@@ -1,2 +1,3 @@
 # KineticGas
-Implementation of the Modified Enskog Theory for Mie fluids (MET-Mie) for computation of diffusion coefficients, thermal diffusion coefficients, viscosity and thermal conductivity
+
+This model has been developed during work on the article (...) which is currently unpublished. The model will be released as open-source once the article is published.
