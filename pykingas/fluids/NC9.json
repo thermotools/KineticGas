@@ -1,0 +1,38 @@
+{
+      "ident": "NC9",
+      "formula": "C9H20",
+      "cas_number": "111-84-2",
+      "name": "N-NONANE",
+      "aliases": [
+            "n-Nonane",
+            "Nonane"
+      ],
+      "mol_weight": 128.259,
+      "Mie": {
+            "default": {
+                  "sigma": 4.5334e-10,
+                  "eps_div_k": 387.55,
+                  "lambda_a": 6.0,
+                  "lambda_r": 18.324,
+                  "bib_reference": "Lafitte et al. 2013, doi: 10.1063/1.4819786"
+            }
+      },
+      "HardSphere": {
+            "default": {
+                  "sigma": 4.5334e-10,
+                  "FH_order": 0,
+                  "bib_reference": "Lafitte et al. 2013, doi: 10.1063/1.4819786"
+            }
+      },
+      "q-Mie": {
+            "default": {
+                  "sigma": 4.5334e-10,
+                  "eps_div_k": 387.55,
+                  "lambda_a": 6.0,
+                  "lambda_r": 18.324,
+                  "FH_order": 0,
+                  "bib_reference": "Lafitte et al. 2013, doi: 10.1063/1.4819786"
+            }
+      },
+      "LJs": {}
+}

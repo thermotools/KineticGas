@@ -1,0 +1,111 @@
+{
+      "ident": "P-H2",
+      "formula": "H2",
+      "cas_number": "1333-74-0",
+      "name": "PARA-HYDROGEN",
+      "aliases": [
+            "ParaHydrogen",
+            "P-Hydrogen",
+            "R702p"
+      ],
+      "mol_weight": 2.01594,
+      "Mie": {
+            "default": {
+                  "sigma": 3.2557e-10,
+                  "eps_div_k": 17.849,
+                  "lambda_a": 6.0,
+                  "lambda_r": 8.0,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "AASEN2019-FH0-LJ": {
+                  "sigma": 3.8131e-10,
+                  "eps_div_k": 13.197,
+                  "lambda_a": 6.0,
+                  "lambda_r": 12.0,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            }
+      },
+      "HardSphere": {
+            "default": {
+                  "sigma": 3.2557e-10,
+                  "FH_order": 0,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "AASEN2019-FH1": {
+                  "sigma": 3.0235e-10,
+                  "FH_order": 1,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "AASEN2019-FH2": {
+                  "sigma": 2.9185e-10,
+                  "FH_order": 2,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "AASEN2019-FH0-LJ": {
+                  "sigma": 3.8131e-10,
+                  "FH_order": 0,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "AASEN2019-FH1-LJ": {
+                  "sigma": 3.0217e-10,
+                  "FH_order": 1,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "AASEN2019-FH2-LJ": {
+                  "sigma": 2.9318e-10,
+                  "FH_order": 2,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            }
+      },
+      "q-Mie": {
+            "default": {
+                  "sigma": 3.2557e-10,
+                  "eps_div_k": 17.849,
+                  "lambda_a": 6.0,
+                  "lambda_r": 8.0,
+                  "FH_order": 0,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "AASEN2019-FH1": {
+                  "sigma": 3.0235e-10,
+                  "eps_div_k": 26.586,
+                  "lambda_a": 6.0,
+                  "lambda_r": 9.0,
+                  "FH_order": 1,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "AASEN2019-FH2": {
+                  "sigma": 2.9185e-10,
+                  "eps_div_k": 55.519,
+                  "lambda_a": 6.0,
+                  "lambda_r": 20.0,
+                  "FH_order": 2,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "AASEN2019-FH0-LJ": {
+                  "sigma": 3.8131e-10,
+                  "eps_div_k": 13.197,
+                  "lambda_a": 6.0,
+                  "lambda_r": 12.0,
+                  "FH_order": 0,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "AASEN2019-FH1-LJ": {
+                  "sigma": 3.0217e-10,
+                  "eps_div_k": 32.955,
+                  "lambda_a": 6.0,
+                  "lambda_r": 12.0,
+                  "FH_order": 1,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "AASEN2019-FH2-LJ": {
+                  "sigma": 2.9318e-10,
+                  "eps_div_k": 40.152,
+                  "lambda_a": 6.0,
+                  "lambda_r": 12.0,
+                  "FH_order": 2,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            }
+      },
+      "LJs": {}
+}

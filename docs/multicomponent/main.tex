@@ -1,0 +1,145 @@
+\documentclass{article}
+\input{preamble.tex}
+\input{commands.tex}
+
+\title{Documentation for multicomponent solutions}
+\author{Vegard Gjeldvik Jervell}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\input{intro.tex}
+\input{diffusion.tex}
+\input{thermal_diffusion.tex}
+\input{conductivity.tex}
+\input{viscosity.tex}
+\input{contact_diameters.tex}
+
+\bibliographystyle{ieeetr}
+\bibliography{bibliografi}
+
+\end{document}
+
+\section{Conductivity}
+To compute the conductivity, we must first find the Sonine polynomial expansion coefficients related to the temperature response function of component $i$, $\Vec{A}_i$, denoted $a_q^{(i)}$. To do this solve the set of equations 
+\begin{equation}
+    \sum_{j = 1}^s \sum_{q = 0}^{N} \Lambda_{ij}^{pq} a_q^{(j)} = \frac{4}{5k_B}x_i K_i \delta_{p,1}, \hspace{1cm} s = \{1, 2, ..., s\}, p = \{0, 1, ..., N\}
+\end{equation}
+where $s$ is the number of components, $N$ is the order of the Enskog approximation and $K_i$ is given by
+\begin{equation}
+    K_i = 1 + \frac{12}{5}\sum_{j = 1}^s \rho b_{ij} M_{ij} M_{ji} g_{ij}
+\end{equation}
+where $M_{ij} = \frac{m_i}{m_i + m_j}$, $\rho b_{ij} = \frac{2 \pi}{3} n_j \sigma_{ij}^3$ and $g_{ij}$ is the radial distribution function at contact. $\sigma_{ij}$ is taken to be the contact distance of the rdf.
+
+Solve this set of equations by writing it in matrix form as 
+\begin{equation}
+    \Mat{\Lambda} \Vec{a} = \pmb{\lambda}
+\end{equation}
+with
+\begin{equation}
+    \Mat{\Lambda} = \left.\overbrace{
+    \begin{bmatrix}
+\Lambda_{11}^{00} & \Lambda_{12}^{00} & \hdots & \Lambda_{1s}^{00} & \Lambda_{11}^{01} & \hdots & \hdots & \Lambda_{1s}^{01} & \hdots & \hdots & \Lambda_{1s}^{0N} \\
+\Lambda_{21}^{00} & \ddots & & \vdots & \vdots & \ddots & & \vdots & \ddots & & \vdots \\
+\vdots & & \ddots & \vdots & \vdots & & \ddots & \vdots & & \ddots & \vdots \\
+\Lambda_{s1}^{00} & \Lambda_{s2}^{00} & \hdots & \Lambda_{ss}^{00} & \Lambda_{s1}^{01} & \hdots & \hdots & \Lambda_{ss}^{01} & \hdots & \hdots & \Lambda_{ss}^{0N} \\
+\Lambda_{11}^{10} & \Lambda_{12}^{10} & \hdots & \Lambda_{1s}^{10} & \Lambda_{11}^{11} & \hdots & \hdots & \Lambda_{1s}^{11} & \hdots & \hdots & \Lambda_{1s}^{1N} \\
+\vdots & \ddots & & \vdots & \vdots & \ddots & & \vdots & \ddots & & \vdots \\
+\vdots & & \ddots & \vdots & \vdots & & \ddots & \vdots & & \ddots & \vdots \\
+\Lambda_{s1}^{10} & \hdots & \hdots & \Lambda_{ss}^{10} & \Lambda_{s1}^{11} & \hdots & \hdots & \Lambda_{ss}^{11} & \hdots & \hdots & \Lambda_{ss}^{1N} \\
+\vdots & \ddots & & \vdots & \vdots & \ddots & & \vdots & \ddots & & \vdots \\
+\vdots & & \ddots & \vdots & \vdots & & \ddots & \vdots & & \ddots & \vdots \\
+\Lambda_{s1}^{N0} & \hdots & \hdots & \Lambda_{ss}^{N0} & \Lambda_{s1}^{N1} & \hdots & \hdots & \Lambda_{ss}^{N1} & \hdots & \hdots & \Lambda_{ss}^{NN} \\
+    \end{bmatrix}
+    }^{Ns} \right\} Ns
+\end{equation}
+
+which for clarity may be written as an ($N \times N$) block matrix
+\begin{equation}
+    \Mat{\Lambda} = 
+    \begin{bmatrix}
+        \Mat{\Lambda}^{(00)} & \Mat{\Lambda}^{(01)} & \hdots & \Mat{\Lambda}^{(0N)} \\
+        \Mat{\Lambda}^{(10)} & \ddots             &        & \vdots \\
+        \vdots             &                    & \ddots & \vdots \\
+        \Mat{\Lambda}^{(N0)} & \hdots & \hdots  & \Mat{\Lambda}^{(NN)}
+    \end{bmatrix}
+    \label{eq:lambda_block1}
+\end{equation}
+consisting of ($s \times s$) blocks
+\begin{equation}
+    \Mat{\Lambda}^{(pq)} = 
+    \begin{bmatrix}
+        \Lambda_{11}^{pq} & \Lambda_{12}^{pq} & \hdots & \Lambda_{1s}^{pq} \\
+        \Lambda_{21}^{pq} & \ddots & & \vdots \\
+        \vdots & & \ddots & \vdots \\
+        \Lambda_{s1}^{pq} & \hdots & \hdots & \Lambda_{ss}^{pq} 
+    \end{bmatrix}.
+    \label{eq:lambda_block2}
+\end{equation}
+
+The corresponding vectors $\Vec{a}$ and $\Vec{\delta}$ are then
+
+\begin{equation}
+    \Vec{a} = 
+    \begin{pmatrix}
+        a_0^{(1)} \\ a_0^{(2)} \\ \vdots \\ a_0^{(s)} \\ a_1^{(1)} \\ \vdots \\ a_{1}^{(s)} \\ \vdots \\ a_{N}^{(s)}
+    \end{pmatrix}
+    , \hspace{2cm}
+    \pmb{\lambda} = \frac{4}{5k_B}
+    \begin{pmatrix}
+        0 \\ \vdots \\ \times s \\ \vdots \\ 0 \\ x_1 K_1 \\ x_2 K_2 \\ \vdots \\ x_s K_s \\ 0 \\ \vdots \\ \times (N - 2)s \\ \vdots \\ 0
+    \end{pmatrix}.
+\end{equation}
+
+The $\Lambda_{ij}^{pq}$ elements are evaluated as
+\begin{equation}
+    \Lambda_{ij}^{pq} = \frac{8}{75 k_B^2 T} \sqrt{m_1 m_2} \left\{ x_i x_j g_{ij} \left[S_{3/2}^{(p)}(\vsU_i^2)\vsU_i, S_{3/2}^{(q)}(\vsU_j^2)\vsU_j\right]_{ij} + \delta_{i,j} \sum_{\ell = 1}^{s} x_i x_\ell g_{i\ell} \left[S_{3/2}^{(p)}(\vsU_i^2)\vsU_i, S_{3/2}^{(q)}(\vsU_i^2)\vsU_i\right]_{i\ell} \right\}
+    \label{eq:lambda_coeffs}
+\end{equation}
+where $[F_i, G_j]_{ij}$ and $[F_i, G_i]_{ij}$ refer to the bracket integrals to which Thompson, Tipton and Lloyalka have identified summational expressions for and $\delta_{i,j}$ is the Kronecker delta.
+
+The conductivity is given in terms of the expansion coefficients $\Vec{a}_q^{(j)}$ as 
+\begin{equation}
+    \begin{split}
+        \lambda &= \frac{5 k_B}{4} \sum_{i} x_i \left(1 + \frac{12}{5} \sum_{j} \rho b_{ij} M_{ij} M_{ji} g_{ij} \right)\left(a_1^{(i)} - \sum_{k} d_{i,1}^{(k)}d_k^{th}\right) \\
+        & \hspace{.5cm} +\frac{5 k_B}{4} \sum_i \sum_j \sqrt{\frac{2\pi m_i m_j k_B T}{m_i + m_j}} \frac{n_i n_j}{m_i + m_j}\sigma_{ij}^{4} g_{ij}
+    \end{split}
+\end{equation}
+where the sums run over the components of the mixture. The expression may be simplified somewhat by inserting for $K_i$ to yield
+\begin{equation}
+    \begin{split}
+        \lambda &= \frac{5 k_B}{4} \sum_{i} x_i K_i \left(a_1^{(i)} - \sum_{k} d_{i,1}^{(k)}d_k^{th}\right) \\
+        & \hspace{.5cm} +\frac{5 k_B}{4} \sum_i \sum_j \sqrt{\frac{2\pi m_i m_j k_B T}{m_i + m_j}} \frac{n_i n_j}{m_i + m_j}\sigma_{ij}^{4} g_{ij}.
+    \end{split}
+\end{equation}
+The coefficients $d_k^{th}$ are found by the solving the set of equations 
+\begin{equation}
+    \sum_{k = 1}^s d_{i,0}^{(k)} d_k^{th} = a_0^{(i)}, \hspace{1cm} i = \{1, 2, ..., s\},
+    \label{eq:dth_set}
+\end{equation}
+with $d_{i,0}^{(k)}$ given by the solution to the diffusion equations \eqref{eq:diffusion_eq_matr}. Written in matrix form, equation \eqref{eq:dth_set} reads
+\begin{equation}
+    \Mat{D}_{th} \Vec{d}_{th} = \Vec{a}_0
+\end{equation}
+with 
+\begin{equation}
+    \Mat{D}_{th} = 
+    \begin{bmatrix}
+        d_{1, 0}^{(1)} & d_{1, 0}^{(2)} & \hdots & d_{1, 0}^{(s)} \\
+        d_{2, 0}^{(1)} & \ddots & & \vdots \\
+        \vdots & & \ddots & \vdots \\
+        d_{s, 0}^{(1)} & d_{s, 0}^{(2)} & \hdots & d_{s, 0}^{(s)}
+    \end{bmatrix}
+    , \hspace{1cm}
+    \Vec{a_0} = 
+    \begin{pmatrix}
+        a_0^{(1)} \\ a_0^{(2)} \\ \vdots \\ a_0^{(s)}
+    \end{pmatrix}
+\end{equation}
+
+
+
+

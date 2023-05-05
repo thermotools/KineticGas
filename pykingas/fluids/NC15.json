@@ -1,0 +1,38 @@
+{
+      "ident": "NC15",
+      "formula": "C15H32",
+      "cas_number": "629-62-9",
+      "name": "N-PENTADECANE",
+      "aliases": [
+            "n-Pentadecane",
+            "Pentadecane"
+      ],
+      "mol_weight": 212.42,
+      "Mie": {
+            "default": {
+                  "sigma": 4.7738e-10,
+                  "eps_div_k": 444.51,
+                  "lambda_a": 6.0,
+                  "lambda_r": 20.822,
+                  "bib_reference": "Lafitte et al. 2013, doi: 10.1063/1.4819786"
+            }
+      },
+      "HardSphere": {
+            "default": {
+                  "sigma": 4.7738e-10,
+                  "FH_order": 0,
+                  "bib_reference": "Lafitte et al. 2013, doi: 10.1063/1.4819786"
+            }
+      },
+      "q-Mie": {
+            "default": {
+                  "sigma": 4.7738e-10,
+                  "eps_div_k": 444.51,
+                  "lambda_a": 6.0,
+                  "lambda_r": 20.822,
+                  "FH_order": 0,
+                  "bib_reference": "Lafitte et al. 2013, doi: 10.1063/1.4819786"
+            }
+      },
+      "LJs": {}
+}

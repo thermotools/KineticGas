@@ -1,0 +1,38 @@
+{
+      "ident": "NC22",
+      "formula": "C22H46",
+      "cas_number": "629-97-0",
+      "name": "N-DOCOSANE",
+      "aliases": [
+            "n-Docosane",
+            "Docosane"
+      ],
+      "mol_weight": 310.61,
+      "Mie": {
+            "default": {
+                  "sigma": 4.7484e-10,
+                  "eps_div_k": 437.72,
+                  "lambda_a": 6.0,
+                  "lambda_r": 20.862,
+                  "bib_reference": "Lafitte et al. 2013, doi: 10.1063/1.4819786"
+            }
+      },
+      "HardSphere": {
+            "default": {
+                  "sigma": 4.7484e-10,
+                  "FH_order": 0,
+                  "bib_reference": "Lafitte et al. 2013, doi: 10.1063/1.4819786"
+            }
+      },
+      "q-Mie": {
+            "default": {
+                  "sigma": 4.7484e-10,
+                  "eps_div_k": 437.72,
+                  "lambda_a": 6.0,
+                  "lambda_r": 20.862,
+                  "FH_order": 0,
+                  "bib_reference": "Lafitte et al. 2013, doi: 10.1063/1.4819786"
+            }
+      },
+      "LJs": {}
+}

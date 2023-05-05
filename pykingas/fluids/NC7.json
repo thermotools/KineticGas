@@ -1,0 +1,38 @@
+{
+      "ident": "NC7",
+      "formula": "C7H16",
+      "cas_number": "142-82-5",
+      "name": "N-HEPTANE",
+      "aliases": [
+            "n-Heptane",
+            "Heptane"
+      ],
+      "mol_weight": 100.205,
+      "Mie": {
+            "default": {
+                  "sigma": 4.4282e-10,
+                  "eps_div_k": 358.51,
+                  "lambda_a": 6.0,
+                  "lambda_r": 17.092,
+                  "bib_reference": "Lafitte et al. 2013, doi: 10.1063/1.4819786"
+            }
+      },
+      "HardSphere": {
+            "default": {
+                  "sigma": 4.4282e-10,
+                  "FH_order": 0,
+                  "bib_reference": "Lafitte et al. 2013, doi: 10.1063/1.4819786"
+            }
+      },
+      "q-Mie": {
+            "default": {
+                  "sigma": 4.4282e-10,
+                  "eps_div_k": 358.51,
+                  "lambda_a": 6.0,
+                  "lambda_r": 17.092,
+                  "FH_order": 0,
+                  "bib_reference": "Lafitte et al. 2013, doi: 10.1063/1.4819786"
+            }
+      },
+      "LJs": {}
+}

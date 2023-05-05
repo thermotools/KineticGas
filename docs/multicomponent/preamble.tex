@@ -1,0 +1,49 @@
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper, left=2.5cm, right=2.5cm, top=3cm,bottom=3cm]{geometry} %margins
+\setcounter{tocdepth}{2}% remove subsubsections from ToC
+\usepackage[hidelinks]{hyperref}
+\usepackage[nottoc]{tocbibind} %adds references to ToC
+\usepackage{afterpage}
+\usepackage{amsmath} %do math
+\usepackage{mathrsfs} %caligrafic symbols
+\usepackage{dutchcal}
+\usepackage{amsbsy}
+\usepackage{amssymb} % Symbols like \blacktriangledown
+\usepackage{stackengine} %Stacking symbols
+\usepackage[version=4]{mhchem} %chemical eqations
+
+\usepackage{siunitx} %get SI units
+\DeclareSIUnit{\atm}{atm}
+\DeclareSIUnit{\angstrom}{\AA}
+
+\usepackage{float} %stuff that floats around
+\usepackage{multirow}
+\usepackage{booktabs}   %tables and stuff
+\usepackage{longtable}
+\usepackage{diagbox} %diagonally split cells in tables
+\usepackage{graphicx} %extra options when inputting figures
+\usepackage{subfig} %subfigures
+\usepackage{cleveref} %Reference "Figures 1 to 4 and 5"
+\newcommand{\crefrangeconjunction}{-} %Change to display "Figures 1-4 and 5" instead
+
+\usepackage{listings} %add python code to document
+
+\usepackage{enumitem} % for listing stuff (bulletpoints and so on)
+\usepackage{setspace} %if you want to change linespacing
+\usepackage[parfill]{parskip} %spacing between paragraphs
+
+\usepackage{url} %for references
+\usepackage{doi} %for references
+\usepackage[super, square, comma, sort&compress]{natbib} %reference package
+
+\numberwithin{equation}{section} %Number eq's by section
+\numberwithin{figure}{section} %number figs by section
+\numberwithin{table}{section} %number tabels by section
+
+\usepackage{comment} %til blokkommentarer
+\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage{todonotes}
+
+\usepackage{ifthen} % For if-else statements
+
+\setcounter{MaxMatrixCols}{20}

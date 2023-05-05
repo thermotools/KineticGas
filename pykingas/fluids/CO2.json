@@ -1,0 +1,52 @@
+{
+      "ident": "CO2",
+      "formula": "CO2",
+      "cas_number": "124-38-9",
+      "name": "CARBON DIOXIDE",
+      "aliases": [
+            "CarbonDioxide",
+            "R744"
+      ],
+      "mol_weight": 44.01,
+      "Mie": {
+            "default": {
+                  "sigma": 3.741e-10,
+                  "eps_div_k": 353.51,
+                  "lambda_a": 6.66,
+                  "lambda_r": 23.0,
+                  "bib_reference": "SAFT-γ Force Field for the Simulation of Molecular Fluids. 1. A Single-Site Coarse Grained Model of Carbon Dioxide, Lafitte et al. J. Phys. Chem. B, 2011, 115, 38, doi: https://doi.org/10.1021/jp204908d"
+            },
+            "lafitte_2011_original": {
+                  "sigma": 3.741e-10,
+                  "eps_div_k": 361.69,
+                  "lambda_a": 6.66,
+                  "lambda_r": 23.0,
+                  "bib_reference": "SAFT-γ Force Field for the Simulation of Molecular Fluids. 1. A Single-Site Coarse Grained Model of Carbon Dioxide, Lafitte et al. J. Phys. Chem. B, 2011, 115, 38, doi: https://doi.org/10.1021/jp204908d"
+            },
+            "saft_1.5_segments": {
+                  "sigma": 3.1916e-10,
+                  "eps_div_k": 231.88,
+                  "lambda_a": 5.1646,
+                  "lambda_r": 27.557,
+                  "bib_reference": "Lafitte et al. 2013, doi: 10.1063/1.4819786"
+            }
+      },
+      "HardSphere": {
+            "default": {
+                  "sigma": 3.1916e-10,
+                  "FH_order": 0,
+                  "bib_reference": "Lafitte et al. 2013, doi: 10.1063/1.4819786"
+            }
+      },
+      "q-Mie": {
+            "default": {
+                  "sigma": 3.1916e-10,
+                  "eps_div_k": 231.88,
+                  "lambda_a": 5.1646,
+                  "lambda_r": 27.557,
+                  "FH_order": 0,
+                  "bib_reference": "Lafitte et al. 2013, doi: 10.1063/1.4819786"
+            }
+      },
+      "LJs": {}
+}

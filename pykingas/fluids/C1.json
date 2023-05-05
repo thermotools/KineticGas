@@ -1,0 +1,59 @@
+{
+      "ident": "C1",
+      "formula": "CH4",
+      "cas_number": "74-82-8",
+      "name": "METHANE",
+      "aliases": [
+            "Methane",
+            "CH4",
+            "R50"
+      ],
+      "mol_weight": 16.0425,
+      "Mie": {
+            "default": {
+                  "sigma": 3.7412e-10,
+                  "eps_div_k": 153.36,
+                  "lambda_a": 6.0,
+                  "lambda_r": 12.65,
+                  "bib_reference": "Lafitte et al. 2013, doi: 10.1063/1.4819786"
+            },
+            "Muller": {
+                  "sigma": 3.752e-10,
+                  "eps_div_k": 170.75,
+                  "lambda_a": 6.0,
+                  "lambda_r": 16.39,
+                  "bib_reference": "M\u00fcller's mystery parameters for methane and decane where SAFT-VR Mie fails"
+            }
+      },
+      "HardSphere": {
+            "default": {
+                  "sigma": 3.7412e-10,
+                  "FH_order": 0,
+                  "bib_reference": "Lafitte et al. 2013, doi: 10.1063/1.4819786"
+            },
+            "Muller": {
+                  "sigma": 3.752e-10,
+                  "FH_order": 0,
+                  "bib_reference": "M\u00fcller's mystery parameters for methane and decane where SAFT-VR Mie fails"
+            }
+      },
+      "q-Mie": {
+            "default": {
+                  "sigma": 3.7412e-10,
+                  "eps_div_k": 153.36,
+                  "lambda_a": 6.0,
+                  "lambda_r": 12.65,
+                  "FH_order": 0,
+                  "bib_reference": "Lafitte et al. 2013, doi: 10.1063/1.4819786"
+            },
+            "Muller": {
+                  "sigma": 3.752e-10,
+                  "eps_div_k": 170.75,
+                  "lambda_a": 6.0,
+                  "lambda_r": 16.39,
+                  "FH_order": 0,
+                  "bib_reference": "M\u00fcller's mystery parameters for methane and decane where SAFT-VR Mie fails"
+            }
+      },
+      "LJs": {}
+}

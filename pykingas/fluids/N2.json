@@ -1,0 +1,52 @@
+{
+      "ident": "N2",
+      "formula": "N2",
+      "cas_number": "7727-37-9",
+      "name": "NITROGEN",
+      "aliases": [
+            "Nitrogen",
+            "R728"
+      ],
+      "mol_weight": 28.013,
+      "Mie": {
+            "default": {
+                  "sigma": 3.609e-10,
+                  "eps_div_k": 105.79,
+                  "lambda_a": 6.0,
+                  "lambda_r": 14.08,
+                  "bib_reference": "Galliero et al. Ind. Eng. Chem. Res. 2017, 56, 32, 9213–9226, https://doi.org/10.1021/acs.iecr.7b01397"
+            },
+            "Nichele2018": {
+                  "sigma": 3.69e-10,
+                  "eps_div_k": 95.934,
+                  "lambda_a": 6.0,
+                  "lambda_r": 12.0,
+                  "bib_reference": "Nichele et al. J. supercritical fluids, 135 (2018),  https://doi.org/10.1016/j.supflu.2018.01.011"
+            },
+            "unknown_ref": {
+                  "sigma": 3.656e-10,
+                  "eps_div_k": 98.94,
+                  "lambda_a": 6.0,
+                  "lambda_r": 12.26,
+                  "bib_reference": "Ronald A. Aziz, J. Chem. Phys. 99, 4518 (1993), DOI : https://doi.org/10.1063/1.466051"
+            }
+      },
+      "HardSphere": {
+            "default": {
+                  "sigma": 3.656e-10,
+                  "FH_order": 0,
+                  "bib_reference": "Ronald A. Aziz, J. Chem. Phys. 99, 4518 (1993), DOI : https://doi.org/10.1063/1.466051"
+            }
+      },
+      "q-Mie": {
+            "default": {
+                  "sigma": 3.656e-10,
+                  "eps_div_k": 98.94,
+                  "lambda_a": 6.0,
+                  "lambda_r": 12.26,
+                  "FH_order": 0,
+                  "bib_reference": "Ronald A. Aziz, J. Chem. Phys. 99, 4518 (1993), DOI : https://doi.org/10.1063/1.466051"
+            }
+      },
+      "LJs": {}
+}

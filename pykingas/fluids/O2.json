@@ -1,0 +1,45 @@
+{
+      "ident": "O2",
+      "formula": "O2",
+      "cas_number": "7782-44-7",
+      "name": "OXYGEN",
+      "aliases": [
+            "Oxygen",
+            "R732"
+      ],
+      "mol_weight": 31.999,
+      "Mie": {
+            "default": {
+                  "sigma": 3.46e-10,
+                  "eps_div_k": 118.0,
+                  "lambda_a": 6.0,
+                  "lambda_r": 12.0,
+                  "bib_reference": "Nichele et al. J. supercritical fluids, 135 (2018),  https://doi.org/10.1016/j.supflu.2018.01.011"
+            },
+            "Chen_LJ_2009": {
+                  "sigma": 3.433e-10,
+                  "eps_div_k": 113.0,
+                  "lambda_a": 6.0,
+                  "lambda_r": 12.0,
+                  "bib_reference": "Chen, Rex and Yuen, W., Oxidation of Metals, 73 (2009), DOI : 10.1007/s11085-009-9180-z"
+            }
+      },
+      "HardSphere": {
+            "default": {
+                  "sigma": 3.433e-10,
+                  "FH_order": 0,
+                  "bib_reference": "Chen, Rex and Yuen, W., Oxidation of Metals, 73 (2009), DOI : 10.1007/s11085-009-9180-z"
+            }
+      },
+      "q-Mie": {
+            "default": {
+                  "sigma": 3.433e-10,
+                  "eps_div_k": 113.0,
+                  "lambda_a": 6.0,
+                  "lambda_r": 12.0,
+                  "FH_order": 0,
+                  "bib_reference": "Chen, Rex and Yuen, W., Oxidation of Metals, 73 (2009), DOI : 10.1007/s11085-009-9180-z"
+            }
+      },
+      "LJs": {}
+}

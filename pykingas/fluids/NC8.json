@@ -1,0 +1,38 @@
+{
+      "ident": "NC8",
+      "formula": "C8H18",
+      "cas_number": "111-65-9",
+      "name": "N-OCTANE",
+      "aliases": [
+            "n-Octane",
+            "Octane"
+      ],
+      "mol_weight": 114.232,
+      "Mie": {
+            "default": {
+                  "sigma": 4.4696e-10,
+                  "eps_div_k": 369.18,
+                  "lambda_a": 6.0,
+                  "lambda_r": 17.378,
+                  "bib_reference": "Lafitte et al. 2013, doi: 10.1063/1.4819786"
+            }
+      },
+      "HardSphere": {
+            "default": {
+                  "sigma": 4.4696e-10,
+                  "FH_order": 0,
+                  "bib_reference": "Lafitte et al. 2013, doi: 10.1063/1.4819786"
+            }
+      },
+      "q-Mie": {
+            "default": {
+                  "sigma": 4.4696e-10,
+                  "eps_div_k": 369.18,
+                  "lambda_a": 6.0,
+                  "lambda_r": 17.378,
+                  "FH_order": 0,
+                  "bib_reference": "Lafitte et al. 2013, doi: 10.1063/1.4819786"
+            }
+      },
+      "LJs": {}
+}

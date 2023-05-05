@@ -1,0 +1,28 @@
+{
+      "ident": "H2O",
+      "formula": "H2O",
+      "cas_number": "7732-18-5",
+      "name": "WATER",
+      "aliases": [
+            "Water"
+      ],
+      "mol_weight": 18.015,
+      "Mie": {
+            "default": {
+                  "sigma": 0,
+                  "eps_div_k": 0,
+                  "lambda_a": 6.0,
+                  "lambda_r": 8.0,
+                  "bib_reference": "Use : O. Lobanova, C. Avendan ̃o, T. Lafitte, E. A. Mu ̈ller, and G. Jackson, “Saft-γ force field for the simulation of molecular fluids: 4. a single-site coarse-grained model of water applicable over a wide temperature range,” Molecular Physics, vol. 113, no. 9- 10, pp. 1228–1249, 2015"
+            }
+      },
+      "HardSphere": {
+            "default": {
+                  "sigma": 0,
+                  "FH_order": 0,
+                  "bib_reference": "Use : O. Lobanova, C. Avendan ̃o, T. Lafitte, E. A. Mu ̈ller, and G. Jackson, “Saft-γ force field for the simulation of molecular fluids: 4. a single-site coarse-grained model of water applicable over a wide temperature range,” Molecular Physics, vol. 113, no. 9- 10, pp. 1228–1249, 2015"
+            }
+      },
+      "q-Mie": {},
+      "LJs": {}
+}

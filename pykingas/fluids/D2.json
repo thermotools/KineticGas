@@ -1,0 +1,105 @@
+{
+      "ident": "D2",
+      "formula": "D2",
+      "cas_number": "7782-39-0",
+      "name": "DEUTERIUM",
+      "aliases": [
+            "Deuterium",
+            "DiDeuterium"
+      ],
+      "mol_weight": 4.0282,
+      "Mie": {
+            "default": {
+                  "sigma": 3.1538e-10,
+                  "eps_div_k": 21.2,
+                  "lambda_a": 6.0,
+                  "lambda_r": 8.0,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "AASEN2019-FH0-LJ": {
+                  "sigma": 3.1561e-10,
+                  "eps_div_k": 28.222,
+                  "lambda_a": 6.0,
+                  "lambda_r": 12.0,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            }
+      },
+      "HardSphere": {
+            "default": {
+                  "sigma": 3.1538e-10,
+                  "FH_order": 0,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "AASEN2019-FH1": {
+                  "sigma": 3.0203e-10,
+                  "FH_order": 1,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "AASEN2019-FH2/AASEN2019-FH2-LJ": {
+                  "sigma": 2.9897e-10,
+                  "FH_order": 2,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "AASEN2019-FH0-LJ": {
+                  "sigma": 3.1561e-10,
+                  "FH_order": 0,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "AASEN2019-FH1-LJ": {
+                  "sigma": 3.0193e-10,
+                  "FH_order": 1,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            }
+      },
+      "q-Mie": {
+            "default": {
+                  "sigma": 3.1538e-10,
+                  "eps_div_k": 21.2,
+                  "lambda_a": 6.0,
+                  "lambda_r": 8.0,
+                  "FH_order": 0,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "AASEN2019-FH1": {
+                  "sigma": 3.0203e-10,
+                  "eps_div_k": 30.273,
+                  "lambda_a": 6.0,
+                  "lambda_r": 10.0,
+                  "FH_order": 1,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "AASEN2019-FH2": {
+                  "sigma": 2.9897e-10,
+                  "eps_div_k": 36.913,
+                  "lambda_a": 6.0,
+                  "lambda_r": 12.0,
+                  "FH_order": 2,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "AASEN2019-FH2-LJ": {
+                  "sigma": 2.9897e-10,
+                  "eps_div_k": 36.913,
+                  "lambda_a": 6.0,
+                  "lambda_r": 12.0,
+                  "FH_order": 2,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "AASEN2019-FH0-LJ": {
+                  "sigma": 3.1561e-10,
+                  "eps_div_k": 28.222,
+                  "lambda_a": 6.0,
+                  "lambda_r": 12.0,
+                  "FH_order": 0,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "AASEN2019-FH1-LJ": {
+                  "sigma": 3.0193e-10,
+                  "eps_div_k": 34.389,
+                  "lambda_a": 6.0,
+                  "lambda_r": 12.0,
+                  "FH_order": 1,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            }
+      },
+      "LJs": {}
+}

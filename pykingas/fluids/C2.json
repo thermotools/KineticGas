@@ -1,0 +1,38 @@
+{
+      "ident": "C2",
+      "formula": "C2H6",
+      "cas_number": "74-84-0",
+      "name": "ETHANE",
+      "aliases": [
+            "Ethane",
+            "R170"
+      ],
+      "mol_weight": 30.07,
+      "Mie": {
+            "default": {
+                  "sigma": 3.7257e-10,
+                  "eps_div_k": 206.12,
+                  "lambda_a": 6.0,
+                  "lambda_r": 12.4,
+                  "bib_reference": "Lafitte et al. 2013, doi: 10.1063/1.4819786"
+            }
+      },
+      "HardSphere": {
+            "default": {
+                  "sigma": 3.7257e-10,
+                  "FH_order": 0,
+                  "bib_reference": "Lafitte et al. 2013, doi: 10.1063/1.4819786"
+            }
+      },
+      "q-Mie": {
+            "default": {
+                  "sigma": 3.7257e-10,
+                  "eps_div_k": 206.12,
+                  "lambda_a": 6.0,
+                  "lambda_r": 12.4,
+                  "FH_order": 0,
+                  "bib_reference": "Lafitte et al. 2013, doi: 10.1063/1.4819786"
+            }
+      },
+      "LJs": {}
+}

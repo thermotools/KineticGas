@@ -1,0 +1,44 @@
+{
+      "ident": "KR",
+      "formula": "KR",
+      "cas_number": "7439-90-9",
+      "name": "KRYPTON",
+      "aliases": [
+            "Krypton"
+      ],
+      "mol_weight": 83.798,
+      "Mie": {
+            "default": {
+                  "sigma": 3.645e-10,
+                  "eps_div_k": 176.10,
+                  "lambda_a": 6.0,
+                  "lambda_r": 14.0,
+                  "bib_reference": "Mick et al. J. Chem. Phys. 143, 114504 (2015), https://doi.org/10.1063/1.4930138"
+            },
+            "Irma1999": {
+                  "sigma": 3.64e-10,
+                  "eps_div_k": 166.66,
+                  "lambda_a": 6.0,
+                  "lambda_r": 12.0,
+                  "bib_reference": "Irma et. al (1999), Molecular Dynamics Simulation of the Maxwell- Stefan Diffusion Coefficients in Lennard-Jones Liquid Mixtures, https://doi.org/10.1080/08927029908022110"
+            }
+      },
+      "HardSphere": {
+            "default": {
+                  "sigma": 3.64e-10,
+                  "FH_order": 0,
+                  "bib_reference": "Irma et. al (1999) ISSN : 1029-0435/0892-7022"
+            }
+      },
+      "q-Mie": {
+            "default": {
+                  "sigma": 3.64e-10,
+                  "eps_div_k": 166.66,
+                  "lambda_a": 6.0,
+                  "lambda_r": 12.0,
+                  "FH_order": 0,
+                  "bib_reference": "Irma et. al (1999) ISSN : 1029-0435/0892-7022"
+            }
+      },
+      "LJs": {}
+}

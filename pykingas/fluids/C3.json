@@ -1,0 +1,37 @@
+{
+      "ident": "C3",
+      "formula": "C3H8",
+      "cas_number": "74-98-6",
+      "name": "PROPANE",
+      "aliases": [
+            "Propane"
+      ],
+      "mol_weight": 44.097,
+      "Mie": {
+            "default": {
+                  "sigma": 3.9056e-10,
+                  "eps_div_k": 239.89,
+                  "lambda_a": 6.0,
+                  "lambda_r": 13.006,
+                  "bib_reference": "Lafitte et al. 2013, doi: 10.1063/1.4819786"
+            }
+      },
+      "HardSphere": {
+            "default": {
+                  "sigma": 3.9056e-10,
+                  "FH_order": 0,
+                  "bib_reference": "Lafitte et al. 2013, doi: 10.1063/1.4819786"
+            }
+      },
+      "q-Mie": {
+            "default": {
+                  "sigma": 3.9056e-10,
+                  "eps_div_k": 239.89,
+                  "lambda_a": 6.0,
+                  "lambda_r": 13.006,
+                  "FH_order": 0,
+                  "bib_reference": "Lafitte et al. 2013, doi: 10.1063/1.4819786"
+            }
+      },
+      "LJs": {}
+}

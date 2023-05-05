@@ -1,0 +1,47 @@
+{
+      "ident": "LJF",
+      "formula": "LJF",
+      "cas_number": "",
+      "name": "LENNARD-JONES_FLUID",
+      "aliases": [
+            "LennardJonesFluid",
+            "6-12",
+            "12-6"
+      ],
+      "mol_weight": 1.0,
+      "Mie": {
+            "default": {
+                  "sigma": 3e-10,
+                  "eps_div_k": 30.0,
+                  "lambda_a": 6.0,
+                  "lambda_r": 12.0,
+                  "bib_reference": ""
+            }
+      },
+      "HardSphere": {
+            "default": {
+                  "sigma": 3e-10,
+                  "FH_order": 0,
+                  "bib_reference": ""
+            }
+      },
+      "q-Mie": {
+            "default": {
+                  "sigma": 3e-10,
+                  "eps_div_k": 30.0,
+                  "lambda_a": 6.0,
+                  "lambda_r": 12.0,
+                  "FH_order": 0,
+                  "bib_reference": ""
+            }
+      },
+      "LJs": {
+            "default": {
+                  "sigma": 3e-10,
+                  "eps_div_k": 30.0,
+                  "lambda_a": 6.0,
+                  "lambda_r": 12.0,
+                  "bib_reference": ""
+            }
+      }
+}

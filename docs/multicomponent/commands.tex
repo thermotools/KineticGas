@@ -1,0 +1,107 @@
+%Putting self-defined commands here
+
+\renewcommand{\Vec}[1]{\boldsymbol{\mathrm{#1}}} % pretty vectors
+\renewcommand{\vec}[1]{\Vec{#1}}
+\newcommand{\Mat}[1]{\underline{\pmb{#1}}} % Matrices
+
+% Common symbols
+% Fluxes
+\newcommand{\bvec}[1]{\Bar{\Vec{#1}}}
+\newcommand{\flux}[2]{\Vec{J}_{#1}^{(#2)}}
+\newcommand{\mflux}{\Vec{J}^{(n,m)}}
+\newcommand{\qflux}{\Vec{J}_q}
+
+% Thermo
+% Vectors
+\newcommand{\vx}{\vec{x}}
+\newcommand{\vn}{\vec{n}}
+
+\newcommand{\Lmm}{L_{\mu \mu}}
+\newcommand{\Lmq}{L_{\mu q}}
+\newcommand{\Lqm}{L_{q \mu}}
+\newcommand{\Lqq}{L_{qq}}
+
+\newcommand{\ST}{S_{T,1}}
+\newcommand{\Kr}{K_{\rho}}
+\newcommand{\Arho}{A_{\rho}}
+\newcommand{\Brho}{B_{\rho}}
+
+\newcommand{\Ta}{T^{\alpha}}
+\newcommand{\Tb}{T^{\beta}}
+\newcommand{\Va}{V^{\alpha}}
+\newcommand{\Vb}{V^{\beta}}
+\newcommand{\na}{n^{\alpha}}
+\newcommand{\nb}{n^{\beta}}
+\newcommand{\xa}{x^{\alpha}}
+\newcommand{\xb}{x^{\beta}}
+\newcommand{\vna}{\vn^{\alpha}}
+\newcommand{\vnb}{\vn^{\beta}}
+\newcommand{\vxa}{\vx^{\alpha}}
+\newcommand{\vxb}{\vx^{\beta}}
+
+
+% Kinetic gas theory
+\newcommand{\vr}{\vec{r}}
+\newcommand{\vu}{\vec{u}}
+\newcommand{\bvu}{\Bar{\vec{u}}}
+\newcommand{\cvel}[1]{\bvec{u}_{#1}}
+\newcommand{\vU}{\vec{U}}
+\newcommand{\cVel}{\bvec{U}}
+\newcommand{\sD}{\mathscr{D}}
+\newcommand{\sU}{\mathscr{U}}
+\newcommand{\vsU}{\pmb{\mathscr{U}}}
+\newcommand{\vA}{\vec{\Lambda}}
+\newcommand{\tvA}{\Tilde{\vA}}
+\newcommand{\vD}{\vec{D}}
+\newcommand{\vd}{\vec{d}}
+\newcommand{\mB}{\Mat{B}}
+\newcommand{\va}{\vec{a}}
+\newcommand{\sg}{\mathcal{g}}
+\renewcommand{\d}{\mathrm{d}}
+\newcommand{\rdf}{\Tilde{\chi}}
+
+% Differentials
+\renewcommand{\d}{\mathrm{d}}
+\newcommand{\dT}{\d T}
+\newcommand{\dV}{\d V}
+\newcommand{\drho}{\d \rho}
+\newcommand{\dr}{\d r}
+\newcommand{\dn}{\d n}
+\newcommand{\dx}{\d x}
+\newcommand{\dA}{\d A}
+\newcommand{\dmu}{\d\mu}
+
+% Finite differences
+\newcommand{\Dn}{\Delta n}
+\newcommand{\Dx}{\Delta x}
+\newcommand{\DT}{\Delta T}
+
+\newcommand{\symbline}[3]{$ #1 $ & #2 & \si{#3} \\} % quick symbol table: \symbline{symbol}{description}{unit}
+\newcommand{\abrline}[2]{#1 & #2 \\} % Abbreviation & Description
+\newcommand{\subline}[2]{$#1$ & #2} % Subscript & Description
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%       quick maffs       %
+\newcommand{\del}{\partial} 
+\newcommand{\pfrac}[2]{\left(\frac{#1}{#2}\right)} %fraction with parentheses around
+\newcommand{\pder}[2]{\frac{\del #1}{\del #2}} %partial derivative of x with respect to y as \pder{x}{y}
+\newcommand{\ppder}[2]{\left(\pder{#1}{#2}\right)} %\pder{}{} but with parentheses
+\newcommand{\der}[2]{\pfrac{\d #1}{\d #2}}
+\newcommand{\lrp}{\left(}
+\newcommand{\rrp}{\right)}
+\newcommand{\lsp}{\left[}
+\newcommand{\rsp}{\right]}
+\newcommand{\lcp}{\left\{}
+\newcommand{\rcp}{\right\}}
+\newcommand{\DeltaAB}{\underset{\alpha,\beta}{\Delta}}
+\newcommand{\DeltaIG}{\underset{ig}{\Delta}}
+\newcommand{\DeltaHS}{\underset{HS}{\Delta}}
+\newcommand{\stackmax}[1]{\stackanchor{$\max$}{\tiny{$#1$}}}
+
+\newcommand{\spder}[3]{
+  \ifthenelse{\equal{\detokenize{#2}}{\detokenize{#3}}}
+    {\left(\frac{\del^2 #1}{\del #2^2}\right)}
+    {\left(\frac{\del^2 #1}{\del #2 \del #3}\right)}%
+}
+
+\newcommand{\abs}[1]{\left|#1\right|}
+\newcommand{\mathsec}[1]{\texorpdfstring{#1}{TEXT}}

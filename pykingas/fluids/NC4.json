@@ -1,0 +1,39 @@
+{
+      "ident": "NC4",
+      "formula": "C4H10",
+      "cas_number": "106-97-8",
+      "name": "N-BUTANE",
+      "aliases": [
+            "n-Butane",
+            "Butane",
+            "R600"
+      ],
+      "mol_weight": 58.124,
+      "Mie": {
+            "default": {
+                  "sigma": 4.0887e-10,
+                  "eps_div_k": 273.64,
+                  "lambda_a": 6.0,
+                  "lambda_r": 13.65,
+                  "bib_reference": "Lafitte et al. 2013, doi: 10.1063/1.4819786"
+            }
+      },
+      "HardSphere": {
+            "default": {
+                  "sigma": 4.0887e-10,
+                  "FH_order": 0,
+                  "bib_reference": "Lafitte et al. 2013, doi: 10.1063/1.4819786"
+            }
+      },
+      "q-Mie": {
+            "default": {
+                  "sigma": 4.0887e-10,
+                  "eps_div_k": 273.64,
+                  "lambda_a": 6.0,
+                  "lambda_r": 13.65,
+                  "FH_order": 0,
+                  "bib_reference": "Lafitte et al. 2013, doi: 10.1063/1.4819786"
+            }
+      },
+      "LJs": {}
+}

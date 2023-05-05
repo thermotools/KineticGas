@@ -1,0 +1,44 @@
+{
+      "ident": "AR",
+      "formula": "AR",
+      "cas_number": "7440-37-1",
+      "name": "ARGON",
+      "aliases": [
+            "Argon"
+      ],
+      "mol_weight": 39.948,
+      "Mie": {
+            "default": {
+                  "sigma": 3.404e-10,
+                  "eps_div_k": 117.84,
+                  "lambda_a": 6.0,
+                  "lambda_r": 12.085,
+                  "bib_reference": "Developing intermolecular-potential models for use with the SAFT-VR Mie equation of state, Simon Dufal, Thomas Lafitte, Amparo Galindo, George Jackson, Andrew J. Haslam, AlChE Journal, Vol. 61, 9, 2015, doi: https://doi.org/10.1002/aic.14808"
+            },
+            "unpublished_Jackson": {
+                  "sigma": 3.41e-10,
+                  "eps_div_k": 118.7,
+                  "lambda_a": 6.0,
+                  "lambda_r": 12.26,
+                  "bib_reference": "Unpublished (as of 08/2018) parameters from G. Jackon's group"
+            }
+      },
+      "HardSphere": {
+            "default": {
+                  "sigma": 3.41e-10,
+                  "FH_order": 0,
+                  "bib_reference": "Unpublished (as of 08/2018) parameters from G. Jackon's group"
+            }
+      },
+      "q-Mie": {
+            "default": {
+                  "sigma": 3.41e-10,
+                  "eps_div_k": 118.7,
+                  "lambda_a": 6.0,
+                  "lambda_r": 12.26,
+                  "FH_order": 0,
+                  "bib_reference": "Unpublished (as of 08/2018) parameters from G. Jackon's group"
+            }
+      },
+      "LJs": {}
+}

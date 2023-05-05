@@ -1,0 +1,157 @@
+{
+      "ident": "HE",
+      "formula": "HE",
+      "cas_number": "7440-59-7",
+      "name": "HELIUM-4",
+      "aliases": [
+            "Helium",
+            "HE4",
+            "R704"
+      ],
+      "mol_weight": 4.003,
+      "Mie": {
+            "Herdes": {
+                  "sigma": 3.353e-10,
+                  "eps_div_k": 4.44,
+                  "lambda_a": 6.0,
+                  "lambda_r": 14.84,
+                  "bib_reference": "Herdes 2015, doi: 10.1016/j.fluid.2015.07.014"
+            },
+            "AASEN2019-FH0-LJ": {
+                  "sigma": 3.1273e-10,
+                  "eps_div_k": 4.1463,
+                  "lambda_a": 6.0,
+                  "lambda_r": 12.0,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "default": {
+                  "sigma": 2.8525e-10,
+                  "eps_div_k": 4.5764,
+                  "lambda_a": 6.0,
+                  "lambda_r": 8.3471,
+                  "bib_reference": "HYVA parameters with non-integer repulsive exponent"
+            }
+      },
+      "HardSphere": {
+            "herdes2015": {
+                  "sigma": 3.353e-10,
+                  "FH_order": 0,
+                  "bib_reference": "Herdes 2015, doi: 10.1016/j.fluid.2015.07.014"
+            },
+            "AASEN2019-FH1": {
+                  "sigma": 2.7443e-10,
+                  "FH_order": 1,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "AASEN2019-FH2": {
+                  "sigma": 2.549e-10,
+                  "FH_order": 2,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "AASEN2019-FH0-LJ": {
+                  "sigma": 3.1273e-10,
+                  "FH_order": 0,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "AASEN2019-FH1-LJ": {
+                  "sigma": 2.8107e-10,
+                  "FH_order": 1,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "AASEN2019-FH2-LJ": {
+                  "sigma": 2.5442e-10,
+                  "FH_order": 2,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "default": {
+                  "sigma": 2.8525e-10,
+                  "FH_order": 0,
+                  "bib_reference": "HYVA parameters with non-integer repulsive exponent"
+            },
+            "HYVA-FH1": {
+                  "sigma": 2.6615e-10,
+                  "FH_order": 1,
+                  "bib_reference": "HYVA parameters with non-integer repulsive exponent"
+            },
+            "HYVA-FH2": {
+                  "sigma": 2.5682e-10,
+                  "FH_order": 2,
+                  "bib_reference": "HYVA parameters with non-integer repulsive exponent"
+            }
+      },
+      "q-Mie": {
+            "default": {
+                  "sigma": 3.353e-10,
+                  "eps_div_k": 4.44,
+                  "lambda_a": 6.0,
+                  "lambda_r": 14.84,
+                  "FH_order": 0,
+                  "bib_reference": "Herdes 2015, doi: 10.1016/j.fluid.2015.07.014"
+            },
+            "AASEN2019-FH1": {
+                  "sigma": 2.7443e-10,
+                  "eps_div_k": 5.4195,
+                  "lambda_a": 6.0,
+                  "lambda_r": 9.0,
+                  "FH_order": 1,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "AASEN2019-FH2": {
+                  "sigma": 2.549e-10,
+                  "eps_div_k": 10.952,
+                  "lambda_a": 6.0,
+                  "lambda_r": 13.0,
+                  "FH_order": 2,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "AASEN2019-FH0-LJ": {
+                  "sigma": 3.1273e-10,
+                  "eps_div_k": 4.1463,
+                  "lambda_a": 6.0,
+                  "lambda_r": 12.0,
+                  "FH_order": 0,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "AASEN2019-FH1-LJ": {
+                  "sigma": 2.8107e-10,
+                  "eps_div_k": 6.6893,
+                  "lambda_a": 6.0,
+                  "lambda_r": 12.0,
+                  "FH_order": 1,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "AASEN2019-FH2-LJ": {
+                  "sigma": 2.5442e-10,
+                  "eps_div_k": 10.393,
+                  "lambda_a": 6.0,
+                  "lambda_r": 12.0,
+                  "FH_order": 2,
+                  "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+            },
+            "HYVA-FH0": {
+                  "sigma": 2.8525e-10,
+                  "eps_div_k": 4.5764,
+                  "lambda_a": 6.0,
+                  "lambda_r": 8.3471,
+                  "FH_order": 0,
+                  "bib_reference": "HYVA parameters with non-integer repulsive exponent"
+            },
+            "HYVA-FH1": {
+                  "sigma": 2.6615e-10,
+                  "eps_div_k": 7.9191,
+                  "lambda_a": 6.0,
+                  "lambda_r": 10.455,
+                  "FH_order": 1,
+                  "bib_reference": "HYVA parameters with non-integer repulsive exponent"
+            },
+            "HYVA-FH2": {
+                  "sigma": 2.5682e-10,
+                  "eps_div_k": 11.942,
+                  "lambda_a": 6.0,
+                  "lambda_r": 13.239,
+                  "FH_order": 2,
+                  "bib_reference": "HYVA parameters with non-integer repulsive exponent"
+            }
+      },
+      "LJs": {}
+}
