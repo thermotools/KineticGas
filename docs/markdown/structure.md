@@ -28,9 +28,9 @@ The primary responsibilities of the python-side and C++ side of the package are
 
 Stuff is illustrated here as well:
 
-![](https://github.com/thermotools/KineticGas/blob/main/docs/structure/kineticgas_classes.pdf)
+![](https://github.com/thermotools/KineticGas/blob/main/docs/structure/kineticgas_classes.svg?raw=true)
 
-![](https://github.com/thermotools/KineticGas/blob/main/docs/structure/who_does_what.pdf)
+![](https://github.com/thermotools/KineticGas/blob/main/docs/structure/who_does_what.svg?raw=true)
 
 # File system
 

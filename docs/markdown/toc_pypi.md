@@ -1,5 +1,5 @@
 ## Table of contents
-   * [Getting started](#Getting-started:-In-Python)
+   * [Getting started](#getting-started-in-python)
      * [Initializing a model](#Initializing-a-model)
      * [Making predictions](#Making-predictions)
    * [Advanced usage]()

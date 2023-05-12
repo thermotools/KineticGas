@@ -1,5 +1,5 @@
 <!--- 
-Generated at: 2023-05-12T10:17:59.345948
+Generated at: 2023-05-12T10:31:37.030609
 This is an auto-generated file, generated using the script at KineticGas/docs/join_docs.py
 The file is created by joining the contents of the files
     KineticGas/docs/markdown/
@@ -20,16 +20,16 @@ The package is implemented mostly in C++ to handle the numerical computations in
 
 KineticGas can be used to predict diffusion coefficients, thermal diffusion coefficients, viscosities and thermal conductivities in gas mixtures, and is reliable over a large range of temperatures and pressures. The package also contains an extensive database of fluid parameters collected from the open literature.
 
-![](https://github.com/thermotools/KineticGas/blolb/main/docs/figures/all.gif?raw=true)
+![](https://github.com/thermotools/KineticGas/blob/main/docs/figures/all.gif?raw=true)
 
 
 ## Table of contents
    * [Installing KineticGas](#Installing-KineticGas)
    * [Getting started](#Getting-started:-In-Python)
-     * [Python]((#Getting-started:-In-Python))
+     * [Python](#getting-started-in-python)
        * [Initializing a model](#Initializing-a-model)
        * [Making predictions](#Making-predictions)
-     * [C++]()
+     * [C++](#getting-started-in-c)
    * [Advanced usage]()
      * [Modifying and adding fluids]()
      * [Implementing new potentials]()
@@ -41,7 +41,8 @@ KineticGas can be used to predict diffusion coefficients, thermal diffusion coef
 
 ## Please cite
 
-KineticGas has been developed throughout the series of two works. If you are referencing the package, please cite the works
+KineticGas has been developed throughout a series of two works. If you are referencing the package, please cite the works
+
    * [Revised Enskog theory for Mie fluids: Prediction of diffusion coefficients, thermal diffusion coefficients, viscosities and thermal conductivities]() (Vegard G. Jervell and Øivind Wilhelmsen, 2023)
    * [The Kinetic Gas theory of Mie fluids](https://ntnuopen.ntnu.no/ntnu-xmlui/handle/11250/3029213) (Vegard G. Jervell, 2022)
 
@@ -81,7 +82,7 @@ bash cpp/build.sh
 pip install .
 ```
 
-From the top level directory should provide you with an installation of `KineticGas`.
+From the top level directory should provide you with an installation of the `KineticGas` python package `pykingas`.
 
 #### Short explanation
 
@@ -465,9 +466,9 @@ The primary responsibilities of the python-side and C++ side of the package are
 
 Stuff is illustrated here as well:
 
-![](https://github.com/thermotools/KineticGas/blob/main/docs/structure/kineticgas_classes.pdf)
+![](https://github.com/thermotools/KineticGas/blob/main/docs/structure/kineticgas_classes.svg?raw=true)
 
-![](https://github.com/thermotools/KineticGas/blob/main/docs/structure/who_does_what.pdf)
+![](https://github.com/thermotools/KineticGas/blob/main/docs/structure/who_does_what.svg?raw=true)
 
 # File system
 

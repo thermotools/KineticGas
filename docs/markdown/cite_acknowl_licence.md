@@ -1,6 +1,7 @@
 ## Please cite
 
-KineticGas has been developed throughout the series of two works. If you are referencing the package, please cite the works
+KineticGas has been developed throughout a series of two works. If you are referencing the package, please cite the works
+
    * [Revised Enskog theory for Mie fluids: Prediction of diffusion coefficients, thermal diffusion coefficients, viscosities and thermal conductivities]() (Vegard G. Jervell and Øivind Wilhelmsen, 2023)
    * [The Kinetic Gas theory of Mie fluids](https://ntnuopen.ntnu.no/ntnu-xmlui/handle/11250/3029213) (Vegard G. Jervell, 2022)
 

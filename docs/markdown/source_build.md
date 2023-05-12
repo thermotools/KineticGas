@@ -14,7 +14,7 @@ bash cpp/build.sh
 pip install .
 ```
 
-From the top level directory should provide you with an installation of `KineticGas`.
+From the top level directory should provide you with an installation of the `KineticGas` python package `pykingas`.
 
 #### Short explanation
 

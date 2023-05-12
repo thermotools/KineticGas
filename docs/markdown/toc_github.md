@@ -1,10 +1,10 @@
 ## Table of contents
    * [Installing KineticGas](#Installing-KineticGas)
    * [Getting started](#Getting-started:-In-Python)
-     * [Python]((#Getting-started:-In-Python))
+     * [Python](#getting-started-in-python)
        * [Initializing a model](#Initializing-a-model)
        * [Making predictions](#Making-predictions)
-     * [C++]()
+     * [C++](#getting-started-in-c)
    * [Advanced usage]()
      * [Modifying and adding fluids]()
      * [Implementing new potentials]()
