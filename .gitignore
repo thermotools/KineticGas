@@ -6,8 +6,10 @@ cpp/Integration/debug/
 cpp/include/
 python/venv
 venv/
+venv*/
+pypi_release/wheelhouse/*.whl
 *__pycache__/
-dist/
+
 build/
 pykingas.egg-info/
 venv*

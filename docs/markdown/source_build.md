@@ -1,6 +1,8 @@
 # Installing KineticGas
 
-An up-to-date release of the KineticGas package is coming to PyPi as [pykingas](https://pypi.org/project/pykingas/#files), at the moment KineticGas must be built from source.
+KineticGas is available on PyPi as the [`pykingas`](https://pypi.org/project/pykingas/) package, compiled for MacOS running on Apple Silicon, for python versions 3.8-3.11.
+
+For other operating systems, KineticGas must currently be built from source.
 
 ## Building from source
 
@@ -28,5 +30,9 @@ The `bash` script `cpp/build_kingas.sh` uses `cmake` and `make` to compile the b
      * Set `PYBIND11_ROOT` in `cpp/CMakeLists.txt` to the resulting directory.
  * The system arcitecture to compile for, and the python version, are specified in `cpp/CMakeLists.txt`, modify these as needed.
  * The bash script `cpp/build.sh` sets the environment variables `CC` and `CXX`, these may also need to be modified for your system.
+ * The python installation to build against can be specified with
+   * `bash cpp/build.sh -DPYTHON_EXECUTABLE=<path/to/python>`
+   * Where `<path/to/python>` can (usually) be replaced by `$(which python)`.
+ * If none of the above works, please feel free to leave an issue.
 
 

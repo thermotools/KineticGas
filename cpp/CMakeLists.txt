@@ -1,11 +1,13 @@
-cmake_minimum_required(VERSION 3.4)
-set(PYBIND11_PYTHON_VERSION "3.10")
+cmake_minimum_required(VERSION 3.12)
+# set(PYBIND11_PYTHON_VERSION "3.10")
+string(ASCII 27 Esc)
+message("${Esc}[34mPYBIND11_PYTHON_VERSION is : ${PYBIND11_PYTHON_VERSION}")
+message("${Esc}[34mPYTHON_EXECUTABLE is : ${PYTHON_EXECUTABLE}")
+
 set(PYBIND11_ROOT "/usr/local/include/pybind11") # This path must contain the pybind11 root dir.
 set(CMAKE_CXX_COMPILER /usr/bin/g++)
 set(CMAKE_C_COMPILER /usr/bin/gcc)
 
-execute_process(COMMAND arch OUTPUT_VARIABLE TARGET_ARCHITECTURE)
-message("Architecture is ${TARGET_ARCHITECTURE}")
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-unknown-pragmas -Wno-sign-compare -std=c++17 -pthread -arch arm64")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wno-unused-parameter")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -DDEBUG -Wno-unused-parameter -Wno-unused-const-variable")
