@@ -29,7 +29,7 @@
 // -------------------------------Constructor and helper functions------------------------------------ //
 
 KineticGas::KineticGas(const std::vector<double> mole_weights, bool is_idealgas) 
-    : Ncomps{mole_weights.size()},
+  : Ncomps{static_cast<unsigned long>(mole_weights.size())},
     is_idealgas{is_idealgas},
     m{mole_weights}
     {
