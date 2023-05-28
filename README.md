@@ -1,5 +1,5 @@
 <!--- 
-Generated at: 2023-05-28T10:04:44.488392
+Generated at: 2023-05-28T10:21:01.819738
 This is an auto-generated file, generated using the script at KineticGas/docs/join_docs.py
 The file is created by joining the contents of the files
     KineticGas/docs/markdown/
@@ -68,9 +68,9 @@ A standalone C++ module, that works without the python wrapper is currently unde
 
 # Installing KineticGas
 
-KineticGas is available on PyPi as the [`pykingas`](https://pypi.org/project/pykingas/) package, compiled for MacOS running on Apple Silicon, for python versions 3.8-3.11.
+KineticGas is available on PyPi as the [`pykingas`](https://pypi.org/project/pykingas/) package, for python versions 3.8-3.11, compiled for MacOS running on Apple Silicon, Linux and Windows.
 
-For other operating systems, KineticGas must currently be built from source.
+For MacOS running on Intel, or other operating systems, KineticGas must currently be built from source.
 
 ## Building from source
 
