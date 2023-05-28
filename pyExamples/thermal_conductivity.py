@@ -41,7 +41,7 @@ print()
 
 # ... but many computations at the same temperature are fast
 Vm_list = np.linspace(1e-4, 1e-3)
-cond_list = np.empty_lie(Vm_list)
+cond_list = np.empty_like(Vm_list)
 for i, Vm in enumerate(Vm_list):
     # Only needs to compute collision integrals at 300 K in the first iteration
     # Subsequent iterations are fast.
