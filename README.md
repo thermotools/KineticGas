@@ -1,5 +1,5 @@
 <!--- 
-Generated at: 2023-05-12T14:03:05.673758
+Generated at: 2023-05-28T10:04:44.488392
 This is an auto-generated file, generated using the script at KineticGas/docs/join_docs.py
 The file is created by joining the contents of the files
     KineticGas/docs/markdown/
@@ -74,9 +74,9 @@ For other operating systems, KineticGas must currently be built from source.
 
 ## Building from source
 
-The current build system is set up to support Mac/Linux. If you create a build system for Windows, please leave a PR.
+A build system using `cmake` and `make` is set up to support Mac, Linux and Windows. For Mac machines running on intel chips, one compiler flag must be modified.
 
-### First Try
+### First Try - For Mac/Linux
 If all goes well, running
 
 ```
@@ -85,6 +85,8 @@ pip install .
 ```
 
 From the top level directory should provide you with an installation of the `KineticGas` python package `pykingas`.
+
+For Mac's running on an intel chip, the compiler flag `-arch arm64` which is set in `cpp/CMakeLists.txt` must be removed or changed to `-arch x86_64`.
 
 #### Short explanation
 
@@ -101,9 +103,13 @@ The `bash` script `cpp/build_kingas.sh` uses `cmake` and `make` to compile the b
  * The python installation to build against can be specified with
    * `bash cpp/build.sh -DPYTHON_EXECUTABLE=<path/to/python>`
    * Where `<path/to/python>` can (usually) be replaced by `$(which python)`.
+   * Alternatively, add the line `set(PYBIND11_PYTHON_VERSION 3)` to the top of the file `cpp/CMakeLists.txt`
+   * Or: add the line `set(PYTHON_EXECUTABLE "<path/to/python>"`
  * If none of the above works, please feel free to leave an issue.
 
+### For Windows
 
+Running `cmake` from the `cpp` directory should produce an MSVC solution file. Building this solution should generate the file `KineticGas_r.cp<python-version>-win_amd64.pyd` which will be displayed as a "python extension module". Copy this file to the `pykingas` directory, and run `pip install .` from the top-level directory (where `setup.py`) is found.
 
 
 # Getting started: In Python
