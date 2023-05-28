@@ -1,8 +1,8 @@
 # Installing KineticGas
 
-KineticGas is available on PyPi as the [`pykingas`](https://pypi.org/project/pykingas/) package, compiled for MacOS running on Apple Silicon, for python versions 3.8-3.11.
+KineticGas is available on PyPi as the [`pykingas`](https://pypi.org/project/pykingas/) package, for python versions 3.8-3.11, compiled for MacOS running on Apple Silicon, Linux and Windows.
 
-For other operating systems, KineticGas must currently be built from source.
+For MacOS running on Intel, or other operating systems, KineticGas must currently be built from source.
 
 ## Building from source
 
