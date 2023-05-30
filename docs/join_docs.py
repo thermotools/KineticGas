@@ -62,7 +62,7 @@ def write_pypi_readme():
 
 def write_github_readme():
     files = ['header', 'toc_github', 'cite_acknowl_licence', 'dependencies', 'source_build', 
-            'getting_started_py', 'getting_started_cpp', 'structure', 'fluid_identifiers']
+            'getting_started_py', 'getting_started_cpp', 'advanced', 'structure', 'fluid_identifiers']
     header = get_header(files)
 
     out_file_str = gen_file_str(files)
