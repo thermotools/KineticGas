@@ -1,5 +1,5 @@
 <!--- 
-Generated at: 2023-05-28T10:21:01.818266
+Generated at: 2023-05-31T01:18:28.250733
 This is an auto-generated file, generated using the script at KineticGas/docs/join_docs.py
 The file is created by joining the contents of the files
     KineticGas/docs/markdown/
@@ -382,6 +382,8 @@ $$J_{CO2} = D_{T}[2] \nabla \ln T - D[2, 0] \nabla n_{C1} - D[2, 1] \nabla n_{O2
 The `frame_of_reference` kwarg works as normal when setting `use_independent=False`.
 
 # Fluid identifiers
+
+*Note* : Many of these fluid parameters have been pulled directly from the [ThermoPack](https://github.com/thermotools/thermopack) fluid database for SAFT-VR Mie parameters. In the cases where SAFT-VR Mie uses segment numbers $>1$ to describe the fluids, the parameter sets cannot be expected to be suitable for use with RET-Mie.
 
 | Fluid name | Fluid identifyer | CAS |
 | ---------- | ---------------- | --- |
