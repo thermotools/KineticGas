@@ -1,5 +1,5 @@
 <!--- 
-Generated at: 2023-05-31T01:18:28.251806
+Generated at: 2023-05-31T01:23:23.046366
 This is an auto-generated file, generated using the script at KineticGas/docs/join_docs.py
 The file is created by joining the contents of the files
     KineticGas/docs/markdown/
@@ -31,11 +31,11 @@ KineticGas can be used to predict diffusion coefficients, thermal diffusion coef
        * [Initializing a model](#Initializing-a-model)
        * [Making predictions](#Making-predictions)
      * [C++](#getting-started-in-c)
-   * [Advanced usage]()
-     * [Modifying and adding fluids]()
-     * [Implementing new potentials]()
-       * [The C++ side]()
-       * [The Python side]()
+   * [Advanced usage](#advanced-usage)
+     * [Modifying and adding fluids](#modifying-and-adding-fluids)
+     * [Implementing new potentials](#implementing-new-potentials)
+       * [The C++ side](#implementing-the-c-side)
+       * [The Python side](#implementing-the-python-side)
    * [Program structure](#structure)
    * [File system](#file-system)
    * [Fluid indentifiers](#fluid-identifiers)
@@ -449,7 +449,7 @@ The `frame_of_reference` kwarg works as normal when setting `use_independent=Fal
 
 A standalone C++ library, that does not depend upon the Python wrapper, is currently under development. See branches under `pure_cpp/` for the most up to date information on that.
 
-# Advaced usage
+# Advanced usage
 
 ## Modifying and adding fluids
 

@@ -1,4 +1,4 @@
-# Advaced usage
+# Advanced usage
 
 ## Modifying and adding fluids
 
