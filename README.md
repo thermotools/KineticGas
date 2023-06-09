@@ -1,5 +1,5 @@
 <!--- 
-Generated at: 2023-05-31T01:23:23.046366
+Generated at: 2023-06-09T08:35:40.152677
 This is an auto-generated file, generated using the script at KineticGas/docs/join_docs.py
 The file is created by joining the contents of the files
     KineticGas/docs/markdown/
@@ -44,7 +44,7 @@ KineticGas can be used to predict diffusion coefficients, thermal diffusion coef
 
 KineticGas has been developed throughout a series of two works. If you are referencing the package, please cite the works
 
-   * [Revised Enskog theory for Mie fluids: Prediction of diffusion coefficients, thermal diffusion coefficients, viscosities and thermal conductivities]() (Vegard G. Jervell and Øivind Wilhelmsen, 2023)
+   * [Revised Enskog theory for Mie fluids: Prediction of diffusion coefficients, thermal diffusion coefficients, viscosities and thermal conductivities](https://doi.org/10.1063/5.0149865) (Vegard G. Jervell and Øivind Wilhelmsen, 2023)
    * [The Kinetic Gas theory of Mie fluids](https://ntnuopen.ntnu.no/ntnu-xmlui/handle/11250/3029213) (Vegard G. Jervell, 2022)
 
 ## Acknowledgments and sources
@@ -137,7 +137,7 @@ The component identifiers are equivalent to the file names in the `pykingas/flui
 
 Internally pure components are treated as binary mixtures of equivalent species, such that a model initialized with e.g. `MieKinGas('H2')` will treat pure hydrogen as a mixture of "Hydrogen with hydrogen". This allows computation of the self-diffusion coefficient through the normal `interdiffusion` method, but carries the caveat mentioned above.
 
-Properties are not dependent on the supplied mole fractions, but it has been found that for numerical stability, the choice `x = [0.5, 0.5` is best.
+Properties are not dependent on the supplied mole fractions, but it has been found that for numerical stability, the choice `x = [0.5, 0.5]` is best.
 
 This may be changed in future versions, such that no mole fraction needs to be supplied when working with pure fluids.
 
