@@ -8,6 +8,76 @@ See : J. Chem. Phys. 139, 154504 (2013); https://doi.org/10.1063/1.4819786
 
 using namespace mie_rdf_constants;
 
+double MieKinGas::omega(const int& i, const int& j, const int& l, const int& r, const double& T){
+    if ((l <= 2) && (r <= 3) && (abs(la[i][j] - 6.) < 1e-10)){ // Use Correlation by Fokin, Popov and Kalashnikov, High Temperature, Vol. 37, No. 1 (1999)
+        // NOTE: There is a typo in Eq. (4b) in the article, ln(1/m) should be ln(m).
+        // See: I. H. Bell et. al. J. Chem. Eng. Data (2020), https://doi.org/10.1021/acs.jced.9b00455
+        // The correlation implemented here has been verified vs. tabulated data.
+
+        // The correlation gives the logarithm of the reduced collision integral.
+        // The collision integral is reduced using the hard-sphere value, i.e. lnomega_star = log(omega / omega_hs)
+        double T_star = T * BOLTZMANN / eps[i][j];
+        if (T_star > 0.4) return omega_correlation(i, j, l, r, T_star) * omega_hs(i, j, l, r, T);
+    }
+    return Spherical::omega(i, j, l, r, T);
+}
+
+double MieKinGas::omega_correlation(int i, int j, int l, int r, double T_star){
+    // Correlation by Fokin, Popov and Kalashnikov, High Temperature, Vol. 37, No. 1 (1999)
+    // NOTE: There is a typo in Eq. (4b) in the article, ln(1/m) should be ln(m).
+    // See: I. H. Bell et. al. J. Chem. Eng. Data (2020), https://doi.org/10.1021/acs.jced.9b00455
+    // The correlation implemented here has been verified vs. tabulated data.
+
+    // The correlation gives the logarithm of the reduced collision integral.
+    // The collision integral is reduced using the hard-sphere value, i.e. lnomega_star = log(omega / omega_hs)
+    if (l == r){
+        double lnomega_star = - (2. / lr[i][j]) * log(T_star);
+        double a_m;
+        for (int n = 1; n < 7; n++){
+            a_m = omega_correlation_factors[l - 1][n - 1][0]
+                    + (omega_correlation_factors[l - 1][n - 1][1] / lr[i][j])
+                    + pow(lr[i][j], -2.) * (omega_correlation_factors[l - 1][n - 1][2]
+                                             + omega_correlation_factors[l - 1][n - 1][3] * log(lr[i][j]));
+
+            lnomega_star += a_m * pow(T_star, (1. - n) * 0.5);
+        }
+        if (l == 2) { lnomega_star += log(1. - (2. / (3. * lr[i][j]))); }
+        return exp(lnomega_star);
+    }
+    return omega_recursive_factor(i, j, l, r - 1, T_star) * omega_correlation(i, j, l, r - 1, T_star);
+}
+
+double MieKinGas::omega_recursive_factor(int i, int j, int l, int r, double T_star){
+    // Higher order collision integrals can be computed from the derivative of lower order ones using the recursion
+    // Given in Fokin, Popov and Kalashnikov, High Temperature, Vol. 37, No. 1 (1999)
+    // See also: Hirchfelder, Curtiss & Bird, Molecular Theory of Gases and Liquids.
+    // For reduced integrals : omega(l, r + 1) / omega(l, r) = 1 + (d omega(l, r) / d T^*) / (r + 2)
+    if (l == r){
+        double dlnomega_dT = - (2 / (lr[i][j] * T_star));
+        double a_m;
+        for (int n = 2; n < 7; n++){
+            a_m = omega_correlation_factors[l - 1][n - 1][0] + (omega_correlation_factors[l - 1][n - 1][1] / lr[i][j])
+                    + pow(lr[i][j], -2.) * (omega_correlation_factors[l - 1][n - 1][2]
+                                            + omega_correlation_factors[l - 1][n - 1][3] * log(lr[i][j]));
+            dlnomega_dT += (1 / (r + 2)) * a_m * pow(T_star, (-1. - n) / 2.) * (1. - n) / 2.;
+        }
+        return 1. + (dlnomega_dT * omega_correlation(i, j, l, r, T_star)) / (r + 2);
+    }
+    else if ((l == 1) && (r == 2)){
+        double a_m;
+        double Cr{0.0};
+        for (int n = 2; n < 7; n++){
+            a_m = omega_correlation_factors[l - 1][n - 1][0] + (omega_correlation_factors[l - 1][n - 1][1] / lr[i][j])
+                    + pow(lr[i][j], -2) * (omega_correlation_factors[l - 1][n - 1][2]
+                                            + omega_correlation_factors[l - 1][n - 1][3] * log(lr[i][j]));
+            Cr += (1 / (r + 2)) * a_m * pow(T_star, (-3. - n) / 2.) * ((1. - n) / 2.) * ((-1. - n) / 2.);
+        }
+        double C11 = omega_recursive_factor(i, j, l, r - 1, T_star);
+        return 1 + (Cr / ((r + 2) * C11)) + (C11 - 1) * (r + 1) / (r + 2);
+    }
+    throw std::runtime_error("No recursive factor available!");
+}
+
 std::vector<std::vector<double>> MieKinGas::model_rdf(double rho, double T, const std::vector<double>& x){
         double beta = (1. / (BOLTZMANN * T));
         std::vector<std::vector<double>> d_BH = get_BH_diameters(T);
