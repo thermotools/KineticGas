@@ -40,6 +40,9 @@ class py_KineticGas:
         self.computed_d_points = {} # dict of state points in which (d_1, d0, d1) have already been computed
         self.computed_a_points = {}  # dict of state points in which (a_1, a1) have already been computed
         self.computed_b_points = {}  # dict of state points in which (b_1, b1) have already been computed
+        self.computed_kT = {} # dict of state points in which thermal diffusion ratios have been computed
+        self.computed_cd = {} # dict of state points in which the collision diameters have been computed
+        self.computed_rdf = {}  # dict of state points in which the RDFs have been computed
 
         self.comps = comps.split(',')
         self.ncomps = len(self.comps)
@@ -270,8 +273,8 @@ class py_KineticGas:
         a = self.compute_cond_vector(particle_density, T, x, N=N)
         E = self.get_Eij(Vm, T, x)
         P = self.get_P_factors(Vm, T, x)
-        rdf = self.cpp_kingas.get_rdf(particle_density, T, x)
-        cd = self.cpp_kingas.get_contact_diameters(particle_density, T, x)
+        rdf = self.get_rdf(particle_density, T, x)
+        cd = self.get_contact_diameters(particle_density, T, x)
 
         b = np.empty((self.ncomps, self.ncomps)) # Precomputing some factors that are used many places later
         for j in range(self.ncomps):
@@ -332,6 +335,10 @@ class py_KineticGas:
         if N is None:
             N = self.default_N
 
+        key = tuple((T, Vm, tuple(x), N))
+        if key in self.computed_kT.keys():
+            return self.computed_kT[key]
+
         if N < 2:
             warnings.warn('Thermal diffusion is a 2nd order phenomena, cannot be computed for N < 2 (got N = '
                           + str(N) + ')', RuntimeWarning, stacklevel=2)
@@ -342,8 +349,8 @@ class py_KineticGas:
                                           use_independent=True, dependent_idx=self.ncomps - 1)
         Dij = self.interdiffusion(T, Vm, x, N=N, frame_of_reference='CoM',
                                   use_binary=False, use_independent=True, dependent_idx=self.ncomps - 1)
-        rdf = self.cpp_kingas.get_rdf(particle_density, T, x)
-        cd = self.cpp_kingas.get_contact_diameters(particle_density, T, x)
+        rdf = self.get_rdf(particle_density, T, x)
+        cd = self.get_contact_diameters(particle_density, T, x)
         P = self.get_P_factors(Vm, T, x)
         E = self.get_Eij(Vm, T, x)
         A = np.zeros((self.ncomps, self.ncomps))
@@ -362,6 +369,7 @@ class py_KineticGas:
 
         kT = np.linalg.solve(A, DT)
 
+        self.computed_kT[key] = tuple(kT)
         return kT
 
     def thermal_diffusion_factor(self, T, Vm, x, N=None):
@@ -428,9 +436,9 @@ class py_KineticGas:
         self.check_valid_composition(x)
         particle_density = Avogadro / Vm
         a = self.compute_cond_vector(particle_density, T, x, N=N)
-        rdf = self.cpp_kingas.get_rdf(particle_density, T, x)
+        rdf = self.get_rdf(particle_density, T, x)
         K = self.cpp_kingas.get_K_factors(particle_density, T, x)
-        cd = self.cpp_kingas.get_contact_diameters(particle_density, T, x)
+        cd = self.get_contact_diameters(particle_density, T, x)
         d = self.compute_diffusion_coeff_vector(particle_density, T, x, N=N)
         d = self.reshape_diffusion_coeff_vector(d)
 
@@ -472,8 +480,8 @@ class py_KineticGas:
 
         particle_density = Avogadro / Vm
         b = self.compute_visc_vector(T, particle_density, x, N=N)
-        cd = self.cpp_kingas.get_contact_diameters(particle_density, T, x)
-        rdf = self.cpp_kingas.get_rdf(particle_density, T, x)
+        cd = self.get_contact_diameters(particle_density, T, x)
+        rdf = self.get_rdf(particle_density, T, x)
         K_prime = self.cpp_kingas.get_K_prime_factors(particle_density, T, x)
 
         eta_prime = 0
@@ -498,6 +506,101 @@ class py_KineticGas:
             N = self.default_N
         self.check_valid_composition(x)
         raise NotImplementedError("Bulk viscosity is not implemented yet. See 'Multicomp docs' for more info.")
+
+    def conductivity_matrix(self, T, Vm, x, N=2, formulation='T-psi', frame_of_reference='CoM', use_thermal_conductivity=None):
+        """
+        Compute the conductivity matrix $L$, for use in NET calculations. The Flux/Force formulation used in the NET
+        model is selected using the `formulation` kwarg. Currently implemented formulations are:
+        ----------------------------------------------------------------------------------------------
+        'T-psi':
+            $$J_q = L_{qq} \nabla (1 / T) - \sum_{i=1}^{N_c-1}(1 / T) L_{qi} \nabla_T \Psi_i$$
+            $$J_i = L_{iq} \nabla (1 / T) - \sum_{j=1}^{N_c-1}(1 / T) L_{ij} \nabla_T \Psi_j$$
+            Where
+                $$ \Psi_i = \mu_i - \mu_{N_c} $$
+            and $N_c$ denotes the number of components. The last component is used as the dependent component.
+            The fluxes in this formulation are on a *mass basis*, and the formulation is implemented in the centre of
+            mass frame of reference. The formulation is only implemented for ideal gases.
+        ----------------------------------------------------------------------------------------------
+
+        Args:
+            T (float) : Temperature [K]
+            Vm (float) : Molar volume [m3 / mol]
+            x (1darray) : Molar composition [-]
+            N (int, optional) : Enskog approximation order (must be >= 2 for thermal effects)
+            formulation (str, optional) : The NET formulation for which to compute the conductivity matrix.
+            frame_of_reference (str, optional) : The frame of reference ('CoM', 'CoN', 'CoV', or 'solvent'). Default: 'CoM'.
+            use_thermal_conductivity (callable, optional) : External thermal conductivity model. Assumed to have the signature
+                    use_thermal_conductivity(T, Vm, x), returning the thermal conductivity in [W / m K]. Default: None.
+
+        Returns:
+            ndarray : The conductivity matrix, contents will vary depending on the `formulation` kwarg.
+        """
+        if formulation == 'T-psi':
+            L = np.zeros((self.ncomps, self.ncomps))
+            rho = Avogadro / Vm
+            d = self.compute_diffusion_coeff_vector(rho, T, x, N=N)
+            d = self.reshape_diffusion_coeff_vector(d)
+
+            d0 = d[:, 0, :]
+            for i in range(self.ncomps - 1):
+                for j in range(self.ncomps - 1):
+                    L[i + 1][j + 1] = d0[i][j] * x[i] * x[j] * self.m[i] * self.m[j] / (2 * Boltzmann)
+
+            k_T = self.thermal_diffusion_ratio(T, Vm, x, N=N)
+            for i in range(self.ncomps - 1):
+                for j in range(self.ncomps - 1):
+                    L[0, i + 1] += L[i + 1, j + 1] * Boltzmann * T * ((k_T[j] / self.m[j]) - (k_T[-1] / self.m[-1]))
+
+                L[i + 1, 0] = L[0, i + 1]
+
+            if use_thermal_conductivity is None:
+                cond = self.thermal_conductivity(T, Vm, x, N=N)
+            else:
+                cond = use_thermal_conductivity(T, Vm, x)
+
+            L[0, 0] = T ** 2 * cond
+            for i in range(self.ncomps - 1):
+                L[0, 0] += Boltzmann * T * L[0, i + 1] * ((k_T[i] / self.m[i]) - (k_T[-1] / self.m[-1]))
+
+            return L
+
+        raise KeyError(f'Invalid formulation : {formulation}')
+
+    def resistivity_matrix(self, T, Vm, x, N=2, formulation='T-psi', frame_of_reference='CoM', use_thermal_conductivity=None):
+        """
+        Compute the resistivity matrix $R = L^{-1}$, for use in NET calculations. The Flux/Force formulation used in the NET
+        model is selected using the `formulation` kwarg. Currently implemented formulations are:
+        ----------------------------------------------------------------------------------------------
+        'T-psi':
+            $$J_q = L_{qq} \nabla (1 / T) - \sum_{i=1}^{N_c-1}(1 / T) L_{qi} \nabla_T \Psi_i$$
+            $$J_i = L_{iq} \nabla (1 / T) - \sum_{j=1}^{N_c-1}(1 / T) L_{ij} \nabla_T \Psi_j$$
+            Where
+                $$ \Psi_i = \mu_i - \mu_{N_c} $$
+            and $N_c$ denotes the number of components. The last component is used as the dependent component.
+            The fluxes in this formulation are on a *mass basis*, and the formulation is implemented in the centre of
+            mass frame of reference. The formulation is only implemented for ideal gases.
+        ----------------------------------------------------------------------------------------------
+
+        Args:
+            T (float) : Temperature [K]
+            Vm (float) : Molar volume [m3 / mol]
+            x (1darray) : Molar composition [-]
+            N (int, optional) : Enskog approximation order (must be >= 2 for thermal effects)
+            formulation (str, optional) : The NET formulation for which to compute the conductivity matrix.
+            frame_of_reference (str, optional) : The frame of reference ('CoM', 'CoN', 'CoV', or 'solvent'). Default: 'CoM'.
+            use_thermal_conductivity (callable, optional) : External thermal conductivity model. Assumed to have the signature
+                    thermal_conductivity(T, Vm, x), returning the thermal conductivity in [W / m K].
+
+        Returns:
+            ndarray : The resistivity matrix, contents will vary depending on the `formulation` kwarg.
+        """
+        if formulation == 'T-psi':
+            L = self.conductivity_matrix(T, Vm, x, N=N, formulation=formulation, frame_of_reference=frame_of_reference,
+                                         use_thermal_conductivity=use_thermal_conductivity)
+            return np.linalg.inv(L)
+
+
+        raise KeyError(f'Invalid formulation : {formulation}')
 
     #####################################################
     #                    Tp-interface                   #
@@ -638,7 +741,7 @@ class py_KineticGas:
     ######################################################
     #         Interface to top-level C++ methods         #
     ######################################################
-    
+
     def get_conductivity_matrix(self, particle_density, T, mole_fracs, N=None):
         """
         Compute the elements of the matrix corresponding to the set of equations that must be solved for the
@@ -692,6 +795,24 @@ class py_KineticGas:
             N = self.default_N
         self.check_valid_composition(mole_fracs)
         return np.array(self.cpp_kingas.get_diffusion_vector(particle_density, T, mole_fracs, N))
+
+    def get_contact_diameters(self, particle_density, T, x):
+        key = tuple((particle_density, T))
+        if key in self.computed_cd.keys():
+            return self.computed_cd[key]
+
+        cd = self.cpp_kingas.get_contact_diameters(particle_density, T, x)
+        self.computed_cd[key] = cd
+        return cd
+
+    def get_rdf(self, particle_density, T, x):
+        key = tuple((particle_density, T, tuple(x)))
+        if key in self.computed_rdf.keys():
+            return self.computed_rdf[key]
+
+        rdf = self.cpp_kingas.get_rdf(particle_density, T, x)
+        self.computed_rdf[key] = rdf
+        return rdf
 
     #####################################################
     #          Evaluation of Matrix equations           #
