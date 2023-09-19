@@ -35,11 +35,12 @@ class MieKinGas(MieType.MieType):
                     parameter_ref=parameter_ref)
 
         self.cpp_kingas = cpp_MieKinGas(self.mole_weights, self.sigma_ij, self.epsilon_ij, self.la, self.lr, self.is_idealgas)
-        if use_eos is None:
-            self.eos = saftvrmie()
-            if parameter_ref == 'default':
-                self.eos.init(comps)
+        if self.is_idealgas is False:
+            if use_eos is None:
+                self.eos = saftvrmie()
+                if parameter_ref == 'default':
+                    self.eos.init(comps)
+                else:
+                    self.eos.init(comps, parameter_reference=parameter_ref)
             else:
-                self.eos.init(comps, parameter_reference=parameter_ref)
-        else:
-            self.eos = use_eos
+                self.eos = use_eos

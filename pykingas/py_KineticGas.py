@@ -8,7 +8,7 @@ Purpose: Parent class for python-wrappers to the KineticGas models. This class t
 import numpy as np
 import json
 import scipy.linalg as lin
-from scipy.constants import Boltzmann, Avogadro, pi
+from scipy.constants import Boltzmann, Avogadro, pi, gas_constant
 from scipy.linalg import block_diag
 from scipy.integrate import quad
 from pykingas import bcolors, suppress_stdout
@@ -23,6 +23,52 @@ def k_delta(i, j): # Kronecker delta
     if i == j:
         return 1
     return 0
+
+class IdealGas:
+    """
+    Class to use for the eos attribute when is_idealgas == True.
+    Also serves as an example of a minimal implementation of an eos-object that can
+    be used if one wishes to supply a custom eos through the use_eos kwarg (See: MieKinGas)
+    """
+    def __init__(self, comps):
+        self.ncomps = len(comps.split(','))
+
+    def chemical_potential_tv(self, T, V, n, dmudn=True):
+        """
+        The chemical potential of an ideal gas mixture. Note: Only dmudn is actually used by the py_KineticGas class.
+        Also note: We need to have V in the signature, even though it is not used, in order to be compatible with
+        the signature of chemical_potential_tv in thermopack.
+
+        Args:
+            T (float) : Temperature [K]
+            V (float) : Volume [m3]
+            n (list[float]) : Mole numbers [mol]
+            dmudn (bool) : Flag to activate derivative calculation
+        Returns
+            tuple : chemical potential [J / mol] and derivatives
+        """
+        n = np.array(n)
+
+        if dmudn is True:
+            dmudn = np.identity(self.ncomps) * gas_constant * T / n
+            return 0, dmudn
+        raise NotImplementedError('Only dmudn is implemented, because that is all we need for the pykingas package.')
+
+    def specific_volume(self, T, p, n, phase):
+        """
+        Compute molar volume for an ideal gas. Note that we must have `n` and `phase` in the signature in
+        order to be compatible with the signature of equation of state objects from ThermoPack.
+
+        Args:
+            T (float) : Temperature [K]
+            p (float) : Pressure [Pa]
+            n (list[float]) : mole numbers [mol]
+            phase (int) : phase flag (see: ThermoPack)
+
+        Returns:
+            float : molar volume [m3 / mol]
+        """
+        return gas_constant * T / p
 
 class py_KineticGas:
 
@@ -74,7 +120,10 @@ class py_KineticGas:
                 self.M[i][j] = self.m[i] / self.m0[i][j]
 
         self.cpp_kingas = None
-        self.eos = None
+        if self.is_idealgas is True:
+            self.eos = IdealGas(comps)
+        else:
+            self.eos = None
 
     #####################################################
     #                   Utility                         #
@@ -99,8 +148,6 @@ class py_KineticGas:
         :return (2D array) : The factors E[i][j] = $ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k \neq j}}$, where $n_i$
                                 is the molar density of species $i$.
         """
-        if self.is_idealgas is True:
-            Vm = 1e6
         if self._is_singlecomp is True:
             x = [0.5, 0.5]
             _, dmudn_pure = self.eos.chemical_potential_tv(T, Vm, [0.5], dmudn=True)
