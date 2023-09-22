@@ -56,6 +56,42 @@ class MieKinGas : public Spherical {
     }
 
 
+    double omega(const int& i, const int& j, const int& l, const int& r, const double& T) override;
+    double omega_correlation(int i, int j, int l, int r, double T_star);
+    double omega_recursive_factor(int i, int j, int l, int r, double T);
+    // The hard sphere integrals are used as the reducing factor for the correlations.
+    // So we need to compute the hard-sphere integrals to convert the reduced collision integrals from the
+    // Correlation by Fokin et. al. to the "real" collision integrals.
+    inline double omega_hs(const int& i, const int& j, const int& l, const int& r, const double& T){
+        double w = PI * pow(sigma[i][j], 2) * 0.5 * (r + 1);
+        for (int ri = r; ri > 1; ri--) {w *= ri;}
+        if (l % 2 == 0){
+            w *= (1. - (1.0 / (l + 1.)));
+        }
+        if (i == j) return sqrt((BOLTZMANN * T) / (PI * m[i])) * w;
+        return sqrt(BOLTZMANN * T * (m[i] + m[j]) / (2. * PI * m[i] * m[j])) * w;
+    }
+
+    static constexpr double omega_correlation_factors[2][6][4] =
+        {
+         {
+          {0., -0.145269e1, 0.294682e2, 0.242508e1},
+          {0.107782e-1, 0.587725, -0.180714e3, .595694e2},
+          {0.546646e-1, -0.651465e1, 0.374457e3, -0.137807e3},
+          {0.485352, 0.245523e2, -0.336782e3, 0.814187e2},
+          {-0.385355, -0.206868e2, 0.132246e3, 0.},
+          {0.847232e-1, 0.521812e1, -0.181140e2, -0.747215e1}
+         },
+         {
+          {0., 0.113086e1, 0.234799e2, 0.310127e1},
+          {0., 0.551559e1, -0.137023e3, 0.185848e2},
+          {0.325909e-1, -0.292925e2, 0.243761e3, 0.},
+          {0.697682, 0.590792e2, -0.143670e3, -0.123518e3},
+          {-0.564238, -0.430549e2, 0., 0.137282e3},
+          {0.126508, 0.104273e2, 0.150601e2, -0.408911e2}
+         }
+        };
+
     // Contact diameter related methods
     // bmax[i][j] is in units of sigma[i][j]
     // bmax = The maximum value of the impact parameter at which deflection angle (chi) is positive
