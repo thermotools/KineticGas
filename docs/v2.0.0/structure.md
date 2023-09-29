@@ -1,6 +1,11 @@
-# Structure
+---
+layout: default
+version: 2.0.0
+title: Structure
+permalink: /v2.0.0/structure.html
+---
 
-See the [structure docs](https://github.com/thermotools/KineticGas/blob/main/docs/structure/structure.pdf) for more information.
+See the [structure docs](/kineticgas/assets/graphics/structure.pdf) for more information.
 
 The primary responsibilities of the python-side and C++ side of the package are
 

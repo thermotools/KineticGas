@@ -1,4 +1,9 @@
-# Fluid identifiers
+---
+layout: default
+version: 2.0.0
+title: Fluid identifiers
+permalink: /v2.0.0/fluid_identifiers.html
+---
 
 *Note* : Many of these fluid parameters have been pulled directly from the [ThermoPack](https://github.com/thermotools/thermopack) fluid database for SAFT-VR Mie parameters. In the cases where SAFT-VR Mie uses segment numbers $>1$ to describe the fluids, the parameter sets cannot be expected to be suitable for use with RET-Mie.
 

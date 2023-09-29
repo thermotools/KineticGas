@@ -1,4 +1,9 @@
-# Advanced usage
+---
+layout: default
+version: 2.0.0
+title: Advanced usage
+permalink: /v2.0.0/advanced.html
+---
 
 ## Modifying and adding fluids
 

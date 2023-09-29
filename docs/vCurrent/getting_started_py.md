@@ -1,4 +1,9 @@
-# Getting started: In Python
+---
+layout: default
+version: 
+title: Getting started - In Python
+permalink: /vcurrent/getting_started_py.html
+---
 
 In addition to this explanation, some examples may be found in the [pyExamples directory](https://github.com/thermotools/KineticGas_private/tree/main/pyExamples).
 

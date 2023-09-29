@@ -1,4 +1,9 @@
-## Please cite
+---
+layout: default
+version: 
+title: Please Cite
+permalink: /please_cite.html
+---
 
 KineticGas has been developed throughout a series of two works. If you are referencing the package, please cite the works
 

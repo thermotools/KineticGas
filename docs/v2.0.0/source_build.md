@@ -1,8 +1,22 @@
-# Installing KineticGas
+---
+layout: default
+version: 2.0.0
+title: Installing KineticGas
+permalink: /v2.0.0/source_build.html
+---
 
 KineticGas is available on PyPi as the [`pykingas`](https://pypi.org/project/pykingas/) package, for python versions 3.8-3.11, compiled for MacOS running on Apple Silicon, Linux and Windows.
 
 For MacOS running on Intel, or other operating systems, KineticGas must currently be built from source.
+
+## Dependencies
+
+The Python package dependencies are listed in the `setup.py` file in the root directory of the package.
+
+To compile the binary that is called from the python wrapper, [pybind11](https://pybind11.readthedocs.io/en/stable/) is required.
+
+A standalone C++ module, that works without the python wrapper is currently under development. See branches under `pure_cpp/` for the most up-to-date version there.
+
 
 ## Building from source
 
