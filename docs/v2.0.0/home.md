@@ -2,7 +2,7 @@
 version: 2.0.0
 sidebar_file: sidebar_2.0.0.md
 layout: home
-title: ThermoPack v2.0.0
+title: KineticGas v2.0.0
 permalink: /v2.0.0/home.html
 ---
 

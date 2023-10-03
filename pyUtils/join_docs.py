@@ -12,7 +12,7 @@ Usage: To add new documentation, create a new markdown file in thermopoack/doc/m
 import os
 from datetime import datetime
 
-MARKDOWN_DIR = os.path.dirname(__file__) + '/markdown/'
+MARKDOWN_DIR = os.path.dirname(__file__) + '/../docs/'
 KINETICGAS_ROOT = os.path.dirname(__file__) + '/..'
 
 def print_finished_report(header, out_file_path):
@@ -49,7 +49,8 @@ def get_header(files):
     return header
 
 def write_pypi_readme():
-    files = ['header', 'toc_pypi', 'cite_acknowl_licence', 'pypi_structure', 'getting_started_py', 'fluid_identifiers']
+    files = ['vCurrent/header', 'readme_parts/toc_pypi', 'metapages/cite_acknowl_licence', 'readme_parts/pypi_structure',
+             'vCurrent/getting_started_py', 'vCurrent/fluid_identifiers']
     header = get_header(files)
 
     out_file_str = gen_file_str(files)
@@ -61,8 +62,9 @@ def write_pypi_readme():
     print_finished_report(header, out_file_path)
 
 def write_github_readme():
-    files = ['header', 'toc_github', 'cite_acknowl_licence', 'dependencies', 'source_build', 
-            'getting_started_py', 'getting_started_cpp', 'advanced', 'structure', 'fluid_identifiers']
+    files = ['vCurrent/header', 'readme_parts/toc_github', 'metapages/cite_acknowl_licence', 'vCurrent/source_build',
+            'vCurrent/getting_started_py', 'vCurrent/getting_started_cpp', 'vCurrent/advanced', 'vCurrent/structure',
+             'vCurrent/fluid_identifiers']
     header = get_header(files)
 
     out_file_str = gen_file_str(files)
