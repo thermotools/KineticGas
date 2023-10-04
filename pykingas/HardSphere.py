@@ -43,15 +43,17 @@ class HardSphere(KineticGas):
 
     def __init__(self, comps, mole_weights=None, sigma=None,
                  N=4, is_idealgas=False, parameter_ref='default'):
-        '''
-        :param comps (str): Comma-separated list of components
+        """Constructor
+        If parameters are explicitly supplied through optional arguments, these will be used instead of those in the database.
+        To supply specific parameters for only some components, give `None` for the components that should use the database
+        value
 
-        If parameters are explicitly supplied, these will be used instead of those in the database.
-        :param mole_weights : (1D array) Molar weights [g/mol]
-        :param sigma : (1D array) hard-sphere diameters [m]
-        :param use_db (bool) : Use precomputed database values for omega_integrals if available
-        :param parameter_ref (str) : Id for parameter set to use
-        '''
+        Args:
+            comps (str) : Comma-separated list of components
+            mole_weights (1D array) : Molar weights [g/mol]
+            sigma (1D array) : hard-sphere diameters [m]
+            parameter_ref (str) : Id for parameter set to use
+        """
         super().__init__(comps, mole_weights=mole_weights, N=N, is_idealgas=is_idealgas)
 
         self.fluids = [self.fluids[i]['HardSphere'][parameter_ref] for i in range(self.ncomps)]
@@ -72,6 +74,19 @@ class HardSphere(KineticGas):
         self.cpp_kingas = cpp_HardSphere(self.mole_weights, self.sigma, is_idealgas)
 
     def get_Eij(self, Vm, T, x):
+        """Utility
+        Compute the factors $ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k \neq j}}$, where $n_i$ is the molar density
+        of species $i$.
+
+        Args:
+            Vm (float) : Molar volume [m3 / mol]
+            T (float) : Temperature [K]
+            x (array_like) : Molar composition
+
+        Returns:
+            (2D array) : The factors E[i][j] = $ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k \neq j}}$, where $n_i$
+                                is the molar density of species $i$. Unit: [1 / mol]
+        """
         x = np.array(x)
         rho = Avogadro / Vm
         n = rho * x

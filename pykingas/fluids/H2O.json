@@ -9,6 +9,13 @@
       "mol_weight": 18.015,
       "Mie": {
             "default": {
+                  "sigma": 3.065e-10,
+                  "eps_div_k": 431.6,
+                  "lambda_a": 6.0,
+                  "lambda_r": 7.5,
+                  "bib_reference": "Parameters fit to viscosity of water vapour at 1 bar. Use with care."
+            },
+            "Tempdependent": {
                   "sigma": 0,
                   "eps_div_k": 0,
                   "lambda_a": 6.0,
