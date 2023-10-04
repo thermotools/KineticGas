@@ -9,7 +9,7 @@ plugins:
 - jekyll-include-cache
 
 url: 'https://vegardjervell.github.io'
-baseurl: '/kineticgas'
+baseurl: '/KineticGas'
 
 data_sources:
   sidebar: "sidebar.md"

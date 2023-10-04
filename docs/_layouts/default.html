@@ -40,13 +40,13 @@
 <div class="sidebar">
     {% if page.version == "2.0.0" %}
       {% capture sidebar_content %}{% include sidebar_2.0.0.md %}{% endcapture %}
-      {% assign home_link = "/kineticgas/v2.0.0/home.html" %}
+      {% assign home_link = "/KineticGas/v2.0.0/home.html" %}
     {% elsif version == "2.1.0" %}
       {% capture sidebar_content %}{% include sidebar_2.1.0.md %}{% endcapture %}
-      {% assign home_link = "/kineticgas/v2.1.0/home.html" %}
+      {% assign home_link = "/KineticGas/v2.1.0/home.html" %}
     {% else %}
       {% capture sidebar_content %}{% include sidebar.md %}{% endcapture %}
-      {% assign home_link = "/kineticgas/index.html" %}
+      {% assign home_link = "/KineticGas/index.html" %}
     {% endif %}
 
     <div>

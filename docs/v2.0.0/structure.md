@@ -5,7 +5,7 @@ title: Structure
 permalink: /v2.0.0/structure.html
 ---
 
-See the [structure docs](/kineticgas/assets/graphics/structure.pdf) for more information.
+See the [structure docs](/KineticGas/assets/graphics/structure.pdf) for more information.
 
 The primary responsibilities of the python-side and C++ side of the package are
 
@@ -33,9 +33,9 @@ The primary responsibilities of the python-side and C++ side of the package are
 
 Stuff is illustrated here as well:
 
-![](/kineticgas/assets/graphics/kineticgas_classes.svg?raw=true)
+![](/KineticGas/assets/graphics/kineticgas_classes.svg?raw=true)
 
-![](/kineticgas/assets/graphics/who_does_what.svg?raw=true)
+![](/KineticGas/assets/graphics/who_does_what.svg?raw=true)
 
 # File system
 
