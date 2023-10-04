@@ -40,14 +40,17 @@
 <div class="sidebar">
     {% if page.version == "2.0.0" %}
       {% capture sidebar_content %}{% include sidebar_2.0.0.md %}{% endcapture %}
+      {% assign home_link = "/kineticgas/v2.0.0/home.html" %}
     {% elsif version == "2.1.0" %}
       {% capture sidebar_content %}{% include sidebar_2.1.0.md %}{% endcapture %}
+      {% assign home_link = "/kineticgas/v2.1.0/home.html" %}
     {% else %}
       {% capture sidebar_content %}{% include sidebar.md %}{% endcapture %}
+      {% assign home_link = "/kineticgas/index.html" %}
     {% endif %}
 
     <div>
-        <a href=""><h2>KineticGas {{ page.version }}</h2></a>
+        <a href="{{ home_link }}"><h2>KineticGas {{ page.version }}</h2></a>
     </div>
 
     {{ sidebar_content | markdownify }}

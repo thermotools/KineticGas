@@ -9,4 +9,4 @@ The package is implemented mostly in C++ to handle the numerical computations in
 
 KineticGas can be used to predict diffusion coefficients, thermal diffusion coefficients, viscosities and thermal conductivities in gas mixtures, and is reliable over a large range of temperatures and pressures. The package also contains an extensive database of fluid parameters collected from the open literature.
 
-![](https://github.com/thermotools/KineticGas/blob/main/docs/figures/all.gif?raw=true)
+![](/kineticgas/v2.0.0/graphics/animations/all.gif?raw=true)
