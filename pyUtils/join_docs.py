@@ -49,7 +49,7 @@ def get_header(files):
     return header
 
 def write_pypi_readme():
-    files = ['vCurrent/header', 'readme_parts/toc_pypi', 'metapages/cite_acknowl_licence', 'readme_parts/pypi_structure',
+    files = ['readme_parts/header', 'readme_parts/toc_pypi', 'metapages/cite_acknowl_licence', 'readme_parts/pypi_structure',
              'vCurrent/getting_started_py', 'vCurrent/fluid_identifiers']
     header = get_header(files)
 
@@ -62,7 +62,7 @@ def write_pypi_readme():
     print_finished_report(header, out_file_path)
 
 def write_github_readme():
-    files = ['vCurrent/header', 'readme_parts/toc_github', 'metapages/cite_acknowl_licence', 'vCurrent/source_build',
+    files = ['readme_parts/header', 'readme_parts/toc_github', 'metapages/cite_acknowl_licence', 'vCurrent/source_build',
             'vCurrent/getting_started_py', 'vCurrent/getting_started_cpp', 'vCurrent/advanced', 'vCurrent/structure',
              'vCurrent/fluid_identifiers']
     header = get_header(files)
