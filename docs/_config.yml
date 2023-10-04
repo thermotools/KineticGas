@@ -1,4 +1,4 @@
-title: KineticGas
+title: ThermoPack
 description: A ThermoTools Project
 show_downloads: true
 theme: jekyll-theme-cayman
@@ -8,7 +8,7 @@ plugins:
 - jekyll-remote-theme # add this line to the plugins list if you already have one
 - jekyll-include-cache
 
-url: 'https://thermotools.github.io'
+url: 'https://vegardjervell.github.io'
 baseurl: '/kineticgas'
 
 data_sources:
@@ -17,6 +17,19 @@ data_sources:
 includes_dir: _includes
 
 pypi_url: 'https://pypi.org/project/pykingas/'
+
+vcurrent:
+  version: 'Latest version (beta)'
+
+  github:
+    repository_name: 'ThermoPack'
+    owner_name: 'ThermoTools'
+    repository_url: 'https://github.com/vegardjervell/thermopack'
+    zip_url: 'https://github.com/vegardjervell/thermopack/archive/main.zip'
+
+  pypi:
+    url: 'https://pypi.org/project/thermopack/'
+
 
 defaults:
   -
