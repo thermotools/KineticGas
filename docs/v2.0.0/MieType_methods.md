@@ -1,6 +1,6 @@
 ---
 layout: default
-version: 
+version: 2.0.0
 title: Methods in the MieType class
 permalink: /v2.0.0/MieType_methods.html
 ---
