@@ -1,6 +1,6 @@
 ---
 layout: default
-version: 
+version: 2.0.0
 title: Methods in the HardSphere class
 permalink: /v2.0.0/HardSphere_methods.html
 ---
