@@ -1,6 +1,7 @@
 #include "KineticGas.h"
 #include "Factorial.h"
 #include "MieKinGas.h"
+#include "KineticGas.h"
 #include "HardSphere.h"
 #include "PseudoHardSphere.h"
 #include "pybind11/pybind11.h"
@@ -135,7 +136,26 @@ PYBIND11_MODULE(KineticGas_d, handle){
         .def("a2ij",  py::overload_cast<double, double, const std::vector<double>&>(&MieKinGas::a2ij_func))
         .def("da2ij_drho", py::overload_cast<double, double, const std::vector<double>&>(&MieKinGas::da2ij_drho_func))
         .def("get_BH_diameters", &MieKinGas::get_BH_diameters);
-    
+
+    py::class_<QuantumMie>(handle, "cpp_QuantumMie")
+        .def(py::init<
+                        std::vector<double>,
+                        std::vector<std::vector<double>>,
+                        std::vector<std::vector<double>>,
+                        std::vector<std::vector<double>>,
+                        std::vector<std::vector<double>>,
+                        int,
+                        bool
+                    >()
+            )
+        KineticGas_bindings(QuantumMie)
+        Spherical_bindings(QuantumMie)
+        .def("get_sigma_eff", &QuantumMie::get_sigma_eff)
+        .def("get_BH_diameters", &QuantumMie::get_BH_diameters)
+        .def("potential", py::overload_cast<int, int, double, double>(&QuantumMie::potential))
+        .def("potential_derivative_r", py::overload_cast<int, int, double, double>(&QuantumMie::potential_derivative_r))
+        .def("potential_dblderivative_rr", py::overload_cast<int, int, double, double>(&QuantumMie::potential_dblderivative_rr));
+
     py::class_<HardSphere>(handle, "cpp_HardSphere")
         .def(py::init<
                         std::vector<double>,
