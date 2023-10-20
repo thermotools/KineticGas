@@ -23,10 +23,12 @@ class Spherical : public KineticGas {
                 bool is_idealgas);
     virtual ~Spherical(){};
 
-    // Potential models, these must be explicitly overridden in derived classes (in addition to the get_rdf function of KineticGas)
+    // Potential models, these must be explicitly overridden in derived classes, in addition to model_rdf and get_contact_diameters.
     virtual double potential(int i, int j, double r) = 0;
     virtual double potential_derivative_r(int i, int j, double r) = 0;
     virtual double potential_dblderivative_rr(int i, int j, double r) = 0;
+    virtual std::vector<std::vector<double>> model_rdf(double rho, double T, const std::vector<double>& mole_fracs) override = 0;
+    virtual std::vector<std::vector<double>> get_contact_diameters(double rho, double T, const std::vector<double>& x) override = 0;
 
     double omega(const int& i, const int& j, const int& l, const int& r, const double& T) override;
     double w_integral(const int& i, const int& j, const double& T, const int& l, const int& r); // Dimentionless collision integral for spherical potentials

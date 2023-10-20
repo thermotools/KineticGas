@@ -95,12 +95,19 @@ class MieKinGas : public Spherical {
     // Contact diameter related methods
     // bmax[i][j] is in units of sigma[i][j]
     // bmax = The maximum value of the impact parameter at which deflection angle (chi) is positive
-    std::vector<std::vector<double>> get_b_max(double T);
-    std::vector<std::vector<double>> get_contact_diameters(double rho, double T, const std::vector<double>& x) override;
+    virtual std::vector<std::vector<double>> get_b_max(double T);
+    virtual std::vector<std::vector<double>> get_contact_diameters(double rho, double T, const std::vector<double>& x) override;
     virtual std::vector<std::vector<double>> get_BH_diameters(double T);
 
     // Methods for computing the radial distribution function at contact
-    std::vector<std::vector<double>> model_rdf(double rho, double T, const std::vector<double>& x) override;
+    // Note: A lot of these methods have two overloads: One that takes the temperature and computes the BH diameter,
+    //      And another that takes the BH diameters directly. I'm not sure which version of these is in primary use
+    //      In the "standard" call chain when `model_rdf` is called, but someone should at some point ensure that we
+    //      are not computing a bunch of unnessecary BH diameters.
+    virtual std::vector<std::vector<double>> model_rdf(double rho, double T, const std::vector<double>& x) override;
+
+    std::vector<std::vector<double>> rdf_HS(double rho, const std::vector<double>& x,
+                                            const std::vector<std::vector<double>>& d_BH);
     std::vector<std::vector<double>> rdf_HS(double rho, double T, const std::vector<double>& x);
     std::vector<std::vector<double>> rdf_g1_func(double rho, const std::vector<double>& x,
                                                 const std::vector<std::vector<double>>& d_BH);

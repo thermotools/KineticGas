@@ -46,6 +46,7 @@ class MieType(KineticGas):
                          stacklevel=2)
             raise KeyError('Missing parameters ' + parameter_ref + ' for compontents ' + comps)
 
+        print(eps_div_k)
         if eps_div_k is None:
             eps_div_k = [self.fluids[i]['eps_div_k'] for i in range(self.ncomps)]
         elif None in eps_div_k:
@@ -55,6 +56,7 @@ class MieType(KineticGas):
         elif self._is_singlecomp is True:
             eps_div_k = [eps_div_k[0] for _ in range(2)]
         eps_div_k = np.array(eps_div_k)
+        print(eps_div_k)
         assert eps_div_k.shape == (self.ncomps,)
         self.epsilon_ij = self.get_epsilon_matrix(eps_div_k, kij)
         self.epsilon = np.diag(self.epsilon_ij)
@@ -98,24 +100,6 @@ class MieType(KineticGas):
         assert sigma.shape == (self.ncomps,)
         self.sigma_ij = self.get_sigma_matrix(sigma)
         self.sigma = self.sigma_ij
-
-    def get_avg_R(self, T, x):
-        """Deprecated
-        """
-        v_bar_1 = np.sqrt(3 * Boltzmann * T / self.mole_weights[0]) * np.sqrt(
-            self.m0 * self.M[0] * self.M[1] / (2 * Boltzmann * T))
-        v_bar_2 = np.sqrt(3 * Boltzmann * T / self.mole_weights[1]) * np.sqrt(
-            self.m0 * self.M[0] * self.M[1] / (2 * Boltzmann * T))
-
-        v_min = min(v_bar_1 - v_bar_2, v_bar_2 - v_bar_1)
-        v_max = v_bar_1 + v_bar_2
-        v_bar_12 = (v_bar_1 + v_bar_2) / 2
-        R_11 = quad(lambda b: self.cpp_kingas.get_R(0, 0, T, v_bar_1, b), 0, self.sigma_ij[0, 0])[0] / self.sigma_ij[0, 0]
-        R_12 = quad(lambda b: self.cpp_kingas.get_R(0, 1, T, v_bar_12, b), 0, self.sigma_ij[0, 1])[0] / self.sigma_ij[
-            0, 1]
-        R_22 = quad(lambda b: self.cpp_kingas.get_R(1, 1, T, v_bar_2, b), 0, self.sigma_ij[1, 1])[0] / self.sigma_ij[1, 1]
-
-        return x[0] ** 2 * R_11 + 2 * x[0] * x[1] * R_12 + x[1] ** 2 * R_22
 
     def get_epsilon_matrix(self, eps_div_k, kij):
         """Utility
@@ -166,3 +150,27 @@ class MieType(KineticGas):
         """
         l = np.array(lambdas)
         return 3 + (1 - lij) * np.sqrt((l - 3) * np.vstack(l - 3))
+
+    def get_BH_diameters(self, T):
+        """Utility
+        Compute Barker-Henderson diameters
+
+        Args:
+            T (float) : Temperature [K]
+
+        Returns:
+            2d array : Barker-Henderson Diameters, indexed by component pair [m]
+        """
+        return self.cpp_kingas.get_BH_diameters(T)
+
+    def potential(self, i, j, r):
+        """Utility
+        Evaluate the interaction potential between types i and j at distance r
+
+        Args:
+            i, j (int) : Component indices
+            r (float) : Distance [m]
+        Returns:
+            float : Interaction potential [J]
+        """
+        return self.cpp_kingas.potential(i, j, r)

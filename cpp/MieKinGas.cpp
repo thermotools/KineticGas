@@ -82,7 +82,7 @@ std::vector<std::vector<double>> MieKinGas::model_rdf(double rho, double T, cons
         double beta = (1. / (BOLTZMANN * T));
         std::vector<std::vector<double>> d_BH = get_BH_diameters(T);
         std::vector<std::vector<double>> x0 = get_x0(d_BH);
-        std::vector<std::vector<double>> gHS = rdf_HS(rho, T, x);
+        std::vector<std::vector<double>> gHS = rdf_HS(rho, x, d_BH);
         std::vector<std::vector<double>> g1 = rdf_g1_func(rho, x, d_BH);
         std::vector<std::vector<double>> g2 = rdf_g2_func(rho, T, x, d_BH, x0);
         std::vector<std::vector<double>> g(Ncomps, std::vector<double>(Ncomps));
@@ -94,9 +94,7 @@ std::vector<std::vector<double>> MieKinGas::model_rdf(double rho, double T, cons
         }
         return g;
     }
-
-std::vector<std::vector<double>> MieKinGas::rdf_HS(double rho, double T, const std::vector<double>& x){
-    std::vector<std::vector<double>> d_BH = get_BH_diameters(T);
+std::vector<std::vector<double>> MieKinGas::rdf_HS(double rho, const std::vector<double>& x, const std::vector<std::vector<double>>& d_BH){
     double zeta = zeta_x_func(rho, x, d_BH);
     double k0 = - log(1 - zeta) + (42. * zeta - 39. * pow(zeta, 2) + 9. * pow(zeta, 3) - 2 * pow(zeta, 4)) / (6 * pow(1 - zeta, 3));
     double k1 = (pow(zeta, 4) + 6. * pow(zeta, 2) - 12. * zeta) / (2. * pow(1 - zeta, 3));
@@ -114,6 +112,11 @@ std::vector<std::vector<double>> MieKinGas::rdf_HS(double rho, double T, const s
         }
     }
     return rdf;
+}
+
+std::vector<std::vector<double>> MieKinGas::rdf_HS(double rho, double T, const std::vector<double>& x){
+    std::vector<std::vector<double>> d_BH = get_BH_diameters(T);
+    return rdf_HS(rho, x, d_BH);
 }
 
 std::vector<std::vector<double>> MieKinGas::rdf_g1_func(double rho, const std::vector<double>& x,

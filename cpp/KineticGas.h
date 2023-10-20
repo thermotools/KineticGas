@@ -84,7 +84,7 @@ class KineticGas{
        If a potential model is implemented only for the ideal gas state, its implementation
        of model_rdf should throw an std::invalid_argument error.
     */
-    virtual std::vector<std::vector<double>> model_rdf(double T, double rho, const std::vector<double>& mole_fracs) = 0;
+    virtual std::vector<std::vector<double>> model_rdf(double rho, double T, const std::vector<double>& mole_fracs) = 0;
 
     std::vector<double> get_wt_fracs(const std::vector<double> mole_fracs); // Compute weight fractions from mole fractions
     std::vector<std::vector<double>> get_rdf(double rho, double T, const std::vector<double>& mole_fracs) {
