@@ -62,7 +62,6 @@ class QuantumMie : public MieKinGas{
 
     inline void q_mie_error(){throw std::runtime_error("QuantumMie uses a temperature dependent potential, but T was not supplied!");}
 
-    double potential(int i, int j, double r) override {q_mie_error(); return 0.;}
     double potential(int i, int j, double r, double T){
         return C[i][j] * eps_0[i][j] * ( pow(sigma_0[i][j] / r, lr[i][j]) - pow(sigma_0[i][j] / r, la[i][j])
                                         + D(i, j, T) * (Q1(lr[i][j]) * pow(sigma_0[i][j], lr[i][j]) / pow(r, lr[i][j] + 2)
@@ -72,7 +71,6 @@ class QuantumMie : public MieKinGas{
                                         );
     }
 
-    double potential_derivative_r(int i, int j, double r) override {q_mie_error(); return 0.;}
     double potential_derivative_r(int i, int j, double r, double T){
         return C[i][j] * eps_0[i][j] * ((la[i][j] * pow(sigma_0[i][j], la[i][j]) / pow(r, la[i][j] + 1))
                                         - (lr[i][j] * pow(sigma_0[i][j], lr[i][j]) / pow(r, lr[i][j] + 1))
@@ -83,7 +81,6 @@ class QuantumMie : public MieKinGas{
                                         );
     }
 
-    double potential_dblderivative_rr(int i, int j, double r) override {q_mie_error(); return 0.;}
     double potential_dblderivative_rr(int i, int j, double r, double T){
         return C[i][j] * eps_0[i][j] * (lr[i][j] * (lr[i][j] + 1) * pow(sigma_0[i][j], lr[i][j]) / pow(r, lr[i][j] + 2)
                                         - (la[i][j] * (la[i][j] + 1) * pow(sigma_0[i][j], la[i][j]) / pow(r, la[i][j] + 2))
@@ -119,7 +116,13 @@ class QuantumMie : public MieKinGas{
 
     // The following methods must be overridden to first compute the effective parameters before calling
     // the parent method, until then they are private (should not be used).
+    // The exception is the potential functions, which should remain private, and only be called after computing
+    // Effective parameters. 
     private:
+    using MieKinGas::potential; // Do not make public, these should only be called if you are sure that sigma_eff and eps_eff have been set
+    using MieKinGas::potential_derivative_r; // Do not make public, these should only be called if you are sure that sigma_eff and eps_eff have been set
+    using MieKinGas::potential_dblderivative_rr; // Do not make public, these should only be called if you are sure that sigma_eff and eps_eff have been set
+
     using MieKinGas::get_b_max; // (double T);
     using MieKinGas::rdf_HS; // (double rho, double T, const std::vector<double>& x);
     using MieKinGas::rdf_g1_func; // (double rho, double T, const std::vector<double>& x);

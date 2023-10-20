@@ -61,9 +61,18 @@ std::vector<std::vector<double>> QuantumMie::model_rdf(double rho, double T, con
 }
 
 std::vector<std::vector<double>> QuantumMie::get_BH_diameters(double T){
-    std::cout << "Calling barker henderson!" << std::endl;
-    set_eff_sigma_eps(T);
-    return MieKinGas::get_BH_diameters(T);
+    // Gauss-Legendre points taken from SAFT-VR-MIE docs (see: ThermoPack)
+    std::vector<std::vector<double>> d_BH(Ncomps, std::vector<double>(Ncomps, 0.0));
+    double beta = 1. / (BOLTZMANN * T);
+    for (int i = 0; i < Ncomps; i++){
+        for (int j = i; j < Ncomps; j++){
+            for (int n = 0; n < 10; n++){
+                d_BH[i][j] += gl_w[n] * (1. - exp(- beta * potential(i, i, sigma[i][i] * (gl_x[n] + 1) / 2., T)));
+            }
+            d_BH[j][i] = d_BH[i][j];
+        }
+    }
+    return d_BH;
 }
 
 std::vector<std::vector<double>> QuantumMie::get_contact_diameters(double rho, double T, const std::vector<double>& x){

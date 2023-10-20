@@ -46,7 +46,6 @@ class MieType(KineticGas):
                          stacklevel=2)
             raise KeyError('Missing parameters ' + parameter_ref + ' for compontents ' + comps)
 
-        print(eps_div_k)
         if eps_div_k is None:
             eps_div_k = [self.fluids[i]['eps_div_k'] for i in range(self.ncomps)]
         elif None in eps_div_k:
@@ -56,7 +55,6 @@ class MieType(KineticGas):
         elif self._is_singlecomp is True:
             eps_div_k = [eps_div_k[0] for _ in range(2)]
         eps_div_k = np.array(eps_div_k)
-        print(eps_div_k)
         assert eps_div_k.shape == (self.ncomps,)
         self.epsilon_ij = self.get_epsilon_matrix(eps_div_k, kij)
         self.epsilon = np.diag(self.epsilon_ij)
