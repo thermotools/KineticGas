@@ -8,10 +8,10 @@ Usage : Accepts a list of parameter dicts as the second argument to the initiali
 import numpy as np
 from scipy.constants import Boltzmann, Avogadro
 from scipy.integrate import quad
-from pykingas import KineticGas
+from pykingas.py_KineticGas import py_KineticGas
 from warnings import warn
 
-class MieType(KineticGas):
+class MieType(py_KineticGas):
 
     def __init__(self, comps, potential,
                  mole_weights=None, sigma=None, eps_div_k=None,

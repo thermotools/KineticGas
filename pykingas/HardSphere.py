@@ -6,7 +6,8 @@ Purpose: Wrapper for the HardSphere class.
 import numpy as np
 from numpy import pi
 from scipy.constants import Avogadro, Boltzmann as kB
-from pykingas import cpp_HardSphere, KineticGas
+from pykingas import cpp_HardSphere
+from pykingas.py_KineticGas import py_KineticGas
 
 def HS_pressure(rho, T, x, sigma, chi):
     p = rho * kB * T
@@ -39,7 +40,7 @@ def mu_func(rho, T, x, sigma, chi):
     return mu
 
 
-class HardSphere(KineticGas):
+class HardSphere(py_KineticGas):
 
     def __init__(self, comps, mole_weights=None, sigma=None,
                  N=4, is_idealgas=False, parameter_ref='default'):
