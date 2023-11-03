@@ -1,10 +1,7 @@
 '''
 Author: Vegard Gjeldvik Jervell
-Purpose: Wrapper for the MieKinGas class. Handles mixing of sigma and epsilon parameters before initialising cpp-side.
+Purpose: Wrapper for the MieKinGas class. Calls the MieType initializer with the appropriate parameter set identifier.
 '''
-import numpy as np
-from scipy.constants import Boltzmann, Avogadro
-from scipy.integrate import quad
 from pykingas import cpp_MieKinGas, MieType
 from thermopack.saftvrmie import saftvrmie
 

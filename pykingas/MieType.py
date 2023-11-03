@@ -9,7 +9,6 @@ import numpy as np
 from scipy.constants import Boltzmann, Avogadro
 from scipy.integrate import quad
 from pykingas import KineticGas
-from copy import deepcopy
 from warnings import warn
 
 class MieType(KineticGas):
@@ -102,6 +101,7 @@ class MieType(KineticGas):
     def get_avg_R(self, T, x):
         """Deprecated
         """
+        warn("This method will be removed. Does not do anything exciting.", DeprecationWarning)
         v_bar_1 = np.sqrt(3 * Boltzmann * T / self.mole_weights[0]) * np.sqrt(
             self.m0 * self.M[0] * self.M[1] / (2 * Boltzmann * T))
         v_bar_2 = np.sqrt(3 * Boltzmann * T / self.mole_weights[1]) * np.sqrt(

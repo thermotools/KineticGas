@@ -5,6 +5,7 @@ Purpose: Wrapper for the PseudoHardSphere class.
 
 from pykingas import cpp_PseudoHardSphere, KineticGas
 import numpy as np
+from scipy.constants import Boltzmann as kB, pi
 
 def HS_pressure(rho, T, x, sigma, chi):
     p = rho * kB * T
