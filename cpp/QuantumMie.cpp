@@ -57,6 +57,7 @@ void QuantumMie::set_epsilon_eff(double T){
 
 std::vector<std::vector<double>> QuantumMie::model_rdf(double rho, double T, const std::vector<double>& x){
     set_eff_sigma_eps(T);
+    set_alpha(T);
     return MieKinGas::model_rdf(rho, T, x);
 }
 
@@ -67,7 +68,8 @@ std::vector<std::vector<double>> QuantumMie::get_BH_diameters(double T){
     for (int i = 0; i < Ncomps; i++){
         for (int j = i; j < Ncomps; j++){
             for (int n = 0; n < 10; n++){
-                d_BH[i][j] += gl_w[n] * (1. - exp(- beta * potential(i, i, sigma[i][i] * (gl_x[n] + 1) / 2., T)));
+                d_BH[i][j] += mie_rdf_constants::gl_w[n] * (1. - exp(- beta * potential(i, i, sigma[i][i] *
+                                                                    (mie_rdf_constants::gl_x[n] + 1) / 2., T)));
             }
             d_BH[j][i] = d_BH[i][j];
         }

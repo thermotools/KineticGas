@@ -57,7 +57,7 @@ class QuantumMie : public MieKinGas{
 
     inline double D(const int& i, const int& j, double T){
         double mu = 1.0 / ( (1.0 / m[i]) + (1.0 / m[j]));
-        return pow(HBAR, 2) / (12.0 * mu * BOLTZMANN * T);
+        return pow(HBAR, 2) / (24.0 * mu * BOLTZMANN * T);
     }
 
     inline void q_mie_error(){throw std::runtime_error("QuantumMie uses a temperature dependent potential, but T was not supplied!");}
@@ -95,9 +95,27 @@ class QuantumMie : public MieKinGas{
     void set_sigma_eff(double T);
     void set_epsilon_eff(double T);
     inline void set_eff_sigma_eps(double T){set_sigma_eff(T); set_epsilon_eff(T);};
+    inline void set_alpha(double T) {
+        for (int i = 0; i < Ncomps; i++){
+            for (int j = i; j < Ncomps; j++){
+                alpha[j][i] = alpha[i][j] = - ((C[i][j] * eps_0[i][j]) / eps[i][j])
+                    * ( ( ( (1 / (lr[i][j] - 3)) * pow(sigma_0[i][j] / sigma[i][j], lr[i][j] - 3.) )
+                        - ( (1 / (la[i][j] - 3)) * pow(sigma_0[i][j] / sigma[i][j], la[i][j] - 3.) )
+                        )
+                        + D(i, j, T) * ( (Q1(lr[i][j]) * pow(sigma_0[i][j], lr[i][j] - 3.) * pow(sigma[i][j], 1. - lr[i][j]) / (lr[i][j] - 1))
+                                       - (Q1(la[i][j]) * pow(sigma_0[i][j], la[i][j] - 3.) * pow(sigma[i][j], 1. - la[i][j]) / (la[i][j] - 1))
+                                       )
+                        + pow(D(i, j, T), 2) * ( (Q2(lr[i][j]) * pow(sigma_0[i][j], lr[i][j] - 3.) * pow(sigma[i][j], - 1. - lr[i][j]) / (lr[i][j] + 1))
+                                                -(Q2(la[i][j]) * pow(sigma_0[i][j], la[i][j] - 3.) * pow(sigma[i][j], - 1. - la[i][j]) / (la[i][j] + 1))
+                                               )
+                      );
+            }
+        }
+    };
     inline std::vector<std::vector<double>> get_sigma_eff(double T){set_sigma_eff(T); return sigma;};
     inline std::vector<std::vector<double>> get_epsilon_eff(double T){set_epsilon_eff(T); return eps;};
     inline std::vector<std::vector<double>> get_sigma_min(double T){set_epsilon_eff(T); return sigma_min;};
+    inline std::vector<std::vector<double>> get_alpha(double T){set_eff_sigma_eps(T); set_alpha(T); return alpha;}
 
     std::vector<std::vector<double>> get_BH_diameters(double T) override;
     virtual std::vector<std::vector<double>> get_contact_diameters(double rho, double T, const std::vector<double>& x) override;
