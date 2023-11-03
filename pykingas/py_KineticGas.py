@@ -9,10 +9,7 @@ import numpy as np
 import json
 import scipy.linalg as lin
 from scipy.constants import Boltzmann, Avogadro, pi, gas_constant
-from scipy.linalg import block_diag
-from scipy.integrate import quad
-from pykingas import bcolors, suppress_stdout
-import warnings, sys, time, atexit, os
+import warnings, os
 
 FLT_EPS = 1e-12
 __fluid_db_path__ = os.path.dirname(__file__) + '/fluids/'
@@ -32,6 +29,7 @@ class IdealGas:
     """
     def __init__(self, comps):
         self.ncomps = len(comps.split(','))
+        self.VAPPH = 1 # Required to be compatible with a ThermoPack-style eos object. The value of the flag can be whatever you want
 
     def chemical_potential_tv(self, T, V, n, dmudn=True):
         """
@@ -66,9 +64,9 @@ class IdealGas:
             phase (int) : phase flag (see: ThermoPack)
 
         Returns:
-            float : molar volume [m3 / mol]
+            (float,) : molar volume [m3 / mol]
         """
-        return gas_constant * T / p
+        return gas_constant * T / p, # Because ThermoPack v2.1.0 returns everything as a tuple, we need to return a tuple.
 
 class py_KineticGas:
 
@@ -79,6 +77,8 @@ class py_KineticGas:
             comps (str): Comma-separated list of components, following ThermoPack-convention
             mole_weights (1d array) : Mole weights [g/mol]. Will be used instead of database values if provided
             is_idealgas (bool) : If true, radial distribution function is unity, if false use radial distribution function of model
+                                In addition, several density-dependent factors are set to zero, to ensure consistency with
+                                the ideal gas law / Gibbs-Duhem for an ideal gas.
         """
 
         self._is_singlecomp = False
@@ -341,10 +341,13 @@ class py_KineticGas:
         cd = self.get_contact_diameters(particle_density, T, x)
 
         b = np.empty((self.ncomps, self.ncomps)) # Precomputing some factors that are used many places later
-        for j in range(self.ncomps):
-            for k in range(self.ncomps):
-                b[j, k] = k_delta(j, k) + (4 * np.pi / 3) * particle_density * x[k] * cd[j][k] ** 3 * self.M[j, k] \
-                          * rdf[j][k]
+        if self.is_idealgas is True:
+            b = np.identity(self.ncomps)
+        else:
+            for j in range(self.ncomps):
+                for k in range(self.ncomps):
+                    b[j, k] = k_delta(j, k) + (4 * np.pi / 3) * particle_density * x[k] * cd[j][k] ** 3 * self.M[j, k] \
+                              * rdf[j][k]
 
         DT = np.zeros(self.ncomps)
         for i in range(self.ncomps):
@@ -368,9 +371,9 @@ class py_KineticGas:
                 tmp = 0
                 for k in range(self.ncomps):
                     for m in range(self.ncomps):
-                        tmp -= particle_density * x[m] * b[m, k]
+                        tmp += particle_density * x[m] * b[m, k]
 
-                DT[i] -= (Dij[i, dependent_idx] / P[dependent_idx]) * tmp
+                DT[i] += (Dij[i, dependent_idx] / P[dependent_idx]) * tmp
 
         return DT / Avogadro # Dividing by Avogadros number to convert unit from particle number to mole number
 
@@ -423,10 +426,14 @@ class py_KineticGas:
         for i in range(self.ncomps):
             A[-1, i] = x[i] * P[i]
 
-        DT[-1] = 0 # Overwriting the DT vector for the final element of the b-vector of A @ kT = b
-        for i in range(self.ncomps):
-            for j in range(self.ncomps):
-                DT[-1] += x[i] * (k_delta(i, j) + (4 * np.pi / 3) * particle_density * x[j] * cd[i][j]**3 * self.M[i, j] * rdf[i][j])
+        # Overwriting the DT vector for the final element of the b-vector of A @ kT = b
+        if self.is_idealgas is True:
+            DT[-1] = 1
+        else:
+            DT[-1] = 0
+            for i in range(self.ncomps):
+                for j in range(self.ncomps):
+                    DT[-1] += x[i] * (k_delta(i, j) + (4 * np.pi / 3) * particle_density * x[j] * cd[i][j]**3 * self.M[i, j] * rdf[i][j])
 
         kT = np.linalg.solve(A, DT)
 
@@ -785,10 +792,9 @@ class py_KineticGas:
         """
         psi = np.identity(self.ncomps)
         w = x * self.m / sum(x * self.m)
-        k = 0 # Arbitrary component (tested)
         for i in range(self.ncomps):
             for j in range(self.ncomps):
-                psi[i, j] -= x[i] * (1 - w[j] * x[k] / (x[j] * w[k]))
+                psi[i, j] += x[i] * ((w[j] / x[j]) - 1) #  (1 - w[j] * x[k] / (x[j] * w[k]))
         return psi
 
     def get_com_2_solv_matr(self, x, solvent_idx):
