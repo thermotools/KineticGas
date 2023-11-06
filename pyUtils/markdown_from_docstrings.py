@@ -31,6 +31,8 @@ NOTE: The procedure described below is the general procedure for generating docu
 -----------------------------------------------------------------------------------------------------------------------
 Now for the generic procedure:
 
+    0 : Set the version number in the pyUtils.DOC_VERSION variable
+
     1 :  Use the function get_autogen_header(<classname>) to generate a comment with a timestamp and a description of
          how the markdown file was generated (using this module)
 
@@ -149,7 +151,7 @@ def to_markdown(methods):
                 md_text += endl + pad + '**' + line[0] + ':** ' + endl
                 md_text += 2 * pad + ':'.join(line[1:])
             else:
-                md_text += line.strip()
+                md_text += line.strip() + ' '
         md_text += endl
     return md_text
 

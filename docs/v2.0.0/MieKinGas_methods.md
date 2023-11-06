@@ -6,7 +6,7 @@ permalink: /v2.0.0/MieKinGas_methods.html
 ---
 
 <!--- 
-Generated at: 2023-11-06T11:51:33.100771
+Generated at: 2023-11-06T12:02:11.552317
 This is an auto-generated file, generated using the script at KineticGas/pyUtils/markdown_from_docstrings.py
 The file is created by parsing the docstrings of the methods in the 
 MieKinGas class. For instructions on how to use the parser routines, see the
@@ -32,7 +32,7 @@ Methods to initialise RET-Mie model.
 If parameters are explicitly supplied through optional arguments, these will be used instead of those in the database.
 To supply specific parameters for only some components, give `None` for the components that should use the database
 value
-
+ 
 
 #### Args:
 
@@ -66,5 +66,5 @@ value
 
 &nbsp;&nbsp;&nbsp;&nbsp; **use_eos :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  (thermopack eos object, optional) EoS to use (initialized), defaults to `saftvrmie`
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  (thermopack eos object, optional) EoS to use (initialized), defaults to `saftvrmie` 
 

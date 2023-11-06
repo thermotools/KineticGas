@@ -6,7 +6,7 @@ permalink: /vcurrent/HardSphere_methods.html
 ---
 
 <!--- 
-Generated at: 2023-11-06T11:58:48.754627
+Generated at: 2023-11-06T12:02:00.297154
 This is an auto-generated file, generated using the script at KineticGas/pyUtils/markdown_from_docstrings.py
 The file is created by parsing the docstrings of the methods in the 
 HardSphere class. For instructions on how to use the parser routines, see the
@@ -34,7 +34,7 @@ Methods to initialise RET-HS model.
 If parameters are explicitly supplied through optional arguments, these will be used instead of those in the database.
 To supply specific parameters for only some components, give `None` for the components that should use the database
 value
-
+ 
 
 #### Args:
 
@@ -52,7 +52,7 @@ value
 
 &nbsp;&nbsp;&nbsp;&nbsp; **parameter_ref (str) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Id for parameter set to use
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Id for parameter set to use 
 
 ## Utility methods
 
@@ -69,7 +69,7 @@ Compute the factors
 $$ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k \neq j}}, $$
 
 where $n_i$ is the molar density of species $i$.
-
+ 
 
 #### Args:
 
@@ -83,11 +83,11 @@ where $n_i$ is the molar density of species $i$.
 
 &nbsp;&nbsp;&nbsp;&nbsp; **x (array_like) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Molar composition
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Molar composition 
 
 #### Returns:
 
 &nbsp;&nbsp;&nbsp;&nbsp; **(2D array) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The factors E[i][j] = $ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k \neq j}}$, where $n_i$is the molar density of species $i$. Unit [1 / mol]
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The factors E[i][j] = $ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k \neq j}}$, where $n_i$is the molar density of species $i$. Unit [1 / mol]  
 
