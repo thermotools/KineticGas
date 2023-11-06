@@ -75,10 +75,13 @@ class HardSphere(py_KineticGas):
         self.cpp_kingas = cpp_HardSphere(self.mole_weights, self.sigma, is_idealgas)
 
     def get_Eij(self, Vm, T, x):
-        """Utility
-        Compute the factors $ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k \neq j}}$, where $n_i$ is the molar density
-        of species $i$.
+        r"""Utility
+        Compute the factors
 
+        $$ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k \neq j}}, $$
+
+        where $n_i$ is the molar density of species $i$.
+        &&
         Args:
             Vm (float) : Molar volume [m3 / mol]
             T (float) : Temperature [K]
