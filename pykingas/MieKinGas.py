@@ -16,7 +16,7 @@ class MieKinGas(MieType.MieType):
         If parameters are explicitly supplied through optional arguments, these will be used instead of those in the database.
         To supply specific parameters for only some components, give `None` for the components that should use the database
         value
-
+        &&
         Args:
             comps (str) : Comma-separated list of components
             mole_weights (1D array) : Molar weights [g/mol]

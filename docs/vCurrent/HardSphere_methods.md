@@ -6,7 +6,7 @@ permalink: /vcurrent/HardSphere_methods.html
 ---
 
 <!--- 
-Generated at: 2023-10-04T01:27:36.498764
+Generated at: 2023-11-06T11:27:09.318183
 This is an auto-generated file, generated using the script at KineticGas/pyUtils/markdown_from_docstrings.py
 The file is created by parsing the docstrings of the methods in the 
 HardSphere class. For instructions on how to use the parser routines, see the
@@ -31,7 +31,10 @@ Methods to initialise RET-HS model.
 
 
 ### `__init__(self, comps, mole_weights=None, sigma=None, N=4, is_idealgas=False, parameter_ref='default')`
-If parameters are explicitly supplied through optional arguments, these will be used instead of those in the database. To supply specific parameters for only some components, give `None` for the components that should use the database value
+If parameters are explicitly supplied through optional arguments, these will be used instead of those in the database.
+To supply specific parameters for only some components, give `None` for the components that should use the database
+value
+
 
 #### Args:
 
@@ -51,8 +54,6 @@ If parameters are explicitly supplied through optional arguments, these will be 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Id for parameter set to use
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 ## Utility methods
 
 Set- and get methods for interaction parameters, mixing parameters ...
@@ -63,35 +64,18 @@ Set- and get methods for interaction parameters, mixing parameters ...
 
 
 ### `get_Eij(self, Vm, T, x)`
-Compute the factors $ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k eq j}}$, where $n_i$ is the molar density of species $i$.
+Compute the factors $ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k
+eq j}}$, where $n_i$ is the molar density
+of species $i$.
 
-#### Args:
+Args:
+Vm (float) : Molar volume [m3 / mol]
+T (float) : Temperature [K]
+x (array_like) : Molar composition
 
-&nbsp;&nbsp;&nbsp;&nbsp; **Vm (float) :** 
+Returns:
+(2D array) : The factors E[i][j] = $ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k
+eq j}}$, where $n_i$
+is the molar density of species $i$. Unit: [1 / mol]
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Molar volume [m3 / mol]
-
-&nbsp;&nbsp;&nbsp;&nbsp; **T (float) :** 
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Temperature [K]
-
-&nbsp;&nbsp;&nbsp;&nbsp; **x (array_like) :** 
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Molar composition
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
-#### Returns:
-
-&nbsp;&nbsp;&nbsp;&nbsp; **(2D array) :** 
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The factors E[i][j] = $ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; eq j}}$, where $n_i$
-
-&nbsp;&nbsp;&nbsp;&nbsp; **is the molar density of species $i$. Unit:** 
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  [1 / mol]
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
 

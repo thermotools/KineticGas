@@ -1,12 +1,12 @@
 ---
 layout: default
-version: 2.0.0
+version: 
 title: Methods in the py_KineticGas class
 permalink: /v2.0.0/py_KineticGas_methods.html
 ---
 
 <!--- 
-Generated at: 2023-10-04T01:24:55.573824
+Generated at: 2023-11-06T11:26:46.870364
 This is an auto-generated file, generated using the script at KineticGas/pyUtils/markdown_from_docstrings.py
 The file is created by parsing the docstrings of the methods in the 
 py_KineticGas class. For instructions on how to use the parser routines, see the
@@ -81,9 +81,7 @@ The constructor
 
 &nbsp;&nbsp;&nbsp;&nbsp; **is_idealgas (bool) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  If true, radial distribution function is unity, if false use radial distribution function of model
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  If true, radial distribution function is unity, if false use radial distribution function of modelIn addition, several density-dependent factors are set to zero, to ensure consistency withthe ideal gas law / Gibbs-Duhem for an ideal gas.
 
 ## TV-property interfaces
 
@@ -107,14 +105,32 @@ Computing properties as a function of temperature and volume.
 ### `bulk_viscosity(self, T, Vm, x, N=None)`
 Not implemented
 
-#### Raises:
+Raises:
+NotImplementedError
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; NotImplementedError
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
 
 ### `conductivity_matrix(self, T, Vm, x, N=2, formulation='T-psi', frame_of_reference='CoM', use_thermal_conductivity=None)`
-Compute the conductivity matrix $L$, for use in NET calculations. The Flux/Force formulation used in the NET model is selected using the `formulation` kwarg. Currently implemented formulations are: ---------------------------------------------------------------------------------------------- 'T-psi': $$J_q = L_{qq} abla (1 / T) - \sum_{i=1}^{N_c-1}(1 / T) L_{qi} abla_T \Psi_i$$ $$J_i = L_{iq} abla (1 / T) - \sum_{j=1}^{N_c-1}(1 / T) L_{ij} abla_T \Psi_j$$ Where $$ \Psi_i = \mu_i - \mu_{N_c} $$ and $N_c$ denotes the number of components. The last component is used as the dependent component. The fluxes in this formulation are on a *mass basis*, and the formulation is implemented in the centre of mass frame of reference. The formulation is only implemented for ideal gases. ----------------------------------------------------------------------------------------------
+Compute the conductivity matrix $L$, for use in NET calculations. The Flux/Force formulation used in the NET
+model is selected using the `formulation` kwarg. Currently implemented formulations are:
+----------------------------------------------------------------------------------------------
+
+`'T-psi'`:
+
+----------------------------------------------------
+
+$$ J_q = L_{qq} \nabla (1 / T) - \sum_{i=1}^{N_c-1}(1 / T) L_{qi} \nabla_T \Psi_i $$
+
+$$ J_i = L_{iq} \nabla (1 / T) - \sum_{j=1}^{N_c-1}(1 / T) L_{ij} \nabla_T \Psi_j $$
+
+Where
+
+$$ \Psi_i = \mu_i - \mu_{N_c} $$
+
+and $N_c$ denotes the number of components. The last component is used as the dependent component.
+The fluxes in this formulation are on a *mass basis*, and the formulation is implemented in the centre of
+mass frame of reference. The formulation is only implemented for ideal gases.
+----------------------------------------------------------------------------------------------
+
 
 #### Args:
 
@@ -144,15 +160,7 @@ Compute the conductivity matrix $L$, for use in NET calculations. The Flux/Force
 
 &nbsp;&nbsp;&nbsp;&nbsp; **use_thermal_conductivity (callable, optional) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  External thermal conductivity model. Assumed to have the signature
-
-&nbsp;&nbsp;&nbsp;&nbsp; **use_thermal_conductivity(T, Vm, x), returning the thermal conductivity in [W / m K]. Default:** 
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  None.
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; If no model is supplied, KineticGas is used to compute thermal conductivity.
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  External thermal conductivity model. Assumed to have the signatureuse_thermal_conductivity(T, Vm, x), returning the thermal conductivity in [W / m K]. Defaults to None.If no model is supplied, KineticGas is used to compute thermal conductivity.
 
 #### Returns:
 
@@ -160,10 +168,22 @@ Compute the conductivity matrix $L$, for use in NET calculations. The Flux/Force
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The conductivity matrix, contents will vary depending on the `formulation` kwarg.
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 ### `interdiffusion(self, T, Vm, x, N=None, use_independent=True, dependent_idx=None, frame_of_reference='CoN', use_binary=True, solvent_idx=None)`
-Compute the interdiffusion coefficients. Default definition is $J_i^{(n, n)} = - \sum_{j eq l} D_{ij} abla n_j,$ $ abla T = abla p = F_k = 0$ orall $k$ where the flux, $J_i^{(n, n)}$ is on a molar basis, in the molar frame of reference, and $j eq l$ is an independent set of forces with l=dependent_idx. For fluxes in other frames of reference, use the `frame_of_reference` kwarg. For the diffusion coefficients describing the fluxes' response to all forces (not independent) the definition is: $J_i^{(n, n)} = - \sum_j D_{ij} abla n_j,$ $ abla T = abla p = F_k = 0$ orall $k$ use the `use_independent` and `dependent_idx` kwargs to switch between these definitions. See: Eq. (17-20) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+Compute the interdiffusion coefficients [m^2 / s]. Default definition is
+
+$$ J_i^{(n, n)} = - \sum_{j \neq l} D_{ij} \nabla n_j, \nabla T = \nabla p = F_k = 0 \forall k $$
+
+where the flux, $J_i^{(n, n)}$ is on a molar basis, in the molar frame of reference, and $j \neq l$ is an
+independent set of forces with $l=$ `dependent_idx`.
+For fluxes in other frames of reference, use the `frame_of_reference` kwarg.
+For the diffusion coefficients describing the fluxes' response to all forces (not independent) the definition
+is:
+
+$$ J_i^{(n, n)} = - \sum_j D_{ij} \nabla n_j, \nabla T = \nabla p = F_k = 0 \forall k $$
+
+use the `use_independent` and `dependent_idx` kwargs to switch between these definitions.
+See: Eq. (17-20) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+
 
 #### Args:
 
@@ -185,11 +205,7 @@ Compute the interdiffusion coefficients. Default definition is $J_i^{(n, n)} = -
 
 &nbsp;&nbsp;&nbsp;&nbsp; **use_binary (bool, optional) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  If the mixture is binary, and an independent set of fluxes and forces is considered, i.e.
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; `use_independent=True`, the diffusion coefficients will be exactly equal with opposite sign. Setting
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; `use_binary=True` will in that case only return the coefficient describing the independent flux-force relation.
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  If the mixture is binary, and an independent set of fluxes and forces is considered, i.e.`use_independent=True`, the diffusion coefficients will be exactly equal with opposite sign. Setting`use_binary=True` will in that case only return the coefficient describing the independent flux-force relation.
 
 &nbsp;&nbsp;&nbsp;&nbsp; **use_independent (bool, optional) :** 
 
@@ -197,25 +213,15 @@ Compute the interdiffusion coefficients. Default definition is $J_i^{(n, n)} = -
 
 &nbsp;&nbsp;&nbsp;&nbsp; **dependent_idx (int, optional) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Index of the dependent molar density gradient (only if use_dependent=True).
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; Defaults to last component, except when `frame_of_reference='solvent'`, in which case default is equal
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; to kwargs['solvent_idx'].
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Index of the dependent molar density gradient (only if `use_independent=True`, the default behaviour).Defaults to last component, except when `frame_of_reference='solvent'`, in which case default is equalto `solvent_idx`.
 
 &nbsp;&nbsp;&nbsp;&nbsp; **frame_of_reference (str, optional) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Which frame of reference the diffusion coefficients apply to. Default
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; is 'CoN'. Can be 'CoN' (molar FoR), 'CoM' (barycentric FoR) or 'solvent' (solvent FoR).
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; See the 'solvent_idx' kwarg for information on selecting the solvent index.  See `get_com_2_for` for more information.
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Which frame of reference the diffusion coefficients apply to. Defaultis 'CoN'. Can be 'CoN' (molar FoR), 'CoM' (barycentric FoR) or 'solvent' (solvent FoR).See the 'solvent_idx' kwarg for information on selecting the solvent index.  See `get_com_2_for` for more information.
 
 &nbsp;&nbsp;&nbsp;&nbsp; **solvent_idx (int, optional) :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Index of component identified as solvent (only when using `frame_of_reference='solvent'`)
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
 
 #### Returns:
 
@@ -223,10 +229,15 @@ Compute the interdiffusion coefficients. Default definition is $J_i^{(n, n)} = -
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Diffusion coefficients, shape varies based on options and number of components. Unit: [m^2 / s]
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 ### `interdiffusion_general(self, T, Vm, x, N=None)`
-Compute the 'Kinetic CoM diffusion coefficients', defined by $J_i^{(n, m)} = - \sum_j D_{ij} abla n_j,$ $ abla T = abla p = F_k = 0$ orall $k$ **For end-users, see: `interdiffusion`** See: Eq. (19) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+Compute the 'Kinetic CoM diffusion coefficients', defined by
+$J_i^{(n, m)} = - \sum_j D_{ij}
+abla n_j,$ $
+abla T =
+abla p = F_k = 0$ orall $k$
+**For end-users, see: `interdiffusion`**
+See: Eq. (19) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+
 
 #### Args:
 
@@ -246,18 +257,34 @@ Compute the 'Kinetic CoM diffusion coefficients', defined by $J_i^{(n, m)} = - \
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Enskog approximation order
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 #### Returns:
 
 &nbsp;&nbsp;&nbsp;&nbsp; **(2D array) :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Array of the (not independent) $D^{(K, m)}$ diffusion coefficients. Unit: [m^2 / s]
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 ### `resistivity_matrix(self, T, Vm, x, N=2, formulation='T-psi', frame_of_reference='CoM', use_thermal_conductivity=None)`
-Compute the resistivity matrix $R = L^{-1}$, for use in NET calculations. The Flux/Force formulation used in the NET model is selected using the `formulation` kwarg. Currently implemented formulations are: ---------------------------------------------------------------------------------------------- 'T-psi': $$J_q = L_{qq} abla (1 / T) - \sum_{i=1}^{N_c-1}(1 / T) L_{qi} abla_T \Psi_i$$ $$J_i = L_{iq} abla (1 / T) - \sum_{j=1}^{N_c-1}(1 / T) L_{ij} abla_T \Psi_j$$ Where $$ \Psi_i = \mu_i - \mu_{N_c} $$ and $N_c$ denotes the number of components. The last component is used as the dependent component. The fluxes in this formulation are on a *mass basis*, and the formulation is implemented in the centre of mass frame of reference. The formulation is only implemented for ideal gases. ----------------------------------------------------------------------------------------------
+Compute the resistivity matrix $R = L^{-1}$, for use in NET calculations. The Flux/Force formulation used in the NET
+model is selected using the `formulation` kwarg. Currently implemented formulations are:
+----------------------------------------------------------------------------------------------
+
+`'T-psi'`:
+
+----------------------------------------------------
+
+$$ J_q = L_{qq} \nabla (1 / T) - \sum_{i=1}^{N_c-1}(1 / T) L_{qi} \nabla_T \Psi_i $$
+
+$$ J_i = L_{iq} \nabla (1 / T) - \sum_{j=1}^{N_c-1}(1 / T) L_{ij} \nabla_T \Psi_j $$
+
+Where
+
+$$ \Psi_i = \mu_i - \mu_{N_c} $$
+
+and $N_c$ denotes the number of components. The last component is used as the dependent component.
+The fluxes in this formulation are on a *mass basis*, and the formulation is implemented in the centre of
+mass frame of reference. The formulation is only implemented for ideal gases.
+----------------------------------------------------------------------------------------------
+
 
 #### Args:
 
@@ -287,15 +314,7 @@ Compute the resistivity matrix $R = L^{-1}$, for use in NET calculations. The Fl
 
 &nbsp;&nbsp;&nbsp;&nbsp; **use_thermal_conductivity (callable, optional) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  External thermal conductivity model. Assumed to have the signature
-
-&nbsp;&nbsp;&nbsp;&nbsp; **thermal_conductivity(T, Vm, x), returning the thermal conductivity in [W / m K]. Default:** 
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  None
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; If no model is supplied, KineticGas is used to compute the thermal conductivity.
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  External thermal conductivity model. Assumed to have the signaturethermal_conductivity(T, Vm, x), returning the thermal conductivity in [W / m K]. Defaults to None.If no model is supplied, KineticGas is used to compute the thermal conductivity.
 
 #### Returns:
 
@@ -303,10 +322,10 @@ Compute the resistivity matrix $R = L^{-1}$, for use in NET calculations. The Fl
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The resistivity matrix, contents will vary depending on the `formulation` kwarg.
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 ### `soret_coefficient(self, T, Vm, x, N=None)`
-Compute the Soret coefficients, $S_{T, ij}$ defined as $S_{T, ij} = lpha_{ij} / T$
+Compute the Soret coefficients, $S_{T, ij}$ defined as
+$S_{T, ij} = \alpha_{ij} / T$
+
 
 #### Args:
 
@@ -326,10 +345,11 @@ Compute the Soret coefficients, $S_{T, ij}$ defined as $S_{T, ij} = lpha_{ij} /
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Enskog approximation order (>= 2)
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 ### `thermal_conductivity(self, T, Vm, x, N=None)`
-Compute the thermal conductivity, $\lambda$. For models initialized with `is_idealgas=True`, the thermal conductivity is not a function of density (i.e. $d \lambda / d V_m = 0). See Eq. (13) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+Compute the thermal conductivity, $\lambda$. For models initialized with `is_idealgas=True`, the thermal
+conductivity is not a function of density (i.e. $d \lambda / d V_m = 0$).
+See Eq. (13) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+
 
 #### Args:
 
@@ -349,18 +369,27 @@ Compute the thermal conductivity, $\lambda$. For models initialized with `is_ide
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Enskog approximation order (>= 2)
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 #### Returns:
 
 &nbsp;&nbsp;&nbsp;&nbsp; **(float) :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The thermal conductivity of the mixture.
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 ### `thermal_diffusion_coeff(self, T, Vm, x, N=None, use_independent=False, dependent_idx=None, frame_of_reference='CoN', solvent_idx=None)`
-Compute thermal diffusion coefficients, D_{T,i} [mol / m^2 s] Default definition is $$J_i^{(n, n)} = D_{T,i} abla \ln T - \sum_j D_{ij} abla n_j, abla p = F_k = 0 orall k$$ where the flux, J_i^{(n, n)} is on a molar basis, in the molar frame of reference. For fluxes in other frames of reference, use the 'frame_of_reference' kwarg. For the diffusion coefficients corresponding to an independent set of forces, defined by $$J_i^{(n, n)} = D_{T,i} abla \ln T - \sum_{j eq l} D_{ij} abla n_j, abla p = F_k = 0 orall k$$ where l is the index of the dependent molar density gradient, use the 'use_independent' and 'dependent_idx' kwargs. See: Eq. (23) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+Compute thermal diffusion coefficients, $D_{T,i}$ [mol / m^2 s]
+Default definition is
+
+$$ J_i^{(n, n)} = D_{T,i} \nabla \ln T - \sum_j D_{ij} \nabla n_j, \nabla p = F_k = 0 \forall k $$
+
+where the flux, $J_i^{(n, n)}$ is on a molar basis, in the molar frame of reference. For fluxes in other frames
+of reference, use the 'frame_of_reference' kwarg. For the diffusion coefficients corresponding to an
+independent set of forces, defined by
+
+$$ J_i^{(n, n)} = D_{T,i} \nabla \ln T - \sum_{j \neq l} D_{ij} \nabla n_j, \nabla p = F_k = 0 \forall k $$
+
+where $l$ is the index of the dependent molar density gradient, use the 'use_independent' and 'dependent_idx' kwargs.
+See: Eq. (23) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+
 
 #### Args:
 
@@ -386,21 +415,15 @@ Compute thermal diffusion coefficients, D_{T,i} [mol / m^2 s] Default definition
 
 &nbsp;&nbsp;&nbsp;&nbsp; **dependent_idx (int, optional) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Index of the dependent molar density gradient (only if use_dependent=True).
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; Defaults to last component.
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Index of the dependent molar density gradient (only if use_dependent=True).Defaults to last component.
 
 &nbsp;&nbsp;&nbsp;&nbsp; **frame_of_reference (str, optional) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  What frame of reference the molar fluxes are measured in. See
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; `get_com_2_for` for valid options.
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  What frame of reference the molar fluxes are measured in. See`get_com_2_for` for valid options.
 
 &nbsp;&nbsp;&nbsp;&nbsp; **solvent_idx (int, optional) :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Index of component identified as solvent (only when using `frame_of_reference='solvent'`)
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
 
 #### Returns:
 
@@ -408,10 +431,18 @@ Compute thermal diffusion coefficients, D_{T,i} [mol / m^2 s] Default definition
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Thermal diffusion coefficients. Unit: [mol m^2 / s]
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 ### `thermal_diffusion_factor(self, T, Vm, x, N=None)`
-Compute the thermal diffusion factors $lpha_{ij}$, defined by $$lpha_{ij} = k_{T, i} - k_{T, j}$$ where $k_{T,i}$ are the thermal diffusion ratios. This definition implies that $$ abla \ln (n_i / n_j) = - lpha_{ij} abla \ln T$$ when the mass fluxes vanish. The thermal diffusion factors are independent of the frame of reference. See: Eq. (29) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+Compute the thermal diffusion factors $\alpha_{ij}$, defined by
+
+$$ \alpha_{ij} = k_{T, i} - k_{T, j} $$
+
+where $k_{T,i}$ are the thermal diffusion ratios. This definition implies that
+
+$$ \nabla \ln (n_i / n_j) = - \alpha_{ij} \nabla \ln T $$
+
+when the mass fluxes vanish. The thermal diffusion factors are independent of the frame of reference.
+See: Eq. (29) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+
 
 #### Args:
 
@@ -430,8 +461,6 @@ Compute the thermal diffusion factors $lpha_{ij}$, defined by $$lpha_{ij} = k_
 &nbsp;&nbsp;&nbsp;&nbsp; **N (int, optional) :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Enskog approximation order (>= 2)
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
 
 #### Returns:
 
@@ -439,10 +468,26 @@ Compute the thermal diffusion factors $lpha_{ij}$, defined by $$lpha_{ij} = k_
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The thermal diffusion factors of the mixture. Unit: Dimensionless.
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 ### `thermal_diffusion_ratio(self, T, Vm, x, N=None)`
-Calculate the "independent" thermal diffusion ratios, $k_{T, i}$ defined by $$J_i^{(n, n)} = - \sum_{j eq l} D_{ij}^{(I, n)} ( abla n_j + n_j k_{T, j} D_{T, j}^{(I, n)} abla \ln T )$$ and $$\sum_i x_i \sum_j [\delta_{ij} + (4 \pi / 3) \sigma_{ij}^3 n_j M_{ij} \chi_{ij} - (n_j k_{T,j} / k_B T) ( d \mu_i / n_j )_{T,n_{l eq j}}] = 0$$ This definition implies that $$ abla n_j = -n_j k_{T,j} abla \ln T\ orall j$$ when all mass fluxes vanish. Note that the thermal diffusion ratios are independent of the frame of reference. See: Eq. (26-27) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+Calculate the "independent" thermal diffusion ratios, $k_{T, i}$ defined by
+
+$$ J_i^{(n, n)} = - \sum_{j \neq l} D_{ij}^{(I, n)} ( \nabla n_j + n_j k_{T, j} D_{T, j}^{(I, n)} \nabla \ln T ) $$
+
+and
+
+$$ \sum_i x_i \sum_j [\delta_{ij} + (4 \pi / 3) \sigma_{ij}^3 n_j M_{ij} \chi_{ij} - (n_j k_{T,j} / k_B T) ( d \mu_i / n_j )_{T,n_{l \neq j}}] = 0 $$
+
+This definition implies that
+
+$$ \nabla n_j = -n_j k_{T,j} \nabla \ln T\ \forall j $$
+
+when all mass fluxes vanish. For models initialised with `is_idealgas=True`, the second equation is replaced with
+
+$$ \sum_i x_i k_{T,i} = 1 $$
+
+The thermal diffusion ratios are independent of the frame of reference.
+See: Eq. (26-27) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+
 
 #### Args:
 
@@ -462,18 +507,16 @@ Calculate the "independent" thermal diffusion ratios, $k_{T, i}$ defined by $$J_
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Enskog approximation order (>= 2)
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 #### Returns:
 
 &nbsp;&nbsp;&nbsp;&nbsp; **(1D array) :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The thermal diffusion ratio of each component. Unit: Dimensionless.
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 ### `viscosity(self, T, Vm, x, N=None)`
-Compute the shear viscosity, $\eta$. For models initialized with `is_idealgas=True`, the shear viscosity is not a function of density (i.e. $d \eta / d V_m = 0). See Eq. (12) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+Compute the shear viscosity, $\eta$. For models initialized with `is_idealgas=True`, the shear viscosity
+is not a function of density (i.e. $d \eta / d V_m = 0). See Eq. (12) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+
 
 #### Args:
 
@@ -493,15 +536,11 @@ Compute the shear viscosity, $\eta$. For models initialized with `is_idealgas=Tr
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Enskog approximation order
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 #### Returns:
 
 &nbsp;&nbsp;&nbsp;&nbsp; **(float) :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The shear viscosity of the mixture.
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
 
 ## Tp-property interfaces
 
@@ -517,29 +556,29 @@ Computing properties as a function of temperature and pressure. Simply forwards 
 
 
 ### `interdiffusion_tp(self, T, p, x, N=None, use_independent=True, dependent_idx=None, frame_of_reference='CoN', use_binary=True, solvent_idx=None)`
-Compute molar volume using the internal equation of state (`self.eos`), assuming vapour, and pass the call to `self.interdiffusion`. See `self.interdiffusion` for documentation. 
+Compute molar volume using the internal equation of state (`self.eos`), assuming vapour, and pass the call to
+`self.interdiffusion`. See `self.interdiffusion` for documentation.
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
 
 ### `thermal_coductivity_tp(self, T, p, x, N=None)`
-Compute molar volume using the internal equation of state (`self.eos`), assuming vapour, and pass the call to `self.thermal_conductivity`. See `self.thermal_conductivity` for documentation. 
+Compute molar volume using the internal equation of state (`self.eos`), assuming vapour, and pass the call to
+`self.thermal_conductivity`. See `self.thermal_conductivity` for documentation.
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
 
 ### `thermal_diffusion_coeff_tp(self, T, p, x, N=None, use_independent=False, dependent_idx=None, frame_of_reference='CoN', solvent_idx=None)`
-Compute molar volume using the internal equation of state (`self.eos`), assuming vapour, and pass the call to `self.thermal_diffusion_coeff`. See `self.thermal_diffusion_coeff` for documentation. 
+Compute molar volume using the internal equation of state (`self.eos`), assuming vapour, and pass the call to
+`self.thermal_diffusion_coeff`. See `self.thermal_diffusion_coeff` for documentation.
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
 
 ### `thermal_diffusion_factor_tp(self, T, p, x, N=None)`
-Compute molar volume using the internal equation of state (`self.eos`), assuming vapour, and pass the call to `self.thermal_diffusion_factor`. See `self.thermal_diffusion_factor` for documentation. 
+Compute molar volume using the internal equation of state (`self.eos`), assuming vapour, and pass the call to
+`self.thermal_diffusion_factor`. See `self.thermal_diffusion_factor` for documentation.
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
 
 ### `viscosity_tp(self, T, p, x, N=None)`
-Compute molar volume using the internal equation of state (`self.eos`), assuming vapour, and pass the call to `self.viscosity`. See `self.viscosity` for documentation. 
+Compute molar volume using the internal equation of state (`self.eos`), assuming vapour, and pass the call to
+`self.viscosity`. See `self.viscosity` for documentation.
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
 
 ## Frame of Reference transformations
 
@@ -557,13 +596,12 @@ Generate matrices for Frame of Reference transformations. See the supportingmate
 ### `get_com_2_con_matr(self, x)`
 Get transformation matrix from centre of mass (CoM) to centre of moles (CoN).
 
+
 #### Args:
 
 &nbsp;&nbsp;&nbsp;&nbsp; **x (array_like) :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Molar composition [-]
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
 
 #### Returns:
 
@@ -571,10 +609,9 @@ Get transformation matrix from centre of mass (CoM) to centre of moles (CoN).
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Transformation matrix $\Psi^{n \leftmapsto m}$
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 ### `get_com_2_cov_matr(self, T, Vm, x)`
 Get centre of mass (CoM) to centre of volume (CoV) transformation matrix
+
 
 #### Args:
 
@@ -589,8 +626,6 @@ Get centre of mass (CoM) to centre of volume (CoV) transformation matrix
 &nbsp;&nbsp;&nbsp;&nbsp; **x (array_like) :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Molar composition [-]
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
 
 #### Returns:
 
@@ -598,10 +633,17 @@ Get centre of mass (CoM) to centre of volume (CoV) transformation matrix
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The transformation matrix $\Psi^{V \leftmapsto m}$.
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 ### `get_com_2_for_matr(self, T, Vm, x, FoR, **kwargs)`
-Dispatcher to get a specific 'change of frame of reference' matrix for transformation from centre of mass to 'FoR'. Returns the appropriate matrix for the transformations derived in Appendix A of ... to transform a flux from the centre of mass frame of reference to the 'FoR' frame of reference by the transformation $$J^{(n, FoR)} = \psi @ J^{(n, m)}$$ where $\psi$ is the matrix returned by this method, and $J$ is the vector of (all) molar fluxes, with the subscript indicating the frame of reference.
+Dispatcher to get a specific 'change of frame of reference' matrix for transformation from
+centre of mass to 'FoR'.
+Returns the appropriate matrix for the transformations derived in Appendix A of ... to transform a flux
+from the centre of mass frame of reference to the 'FoR' frame of reference by the transformation
+
+$$ J^{(n, FoR)} = \psi @ J^{(n, m)} $$
+
+where $\psi$ is the matrix returned by this method, and $J$ is the vector of (all) molar fluxes, with the
+subscript indicating the frame of reference.
+
 
 #### Args:
 
@@ -617,20 +659,15 @@ Dispatcher to get a specific 'change of frame of reference' matrix for transform
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Molar composition [-]
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 #### Returns:
 
 &nbsp;&nbsp;&nbsp;&nbsp; **(2Darray) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The $N$ x $N$ transformation matrix to transform the fluxes, with $N$ being the number of
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; components.
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The $N$ x $N$ transformation matrix to transform the fluxes, with $N$ being the number ofcomponents.
 
 ### `get_com_2_solv_matr(self, x, solvent_idx)`
 Get transformation matrix from centre of mass (CoM) to solvent (solvent) frame of reference
+
 
 #### Args:
 
@@ -642,18 +679,15 @@ Get transformation matrix from centre of mass (CoM) to solvent (solvent) frame o
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The component index of the solvent.
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 #### Returns:
 
 &nbsp;&nbsp;&nbsp;&nbsp; **2darray :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The transformation matrix $\Psi^{n_k \leftmapsto m}$, where $k$ is the `solvent_idx`.
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 ### `get_solv_2_solv_matr(self, x, prev_solv_idx, new_solv_idx)`
 Get solvent-to-solvent frame of reference transformation matrix
+
 
 #### Args:
 
@@ -669,15 +703,11 @@ Get solvent-to-solvent frame of reference transformation matrix
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Component index of the new solvent
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 #### Returns:
 
 &nbsp;&nbsp;&nbsp;&nbsp; **2d array :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The transformation matrix $\Psi^{n_k \leftmapsto n_l}$, where $k$ is `new_solv_idx` and $l$ is `prev_solv_idx`.
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
 
 ## Interfaces to C++ methods
 
@@ -693,7 +723,10 @@ Lightweight wrappers for the most commonly used C++ side methods.
 
 
 ### `get_conductivity_matrix(self, particle_density, T, mole_fracs, N=None)`
-Compute the elements of the matrix corresponding to the set of equations that must be solved for the thermal response function sonine polynomial expansion coefficients: Eq. (6) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+Compute the elements of the matrix corresponding to the set of equations that must be solved for the
+thermal response function sonine polynomial expansion coefficients:
+Eq. (6) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+
 
 #### Args:
 
@@ -713,20 +746,17 @@ Compute the elements of the matrix corresponding to the set of equations that mu
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Enskog approximation order.
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 #### Returns:
 
 &nbsp;&nbsp;&nbsp;&nbsp; **2Darray :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  ($N N_c$ x $N N_c$) matrix, where $N$ is the Enskog approximation order and $N_c$ is
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; the number of components.
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  ($N N_c$ x $N N_c$) matrix, where $N$ is the Enskog approximation order and $N_c$ isthe number of components.
 
 ### `get_conductivity_vector(self, particle_density, T, mole_fracs, N)`
-Compute the right-hand side vector to the set of equations that must be solved for the thermal response function Sonine polynomial expansion coefficients: Eq. (6) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+Compute the right-hand side vector to the set of equations that must be solved for the
+thermal response function Sonine polynomial expansion coefficients:
+Eq. (6) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+
 
 #### Args:
 
@@ -746,20 +776,15 @@ Compute the right-hand side vector to the set of equations that must be solved f
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Enskog approximation order.
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 #### Returns:
 
 &nbsp;&nbsp;&nbsp;&nbsp; **(1Darray) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  ($N N_c$,) vector, where $N$ is the Enskog approximation order and $N_c$ is
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; the number of components.
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  ($N N_c$,) vector, where $N$ is the Enskog approximation order and $N_c$ isthe number of components.
 
 ### `get_contact_diameters(self, particle_density, T, x)`
 Compute collision diameters given by Eq. (40) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+
 
 #### Args:
 
@@ -775,18 +800,17 @@ Compute collision diameters given by Eq. (40) in RET for Mie fluids (https://doi
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Molar composition [-]
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 #### Returns:
 
 &nbsp;&nbsp;&nbsp;&nbsp; **2d array :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Collision diameters [m], indexed by component pair.
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 ### `get_diffusion_vector(self, particle_density, T, mole_fracs, N=None)`
-Compute the right-hand side vector to the set of equations that must be solved for the diffusive response function Sonine polynomial expansion coefficients. Eq. (10) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+Compute the right-hand side vector to the set of equations that must be solved for the
+diffusive response function Sonine polynomial expansion coefficients.
+Eq. (10) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+
 
 #### Args:
 
@@ -806,20 +830,15 @@ Compute the right-hand side vector to the set of equations that must be solved f
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Enskog approximation order.
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 #### Returns:
 
 &nbsp;&nbsp;&nbsp;&nbsp; **(1Darray) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  ($N N_c^2$,) vector, where $N$ is the Enskog approximation order and $N_c$ is
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; the number of components.
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  ($N N_c^2$,) vector, where $N$ is the Enskog approximation order and $N_c$ isthe number of components.
 
 ### `get_rdf(self, particle_density, T, x)`
 Compute the radial distribution function at contact
+
 
 #### Args:
 
@@ -835,15 +854,11 @@ Compute the radial distribution function at contact
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Molar composition [-]
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 #### Returns:
 
 &nbsp;&nbsp;&nbsp;&nbsp; **2d array :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  RDF at contact, indexed by component pair.
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
 
 ## Utility methods
 
@@ -864,15 +879,12 @@ Methods for various helper computations
 ### `check_valid_composition(self, x)`
 Check that enough mole fractions are supplied for the initialised model. Also check that they sum to unity.
 
+
 #### Args:
 
 &nbsp;&nbsp;&nbsp;&nbsp; **x (array_like) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Molar composition
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; Raises
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Molar compositionRaises
 
 &nbsp;&nbsp;&nbsp;&nbsp; **IndexError :** 
 
@@ -882,10 +894,15 @@ Check that enough mole fractions are supplied for the initialised model. Also ch
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  If mole fractions do not sum to unity.
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 ### `compute_cond_vector(self, particle_density, T, mole_fracs, N=None)`
-Compute the thermal response function Sonine polynomial expansion coefficients by solving the set of equations $$\Lambda \ell = \lambda$$ Corresponding to Eq. (6) in RET for Mie fluids (https://doi.org/10.1063/5.0149865) Where $\Lambda$ is the matrix returned by the c++ method `get_conductivity_matrix`, and $\lambda$ is the vector returned by the c++ method `get_conductivity_vector`.
+Compute the thermal response function Sonine polynomial expansion coefficients by solving the set of equations
+
+$$\Lambda \ell = \lambda$$
+
+Corresponding to Eq. (6) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+Where $\Lambda$ is the matrix returned by the c++ method `get_conductivity_matrix`, and $\lambda$ is the vector
+returned by the c++ method `get_conductivity_vector`.
+
 
 #### Args:
 
@@ -905,15 +922,11 @@ Compute the thermal response function Sonine polynomial expansion coefficients b
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Enskog approximation order.
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 #### Returns:
 
 &nbsp;&nbsp;&nbsp;&nbsp; **1Darray :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  ($N N_c$,) vector, where $N$ is the Enskog approximation order and $N_c$ is
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; the number of components. The vector is ordered as
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  ($N N_c$,) vector, where $N$ is the Enskog approximation order and $N_c$ isthe number of components. The vector is ordered as
 
 &nbsp;&nbsp;&nbsp;&nbsp; **l[:** 
 
@@ -921,18 +934,17 @@ Compute the thermal response function Sonine polynomial expansion coefficients b
 
 &nbsp;&nbsp;&nbsp;&nbsp; **l[N_c :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  2 * N_c] = [$\ell_1^{(1)}$, $\ell_2^{(1)}$, ..., $\ell_{N_c}^{(1)}$]
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; ... etc ...
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; Where subscripts indicate component indices, and superscripts are Enskog approximation
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; order summation indices.
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  2 * N_c] = [$\ell_1^{(1)}$, $\ell_2^{(1)}$, ..., $\ell_{N_c}^{(1)}$]... etc ...Where subscripts indicate component indices, and superscripts are Enskog approximationorder summation indices.
 
 ### `compute_diffusion_coeff_vector(self, particle_density, T, mole_fracs, N=None)`
-Compute the diffusive response function Sonine polynomial expansion coefficients by solving the set of equations $$D d = \delta$$ Corresponding to Eq. (10) in RET for Mie fluids (https://doi.org/10.1063/5.0149865) Where $D$ is the matrix returned by the c++ method `get_diffusion_matrix`, and $\delta$ is the vector returned by the c++ method `get_diffusion_vector`.
+Compute the diffusive response function Sonine polynomial expansion coefficients by solving the set of equations
+
+$$D d = \delta$$
+
+Corresponding to Eq. (10) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+Where $D$ is the matrix returned by the c++ method `get_diffusion_matrix`, and $\delta$ is the vector
+returned by the c++ method `get_diffusion_vector`.
+
 
 #### Args:
 
@@ -952,22 +964,19 @@ Compute the diffusive response function Sonine polynomial expansion coefficients
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Enskog approximation order.
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 #### Returns:
 
 &nbsp;&nbsp;&nbsp;&nbsp; **1Darray :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  ($N N_c^2$,) vector, where $N$ is the Enskog approximation order and $N_c$ is
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; the number of components, containing the diffusive response function sonine polynomial
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; expansion coefficients ($d_{i, j}^{(q)}$). See `reshape_diffusive_coeff_vector` for help on practical usage.
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  ($N N_c^2$,) vector, where $N$ is the Enskog approximation order and $N_c$ isthe number of components, containing the diffusive response function sonine polynomialexpansion coefficients ($d_{i, j}^{(q)}$). See `reshape_diffusive_coeff_vector` for help on practical usage.
 
 ### `compute_dth_vector(self, particle_density, T, mole_fracs, N=None)`
-Compute the coefficients $d_i^{(J = 0)}$, by solving the set of equations $$\sum_j d_{i,j}^{(0)} d_j^{ec{J} = 0} = \ell_i^{(0)}$$, i.e. Eq. (15) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+Compute the coefficients $d_i^{(J = 0)}$, by solving the set of equations
+
+$$\sum_j d_{i,j}^{(0)} d_j^{\vec{J} = 0} = \ell_i^{(0)}$$,
+
+i.e. Eq. (15) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+
 
 #### Args:
 
@@ -986,8 +995,6 @@ Compute the coefficients $d_i^{(J = 0)}$, by solving the set of equations $$\sum
 &nbsp;&nbsp;&nbsp;&nbsp; **N (Optional, int) :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Enskog approximation order.
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
 
 #### Returns:
 
@@ -995,10 +1002,15 @@ Compute the coefficients $d_i^{(J = 0)}$, by solving the set of equations $$\sum
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Vector of the $d_i^{(J = 0)}$ coefficients.
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 ### `compute_visc_vector(self, T, particle_density, mole_fracs, N=None)`
-Compute the viscous response function Sonine polynomial expansion coefficients by solving the set of equations $$\Beta b = eta$$ Corresponding to Eq. (8) in RET for Mie fluids (https://doi.org/10.1063/5.0149865) Where $\Beta$ is the matrix returned by the c++ method `get_viscosity_matrix`, and $eta$ is the vector returned by the c++ method `get_viscosity_vector`.
+Compute the viscous response function Sonine polynomial expansion coefficients by solving the set of equations
+
+$$\Beta b = eta$$
+
+Corresponding to Eq. (8) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+Where $\Beta$ is the matrix returned by the c++ method `get_viscosity_matrix`, and $eta$ is the vector
+returned by the c++ method `get_viscosity_vector`.
+
 
 #### Args:
 
@@ -1018,15 +1030,11 @@ Compute the viscous response function Sonine polynomial expansion coefficients b
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Enskog approximation order.
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 #### Returns:
 
 &nbsp;&nbsp;&nbsp;&nbsp; **1D array :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  ($N N_c$,) vector, where $N$ is the Enskog approximation order and $N_c$ is
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; the number of components, ordered as
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  ($N N_c$,) vector, where $N$ is the Enskog approximation order and $N_c$ isthe number of components, ordered as
 
 &nbsp;&nbsp;&nbsp;&nbsp; **b[:** 
 
@@ -1034,18 +1042,15 @@ Compute the viscous response function Sonine polynomial expansion coefficients b
 
 &nbsp;&nbsp;&nbsp;&nbsp; **b[N_c:** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  2 * N_c] = [b_1^{(1)}, b_2^{(1)}, ..., b_{N_c}^{(1)}]
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; ... etc ...
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; where subscripts denote component indices and superscripts denote Enskog approximation
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; summation indices.
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  2 * N_c] = [b_1^{(1)}, b_2^{(1)}, ..., b_{N_c}^{(1)}]... etc ...where subscripts denote component indices and superscripts denote Enskog approximationsummation indices.
 
 ### `get_Eij(self, Vm, T, x)`
-Compute the factors $ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k eq j}}$, where $n_i$ is the molar density of species $i$.
+Compute the factors
+
+$$ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k \neq j}}, $$
+
+where $n_i$ is the molar density of species $i$.
+
 
 #### Args:
 
@@ -1060,25 +1065,20 @@ Compute the factors $ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k eq j}}$, where 
 &nbsp;&nbsp;&nbsp;&nbsp; **x (array_like) :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Molar composition
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
 
 #### Returns:
 
 &nbsp;&nbsp;&nbsp;&nbsp; **(2D array) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The factors E[i][j] = $ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; eq j}}$, where $n_i$
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The factors E[i][j] = $ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k \neq j}}$, where $n_i$
 
 &nbsp;&nbsp;&nbsp;&nbsp; **is the molar density of species $i$. Unit:** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  [1 / mol]
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 ### `get_P_factors(self, Vm, T, x)`
 Compute the factors $\Xi_i = \sum_j E_{ij}$, where $E_{ij}$ are the factors computed by `get_Eij`.
+
 
 #### Args:
 
@@ -1093,8 +1093,6 @@ Compute the factors $\Xi_i = \sum_j E_{ij}$, where $E_{ij}$ are the factors comp
 &nbsp;&nbsp;&nbsp;&nbsp; **x (array_like) :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Molar composition
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
 
 #### Returns:
 
@@ -1102,10 +1100,12 @@ Compute the factors $\Xi_i = \sum_j E_{ij}$, where $E_{ij}$ are the factors comp
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The factors $\Xi_i$, Unit: [1 / mol]
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 ### `reshape_diffusion_coeff_vector(self, d)`
-The vector returned by `compute_diffusion_coeff_vector` contains the diffusive response function sonine polynomial expansion coefficients (eg. $d_{i, j}^{(q)}$ ). To more easily access the correct coefficients, this method reshapes the vector to a matrix indiced as `d[i][q][j]` where i and j are component indices, and q refferes to the approximation order summation index.
+The vector returned by `compute_diffusion_coeff_vector` contains the diffusive response function sonine
+polynomial expansion coefficients (eg. $d_{i, j}^{(q)}$ ).
+To more easily access the correct coefficients, this method reshapes the vector to a matrix indiced
+as `d[i][q][j]` where i and j are component indices, and q refferes to the approximation order summation index.
+
 
 #### Args:
 
@@ -1113,13 +1113,9 @@ The vector returned by `compute_diffusion_coeff_vector` contains the diffusive r
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The array returned by `get_diffusion_coeff_vector`
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 #### Returns:
 
 &nbsp;&nbsp;&nbsp;&nbsp; **3D array :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The matrix of $d_{i, j}^{(q)}$ coefficients ordered as `d[i][q][j]`
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
 

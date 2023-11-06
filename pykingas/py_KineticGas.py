@@ -36,7 +36,7 @@ class IdealGas:
         The chemical potential of an ideal gas mixture. Note: Only dmudn is actually used by the py_KineticGas class.
         Also note: We need to have V in the signature, even though it is not used, in order to be compatible with
         the signature of chemical_potential_tv in thermopack.
-
+        &&
         Args:
             T (float) : Temperature [K]
             V (float) : Volume [m3]
@@ -56,7 +56,7 @@ class IdealGas:
         """
         Compute molar volume for an ideal gas. Note that we must have `n` and `phase` in the signature in
         order to be compatible with the signature of equation of state objects from ThermoPack.
-
+        &&
         Args:
             T (float) : Temperature [K]
             p (float) : Pressure [Pa]
@@ -72,7 +72,7 @@ class py_KineticGas:
 
     def __init__(self, comps, mole_weights=None, N=3, is_idealgas=False):
         """Constructor
-
+        &&
         Args:
             comps (str): Comma-separated list of components, following ThermoPack-convention
             mole_weights (1d array) : Mole weights [g/mol]. Will be used instead of database values if provided
@@ -132,7 +132,7 @@ class py_KineticGas:
     def check_valid_composition(self, x):
         """Utility
         Check that enough mole fractions are supplied for the initialised model. Also check that they sum to unity.
-
+        &&
         Args:
             x (array_like) : Molar composition
 
@@ -148,10 +148,13 @@ class py_KineticGas:
 
 
     def get_Eij(self, Vm, T, x):
-        """Utility
-        Compute the factors $ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k \neq j}}$, where $n_i$ is the molar density
-        of species $i$.
+        r"""Utility
+        Compute the factors
 
+        $$ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k \neq j}}, $$
+
+        where $n_i$ is the molar density of species $i$.
+        &&
         Args:
             Vm (float) : Molar volume [m3 / mol]
             T (float) : Temperature [K]
@@ -183,9 +186,9 @@ class py_KineticGas:
         return Eij
 
     def get_P_factors(self, Vm, T, x):
-        """Utility
+        r"""Utility
         Compute the factors $\Xi_i = \sum_j E_{ij}$, where $E_{ij}$ are the factors computed by `get_Eij`.
-
+        &&
         Args:
             Vm (float) : Molar volume [m3 / mol]
             T (float) : Temperature [K]
@@ -208,18 +211,22 @@ class py_KineticGas:
                        use_independent=True, dependent_idx=None,
                         frame_of_reference='CoN', use_binary=True,
                         solvent_idx=None):
-        """TV-property
-        Compute the interdiffusion coefficients. Default definition is
-        $J_i^{(n, n)} = - \sum_{j \neq l} D_{ij} \nabla n_j,$ $\nabla T = \nabla p = F_k = 0$ \forall $k$
+        r"""TV-property
+        Compute the interdiffusion coefficients [m^2 / s]. Default definition is
+
+        $$ J_i^{(n, n)} = - \sum_{j \neq l} D_{ij} \nabla n_j, \nabla T = \nabla p = F_k = 0 \forall k $$
+
         where the flux, $J_i^{(n, n)}$ is on a molar basis, in the molar frame of reference, and $j \neq l$ is an
-        independent set of forces with l=dependent_idx.
+        independent set of forces with $l=$ `dependent_idx`.
         For fluxes in other frames of reference, use the `frame_of_reference` kwarg.
         For the diffusion coefficients describing the fluxes' response to all forces (not independent) the definition
         is:
-        $J_i^{(n, n)} = - \sum_j D_{ij} \nabla n_j,$ $\nabla T = \nabla p = F_k = 0$ \forall $k$
+
+        $$ J_i^{(n, n)} = - \sum_j D_{ij} \nabla n_j, \nabla T = \nabla p = F_k = 0 \forall k $$
+
         use the `use_independent` and `dependent_idx` kwargs to switch between these definitions.
         See: Eq. (17-20) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
-
+        &&
         Args:
             T (float) : Temperature (K)
             Vm (float) : Molar volume (m3 / mol)
@@ -229,9 +236,9 @@ class py_KineticGas:
                 `use_independent=True`, the diffusion coefficients will be exactly equal with opposite sign. Setting
                 `use_binary=True` will in that case only return the coefficient describing the independent flux-force relation.
             use_independent (bool, optional) : Return diffusion coefficients for independent set of forces.
-            dependent_idx (int, optional) : Index of the dependent molar density gradient (only if use_dependent=True).
+            dependent_idx (int, optional) : Index of the dependent molar density gradient (only if `use_independent=True`, the default behaviour).
                 Defaults to last component, except when `frame_of_reference='solvent'`, in which case default is equal
-                to kwargs['solvent_idx'].
+                to `solvent_idx`.
             frame_of_reference (str, optional) : Which frame of reference the diffusion coefficients apply to. Default
                 is 'CoN'. Can be 'CoN' (molar FoR), 'CoM' (barycentric FoR) or 'solvent' (solvent FoR).
                 See the 'solvent_idx' kwarg for information on selecting the solvent index.  See `get_com_2_for` for more information.
@@ -266,7 +273,7 @@ class py_KineticGas:
         $J_i^{(n, m)} = - \sum_j D_{ij} \nabla n_j,$ $\nabla T = \nabla p = F_k = 0$ \forall $k$
         **For end-users, see: `interdiffusion`**
         See: Eq. (19) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
-
+        &&
         Args:
             T (float) : Temperature (K)
             Vm (float) : Molar volume (m3 / mol)
@@ -297,17 +304,21 @@ class py_KineticGas:
     def thermal_diffusion_coeff(self, T, Vm, x, N=None,
                                 use_independent=False, dependent_idx=None,
                                 frame_of_reference='CoN', solvent_idx=None):
-        '''TV-Property
-        Compute thermal diffusion coefficients, D_{T,i} [mol / m^2 s]
+        r"""TV-Property
+        Compute thermal diffusion coefficients, $D_{T,i}$ [mol / m^2 s]
         Default definition is
-        $$J_i^{(n, n)} = D_{T,i} \nabla \ln T - \sum_j D_{ij} \nabla n_j, \nabla p = F_k = 0 \forall k$$
-        where the flux, J_i^{(n, n)} is on a molar basis, in the molar frame of reference. For fluxes in other frames
+
+        $$ J_i^{(n, n)} = D_{T,i} \nabla \ln T - \sum_j D_{ij} \nabla n_j, \nabla p = F_k = 0 \forall k $$
+
+        where the flux, $J_i^{(n, n)}$ is on a molar basis, in the molar frame of reference. For fluxes in other frames
         of reference, use the 'frame_of_reference' kwarg. For the diffusion coefficients corresponding to an
         independent set of forces, defined by
-        $$J_i^{(n, n)} = D_{T,i} \nabla \ln T - \sum_{j \neq l} D_{ij} \nabla n_j, \nabla p = F_k = 0 \forall k$$
-        where l is the index of the dependent molar density gradient, use the 'use_independent' and 'dependent_idx' kwargs.
-        See: Eq. (23) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
 
+        $$ J_i^{(n, n)} = D_{T,i} \nabla \ln T - \sum_{j \neq l} D_{ij} \nabla n_j, \nabla p = F_k = 0 \forall k $$
+
+        where $l$ is the index of the dependent molar density gradient, use the 'use_independent' and 'dependent_idx' kwargs.
+        See: Eq. (23) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+        &&
         Args:
             T (float) : Temperature [K]
             Vm (float) : Molar volume [m^3 / mol]
@@ -322,7 +333,7 @@ class py_KineticGas:
 
         Returns:
             (1D array) : Thermal diffusion coefficients. Unit: [mol m^2 / s]
-        '''
+        """
         if N is None:
             N = self.default_N
         self.check_valid_composition(x)
@@ -378,16 +389,26 @@ class py_KineticGas:
         return DT / Avogadro # Dividing by Avogadros number to convert unit from particle number to mole number
 
     def thermal_diffusion_ratio(self, T, Vm, x, N=None):
-        """TV-property
+        r"""TV-property
         Calculate the "independent" thermal diffusion ratios, $k_{T, i}$ defined by
-        $$J_i^{(n, n)} = - \sum_{j \neq l} D_{ij}^{(I, n)} ( \nabla n_j + n_j k_{T, j} D_{T, j}^{(I, n)} \nabla \ln T )$$
-        and
-        $$\sum_i x_i \sum_j [\delta_{ij} + (4 \pi / 3) \sigma_{ij}^3 n_j M_{ij} \chi_{ij} - (n_j k_{T,j} / k_B T) ( d \mu_i / n_j )_{T,n_{l \neq j}}] = 0$$
-        This definition implies that
-        $$\nabla n_j = -n_j k_{T,j} \nabla \ln T\ \forall j$$ when all mass fluxes vanish.
-        Note that the thermal diffusion ratios are independent of the frame of reference.
-        See: Eq. (26-27) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
 
+        $$ J_i^{(n, n)} = - \sum_{j \neq l} D_{ij}^{(I, n)} ( \nabla n_j + n_j k_{T, j} D_{T, j}^{(I, n)} \nabla \ln T ) $$
+
+        and
+
+        $$ \sum_i x_i \sum_j [\delta_{ij} + (4 \pi / 3) \sigma_{ij}^3 n_j M_{ij} \chi_{ij} - (n_j k_{T,j} / k_B T) ( d \mu_i / n_j )_{T,n_{l \neq j}}] = 0 $$
+
+        This definition implies that
+
+        $$ \nabla n_j = -n_j k_{T,j} \nabla \ln T\ \forall j $$
+
+        when all mass fluxes vanish. For models initialised with `is_idealgas=True`, the second equation is replaced with
+
+        $$ \sum_i x_i k_{T,i} = 1 $$
+
+        The thermal diffusion ratios are independent of the frame of reference.
+        See: Eq. (26-27) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+        &&
         Args:
             T (float) : Temperature [K]
             Vm (float) : Molar volume [m3 / mol]
@@ -441,14 +462,18 @@ class py_KineticGas:
         return kT
 
     def thermal_diffusion_factor(self, T, Vm, x, N=None):
-        """TV-property
+        r"""TV-property
         Compute the thermal diffusion factors $\alpha_{ij}$, defined by
-        $$\alpha_{ij} = k_{T, i} - k_{T, j}$$
-        where $k_{T,i}$ are the thermal diffusion ratios. This definition implies that
-        $$\nabla \ln (n_i / n_j) = - \alpha_{ij} \nabla \ln T$$ when the mass fluxes vanish.
-        The thermal diffusion factors are independent of the frame of reference.
-        See: Eq. (29) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
 
+        $$ \alpha_{ij} = k_{T, i} - k_{T, j} $$
+
+        where $k_{T,i}$ are the thermal diffusion ratios. This definition implies that
+
+        $$ \nabla \ln (n_i / n_j) = - \alpha_{ij} \nabla \ln T $$
+
+        when the mass fluxes vanish. The thermal diffusion factors are independent of the frame of reference.
+        See: Eq. (29) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+        &&
         Args:
             T (float) : Temperature [K]
             Vm (float) : Molar volume [m3 / mol]
@@ -475,10 +500,10 @@ class py_KineticGas:
         return alpha
 
     def soret_coefficient(self, T, Vm, x, N=None):
-        """TV-Property
+        r"""TV-Property
         Compute the Soret coefficients, $S_{T, ij}$ defined as
         $S_{T, ij} = \alpha_{ij} / T$
-
+        &&
         Args:
             T (float) : Temperature [K]
             Vm (float) : Molar volume [m3 / mol]
@@ -493,11 +518,11 @@ class py_KineticGas:
         return alpha / T
 
     def thermal_conductivity(self, T, Vm, x, N=None):
-        """TV-Property
+        r"""TV-Property
         Compute the thermal conductivity, $\lambda$. For models initialized with `is_idealgas=True`, the thermal
-        conductivity is not a function of density (i.e. $d \lambda / d V_m = 0).
+        conductivity is not a function of density (i.e. $d \lambda / d V_m = 0$).
         See Eq. (13) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
-
+        &&
         Args:
             T (float) : Temperature [K]
             Vm (float) : Molar volume [m3 / mol]
@@ -539,10 +564,10 @@ class py_KineticGas:
         return cond
 
     def viscosity(self, T, Vm, x, N=None):
-        """TV-Property
+        r"""TV-Property
         Compute the shear viscosity, $\eta$. For models initialized with `is_idealgas=True`, the shear viscosity
         is not a function of density (i.e. $d \eta / d V_m = 0). See Eq. (12) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
-
+        &&
         Args:
             T (float) : Temperature [K]
             Vm (float) : Molar volume [m3 / mol]
@@ -589,20 +614,28 @@ class py_KineticGas:
         raise NotImplementedError("Bulk viscosity is not implemented yet. See 'Multicomp docs' for more info.")
 
     def conductivity_matrix(self, T, Vm, x, N=2, formulation='T-psi', frame_of_reference='CoM', use_thermal_conductivity=None):
-        """TV-Property
+        r"""TV-Property
         Compute the conductivity matrix $L$, for use in NET calculations. The Flux/Force formulation used in the NET
         model is selected using the `formulation` kwarg. Currently implemented formulations are:
         ----------------------------------------------------------------------------------------------
-        'T-psi':
-            $$J_q = L_{qq} \nabla (1 / T) - \sum_{i=1}^{N_c-1}(1 / T) L_{qi} \nabla_T \Psi_i$$
-            $$J_i = L_{iq} \nabla (1 / T) - \sum_{j=1}^{N_c-1}(1 / T) L_{ij} \nabla_T \Psi_j$$
-            Where
-                $$ \Psi_i = \mu_i - \mu_{N_c} $$
-            and $N_c$ denotes the number of components. The last component is used as the dependent component.
-            The fluxes in this formulation are on a *mass basis*, and the formulation is implemented in the centre of
-            mass frame of reference. The formulation is only implemented for ideal gases.
-        ----------------------------------------------------------------------------------------------
 
+        `'T-psi'`:
+
+        ----------------------------------------------------
+
+        $$ J_q = L_{qq} \nabla (1 / T) - \sum_{i=1}^{N_c-1}(1 / T) L_{qi} \nabla_T \Psi_i $$
+
+        $$ J_i = L_{iq} \nabla (1 / T) - \sum_{j=1}^{N_c-1}(1 / T) L_{ij} \nabla_T \Psi_j $$
+
+        Where
+
+        $$ \Psi_i = \mu_i - \mu_{N_c} $$
+
+        and $N_c$ denotes the number of components. The last component is used as the dependent component.
+        The fluxes in this formulation are on a *mass basis*, and the formulation is implemented in the centre of
+        mass frame of reference. The formulation is only implemented for ideal gases.
+        ----------------------------------------------------------------------------------------------
+        &&
         Args:
             T (float) : Temperature [K]
             Vm (float) : Molar volume [m3 / mol]
@@ -611,7 +644,7 @@ class py_KineticGas:
             formulation (str, optional) : The NET formulation for which to compute the conductivity matrix.
             frame_of_reference (str, optional) : The frame of reference ('CoM', 'CoN', 'CoV', or 'solvent'). Default: 'CoM'.
             use_thermal_conductivity (callable, optional) : External thermal conductivity model. Assumed to have the signature
-                    use_thermal_conductivity(T, Vm, x), returning the thermal conductivity in [W / m K]. Default: None.
+                    use_thermal_conductivity(T, Vm, x), returning the thermal conductivity in [W / m K]. Defaults to None.
                     If no model is supplied, KineticGas is used to compute thermal conductivity.
 
         Returns:
@@ -649,20 +682,28 @@ class py_KineticGas:
         raise KeyError(f'Invalid formulation : {formulation}')
 
     def resistivity_matrix(self, T, Vm, x, N=2, formulation='T-psi', frame_of_reference='CoM', use_thermal_conductivity=None):
-        """TV-property
+        r"""TV-property
         Compute the resistivity matrix $R = L^{-1}$, for use in NET calculations. The Flux/Force formulation used in the NET
         model is selected using the `formulation` kwarg. Currently implemented formulations are:
         ----------------------------------------------------------------------------------------------
-        'T-psi':
-            $$J_q = L_{qq} \nabla (1 / T) - \sum_{i=1}^{N_c-1}(1 / T) L_{qi} \nabla_T \Psi_i$$
-            $$J_i = L_{iq} \nabla (1 / T) - \sum_{j=1}^{N_c-1}(1 / T) L_{ij} \nabla_T \Psi_j$$
-            Where
-                $$ \Psi_i = \mu_i - \mu_{N_c} $$
-            and $N_c$ denotes the number of components. The last component is used as the dependent component.
-            The fluxes in this formulation are on a *mass basis*, and the formulation is implemented in the centre of
-            mass frame of reference. The formulation is only implemented for ideal gases.
-        ----------------------------------------------------------------------------------------------
 
+        `'T-psi'`:
+
+        ----------------------------------------------------
+
+        $$ J_q = L_{qq} \nabla (1 / T) - \sum_{i=1}^{N_c-1}(1 / T) L_{qi} \nabla_T \Psi_i $$
+
+        $$ J_i = L_{iq} \nabla (1 / T) - \sum_{j=1}^{N_c-1}(1 / T) L_{ij} \nabla_T \Psi_j $$
+
+        Where
+
+        $$ \Psi_i = \mu_i - \mu_{N_c} $$
+
+        and $N_c$ denotes the number of components. The last component is used as the dependent component.
+        The fluxes in this formulation are on a *mass basis*, and the formulation is implemented in the centre of
+        mass frame of reference. The formulation is only implemented for ideal gases.
+        ----------------------------------------------------------------------------------------------
+        &&
         Args:
             T (float) : Temperature [K]
             Vm (float) : Molar volume [m3 / mol]
@@ -671,7 +712,7 @@ class py_KineticGas:
             formulation (str, optional) : The NET formulation for which to compute the conductivity matrix.
             frame_of_reference (str, optional) : The frame of reference ('CoM', 'CoN', 'CoV', or 'solvent'). Default: 'CoM'.
             use_thermal_conductivity (callable, optional) : External thermal conductivity model. Assumed to have the signature
-                    thermal_conductivity(T, Vm, x), returning the thermal conductivity in [W / m K]. Default: None
+                    thermal_conductivity(T, Vm, x), returning the thermal conductivity in [W / m K]. Defaults to None.
                     If no model is supplied, KineticGas is used to compute the thermal conductivity.
 
         Returns:
@@ -747,15 +788,17 @@ class py_KineticGas:
     #####################################################
 
     def get_com_2_for_matr(self, T, Vm, x, FoR, **kwargs):
-        """FOR-Transform
+        r"""FOR-Transform
         Dispatcher to get a specific 'change of frame of reference' matrix for transformation from
         centre of mass to 'FoR'.
         Returns the appropriate matrix for the transformations derived in Appendix A of ... to transform a flux
         from the centre of mass frame of reference to the 'FoR' frame of reference by the transformation
-        $$J^{(n, FoR)} = \psi @ J^{(n, m)}$$
+
+        $$ J^{(n, FoR)} = \psi @ J^{(n, m)} $$
+
         where $\psi$ is the matrix returned by this method, and $J$ is the vector of (all) molar fluxes, with the
         subscript indicating the frame of reference.
-
+        &&
         Args:
             T (float) : Temperature [K]
             Vm (float) : Molar volume [m3 / mol]
@@ -783,7 +826,7 @@ class py_KineticGas:
     def get_com_2_con_matr(self, x):
         """FOR-Transform
         Get transformation matrix from centre of mass (CoM) to centre of moles (CoN).
-
+        &&
         Args:
             x (array_like) : Molar composition [-]
 
@@ -800,7 +843,7 @@ class py_KineticGas:
     def get_com_2_solv_matr(self, x, solvent_idx):
         """FOR-Transform
         Get transformation matrix from centre of mass (CoM) to solvent (solvent) frame of reference
-
+        &&
         Args:
             x (array_like) : Molar composition [-]
             solvent_idx (int) : The component index of the solvent.
@@ -821,7 +864,7 @@ class py_KineticGas:
     def get_com_2_cov_matr(self, T, Vm, x):
         """FOR-Transform
         Get centre of mass (CoM) to centre of volume (CoV) transformation matrix
-
+        &&
         Args:
             T (float) : Temperature [K]
             Vm (float) : Molar volume [m3 / mol]
@@ -843,7 +886,7 @@ class py_KineticGas:
     def get_solv_2_solv_matr(self, x, prev_solv_idx, new_solv_idx):
         """FOR-Transform
         Get solvent-to-solvent frame of reference transformation matrix
-
+        &&
         Args:
             x (array_like) : Molar composition [-]
             prev_solv_idx (int) : Component index of the old (current) solvent
@@ -869,7 +912,7 @@ class py_KineticGas:
         Compute the elements of the matrix corresponding to the set of equations that must be solved for the
         thermal response function sonine polynomial expansion coefficients:
         Eq. (6) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
-
+        &&
         Args:
             particle_density (float) : Particle density (not molar!) [1 / m3]
             T (float) : Temperature [K]
@@ -890,7 +933,7 @@ class py_KineticGas:
         Compute the right-hand side vector to the set of equations that must be solved for the
         thermal response function Sonine polynomial expansion coefficients:
         Eq. (6) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
-
+        &&
         Args:
             particle_density (float) : Particle density (not molar!) [1 / m3]
             T (float) : Temperature [K]
@@ -911,7 +954,7 @@ class py_KineticGas:
         Compute the right-hand side vector to the set of equations that must be solved for the
         diffusive response function Sonine polynomial expansion coefficients.
         Eq. (10) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
-
+        &&
         Args:
             particle_density (float) : Particle density (not molar!) [1 / m3]
             T (float) : Temperature [K]
@@ -930,7 +973,7 @@ class py_KineticGas:
     def get_contact_diameters(self, particle_density, T, x):
         """cpp-interface
         Compute collision diameters given by Eq. (40) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
-
+        &&
         Args:
             particle_density (float) : Particle density (not molar!) [1 / m3]
             T (float) : Temperature [K]
@@ -950,7 +993,7 @@ class py_KineticGas:
     def get_rdf(self, particle_density, T, x):
         """cpp-interface
         Compute the radial distribution function at contact
-
+        &&
         Args:
             particle_density (float) : Particle density (not molar!) [1 / m3]
             T (float) : Temperature [K]
@@ -974,11 +1017,13 @@ class py_KineticGas:
     def compute_diffusion_coeff_vector(self, particle_density, T, mole_fracs, N=None):
         """Utility
         Compute the diffusive response function Sonine polynomial expansion coefficients by solving the set of equations
+
         $$D d = \delta$$
+
         Corresponding to Eq. (10) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
         Where $D$ is the matrix returned by the c++ method `get_diffusion_matrix`, and $\delta$ is the vector
         returned by the c++ method `get_diffusion_vector`.
-
+        &&
         Args:
             particle_density (float) : Particle density (not molar!) [1 / m3]
             T (float) : Temperature [K]
@@ -1014,7 +1059,7 @@ class py_KineticGas:
         polynomial expansion coefficients (eg. $d_{i, j}^{(q)}$ ).
         To more easily access the correct coefficients, this method reshapes the vector to a matrix indiced
         as `d[i][q][j]` where i and j are component indices, and q refferes to the approximation order summation index.
-
+        &&
         Args:
             d (1D array) : The array returned by `get_diffusion_coeff_vector`
 
@@ -1031,11 +1076,13 @@ class py_KineticGas:
         return matr
     
     def compute_dth_vector(self, particle_density, T, mole_fracs, N=None):
-        """Utility
+        r"""Utility
         Compute the coefficients $d_i^{(J = 0)}$, by solving the set of equations
-        $$\sum_j d_{i,j}^{(0)} d_j^{\vec{J} = 0} = \ell_i^{(0)}$$,
-        i.e. Eq. (15) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
 
+        $$\sum_j d_{i,j}^{(0)} d_j^{\vec{J} = 0} = \ell_i^{(0)}$$,
+
+        i.e. Eq. (15) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+        &&
         Args:
             particle_density (float) : Particle density (not molar!) [1 / m3]
             T (float) : Temperature [K]
@@ -1070,11 +1117,13 @@ class py_KineticGas:
     def compute_cond_vector(self, particle_density, T, mole_fracs, N=None):
         """Utility
         Compute the thermal response function Sonine polynomial expansion coefficients by solving the set of equations
+
         $$\Lambda \ell = \lambda$$
+
         Corresponding to Eq. (6) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
         Where $\Lambda$ is the matrix returned by the c++ method `get_conductivity_matrix`, and $\lambda$ is the vector
         returned by the c++ method `get_conductivity_vector`.
-
+        &&
         Args:
             particle_density (float) : Particle density (not molar!) [1 / m3]
             T (float) : Temperature [K]
@@ -1114,11 +1163,13 @@ class py_KineticGas:
     def compute_visc_vector(self, T, particle_density, mole_fracs, N=None):
         """Utility
         Compute the viscous response function Sonine polynomial expansion coefficients by solving the set of equations
+
         $$\Beta b = \beta$$
+
         Corresponding to Eq. (8) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
         Where $\Beta$ is the matrix returned by the c++ method `get_viscosity_matrix`, and $\beta$ is the vector
         returned by the c++ method `get_viscosity_vector`.
-
+        &&
         Args:
             particle_density (float) : Particle density (not molar!) [1 / m3]
             T (float) : Temperature [K]

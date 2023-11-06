@@ -1,12 +1,12 @@
 ---
 layout: default
-version: 2.0.0
+version: 
 title: Methods in the MieType class
 permalink: /v2.0.0/MieType_methods.html
 ---
 
 <!--- 
-Generated at: 2023-10-04T01:26:58.670961
+Generated at: 2023-11-06T11:40:35.233471
 This is an auto-generated file, generated using the script at KineticGas/pyUtils/markdown_from_docstrings.py
 The file is created by parsing the docstrings of the methods in the 
 MieType class. For instructions on how to use the parser routines, see the
@@ -35,7 +35,9 @@ Methods to initialise Mie-Type model.
 
 
 ### `__init__(self, comps, potential, mole_weights=None, sigma=None, eps_div_k=None, la=None, lr=None, lij=0, kij=0, N=4, is_idealgas=False, parameter_ref='default')`
-If optional parameters are supplied, these are used instead of the parameters found in the database. To supply specific parameters for only some components, give `None` for the components that should use the database value
+If optional parameters are supplied, these are used instead of the parameters found in the database. To supply specific parameters for only some components, give `None` for the components that should use the database
+value
+
 
 #### Args:
 
@@ -67,8 +69,6 @@ If optional parameters are supplied, these are used instead of the parameters fo
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Mixing parameter for epsilon (kij > 0 => favours mixing, kij < 0 => favours separation)
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 ## Utility methods
 
 Set- and get methods for interaction parameters, mixing parameters ...
@@ -81,7 +81,9 @@ Set- and get methods for interaction parameters, mixing parameters ...
 
 
 ### `get_epsilon_matrix(self, eps_div_k, kij)`
-Compute matrix of well-depths, given well depth of each component Warning: Use of mixing parameters is not thouroughly tested.
+Compute matrix of well-depths, given well depth of each component
+Warning: Use of mixing parameters is not thouroughly tested.
+
 
 #### Args:
 
@@ -93,18 +95,15 @@ Compute matrix of well-depths, given well depth of each component Warning: Use o
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Not in use, internal parameter `self.kij` is used for mixing.
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 #### Returns:
 
 &nbsp;&nbsp;&nbsp;&nbsp; **2d array :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Well depth for each interaction pair.
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 ### `get_lambda_matrix(self, lambdas, lij)`
 Compute pair-interaction $\lambda_r$ parameters, apply mixing parameter.
+
 
 #### Args:
 
@@ -116,26 +115,22 @@ Compute pair-interaction $\lambda_r$ parameters, apply mixing parameter.
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Mixing parameters
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 #### Returns:
 
 &nbsp;&nbsp;&nbsp;&nbsp; **2d array :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Repulsive exponent for each pair-interaction.
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 ### `get_sigma_matrix(self, sigma)`
-Compute interaction parameter $sigma$ for each particle pair, applying mixing parameters given by `self.lij`. Warning: Use of mixing parameters is not thouroughly tested.
+Compute interaction parameter $sigma$ for each particle pair, applying mixing parameters given by `self.lij`.
+Warning: Use of mixing parameters is not thouroughly tested.
+
 
 #### Args:
 
 &nbsp;&nbsp;&nbsp;&nbsp; **sigma (1D array) :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  sigma-parameters [m]
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
 
 &nbsp;&nbsp;&nbsp;&nbsp; **Retunrs:** 
 
@@ -149,10 +144,6 @@ Compute interaction parameter $sigma$ for each particle pair, applying mixing pa
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Use of mixing parameters is not thouroughly tested.
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
-
 ## Deprecated methods
 
 Deprecated methods are not maintained, and may be removed in the future.
@@ -164,6 +155,4 @@ Deprecated methods are not maintained, and may be removed in the future.
 
 ### `get_avg_R(self, T, x)`
 
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; 
 
