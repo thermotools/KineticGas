@@ -6,7 +6,7 @@ permalink: /vcurrent/py_KineticGas_methods.html
 ---
 
 <!--- 
-Generated at: 2023-11-06T11:12:50.141583
+Generated at: 2023-11-06T11:55:20.756868
 This is an auto-generated file, generated using the script at KineticGas/pyUtils/markdown_from_docstrings.py
 The file is created by parsing the docstrings of the methods in the 
 py_KineticGas class. For instructions on how to use the parser routines, see the
@@ -227,7 +227,7 @@ See: Eq. (17-20) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
 
 &nbsp;&nbsp;&nbsp;&nbsp; **(ndarray or float) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Diffusion coefficients, shape varies based on options and number of components. Unit: [m^2 / s]
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Diffusion coefficients, shape varies based on options and number of components. Unit [m^2 / s]
 
 ### `interdiffusion_general(self, T, Vm, x, N=None)`
 Compute the 'Kinetic CoM diffusion coefficients', defined by
@@ -261,7 +261,7 @@ See: Eq. (19) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
 
 &nbsp;&nbsp;&nbsp;&nbsp; **(2D array) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Array of the (not independent) $D^{(K, m)}$ diffusion coefficients. Unit: [m^2 / s]
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Array of the (not independent) $D^{(K, m)}$ diffusion coefficients. Unit [m^2 / s]
 
 ### `resistivity_matrix(self, T, Vm, x, N=2, formulation='T-psi', frame_of_reference='CoM', use_thermal_conductivity=None)`
 Compute the resistivity matrix $R = L^{-1}$, for use in NET calculations. The Flux/Force formulation used in the NET
@@ -429,7 +429,7 @@ See: Eq. (23) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
 
 &nbsp;&nbsp;&nbsp;&nbsp; **(1D array) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Thermal diffusion coefficients. Unit: [mol m^2 / s]
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Thermal diffusion coefficients. Unit [mol m^2 / s]
 
 ### `thermal_diffusion_factor(self, T, Vm, x, N=None)`
 Compute the thermal diffusion factors $\alpha_{ij}$, defined by
@@ -466,7 +466,7 @@ See: Eq. (29) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
 
 &nbsp;&nbsp;&nbsp;&nbsp; **(2D array) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The thermal diffusion factors of the mixture. Unit: Dimensionless.
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The thermal diffusion factors of the mixture. Dimensionless.
 
 ### `thermal_diffusion_ratio(self, T, Vm, x, N=None)`
 Calculate the "independent" thermal diffusion ratios, $k_{T, i}$ defined by
@@ -511,7 +511,7 @@ See: Eq. (26-27) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
 
 &nbsp;&nbsp;&nbsp;&nbsp; **(1D array) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The thermal diffusion ratio of each component. Unit: Dimensionless.
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The thermal diffusion ratio of each component. Unit Dimensionless.
 
 ### `viscosity(self, T, Vm, x, N=None)`
 Compute the shear viscosity, $\eta$. For models initialized with `is_idealgas=True`, the shear viscosity
@@ -1070,11 +1070,7 @@ where $n_i$ is the molar density of species $i$.
 
 &nbsp;&nbsp;&nbsp;&nbsp; **(2D array) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The factors E[i][j] = $ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k \neq j}}$, where $n_i$
-
-&nbsp;&nbsp;&nbsp;&nbsp; **is the molar density of species $i$. Unit:** 
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  [1 / mol]
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The factors E[i][j] = $ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k \neq j}}$, where $n_i$is the molar density of species $i$. Unit [1 / mol]
 
 ### `get_P_factors(self, Vm, T, x)`
 Compute the factors $\Xi_i = \sum_j E_{ij}$, where $E_{ij}$ are the factors computed by `get_Eij`.
@@ -1098,7 +1094,7 @@ Compute the factors $\Xi_i = \sum_j E_{ij}$, where $E_{ij}$ are the factors comp
 
 &nbsp;&nbsp;&nbsp;&nbsp; **(1D array) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The factors $\Xi_i$, Unit: [1 / mol]
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The factors $\Xi_i$, Unit [1 / mol]
 
 ### `reshape_diffusion_coeff_vector(self, d)`
 The vector returned by `compute_diffusion_coeff_vector` contains the diffusive response function sonine

@@ -162,7 +162,7 @@ class py_KineticGas:
 
         Returns:
             (2D array) : The factors E[i][j] = $ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k \neq j}}$, where $n_i$
-                                is the molar density of species $i$. Unit: [1 / mol]
+                                is the molar density of species $i$. Unit [1 / mol]
         """
         if self._is_singlecomp is True:
             x = [0.5, 0.5]
@@ -195,7 +195,7 @@ class py_KineticGas:
             x (array_like) : Molar composition
 
         Returns:
-            (1D array) : The factors $\Xi_i$, Unit: [1 / mol]
+            (1D array) : The factors $\Xi_i$, Unit [1 / mol]
         """
         E = self.get_Eij(Vm, T, x)
         P = np.zeros(self.ncomps)
@@ -245,7 +245,7 @@ class py_KineticGas:
             solvent_idx (int, optional) : Index of component identified as solvent (only when using `frame_of_reference='solvent'`)
 
         Returns:
-            (ndarray or float) : Diffusion coefficients, shape varies based on options and number of components. Unit: [m^2 / s]
+            (ndarray or float) : Diffusion coefficients, shape varies based on options and number of components. Unit [m^2 / s]
         """
         D = self.interdiffusion_general(T, Vm, x, N=N)
         # psi = Transformation matrix from 'centre of mass' to 'frame_of_reference'
@@ -281,7 +281,7 @@ class py_KineticGas:
             N (int, optional) : Enskog approximation order
 
         Returns:
-            (2D array) : Array of the (not independent) $D^{(K, m)}$ diffusion coefficients. Unit: [m^2 / s]
+            (2D array) : Array of the (not independent) $D^{(K, m)}$ diffusion coefficients. Unit [m^2 / s]
         """
         x = np.array(x)
         if N is None:
@@ -332,7 +332,7 @@ class py_KineticGas:
             solvent_idx (int, optional) : Index of component identified as solvent (only when using `frame_of_reference='solvent'`)
 
         Returns:
-            (1D array) : Thermal diffusion coefficients. Unit: [mol m^2 / s]
+            (1D array) : Thermal diffusion coefficients. Unit [mol m^2 / s]
         """
         if N is None:
             N = self.default_N
@@ -416,7 +416,7 @@ class py_KineticGas:
             N (int, optional) : Enskog approximation order (>= 2)
 
         Returns:
-            (1D array) : The thermal diffusion ratio of each component. Unit: Dimensionless.
+            (1D array) : The thermal diffusion ratio of each component. Unit Dimensionless.
         """
         if N is None:
             N = self.default_N
@@ -481,7 +481,7 @@ class py_KineticGas:
             N (int, optional) : Enskog approximation order (>= 2)
 
         Returns:
-            (2D array) : The thermal diffusion factors of the mixture. Unit: Dimensionless.
+            (2D array) : The thermal diffusion factors of the mixture. Dimensionless.
         """
         if N is None:
             N = self.default_N

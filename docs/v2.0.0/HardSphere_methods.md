@@ -6,7 +6,7 @@ permalink: /v2.0.0/HardSphere_methods.html
 ---
 
 <!--- 
-Generated at: 2023-11-06T11:51:33.101045
+Generated at: 2023-11-06T11:55:42.748545
 This is an auto-generated file, generated using the script at KineticGas/pyUtils/markdown_from_docstrings.py
 The file is created by parsing the docstrings of the methods in the 
 HardSphere class. For instructions on how to use the parser routines, see the
@@ -76,6 +76,6 @@ x (array_like) : Molar composition
 Returns:
 (2D array) : The factors E[i][j] = $ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k
 eq j}}$, where $n_i$
-is the molar density of species $i$. Unit: [1 / mol]
+is the molar density of species $i$. Unit [1 / mol]
 
 
