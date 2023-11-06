@@ -1,12 +1,12 @@
 ---
 layout: default
-version: 
+version: 2.0.0
 title: Methods in the MieType class
 permalink: /v2.0.0/MieType_methods.html
 ---
 
 <!--- 
-Generated at: 2023-11-06T11:40:35.233471
+Generated at: 2023-11-06T11:51:33.100349
 This is an auto-generated file, generated using the script at KineticGas/pyUtils/markdown_from_docstrings.py
 The file is created by parsing the docstrings of the methods in the 
 MieType class. For instructions on how to use the parser routines, see the

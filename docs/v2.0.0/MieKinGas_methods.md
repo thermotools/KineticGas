@@ -1,12 +1,12 @@
 ---
 layout: default
-version: 
+version: 2.0.0
 title: Methods in the MieKinGas class
 permalink: /v2.0.0/MieKinGas_methods.html
 ---
 
 <!--- 
-Generated at: 2023-11-06T11:26:46.872811
+Generated at: 2023-11-06T11:51:33.100771
 This is an auto-generated file, generated using the script at KineticGas/pyUtils/markdown_from_docstrings.py
 The file is created by parsing the docstrings of the methods in the 
 MieKinGas class. For instructions on how to use the parser routines, see the

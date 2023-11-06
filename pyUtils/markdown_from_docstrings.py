@@ -81,7 +81,7 @@ import copy
 import inspect
 from warnings import warn
 from datetime import datetime
-from tools import remove_illegal_link_chars, check_is_changed, write_file, KINETICGAS_ROOT, MARKDOWN_DIR
+from tools import remove_illegal_link_chars, check_is_changed, write_file, KINETICGAS_ROOT, MARKDOWN_DIR, DOC_VERSION
 from pykingas.py_KineticGas import py_KineticGas
 from pykingas.MieType import MieType
 from pykingas.MieKinGas import MieKinGas
@@ -89,11 +89,16 @@ from pykingas.HardSphere import HardSphere
 
 
 def get_autogen_header(classname):
+    if DOC_VERSION.lower() != 'current':
+        version_tag = DOC_VERSION
+    else:
+        version_tag = ''
+
     header = f'''---
 layout: default
-version: 
+version: {version_tag}
 title: Methods in the {classname} class
-permalink: /vcurrent/{classname}_methods.html
+permalink: /v{DOC_VERSION.lower()}/{classname}_methods.html
 ---\n\n'''
     header += '<!--- \n'
     header += 'Generated at: ' + datetime.today().isoformat() + '\n'
