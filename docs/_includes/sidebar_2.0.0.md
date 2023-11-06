@@ -8,6 +8,7 @@
 * [Advanced usage](/KineticGas/v2.0.0/advanced.html)
     * [Adding new fluids](/KineticGas/v2.0.0/advanced.html#Modifying-and-adding-fluids) 
     * [Custom interaction potentials](/KineticGas/v2.0.0/advanced.html#Implementing-new-potentials)
+* [Bug Tracker](/KineticGas/v2.0.0/bugs.html)
 * [Documentation](/KineticGas/v2.0.0/method_docs.html)
   * [`py_KineticGas` - The core of the python interface](/KineticGas/v2.0.0/py_KineticGas_methods.html)
   * [`MieType` - Parent for Mie-Type models](/KineticGas/v2.0.0/MieType_methods.html)
