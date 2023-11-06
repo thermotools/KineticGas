@@ -6,7 +6,8 @@ Purpose: Wrapper for the HardSphere class.
 import numpy as np
 from numpy import pi
 from scipy.constants import Avogadro, Boltzmann as kB
-from pykingas import cpp_HardSphere, KineticGas
+from pykingas import cpp_HardSphere
+from pykingas.py_KineticGas import py_KineticGas
 
 def HS_pressure(rho, T, x, sigma, chi):
     p = rho * kB * T
@@ -39,7 +40,7 @@ def mu_func(rho, T, x, sigma, chi):
     return mu
 
 
-class HardSphere(KineticGas):
+class HardSphere(py_KineticGas):
 
     def __init__(self, comps, mole_weights=None, sigma=None,
                  N=4, is_idealgas=False, parameter_ref='default'):
@@ -47,7 +48,7 @@ class HardSphere(KineticGas):
         If parameters are explicitly supplied through optional arguments, these will be used instead of those in the database.
         To supply specific parameters for only some components, give `None` for the components that should use the database
         value
-
+        &&
         Args:
             comps (str) : Comma-separated list of components
             mole_weights (1D array) : Molar weights [g/mol]
@@ -74,10 +75,13 @@ class HardSphere(KineticGas):
         self.cpp_kingas = cpp_HardSphere(self.mole_weights, self.sigma, is_idealgas)
 
     def get_Eij(self, Vm, T, x):
-        """Utility
-        Compute the factors $ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k \neq j}}$, where $n_i$ is the molar density
-        of species $i$.
+        r"""Utility
+        Compute the factors
 
+        $$ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k \neq j}}, $$
+
+        where $n_i$ is the molar density of species $i$.
+        &&
         Args:
             Vm (float) : Molar volume [m3 / mol]
             T (float) : Temperature [K]
@@ -85,7 +89,7 @@ class HardSphere(KineticGas):
 
         Returns:
             (2D array) : The factors E[i][j] = $ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k \neq j}}$, where $n_i$
-                                is the molar density of species $i$. Unit: [1 / mol]
+                                is the molar density of species $i$. Unit [1 / mol]
         """
         x = np.array(x)
         rho = Avogadro / Vm

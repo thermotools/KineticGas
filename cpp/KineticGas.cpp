@@ -22,9 +22,6 @@
 #define _LIBCPP_DEBUG 1
 #endif
 
-#define pprintf(flt) std::printf("%f", flt); std::printf("\n")
-#define pprinti(i) std::printf("%i", i); std::printf("\n")
-
 // --------------------------------------------------------------------------------------------------- //
 // -------------------------------Constructor and helper functions------------------------------------ //
 
@@ -163,8 +160,8 @@ std::vector<double> KineticGas::get_conductivity_vector(double rho, double T, co
     std::vector<double> K = get_K_factors(rho, T, x);
     std::vector<double> l(Ncomps * N, 0.);
     l[1] = x[0] * K[0] * 4. / (5. * BOLTZMANN); // Lambda_1^{(p > 0} block
-    for (int i = 1; i < N; i++){
-        l[N * i + i] = x[i] * K[i] * 4. / (5. * BOLTZMANN); // Lambda_{i > 1} block
+    for (int i = 1; i < Ncomps; i++){
+        l[N + (Ncomps - 1) + (i - 1)] = x[i] * K[i] * 4. / (5. * BOLTZMANN); // Lambda_{i > 1} block
     }
     return l;
 }

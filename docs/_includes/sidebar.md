@@ -1,5 +1,5 @@
 * [Getting started - In Python](/KineticGas/vcurrent/getting_started_py.html)
-    * [Initialising an equation of state](/KineticGas/vcurrent/getting_started_py.html#initialising-a-model)
+    * [Initialising a Model](/KineticGas/vcurrent/getting_started_py.html#initialising-a-model)
     * [Doing calculations](/KineticGas/vcurrent/getting_started_py.html#making-predictions)
     * [Thermal Conductivity](/KineticGas/vcurrent/getting_started_py.html#thermal-conductivity)
     * [Viscosity](/KineticGas/vcurrent/getting_started_py.html#shear-viscosity)

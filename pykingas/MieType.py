@@ -8,11 +8,10 @@ Usage : Accepts a list of parameter dicts as the second argument to the initiali
 import numpy as np
 from scipy.constants import Boltzmann, Avogadro
 from scipy.integrate import quad
-from pykingas import KineticGas
-from copy import deepcopy
+from pykingas.py_KineticGas import py_KineticGas
 from warnings import warn
 
-class MieType(KineticGas):
+class MieType(py_KineticGas):
 
     def __init__(self, comps, potential,
                  mole_weights=None, sigma=None, eps_div_k=None,
@@ -22,7 +21,7 @@ class MieType(KineticGas):
         """Constructor
         If optional parameters are supplied, these are used instead of the parameters found in the database. To supply specific parameters for only some components, give `None` for the components that should use the database
         value
-
+        &&
         Args:
             comps (str) : Comma-separated list of components
             mole_weights (optional, 1D array) : Molar masses [g/mol]
@@ -102,6 +101,7 @@ class MieType(KineticGas):
     def get_avg_R(self, T, x):
         """Deprecated
         """
+        warn("This method will be removed. Does not do anything exciting.", DeprecationWarning)
         v_bar_1 = np.sqrt(3 * Boltzmann * T / self.mole_weights[0]) * np.sqrt(
             self.m0 * self.M[0] * self.M[1] / (2 * Boltzmann * T))
         v_bar_2 = np.sqrt(3 * Boltzmann * T / self.mole_weights[1]) * np.sqrt(
@@ -121,7 +121,7 @@ class MieType(KineticGas):
         """Utility
         Compute matrix of well-depths, given well depth of each component
         Warning: Use of mixing parameters is not thouroughly tested.
-
+        &&
         Args:
             eps_div_k (1d array) : Well depth parameter of each component
             kij (2d array) : Not in use, internal parameter `self.kij` is used for mixing.
@@ -138,7 +138,7 @@ class MieType(KineticGas):
         """Utility
         Compute interaction parameter $sigma$ for each particle pair, applying mixing parameters given by `self.lij`.
         Warning: Use of mixing parameters is not thouroughly tested.
-
+        &&
         Args:
             sigma (1D array) : sigma-parameters [m]
 
@@ -156,7 +156,7 @@ class MieType(KineticGas):
     def get_lambda_matrix(self, lambdas, lij):
         """Utility
         Compute pair-interaction $\lambda_r$ parameters, apply mixing parameter.
-
+        &&
         Args:
             lambdas (1d array) : Repulsive exponents for each pure-component interaction potential
             lij (1d array) : Mixing parameters
