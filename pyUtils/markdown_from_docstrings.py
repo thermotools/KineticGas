@@ -11,12 +11,12 @@ Usage : Current functionality is designed to parse the docstrings of a given cla
         def myfunc(self, p1, p2, p3, p4=None, p5=<something>, ...):
             """Section Name
             Description of what this function does (a kind of header). We can write lots of stuff here
-            NOTE the double lineshift here
-
+            NOTE the double ampersand here
+            &&
             Args:
-                 p1 (int) : The lineshift before 'Args' is necessary.
+                 p1 (int) : The double ampersand before 'Args' is necessary.
                  p2 (float) : The colons here are also necessary.
-                 p3 (bool) : SomethingSomething
+                 p3 (bool) : If you put colons in the docstring that will mess stuff up.
                  p4 (Optional, list) : etc.
             Returns:
                 (float) : The colon here is also necessary.
@@ -118,10 +118,10 @@ def to_markdown(methods):
     """
     md_text = ''
     for name, meth in methods:
-        docparts = meth.__doc__.split('\n\n')
+        docparts = meth.__doc__.split('&&')
         header_lines = [line.strip() for line in docparts[0].split('\n')]
-        header = ' '.join(header_lines[1:]) # Cutting out the section identifier
-        header.replace('\n', ' ')
+        header = '\n'.join(header_lines[1:]) # Cutting out the section identifier
+        # header.replace('\n', ' ')
 
         if len(docparts) > 1:
             content = '\n\n'.join(docparts[1:])
@@ -131,21 +131,21 @@ def to_markdown(methods):
         content_lines = [line.strip() for line in content.split('\n')]
 
         md_text += '### `' + name + str(inspect.signature(meth)) + '`\n'
-        md_text += header + '\n\n'
+        md_text += header
 
         pad = '&nbsp;' * 4 + ' '
         endl = '\n\n'
         for line in content_lines:
             if ('args:' in line.lower()) or ('returns:' in line.lower()) or ('raises:' in line.lower()):
-                md_text += '#### ' + line + endl
+                md_text += endl + '#### ' + line
 
             elif ':' in line:
                 line = line.split(':')
-                md_text += pad + '**' + line[0] + ':** ' + endl
-                md_text += 2 * pad + ':'.join(line[1:]) + endl
+                md_text += endl + pad + '**' + line[0] + ':** ' + endl
+                md_text += 2 * pad + ':'.join(line[1:])
             else:
-                md_text += 2 * pad + line + endl
-
+                md_text += line.strip()
+        md_text += endl
     return md_text
 
 def split_methods_by_section(sections, methods):
