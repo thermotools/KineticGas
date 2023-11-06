@@ -24,11 +24,9 @@ class bcolors: # For fancy (readable) printing during tests
 args = sys.argv
 
 if '-debug' in args or 'debug' in args or '-d' in args:
-    from . import KineticGas_d
-    __cpp_Module__ = KineticGas_d
+    from . import KineticGas_d as __cpp_Module__
 else:
-    from . import KineticGas_r
-    __cpp_Module__ = KineticGas_r
+    from . import KineticGas_r as __cpp_Module__
 
 # Expose everything in the __cpp_Module__ through the pykingas module
 for _attr in dir(__cpp_Module__):
