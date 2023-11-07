@@ -1,0 +1,47 @@
+\section{Ortiz de Zárate}
+
+Ortiz de Zárate showed that one may define the diffusion- and thermal diffusion coefficients such that they are equivalent in the centre of mass (CoM) and centre of moles (CoN) frame of reference (FoR). We denote these frame-independent coefficients as $\Vec{D}_T^{(z)}$ and $\Mat{D}^{(z)}$, and they are defined through
+\begin{equation}
+    \begin{pmatrix}J_1 \\ J_2 \\ \vdots \\ J_{N-1} \end{pmatrix}^{(n, n)} = - c\left\{
+    \Mat{X}
+    \begin{pmatrix}
+    D_{T,1} \\ D_{T,2} \\ \vdots \\ D_{T,N-1}    
+    \end{pmatrix}^{(z)} \nabla T +
+    \Mat{X}
+    \begin{bmatrix}
+    D_{11} & D_{12} & \hdots & D_{1,N-1} \\
+    D_{21} & D_{22} & \hdots & D_{2,N-1} \\
+    \vdots & \vdots & \ddots & \vdots \\
+    D_{N-1,1} & D_{N-1,2} & \hdots & D_{N-1,N-1}
+    \end{bmatrix}^{(z)}
+    \Mat{X}^{-1}
+    \begin{pmatrix}\nabla x_1 \\ \nabla x_2 \\ \vdots \\ \nabla x_{N-1} \end{pmatrix}
+    \right\}
+    \label{eq:zarate_definition}
+\end{equation}
+or, more compactly
+\begin{equation}
+    \Vec{J}^{(n, n)} = c \left\{ \Mat{X} \Vec{D}_T^{(z)} \nabla T + \Mat{X} \Mat{D}^{(z)} \Mat{X}^{-1} \nabla \Vec{x} \right\},
+\end{equation}
+where we have arbitrarily chosen the last component as the dependent component for ease of notation, and $\Mat{X}$ is the matrix
+\begin{equation}
+    X_{ij} = \delta_{ij} x_i - x_i x_j.
+\end{equation}
+Ortiz de Zárate shows that these coefficients simultaneously fulfill
+\begin{equation}
+    \Vec{J}^{(m, m)} = \rho \left\{ \Mat{W} \Vec{D}_T^{(z)} \nabla T + \Mat{W} \Mat{D}^{(z)} \Mat{W}^{-1} \nabla \Vec{w} \right\},
+\end{equation}
+where $w$ denote the mass fractions, $\rho$ denotes the mass density, and $\Mat{W}$ is the matrix
+\begin{equation}
+    W_{ij} = \delta_{ij} w_i - w_i w_j.
+\end{equation}
+for details on how these are related to other diffusion coefficients, see the memo on binary limits.
+
+To compute the coefficients $\Vec{D}_T^{(z)}$ and $\Mat{D}^{(z)}$, use the option \code{frame\_of\_reference='zarate'}. For direct access to the coefficients
+\begin{equation}
+    \begin{split}
+        \Mat{D}^{(x)} &= \Mat{X} \Mat{D}^{(z)} \Mat{X}^{-1}, \quad \text{and} \\
+        \Mat{D}^{(w)} &= \Mat{W} \Mat{D}^{(z)} \Mat{W}^{-1}
+    \end{split}
+\end{equation}
+use the options \code{frame\_of\_reference='zarate\_x'} and \code{frame\_of\_reference='zarate\_w'}
