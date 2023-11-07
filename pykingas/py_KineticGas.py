@@ -256,8 +256,8 @@ class py_KineticGas:
                 Defaults to last component, except when `frame_of_reference='solvent'`, in which case default is equal
                 to `solvent_idx`.
             frame_of_reference (str, optional) : Which frame of reference the diffusion coefficients apply to. Default
-                is 'CoN'. Can be 'CoN' (molar FoR), 'CoM' (barycentric FoR), 'solvent' (solvent FoR), 'zarate' (See: Memo on
-                definitions of the diffusion coefficient), 'zarate_x' ($D^{(x)}$ as defined by Ortiz de Zárate, doi: 10.1140/epje/i2019-11803-2)
+                is 'CoN'. Can be 'CoN' (molar FoR), 'CoM' (barycentric FoR), 'solvent' (solvent FoR), 'zarate' (See Memo on
+                definitions of the diffusion coefficient), 'zarate_x' ($D^{(x)}$ as defined by Ortiz de Zárate, doi 10.1140/epje/i2019-11803-2)
                 'zarate_w' ($D^{(w)}$ as defined by Ortiz de Zárate).
             solvent_idx (int, optional) : Index of component identified as solvent (only when using `frame_of_reference='solvent'`)
 
@@ -301,8 +301,8 @@ class py_KineticGas:
         """TV-property
         Compute the 'Kinetic CoM diffusion coefficients', defined by
         $J_i^{(n, m)} = - \sum_j D_{ij} \nabla n_j,$ $\nabla T = \nabla p = F_k = 0$ \forall $k$
-        **For end-users, see: `interdiffusion`**
-        See: Eq. (19) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+        **For end-users, see `interdiffusion`**
+        See Eq. (19) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
         &&
         Args:
             T (float) : Temperature (K)
@@ -347,7 +347,7 @@ class py_KineticGas:
         $$ J_i^{(n, n)} = D_{T,i} \nabla \ln T - \sum_{j \neq l} D_{ij} \nabla n_j, \nabla p = F_k = 0 \forall k $$
 
         where $l$ is the index of the dependent molar density gradient, use the 'use_independent' and 'dependent_idx' kwargs.
-        See: Eq. (23) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+        See Eq. (23) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
         &&
         Args:
             T (float) : Temperature [K]
@@ -464,7 +464,7 @@ class py_KineticGas:
         $$ \sum_i x_i k_{T,i} = 1 $$
 
         The thermal diffusion ratios are independent of the frame of reference.
-        See: Eq. (26-27) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+        See Eq. (26-27) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
         &&
         Args:
             T (float) : Temperature [K]
@@ -529,7 +529,7 @@ class py_KineticGas:
         $$ \nabla \ln (n_i / n_j) = - \alpha_{ij} \nabla \ln T $$
 
         when the mass fluxes vanish. The thermal diffusion factors are independent of the frame of reference.
-        See: Eq. (29) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+        See Eq. (29) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
         &&
         Args:
             T (float) : Temperature [K]
@@ -962,7 +962,7 @@ class py_KineticGas:
 
     def get_zarate_X_matr(self, x, dependent_idx):
         """FOR-Transform
-        Compute the matrix $X$ as defined by Zárate. See: (Definition of frame-invariant thermodiffusion and Soret coefficients for ternary mixtures)
+        Compute the matrix $X$ as defined by Zárate. See (Definition of frame-invariant thermodiffusion and Soret coefficients for ternary mixtures)
         and memo on diffusion coefficient definitions.
         &&
         Args:
@@ -991,7 +991,7 @@ class py_KineticGas:
 
     def get_zarate_W_matr(self, x, dependent_idx):
         """FOR-Transform
-        Compute the matrix $W$ as defined by Zárate. See: (Definition of frame-invariant thermodiffusion and Soret coefficients for ternary mixtures)
+        Compute the matrix $W$ as defined by Zárate. See (Definition of frame-invariant thermodiffusion and Soret coefficients for ternary mixtures)
         and memo on diffusion coefficient definitions.
         &&
         Args:
