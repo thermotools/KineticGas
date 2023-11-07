@@ -83,12 +83,14 @@ import copy
 import inspect
 from warnings import warn
 from datetime import datetime
-from tools import remove_illegal_link_chars, check_is_changed, write_file, KINETICGAS_ROOT, MARKDOWN_DIR, DOC_VERSION
+from tools import remove_illegal_link_chars, write_file, get_root_and_markdown_dir
 from pykingas.py_KineticGas import py_KineticGas
 from pykingas.MieType import MieType
 from pykingas.MieKinGas import MieKinGas
 from pykingas.HardSphere import HardSphere
 
+DOC_VERSION = 'current'
+KINETICGAS_ROOT, MARKDOWN_DIR = get_root_and_markdown_dir(DOC_VERSION)
 
 def get_autogen_header(classname):
     if DOC_VERSION.lower() != 'current':

@@ -6,7 +6,7 @@ permalink: /vcurrent/py_KineticGas_methods.html
 ---
 
 <!--- 
-Generated at: 2023-11-06T12:02:00.294524
+Generated at: 2023-11-07T12:20:01.915091
 This is an auto-generated file, generated using the script at KineticGas/pyUtils/markdown_from_docstrings.py
 The file is created by parsing the docstrings of the methods in the 
 py_KineticGas class. For instructions on how to use the parser routines, see the
@@ -41,6 +41,8 @@ The `py_KineticGas` class, found in `pykingas/py_KineticGas.py`, is the core of 
     * [get_com_2_for_matr](#get_com_2_for_matrself-t-vm-x-for-**kwargs)
     * [get_com_2_solv_matr](#get_com_2_solv_matrself-x-solvent_idx)
     * [get_solv_2_solv_matr](#get_solv_2_solv_matrself-x-prev_solv_idx-new_solv_idx)
+    * [get_zarate_W_matr](#get_zarate_w_matrself-x-dependent_idx)
+    * [get_zarate_X_matr](#get_zarate_x_matrself-x-dependent_idx)
   * [Interfaces to C++ methods](#interfaces-to-c++-methods)
     * [get_conductivity_matrix](#get_conductivity_matrixself-particle_density-t-mole_fracs-nnone)
     * [get_conductivity_vector](#get_conductivity_vectorself-particle_density-t-mole_fracs-n)
@@ -217,7 +219,15 @@ See: Eq. (17-20) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
 
 &nbsp;&nbsp;&nbsp;&nbsp; **frame_of_reference (str, optional) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Which frame of reference the diffusion coefficients apply to. Defaultis 'CoN'. Can be 'CoN' (molar FoR), 'CoM' (barycentric FoR) or 'solvent' (solvent FoR). See the 'solvent_idx' kwarg for information on selecting the solvent index.  See `get_com_2_for` for more information. 
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Which frame of reference the diffusion coefficients apply to. Default
+
+&nbsp;&nbsp;&nbsp;&nbsp; **is 'CoN'. Can be 'CoN' (molar FoR), 'CoM' (barycentric FoR), 'solvent' (solvent FoR), 'zarate' (See:** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Memo on
+
+&nbsp;&nbsp;&nbsp;&nbsp; **definitions of the diffusion coefficient), 'zarate_x' ($D^{(x)}$ as defined by Ortiz de Zárate, doi:** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  10.1140/epje/i2019-11803-2)'zarate_w' ($D^{(w)}$ as defined by Ortiz de Zárate). 
 
 &nbsp;&nbsp;&nbsp;&nbsp; **solvent_idx (int, optional) :** 
 
@@ -419,7 +429,11 @@ See: Eq. (23) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
 
 &nbsp;&nbsp;&nbsp;&nbsp; **frame_of_reference (str, optional) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  What frame of reference the molar fluxes are measured in. See`get_com_2_for` for valid options. 
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  What frame of reference the coefficients apply to. Valid options are`'CoM'` (centre of mass / barycentric), `'CoN'` (centre of moles), `'CoV'` (centre of volume) `'solvent'` (together with `solvent_idx`) or `'zarate'`, for the coefficients as 
+
+&nbsp;&nbsp;&nbsp;&nbsp; **defined by Ortiz de Zarate (doi:** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  10.1140/epje/i2019-11803-2).
 
 &nbsp;&nbsp;&nbsp;&nbsp; **solvent_idx (int, optional) :** 
 
@@ -591,6 +605,8 @@ Generate matrices for Frame of Reference transformations. See the supportingmate
     * [get_com_2_for_matr](#get_com_2_for_matrself-t-vm-x-for-**kwargs)
     * [get_com_2_solv_matr](#get_com_2_solv_matrself-x-solvent_idx)
     * [get_solv_2_solv_matr](#get_solv_2_solv_matrself-x-prev_solv_idx-new_solv_idx)
+    * [get_zarate_W_matr](#get_zarate_w_matrself-x-dependent_idx)
+    * [get_zarate_X_matr](#get_zarate_x_matrself-x-dependent_idx)
 
 
 ### `get_com_2_con_matr(self, x)`
@@ -708,6 +724,48 @@ Get solvent-to-solvent frame of reference transformation matrix
 &nbsp;&nbsp;&nbsp;&nbsp; **2d array :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The transformation matrix $\Psi^{n_k \leftmapsto n_l}$, where $k$ is `new_solv_idx` and $l$ is `prev_solv_idx`. 
+
+### `get_zarate_W_matr(self, x, dependent_idx)`
+Compute the matrix $W$ as defined by Zárate. See: (Definition of frame-invariant thermodiffusion and Soret coefficients for ternary mixtures)
+and memo on diffusion coefficient definitions.
+ 
+
+#### Args:
+
+&nbsp;&nbsp;&nbsp;&nbsp; **x (array_like) :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Molar composition [-]
+
+&nbsp;&nbsp;&nbsp;&nbsp; **dependent_idx (int) :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Index of the dependent species
+
+#### Returns:
+
+&nbsp;&nbsp;&nbsp;&nbsp; **2d array :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The transformation matrix $W$ 
+
+### `get_zarate_X_matr(self, x, dependent_idx)`
+Compute the matrix $X$ as defined by Zárate. See: (Definition of frame-invariant thermodiffusion and Soret coefficients for ternary mixtures)
+and memo on diffusion coefficient definitions.
+ 
+
+#### Args:
+
+&nbsp;&nbsp;&nbsp;&nbsp; **x (array_like) :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Molar composition [-]
+
+&nbsp;&nbsp;&nbsp;&nbsp; **dependent_idx (int) :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Index of the dependent species
+
+#### Returns:
+
+&nbsp;&nbsp;&nbsp;&nbsp; **2d array :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The transformation matrix $X$ 
 
 ## Interfaces to C++ methods
 

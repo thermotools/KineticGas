@@ -4,6 +4,11 @@ DOC_VERSION = 'Current'
 KINETICGAS_ROOT = os.path.dirname(__file__) + '/../'
 MARKDOWN_DIR = KINETICGAS_ROOT + 'docs/v' + DOC_VERSION + '/'
 
+def get_root_and_markdown_dir(version):
+    root = os.path.dirname(__file__) + '/../'
+    md_dir = root + 'docs/v' + version + '/'
+    return root, md_dir
+
 def remove_illegal_link_chars(link_str):
     """
     Remove characters that are illegal in url-links from the string 'link_str', and return the new string.

@@ -4,6 +4,7 @@ Purpose: Parent class for python-wrappers to the KineticGas models. This class t
         and the final computations that yield transport coefficients, as well as reading fluid parameters from
         the 'fluids/XX.json' files.
 '''
+import copy
 
 import numpy as np
 import json
@@ -20,6 +21,21 @@ def k_delta(i, j): # Kronecker delta
     if i == j:
         return 1
     return 0
+
+def compress_diffusion_matr(M, dependent_idx):
+    M_indep = np.empty((len(M) - 1, len(M) - 1))
+    M_i = 0
+    for i in range(len(M)):
+        if i == dependent_idx:
+            continue
+        M_j = 0
+        for j in range(len(M)):
+            if j == dependent_idx:
+                continue
+            M_indep[M_i][M_j] = M[i][j]
+            M_j += 1
+        M_i += 1
+    return M_indep
 
 class IdealGas:
     """
@@ -240,8 +256,9 @@ class py_KineticGas:
                 Defaults to last component, except when `frame_of_reference='solvent'`, in which case default is equal
                 to `solvent_idx`.
             frame_of_reference (str, optional) : Which frame of reference the diffusion coefficients apply to. Default
-                is 'CoN'. Can be 'CoN' (molar FoR), 'CoM' (barycentric FoR) or 'solvent' (solvent FoR).
-                See the 'solvent_idx' kwarg for information on selecting the solvent index.  See `get_com_2_for` for more information.
+                is 'CoN'. Can be 'CoN' (molar FoR), 'CoM' (barycentric FoR), 'solvent' (solvent FoR), 'zarate' (See: Memo on
+                definitions of the diffusion coefficient), 'zarate_x' ($D^{(x)}$ as defined by Ortiz de Zárate, doi: 10.1140/epje/i2019-11803-2)
+                'zarate_w' ($D^{(w)}$ as defined by Ortiz de Zárate).
             solvent_idx (int, optional) : Index of component identified as solvent (only when using `frame_of_reference='solvent'`)
 
         Returns:
@@ -250,6 +267,18 @@ class py_KineticGas:
         D = self.interdiffusion_general(T, Vm, x, N=N)
         # psi = Transformation matrix from 'centre of mass' to 'frame_of_reference'
         # get_com_2_for_matr() dispatches the call to specific functions for different frames of reference.
+        if frame_of_reference == 'zarate_x':
+            D = self.interdiffusion(T, Vm, x, N=N, frame_of_reference='CoN', dependent_idx=dependent_idx, use_independent=True)
+            return compress_diffusion_matr(D, dependent_idx)
+        elif frame_of_reference == 'zarate':
+            X = self.get_zarate_X_matr(x, dependent_idx)
+            D_x = self.interdiffusion(T, Vm, x, N=N, frame_of_reference='zarate_x', dependent_idx=dependent_idx)
+            return X @ D_x @ np.linalg.inv(X)
+        elif frame_of_reference == 'zarate_w':
+            W = self.get_zarate_W_matr(x, dependent_idx)
+            D_z = self.interdiffusion(T, Vm, x, N=N, frame_of_reference='zarate', dependent_idx=dependent_idx)
+            return W @ D_z @ np.linalg.inv(W)
+
         psi = self.get_com_2_for_matr(T, Vm, x, frame_of_reference, solvent_idx=solvent_idx)
         D = psi @ D
         if use_independent is True:
@@ -259,9 +288,10 @@ class py_KineticGas:
                 else:
                     dependent_idx = self.ncomps - 1
             P = self.get_P_factors(Vm, T, x)
+            D_dep = copy.deepcopy(D)
             for i in range(self.ncomps):
                 for j in range(self.ncomps):
-                    D[i, j] -= (P[j] / P[dependent_idx]) * D[i, dependent_idx]
+                    D[i, j] -= (P[j] / P[dependent_idx]) * D_dep[i, dependent_idx]
             if use_binary is True and self.ncomps == 2:
                 independent_idx = 1 - dependent_idx
                 return D[independent_idx][independent_idx] # Return the independent fluxes response to the independent force
@@ -327,8 +357,10 @@ class py_KineticGas:
             use_independent (bool, optional) : Return diffusion coefficients for independent set of forces.
             dependent_idx (int, optional) : Index of the dependent molar density gradient (only if use_dependent=True).
                                 Defaults to last component.
-            frame_of_reference (str, optional) : What frame of reference the molar fluxes are measured in. See
-                `get_com_2_for` for valid options.
+            frame_of_reference (str, optional) : What frame of reference the coefficients apply to. Valid options are
+                                        `'CoM'` (centre of mass / barycentric), `'CoN'` (centre of moles), `'CoV'` (centre of volume)
+                                        `'solvent'` (together with `solvent_idx`) or `'zarate'`, for the coefficients as
+                                        defined by Ortiz de Zarate (doi: 10.1140/epje/i2019-11803-2).
             solvent_idx (int, optional) : Index of component identified as solvent (only when using `frame_of_reference='solvent'`)
 
         Returns:
@@ -342,6 +374,12 @@ class py_KineticGas:
             warnings.warn('Thermal diffusion is a 2nd order phenomena, cannot be computed for N < 2 (got N = '
                           + str(N) + ')', RuntimeWarning, stacklevel=2)
             return np.full(self.ncomps, np.nan)
+
+        use_zarate = False
+        if frame_of_reference.lower() == 'zarate':
+            frame_of_reference = 'CoN'
+            use_zarate = True
+            use_independent = True
 
         particle_density = Avogadro / Vm
         d = self.compute_diffusion_coeff_vector(particle_density, T, x, N=N)
@@ -386,7 +424,26 @@ class py_KineticGas:
 
                 DT[i] += (Dij[i, dependent_idx] / P[dependent_idx]) * tmp
 
-        return DT / Avogadro # Dividing by Avogadros number to convert unit from particle number to mole number
+        DT /= Avogadro # Dividing by Avogadros number to convert unit from particle number to mole number
+        if use_zarate is True:
+            D = self.interdiffusion(T, Vm, x, N=N, use_independent=True, dependent_idx=dependent_idx, frame_of_reference='CoN',
+                                    use_binary=False)
+            DT_indep = np.empty(self.ncomps - 1)
+            D_indep = compress_diffusion_matr(D, dependent_idx)
+            DT_idx = 0
+            x_factor = np.empty(self.ncomps - 1)
+
+            for i in range(self.ncomps):
+                if i == dependent_idx:
+                    continue
+                x_factor[DT_idx] = x[i]
+                DT_indep[DT_idx] = DT[i]
+                DT_idx += 1
+            X = self.get_zarate_X_matr(x, dependent_idx)
+            c = 1 / Vm
+            DT = np.linalg.solve(- c * X, (DT_indep + c * D_indep @ x_factor) / T)
+
+        return DT
 
     def thermal_diffusion_ratio(self, T, Vm, x, N=None):
         r"""TV-property
@@ -902,6 +959,49 @@ class py_KineticGas:
                 psi[i, j] -= x[i] * (k_delta(j, new_solv_idx) - k_delta(j, prev_solv_idx) * k_delta(k, new_solv_idx)) / \
                              x[new_solv_idx]
         return psi
+
+    def get_zarate_X_matr(self, x, dependent_idx):
+        """FOR-Transform
+        Compute the matrix $X$ as defined by Zárate. See: (Definition of frame-invariant thermodiffusion and Soret coefficients for ternary mixtures)
+        and memo on diffusion coefficient definitions.
+        &&
+        Args:
+            x (array_like) : Molar composition [-]
+            dependent_idx (int) : Index of the dependent species
+        Returns:
+            2d array : The transformation matrix $X$
+        """
+        while dependent_idx < 0:
+            dependent_idx += self.ncomps
+
+        X = np.zeros((self.ncomps - 1, self.ncomps - 1))
+        i_idx = 0
+        for i in range(self.ncomps):
+            if i == dependent_idx:
+                continue
+            X[i_idx][i_idx] = x[i]
+            j_idx = 0
+            for j in range(self.ncomps):
+                if j == dependent_idx:
+                    continue
+                X[i_idx][j_idx] -= x[i] * x[j]
+                j_idx += 1
+            i_idx += 1
+        return X
+
+    def get_zarate_W_matr(self, x, dependent_idx):
+        """FOR-Transform
+        Compute the matrix $W$ as defined by Zárate. See: (Definition of frame-invariant thermodiffusion and Soret coefficients for ternary mixtures)
+        and memo on diffusion coefficient definitions.
+        &&
+        Args:
+            x (array_like) : Molar composition [-]
+            dependent_idx (int) : Index of the dependent species
+        Returns:
+            2d array : The transformation matrix $W$
+        """
+        wt_fracs = x * self.mole_weights / sum(x * self.mole_weights)
+        return self.get_zarate_X_matr(wt_fracs, dependent_idx)
 
     ######################################################
     #         Interface to top-level C++ methods         #
