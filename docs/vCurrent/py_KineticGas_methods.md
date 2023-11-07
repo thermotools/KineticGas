@@ -6,7 +6,7 @@ permalink: /vcurrent/py_KineticGas_methods.html
 ---
 
 <!--- 
-Generated at: 2023-11-07T12:49:13.638756
+Generated at: 2023-11-07T12:52:48.301205
 This is an auto-generated file, generated using the script at KineticGas/pyUtils/markdown_from_docstrings.py
 The file is created by parsing the docstrings of the methods in the 
 py_KineticGas class. For instructions on how to use the parser routines, see the
@@ -235,6 +235,7 @@ See: Eq. (17-20) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
 Compute the 'Kinetic CoM diffusion coefficients', defined by
 
 $$ J_i^{(n, m)} = - \sum_j D_{ij} \nabla n_j, \nabla T = \nabla p = F_k = 0 \forall k $$
+
 **For end-users, see `interdiffusion`**
 See Eq. (19) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
  

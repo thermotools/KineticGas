@@ -311,6 +311,7 @@ class py_KineticGas:
         Compute the 'Kinetic CoM diffusion coefficients', defined by
 
         $$ J_i^{(n, m)} = - \sum_j D_{ij} \nabla n_j, \nabla T = \nabla p = F_k = 0 \forall k $$
+
         **For end-users, see `interdiffusion`**
         See Eq. (19) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
         &&
