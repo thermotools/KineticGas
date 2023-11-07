@@ -360,7 +360,7 @@ class py_KineticGas:
             frame_of_reference (str, optional) : What frame of reference the coefficients apply to. Valid options are
                                         `'CoM'` (centre of mass / barycentric), `'CoN'` (centre of moles), `'CoV'` (centre of volume)
                                         `'solvent'` (together with `solvent_idx`) or `'zarate'`, for the coefficients as
-                                        defined by Ortiz de Zarate (doi: 10.1140/epje/i2019-11803-2).
+                                        defined by Ortiz de Zarate (doi 10.1140/epje/i2019-11803-2).
             solvent_idx (int, optional) : Index of component identified as solvent (only when using `frame_of_reference='solvent'`)
 
         Returns:

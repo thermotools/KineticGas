@@ -6,7 +6,7 @@ permalink: /vcurrent/py_KineticGas_methods.html
 ---
 
 <!--- 
-Generated at: 2023-11-07T12:25:58.939869
+Generated at: 2023-11-07T12:27:42.544721
 This is an auto-generated file, generated using the script at KineticGas/pyUtils/markdown_from_docstrings.py
 The file is created by parsing the docstrings of the methods in the 
 py_KineticGas class. For instructions on how to use the parser routines, see the
@@ -421,11 +421,7 @@ See Eq. (23) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
 
 &nbsp;&nbsp;&nbsp;&nbsp; **frame_of_reference (str, optional) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  What frame of reference the coefficients apply to. Valid options are`'CoM'` (centre of mass / barycentric), `'CoN'` (centre of moles), `'CoV'` (centre of volume) `'solvent'` (together with `solvent_idx`) or `'zarate'`, for the coefficients as 
-
-&nbsp;&nbsp;&nbsp;&nbsp; **defined by Ortiz de Zarate (doi:** 
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  10.1140/epje/i2019-11803-2).
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  What frame of reference the coefficients apply to. Valid options are`'CoM'` (centre of mass / barycentric), `'CoN'` (centre of moles), `'CoV'` (centre of volume) `'solvent'` (together with `solvent_idx`) or `'zarate'`, for the coefficients as defined by Ortiz de Zarate (doi 10.1140/epje/i2019-11803-2). 
 
 &nbsp;&nbsp;&nbsp;&nbsp; **solvent_idx (int, optional) :** 
 
