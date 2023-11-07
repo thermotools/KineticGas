@@ -6,7 +6,7 @@ permalink: /vcurrent/py_KineticGas_methods.html
 ---
 
 <!--- 
-Generated at: 2023-11-07T12:27:42.544721
+Generated at: 2023-11-07T12:49:13.638756
 This is an auto-generated file, generated using the script at KineticGas/pyUtils/markdown_from_docstrings.py
 The file is created by parsing the docstrings of the methods in the 
 py_KineticGas class. For instructions on how to use the parser routines, see the
@@ -219,7 +219,7 @@ See: Eq. (17-20) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
 
 &nbsp;&nbsp;&nbsp;&nbsp; **frame_of_reference (str, optional) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Which frame of reference the diffusion coefficients apply to. Defaultis 'CoN'. Can be 'CoN' (molar FoR), 'CoM' (barycentric FoR), 'solvent' (solvent FoR), 'zarate' (See Memo on definitions of the diffusion coefficient), 'zarate_x' ($D^{(x)}$ as defined by Ortiz de Zárate, doi 10.1140/epje/i2019-11803-2) 'zarate_w' ($D^{(w)}$ as defined by Ortiz de Zárate). 
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Which frame of reference the diffusion coefficients apply to. Defaultis `'CoN'`. Can be `'CoN'` (molar FoR), `'CoM'` (barycentric FoR), `'solvent'` (solvent FoR), `'zarate'` (See Memo on definitions of the diffusion coefficient), `'zarate_x'` ($D^{(x)}$ as defined by Ortiz de Zárate, doi 10.1140/epje/i2019-11803-2) or `'zarate_w'` ($D^{(w)}$ as defined by Ortiz de Zárate). 
 
 &nbsp;&nbsp;&nbsp;&nbsp; **solvent_idx (int, optional) :** 
 
@@ -233,10 +233,8 @@ See: Eq. (17-20) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
 
 ### `interdiffusion_general(self, T, Vm, x, N=None)`
 Compute the 'Kinetic CoM diffusion coefficients', defined by
-$J_i^{(n, m)} = - \sum_j D_{ij}
-abla n_j,$ $
-abla T =
-abla p = F_k = 0$ orall $k$
+
+$$ J_i^{(n, m)} = - \sum_j D_{ij} \nabla n_j, \nabla T = \nabla p = F_k = 0 \forall k $$
 **For end-users, see `interdiffusion`**
 See Eq. (19) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
  

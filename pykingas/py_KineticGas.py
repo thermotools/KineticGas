@@ -265,9 +265,9 @@ class py_KineticGas:
                 Defaults to last component, except when `frame_of_reference='solvent'`, in which case default is equal
                 to `solvent_idx`.
             frame_of_reference (str, optional) : Which frame of reference the diffusion coefficients apply to. Default
-                is 'CoN'. Can be 'CoN' (molar FoR), 'CoM' (barycentric FoR), 'solvent' (solvent FoR), 'zarate' (See Memo on
-                definitions of the diffusion coefficient), 'zarate_x' ($D^{(x)}$ as defined by Ortiz de Zárate, doi 10.1140/epje/i2019-11803-2)
-                'zarate_w' ($D^{(w)}$ as defined by Ortiz de Zárate).
+                is `'CoN'`. Can be `'CoN'` (molar FoR), `'CoM'` (barycentric FoR), `'solvent'` (solvent FoR), `'zarate'` (See Memo on
+                definitions of the diffusion coefficient), `'zarate_x'` ($D^{(x)}$ as defined by Ortiz de Zárate, doi 10.1140/epje/i2019-11803-2)
+                or `'zarate_w'` ($D^{(w)}$ as defined by Ortiz de Zárate).
             solvent_idx (int, optional) : Index of component identified as solvent (only when using `frame_of_reference='solvent'`)
 
         Returns:
@@ -307,9 +307,10 @@ class py_KineticGas:
         return D
 
     def interdiffusion_general(self, T, Vm, x, N=None):
-        """TV-property
+        r"""TV-property
         Compute the 'Kinetic CoM diffusion coefficients', defined by
-        $J_i^{(n, m)} = - \sum_j D_{ij} \nabla n_j,$ $\nabla T = \nabla p = F_k = 0$ \forall $k$
+
+        $$ J_i^{(n, m)} = - \sum_j D_{ij} \nabla n_j, \nabla T = \nabla p = F_k = 0 \forall k $$
         **For end-users, see `interdiffusion`**
         See Eq. (19) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
         &&
