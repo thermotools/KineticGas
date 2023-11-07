@@ -23,6 +23,15 @@ def k_delta(i, j): # Kronecker delta
     return 0
 
 def compress_diffusion_matr(M, dependent_idx):
+    """Utility
+    Remove the dependent row and column from a diffusion matrix, returning an (N - 1 x N - 1) matrix.
+    &&
+    Args:
+        M (array_like) : Diffusion matrix, shape (N, N)
+        dependent_idx (int) : Index of the dependent species
+    Returns:
+        array : (N - 1) x (N - 1) array of independent diffusion coefficients, where N is the number of components.
+    """
     M_indep = np.empty((len(M) - 1, len(M) - 1))
     M_i = 0
     for i in range(len(M)):
