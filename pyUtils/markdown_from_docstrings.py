@@ -89,7 +89,7 @@ from pykingas.MieType import MieType
 from pykingas.MieKinGas import MieKinGas
 from pykingas.HardSphere import HardSphere
 
-DOC_VERSION = 'current'
+DOC_VERSION = 'Current'
 KINETICGAS_ROOT, MARKDOWN_DIR = get_root_and_markdown_dir(DOC_VERSION)
 
 def get_autogen_header(classname):
