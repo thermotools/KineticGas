@@ -293,6 +293,11 @@ class py_KineticGas:
         Returns:
             (ndarray or float) : Diffusion coefficients, shape varies based on options and number of components. Unit [m^2 / s]
         """
+        if dependent_idx is None:
+            dependent_idx = self.ncomps - 1
+        while dependent_idx < 0:
+            dependent_idx += self.ncomps
+
         D = self.interdiffusion_general(T, Vm, x, N=N)
         # psi = Transformation matrix from 'centre of mass' to 'frame_of_reference'
         # get_com_2_for_matr() dispatches the call to specific functions for different frames of reference.
