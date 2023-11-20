@@ -1,5 +1,7 @@
+"""
+Module to check that various summational constraints are satisfied
+"""
 import numpy as np
-from pykingas.MieKinGas import MieKinGas
 from tools import models, check_eq
 import pytest
 

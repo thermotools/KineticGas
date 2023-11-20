@@ -1,6 +1,7 @@
-import warnings
-from pykingas.MieKinGas import MieKinGas
-from pykingas.HardSphere import HardSphere
+"""
+Module to ensure that swapping component order in binary mixtures does not change output
+Essentially computes a bunch of properties, flips the component order, and recomputes, to check that output is the same.
+"""
 from tools import check_eq, check_eq_arr, check_eq_lst, Components, report, models
 import pytest
 
