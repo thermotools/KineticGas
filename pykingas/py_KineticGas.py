@@ -712,9 +712,9 @@ class py_KineticGas:
 
         ----------------------------------------------------
 
-        $$ J_q = L_{qq} \nabla (1 / T) - \sum_{i=1}^{N_c-1}(1 / T) L_{qi} \nabla_T \Psi_i $$
+        $$ J_q = L_{qq} \nabla (1 / T) - \sum_{i=1}^{N_c-1}(1 / T) L_{qi} \nabla_T \Psi_{i; p, x} $$
 
-        $$ J_i = L_{iq} \nabla (1 / T) - \sum_{j=1}^{N_c-1}(1 / T) L_{ij} \nabla_T \Psi_j $$
+        $$ J_i = L_{iq} \nabla (1 / T) - \sum_{j=1}^{N_c-1}(1 / T) L_{ij} \nabla_T \Psi_{j; p, x} $$
 
         Where
 
@@ -753,7 +753,7 @@ class py_KineticGas:
             k_T = self.thermal_diffusion_ratio(T, Vm, x, N=N)
             for i in range(self.ncomps - 1):
                 for j in range(self.ncomps - 1):
-                    L[0, i + 1] += L[i + 1, j + 1] * Boltzmann * T * ((k_T[j] / self.m[j]) - (k_T[-1] / self.m[-1]))
+                    L[0, i + 1] -= L[i + 1, j + 1] * Boltzmann * T * (((1 - k_T[j]) / self.m[j]) - ((1 - k_T[-1]) / self.m[-1]))
 
                 L[i + 1, 0] = L[0, i + 1]
 
@@ -764,7 +764,7 @@ class py_KineticGas:
 
             L[0, 0] = T ** 2 * cond
             for i in range(self.ncomps - 1):
-                L[0, 0] += Boltzmann * T * L[0, i + 1] * ((k_T[i] / self.m[i]) - (k_T[-1] / self.m[-1]))
+                L[0, 0] -= Boltzmann * T * L[0, i + 1] * (((1 - k_T[i]) / self.m[i]) - ((1 - k_T[-1]) / self.m[-1]))
 
             return L
 
