@@ -77,21 +77,41 @@ class IdealGas:
             return 0, dmudn
         raise NotImplementedError('Only dmudn is implemented, because that is all we need for the pykingas package.')
 
-    def specific_volume(self, T, p, n, phase):
+    def specific_volume(self, T, p, n, phase, dvdn=False):
         """
         Compute molar volume for an ideal gas. Note that we must have `n` and `phase` in the signature in
-        order to be compatible with the signature of equation of state objects from ThermoPack.
+        order to be compatible with the signature of equation of state objects from ThermoPack. Partial molar volumes
+        must be implemented in order to use the solvent frame of reference.
         &&
         Args:
             T (float) : Temperature [K]
             p (float) : Pressure [Pa]
             n (list[float]) : mole numbers [mol]
             phase (int) : phase flag (see: ThermoPack)
+            dvdn (bool) : Compute partial molar volumes
 
         Returns:
             (float,) : molar volume [m3 / mol]
         """
-        return gas_constant * T / p, # Because ThermoPack v2.1.0 returns everything as a tuple, we need to return a tuple.
+        v = gas_constant * T / p
+        if dvdn is True:
+            return v, np.array([v for _ in range(self.ncomps)])
+        return v, # Because ThermoPack v2.1.0 returns everything as a tuple, we need to return a tuple.
+
+    def pressure_tv(self, T, Vm, x):
+        """
+        Compute pressure for an ideal gas, we must take `x` as an argument to be compatible with the generic ThermoPack
+        signature. This method is required for the solvent `frame_of_reference` diffusion and thermal diffusion coefficients.
+        &&
+        Args:
+            T (float) : Temperature [K]
+            Vm (float) : molar volume [m3 / mol]
+            x (list[float]) : mole fractions [-]
+
+        Returns:
+            (tuple) : (Pressure,)
+        """
+        return gas_constant * T / Vm
 
 class py_KineticGas:
 
@@ -277,7 +297,8 @@ class py_KineticGas:
         # psi = Transformation matrix from 'centre of mass' to 'frame_of_reference'
         # get_com_2_for_matr() dispatches the call to specific functions for different frames of reference.
         if frame_of_reference == 'zarate_x':
-            D = self.interdiffusion(T, Vm, x, N=N, frame_of_reference='CoN', dependent_idx=dependent_idx, use_independent=True)
+            D = self.interdiffusion(T, Vm, x, N=N, frame_of_reference='CoN', dependent_idx=dependent_idx, use_independent=True,
+                                    use_binary=False)
             return compress_diffusion_matr(D, dependent_idx)
         elif frame_of_reference == 'zarate':
             X = self.get_zarate_X_matr(x, dependent_idx)
