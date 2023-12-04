@@ -22,12 +22,16 @@ namespace py = pybind11;
         .def("get_conductivity_matrix", &Model::get_conductivity_matrix) \
         .def("get_viscosity_matrix", &Model::get_viscosity_matrix)\
         .def("get_viscosity_vector", &Model::get_viscosity_vector)\
+        .def("get_bulk_viscosity_matrix", &Model::get_bulk_viscosity_matrix)\
+        .def("get_bulk_viscosity_vector", &Model::get_bulk_viscosity_vector)\
         \
         .def("B_prime", &Model::B_prime) \
         .def("B_dblprime", &Model::B_dblprime) \
         \
         .def("L_ij", &Model::L_ij) \
         .def("L_i", &Model::L_i) \
+        .def("Lb_ij", &Model::Lb_ij) \
+        .def("Lb_i", &Model::Lb_i) \
         \
         .def("get_rdf", &Model::get_rdf) \
         .def("get_K_factors", &Model::get_K_factors) \

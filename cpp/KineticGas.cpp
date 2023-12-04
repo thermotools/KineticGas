@@ -91,6 +91,22 @@ std::vector<double> KineticGas::get_K_prime_factors(double rho, double T, const 
     return K_prime;
 }
 
+std::vector<double> KineticGas::get_K_dblprime_factors(double rho, double T, double p, const std::vector<double>& mole_fracs){
+    if (is_idealgas) return std::vector<double>(Ncomps, 0.);
+    std::vector<std::vector<double>> rdf = get_rdf(rho, T, mole_fracs);
+    std::vector<double> K_dblprime(Ncomps, 0.);
+    std::vector<std::vector<double>> cd = get_contact_diameters(rho, T, mole_fracs);
+
+    for (int i = 0; i < Ncomps; i++){
+        for (int j = 0; j < Ncomps; j++){
+            K_dblprime[i] += mole_fracs[j] * M[j][i] * pow(cd[i][j], 3) * rdf[i][j];
+        }
+        K_dblprime[i] *= rho * 4. * PI / 3.;
+        K_dblprime[i] += 1. - (p / (rho * BOLTZMANN * T));
+    }
+    return K_dblprime;
+}
+
 // --------------------------------------------------------------------------------------------------- //
 // ---------------------------------Matrix and vector generators-------------------------------------- //
     /*
@@ -269,6 +285,45 @@ std::vector<double> KineticGas::get_viscosity_vector(double rho, double T, const
     for (int i = 0; i < Ncomps; i++){
         viscosity_vec[i] = 2. * x[i] * K_prime[i] / (BOLTZMANN * T);
     }
+    return viscosity_vec;
+}
+
+std::vector<std::vector<double>> KineticGas::get_bulk_viscosity_matrix(double rho, double T, const std::vector<double>& x, int N){
+    std::vector<std::vector<double>> viscosity_mat(Ncomps * N, std::vector<double>(Ncomps * N, 0.));
+    std::vector<std::vector<double>> rdf = get_rdf(rho, T, x);
+    double minval = 1e10; // Used later to scale some equations for better conditioning
+    for (int p = 1; p < N; p++){
+        for (int q = 1; q < N; q++){
+            for (int i = ((p == 1) ? 1 : 0); i < Ncomps; i++){
+                for (int j = 0; j < Ncomps; j++){
+                    viscosity_mat[p * Ncomps + i][q * Ncomps + j] = x[i] * x[j] * rdf[i][j] * Lb_ij(p, q, i, j, T);
+                    if (i == j){
+                        for (int l = 0; l < Ncomps; l++){
+                            viscosity_mat[p * Ncomps + i][q * Ncomps + j] += x[i] * x[l] * rdf[i][l] * Lb_i(p, q, i, l, T);
+                        }
+                    }
+                    minval = std::min(minval, abs(viscosity_mat[p * Ncomps + i][q * Ncomps + j]));
+                }
+            }
+        }
+    }
+    // The following equations are of the type \sum_i a_i h_i^(r) = 0, so we scale the lhs. with minval
+    for (int i = 0; i < Ncomps; i++){
+        viscosity_mat[i][i] = 1. * minval;
+        viscosity_mat[Ncomps][Ncomps + i] = x[i] * minval;
+    }
+    return viscosity_mat;
+}
+
+std::vector<double> KineticGas::get_bulk_viscosity_vector(double rho, double T, double p, const std::vector<double>& x, int N){
+    std::vector<double> K_dprime = get_K_dblprime_factors(rho, T, p, x);
+    std::vector<double> viscosity_vec(N * Ncomps, 0.);
+    for (int i = 0; i < Ncomps; i++){
+        std::cout << K_dprime[i] << ", ";
+        viscosity_vec[Ncomps + i] = x[i] * K_dprime[i]; // only non-zero for p = 1 (the p-index, not the pressure)
+    }
+    viscosity_vec[Ncomps] = 0.;
+    std::cout << "\n";
     return viscosity_vec;
 }
 
@@ -479,4 +534,51 @@ double KineticGas::L_i(const int& p, const int& q, const int& i, const int& j, c
     }
     val *= 16.0 / 3.0;
     return val;
+}
+
+// --------------------------------------------------------------------------------------------------- //
+//                          Lb-integrals, used for bulk viscosity                                      //
+// --------------------------------------------------------------------------------------------------- //
+
+double KineticGas::Lb_ij(int p, int q, int i, int j, double T){
+    if (p == 0) return 0.;
+    if (p == 1){
+        if (q == 1){
+            return - 16. * M[i][j] * M[j][i] * omega(i, j, 1, 1, T);
+        }
+        else if (q == 2){
+            return - 16. * pow(M[i][j], 2) * M[j][i] * (5. * omega(i, j, 1, 1, T) - 2. * omega(i, j, 1, 2, T));
+        }
+        throw std::range_error("Bulk viscosity integrals only available for (p, q) = {(0, 0), (1, 1), (1, 2), (2, 2)}.\n");
+    }
+    else if (p == 2){
+        if (q != 2) throw std::range_error("Bulk viscosity integrals only available for (p, q) = {(0, 0), (1, 1), (1, 2), (2, 2)}.\n");
+        return - 16. * pow(M[i][j] * M[j][i], 2) * (4. * omega(i, j, 1, 3, T) - 20. * omega(i, j, 1, 2, T)
+                    + 35. * omega(i, j, 1, 1, T) - 4. * omega(i, j, 2, 2, T));
+    }
+    throw std::range_error("Bulk viscosity integrals only available for (p, q) = {(0, 0), (1, 1), (1, 2), (2, 2)}.\n");
+}
+
+double KineticGas::Lb_i(int p, int q, int i, int j, double T){
+    if (p == 0) return 0.;
+    if (p == 1){
+        if (q == 1){
+            return 16. * M[i][j] * M[j][i] * omega(i, j, 1, 1, T);
+        }
+        else if (q == 2){
+            return 16. * M[i][j] * pow(M[j][i], 2) * (5. * omega(i, j, 1, 1, T) - 2. * omega(i, j, 1, 2, T));
+        }
+        throw std::range_error("Bulk viscosity integrals only available for (p, q) = {(0, 0), (1, 1), (1, 2), (2, 2)}.\n");
+    }
+    else if (p == 2){
+        if (q != 2) throw std::range_error("Bulk viscosity integrals only available for (p, q) = {(0, 0), (1, 1), (1, 2), (2, 2)}.\n");
+        return 16. * pow(M[j][i], 3) * M[i][j] * (4. * omega(i, j, 1, 3, T)
+                    - 24. * omega(i, j, 1, 2, T) + 35. * omega(i, j, 1, 1, T)
+                    + 64. * pow(M[i][j], 3) * M[j][i] * omega(i, j, 1, 1, T)
+                    + 64. * pow(M[i][j] * M[j][i], 2) * omega(i, j, 2, 2, T)
+                    + 32. * M[i][j] * M[j][i] * (M[j][i] - M[i][j]) * (2. * omega(i, j, 1, 2, T)
+                                                                        - 5. * omega(i, j, 1, 1, T))
+                                                  );
+    }
+    throw std::range_error("Bulk viscosity integrals only available for (p, q) = {(0, 0), (1, 1), (1, 2), (2, 2)}.\n");
 }

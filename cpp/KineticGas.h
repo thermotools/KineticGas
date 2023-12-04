@@ -106,16 +106,18 @@ class KineticGas{
     double H_simple(const int& p, const int& q, const int& i, const double& T);           // [S^(p)_{3/2}(U^2_i), S^(q)_{3/2}(U^2_i)]_{i}
 
     // Linear combination weights by Tompson, Tipton and Lloyalka
-    double B_prime(const int& p, const int& q, const int& r, const int& l,
-                    const double& M1, const double& M2);
-    double B_dblprime(const int& p, const int& q, const int& r, const int& l,
-                        const double& M1, const double& M2);
+    double B_prime(const int& p, const int& q, const int& r, const int& l, const double& M1, const double& M2);
+    double B_dblprime(const int& p, const int& q, const int& r, const int& l, const double& M1, const double& M2);
     double B_trippleprime(const int& p, const int& q, const int& r, const int& l);
 
     // Viscosity related square bracket integrals
     double L_ij(const int& p, const int& q, const int& i, const int& j, const double& T); // [S^(p)_{5/2}(U^2_i), S^(q)_{5/2}(U^2_j)]_{ij}
     double L_i(const int& p, const int& q, const int& i, const int& j, const double& T);  // [S^(p)_{5/2}(U^2_i), S^(q)_{5/2}(U^2_i)]_{ij}
     double L_simple(const int& p, const int& q, const int& i, const double& T);           // [S^(p)_{5/2}(U^2_i), S^(q)_{5/2}(U^2_i)]_{i}
+
+    // Bulk viscosity
+    double Lb_ij(int p, int q, int i, int j, double T); // [S^(p)_{1/2}(U^2_i), S^(q)_{1/2}(U^2_j)]_{ij}
+    double Lb_i(int p, int q, int i, int j, double T);  // [S^(p)_{1/2}(U^2_i), S^(q)_{1/2}(U^2_i)]_{ij}
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------- //
 // ---------------------------------- Matrices and vectors for multicomponent, density corrected solutions -------------------------------------- //
@@ -127,23 +129,29 @@ class KineticGas{
     std::vector<double> get_conductivity_vector(double rho, double T, const std::vector<double>& x, int N);
     std::vector<std::vector<double>> get_viscosity_matrix(double rho, double T, const std::vector<double>&x, int N);
     std::vector<double> get_viscosity_vector(double rho, double T, const std::vector<double>& x, int N);
-    
+    std::vector<std::vector<double>> get_bulk_viscosity_matrix(double rho, double T, const std::vector<double>&x, int N);
+    std::vector<double> get_bulk_viscosity_vector(double rho, double T, double p, const std::vector<double>& x, int N);
 
     // Eq. (1.2) of 'multicomponent docs'
     std::vector<double> get_K_factors(double rho, double T, const std::vector<double>& mole_fracs);
     // Eq. (5.4) of 'multicomponent docs'
     std::vector<double> get_K_prime_factors(double rho, double T, const std::vector<double>& mole_fracs);
+    // Eq. (S.16) of RET for Mie fluids, supporting material.
+    std::vector<double> get_K_dblprime_factors(double rho, double T, double p, const std::vector<double>& mole_fracs);
 
 // ----------------------------------------------------------------------------------------------------------------------------------- //
 // --------------------------------------- Methods to facilitate multithreading ------------------------------------------------------ //
     /*
-        Filling the A-matrix is the most computationally intensive part of the module
-        The matrix elements may be computed independently. Therefore the functions fill_A_matrix_<ij>() have been
-        implemented to facilitate multithreading. j indicates the number of functions the matrix generation has been split
-        over, i differentiates between functions.
-        So fill_A_matrix_i4 is a set of four functions intended to be run on four separate threads, while
-        fill_A_matrix_i2 is a set of two functions intended to be run on two separate threads.
-        For a graphical representation of how the functions split the matrix, see the implementation file.
+        The easiest part of the program to multithread is the computation of collision integrals. Each KineticGas
+        object holds its own map of previously computed collision integrals in this->omega_map. Whenever `omega` is called,
+        this map is checked to see if the integrals have been previously evaluated. The following methods divide a given
+        set of collision integrals between different treads, so that when computing e.g. diffusion coefficients, the
+        required collision integrals are first computed and stored by calling `omega` from `precompute_diffusion_omega`,
+        then accessed by subsequent calls to `omega` by whatever method needs the integrals. In general, what you want
+        to do is:
+            1) Determine what collision integrals you need.
+            2) Evaluate them by executing `omega` on different threads.
+            3) Retrieve them by calling `omega` after all the treads are finished.
     */
     void precompute_omega(const std::vector<int>& i_vec, const std::vector<int>& j_vec,
                         const std::vector<int>& l_vec, const std::vector<int>& r_vec, double T);

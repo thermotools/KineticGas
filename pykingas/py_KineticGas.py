@@ -112,6 +112,7 @@ class py_KineticGas:
         self.computed_d_points = {} # dict of state points in which (d_1, d0, d1) have already been computed
         self.computed_a_points = {}  # dict of state points in which (a_1, a1) have already been computed
         self.computed_b_points = {}  # dict of state points in which (b_1, b1) have already been computed
+        self.computed_h_points = {}  # dict of state points in which (b_1, b1) have already been computed
         self.computed_kT = {} # dict of state points in which thermal diffusion ratios have been computed
         self.computed_cd = {} # dict of state points in which the collision diameters have been computed
         self.computed_rdf = {}  # dict of state points in which the RDFs have been computed
@@ -689,7 +690,32 @@ class py_KineticGas:
         if N is None:
             N = self.default_N
         self.check_valid_composition(x)
-        raise NotImplementedError("Bulk viscosity is not implemented yet. See 'Multicomp docs' for more info.")
+        if N < 2:
+            warnings.warn(f'Bulk viscosity is a second order phemomenon, got Enskog order N = {N}', Warning)
+            return 0. # Bulk viscosity is a second order phenomenon
+
+        particle_density = Avogadro / Vm
+        h = self.compute_bulk_visc_vector(T, particle_density, x, N=N)[self.ncomps : 2 * self.ncomps] # Extract first order coefficients
+        cd = self.get_contact_diameters(particle_density, T, x)
+        rdf = self.get_rdf(particle_density, T, x)
+        K_prime = self.cpp_kingas.get_K_prime_factors(particle_density, T, x)
+        K = (np.array(K_prime) - 1) * (5 / 4)
+        bvisc_prime = 0
+        print(f'h : {h}')
+        print(f'K : {K}, {sum(x * h)}')
+        for i in range(self.ncomps):
+            bvisc_prime += K[i] * x[i] * h[i]
+        bvisc_prime *= 2 * Boltzmann * T
+
+        bvisc_dblprime = 0
+        if self.is_idealgas is False:
+            for i in range(self.ncomps):
+                for j in range(self.ncomps):
+                    bvisc_dblprime += x[i] * x[j] * cd[i][j]**4 * rdf[i][j] * np.sqrt(self.m[i] * self.m[j] / (self.m[i] + self.m[j]))
+            bvisc_dblprime *= particle_density**2 * 4 * np.sqrt(2 * np.pi * Boltzmann * T) / 9
+
+        print(f'Contributions : {bvisc_prime}, {bvisc_dblprime}')
+        return bvisc_prime + bvisc_dblprime
 
     def conductivity_matrix(self, T, Vm, x, N=2, formulation='T-psi', frame_of_reference='CoM', use_thermal_conductivity=None):
         r"""TV-Property
@@ -1315,6 +1341,9 @@ class py_KineticGas:
         B = self.cpp_kingas.get_viscosity_matrix(particle_density, T, mole_fracs, N)
         beta = self.cpp_kingas.get_viscosity_vector(particle_density, T, mole_fracs, N)
 
+        print(f'B : {B}')
+        print(f'beta : {beta}')
+
         if any(np.isnan(np.array(B).flatten())):
             warnings.warn('Viscosity matrix contained NAN elements!')
             b = np.array([np.nan for _ in beta])
@@ -1323,3 +1352,49 @@ class py_KineticGas:
 
         self.computed_b_points[(T, particle_density, tuple(mole_fracs), N)] = tuple(b)
         return b
+
+    def compute_bulk_visc_vector(self, T, particle_density, mole_fracs, N=None):
+        """Utility
+        Compute the bulk viscous response function Sonine polynomial expansion coefficients by solving the set of equations
+
+        $$\Gamma h = \gamma$$
+
+        Corresponding to Eqs. (38 b, 45 a) in Enskog Theory for Multicomponent mixtures I (doi https://doi.org/10.1063/1.444985)
+        Where $\Gamma$ is the matrix returned by the c++ method `get_bulk_viscosity_matrix`, and $\gamma$ is the vector
+        returned by the c++ method `get_bulk_viscosity_vector`.
+        &&
+        Args:
+            particle_density (float) : Particle density (not molar!) [1 / m3]
+            T (float) : Temperature [K]
+            mole_fracs (list<float>) : Molar composition [-]
+            N (Optional, int) : Enskog approximation order.
+
+        Returns:
+            1D array : ($N N_c$,) vector, where $N$ is the Enskog approximation order and $N_c$ is
+                            the number of components, ordered as
+                            h[:N_c] = [h_1^{(0)}, h_2^{(0)}, ..., h_{N_c}^{(0)}]
+                            h[N_c: 2 * N_c] = [h_1^{(1)}, h_2^{(1)}, ..., h_{N_c}^{(1)}]
+                            ... etc ...
+                            where subscripts denote component indices and superscripts denote Enskog approximation
+                            summation indices.
+        """
+        if N is None:
+            N = self.default_N
+        self.check_valid_composition(mole_fracs)
+        if (T, particle_density, tuple(mole_fracs), N) in self.computed_h_points.keys():
+            return self.computed_h_points[(T, particle_density, tuple(mole_fracs), N)]
+
+        p, = self.eos.pressure_tv(T, Avogadro / particle_density, mole_fracs)
+        gamma = self.cpp_kingas.get_bulk_viscosity_matrix(particle_density, T, mole_fracs, N)
+        h_rhs = self.cpp_kingas.get_bulk_viscosity_vector(particle_density, T, p, mole_fracs, N)
+
+        print(gamma)
+        print(h_rhs)
+        if any(np.isnan(np.array(gamma).flatten())):
+            warnings.warn('Viscosity matrix contained NAN elements!')
+            h = np.array([np.nan for _ in h_rhs])
+        else:
+            h = lin.solve(gamma, h_rhs)
+
+        self.computed_b_points[(T, particle_density, tuple(mole_fracs), N)] = tuple(h)
+        return h

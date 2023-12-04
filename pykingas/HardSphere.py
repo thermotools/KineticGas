@@ -19,7 +19,7 @@ class HardSphereEoS:
         self.sigma = sigma
 
     def pressure_tv(self, T, V, n):
-        x = n / sum(n)
+        x = np.array(n) / sum(n)
         rho = Avogadro / V
         chi = self.cpp_model.get_rdf(rho, T, x)
         return HS_pressure(rho, T, x, self.sigma, chi),
