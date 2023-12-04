@@ -18,30 +18,29 @@ class HardSphereEoS:
         self.cpp_model = cpp_model
         self.sigma = sigma
 
-    def pressure_tv(self, T, Vm, x):
-        rho = Avogadro / Vm
+    def pressure_tv(self, T, V, n):
+        x = n / sum(n)
+        rho = Avogadro / V
         chi = self.cpp_model.get_rdf(rho, T, x)
         return HS_pressure(rho, T, x, self.sigma, chi),
 
-    def specific_volume(self, T, p, x, phase, dvdn=False):
+    def specific_volume(self, T, p, n, phase, dvdn=False):
         v_init = Avogadro * kB * T / p
-        v = root(lambda Vm : self.pressure_tv(T, Vm[0], x)[0] - p, x0=np.array([v_init])).x[0]
+        v = root(lambda Vm : self.pressure_tv(T, Vm[0], n)[0] - p, x0=np.array([v_init])).x[0]
         if dvdn is False:
             return v,
 
         dvdn = np.empty(self.ncomps)
-        eps = min(x) * 1e-3
+        eps = min(n) * 1e-3
         for i in range(self.ncomps):
-            nm1 = np.array([xi for xi in x])
-            np1 = np.array([xi for xi in x])
+            nm1 = np.array([xi for xi in n])
+            np1 = np.array([xi for xi in n])
             nm1[i] -= eps
-            xm1 = nm1 / sum(nm1)
             np1[i] += eps
-            xp1 = np1 / sum(np1)
 
-            vm1, = self.specific_volume(T, p, xm1, 1)
-            vp1, = self.specific_volume(T, p, xp1, 1)
-            dvdn[i] = (vp1 - vm1) / (2 * eps)
+            vm1 = self.specific_volume(T, p, nm1, 2)[0] * sum(nm1)
+            vp1 = self.specific_volume(T, p, np1, 2)[0] * sum(np1)
+            dvdn[i] =  (vp1 - vm1) / (2 * eps)
 
         return v, dvdn
 
