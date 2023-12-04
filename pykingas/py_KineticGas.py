@@ -273,19 +273,24 @@ class py_KineticGas:
         Returns:
             (ndarray or float) : Diffusion coefficients, shape varies based on options and number of components. Unit [m^2 / s]
         """
+        if dependent_idx is None:
+            dependent_idx = self.ncomps - 1
+        while dependent_idx < 0:
+            dependent_idx += self.ncomps
+
         D = self.interdiffusion_general(T, Vm, x, N=N)
         # psi = Transformation matrix from 'centre of mass' to 'frame_of_reference'
         # get_com_2_for_matr() dispatches the call to specific functions for different frames of reference.
         if frame_of_reference == 'zarate_x':
-            D = self.interdiffusion(T, Vm, x, N=N, frame_of_reference='CoN', dependent_idx=dependent_idx, use_independent=True)
+            D = self.interdiffusion(T, Vm, x, N=N, frame_of_reference='CoN', dependent_idx=dependent_idx, use_independent=True, use_binary=False)
             return compress_diffusion_matr(D, dependent_idx)
         elif frame_of_reference == 'zarate':
             X = self.get_zarate_X_matr(x, dependent_idx)
-            D_x = self.interdiffusion(T, Vm, x, N=N, frame_of_reference='zarate_x', dependent_idx=dependent_idx)
+            D_x = self.interdiffusion(T, Vm, x, N=N, frame_of_reference='zarate_x', dependent_idx=dependent_idx, use_binary=False)
             return X @ D_x @ np.linalg.inv(X)
         elif frame_of_reference == 'zarate_w':
             W = self.get_zarate_W_matr(x, dependent_idx)
-            D_z = self.interdiffusion(T, Vm, x, N=N, frame_of_reference='zarate', dependent_idx=dependent_idx)
+            D_z = self.interdiffusion(T, Vm, x, N=N, frame_of_reference='zarate', dependent_idx=dependent_idx, use_binary=False)
             return W @ D_z @ np.linalg.inv(W)
 
         psi = self.get_com_2_for_matr(T, Vm, x, frame_of_reference, solvent_idx=solvent_idx)
@@ -379,6 +384,11 @@ class py_KineticGas:
         """
         if N is None:
             N = self.default_N
+        if dependent_idx is None:
+            dependent_idx = self.ncomps - 1
+        while dependent_idx < 0:
+            dependent_idx += self.ncomps
+
         self.check_valid_composition(x)
 
         if N < 2:
