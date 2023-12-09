@@ -77,21 +77,41 @@ class IdealGas:
             return 0, dmudn
         raise NotImplementedError('Only dmudn is implemented, because that is all we need for the pykingas package.')
 
-    def specific_volume(self, T, p, n, phase):
+    def specific_volume(self, T, p, n, phase, dvdn=False):
         """
         Compute molar volume for an ideal gas. Note that we must have `n` and `phase` in the signature in
-        order to be compatible with the signature of equation of state objects from ThermoPack.
+        order to be compatible with the signature of equation of state objects from ThermoPack. Partial molar volumes
+        must be implemented in order to use the solvent frame of reference.
         &&
         Args:
             T (float) : Temperature [K]
             p (float) : Pressure [Pa]
             n (list[float]) : mole numbers [mol]
             phase (int) : phase flag (see: ThermoPack)
+            dvdn (bool) : Compute partial molar volumes
 
         Returns:
             (float,) : molar volume [m3 / mol]
         """
-        return gas_constant * T / p, # Because ThermoPack v2.1.0 returns everything as a tuple, we need to return a tuple.
+        v = gas_constant * T / p
+        if dvdn is True:
+            return v, np.array([v for _ in range(self.ncomps)])
+        return v, # Because ThermoPack v2.1.0 returns everything as a tuple, we need to return a tuple.
+
+    def pressure_tv(self, T, Vm, x):
+        """
+        Compute pressure for an ideal gas, we must take `x` as an argument to be compatible with the generic ThermoPack
+        signature. This method is required for the solvent `frame_of_reference` diffusion and thermal diffusion coefficients.
+        &&
+        Args:
+            T (float) : Temperature [K]
+            Vm (float) : molar volume [m3 / mol]
+            x (list[float]) : mole fractions [-]
+
+        Returns:
+            (tuple) : (Pressure,)
+        """
+        return gas_constant * T / Vm
 
 class py_KineticGas:
 
@@ -577,21 +597,60 @@ class py_KineticGas:
 
         return alpha
 
-    def soret_coefficient(self, T, Vm, x, N=None):
+    def soret_coefficient(self, T, Vm, x, N=None, use_zarate=True, dependent_idx=-1):
         r"""TV-Property
-        Compute the Soret coefficients, $S_{T, ij}$ defined as
-        $S_{T, ij} = \alpha_{ij} / T$
+        Compute the Soret coefficients, $S_{T, ij}$. If `use_zarate=False`, the Soret coefficient is defined by
+
+        $$ S_{T, ij} = \alpha_{ij} / T $$
+
+        where $\alpha_{ij}$ are the thermal diffusion factors. If `use_zarate=True`, uses the definition proposed by
+        Ortiz de Zarate in (doi 10.1140/epje/i2019-11803-2), i.e.
+
+        $$ X^{-1} D^{(x)} X (S_T) = (D_T) $$
+
+        where $(S_T)$ and $(D_T)$ indicate the vectors of Soret coefficients and thermal diffusion coefficients.
+        Or, following the notation in the memo on definitions of diffusion and thermal diffusion coefficients,
+
+        $$ D^{(z)} (S_T) = (D_T). $$
+
+        The Soret coefficients defined this way satisfy
+
+        $$ X (S_T) \nabla T = - (\nabla x) $$
+
+        and
+
+        $$ W (S_T) \nabla T = - (\nabla w) $$
+
+        which in a binary mixture reduces to the same as the definition used when `use_zarate=False`, i.e.
+
+        $$ S_T = - \frac{\nabla x_1}{x_1 (1 - x_1) \nabla T}$$
+
+        if species 2 is the dependent species.
+
         &&
         Args:
             T (float) : Temperature [K]
             Vm (float) : Molar volume [m3 / mol]
             x (array_like) : Molar composition
             N (int, optional) : Enskog approximation order (>= 2)
+            use_zarate (bool, optional) : Use Ortiz de Zarate formulation of the Soret coefficient, as given in the
+                                        method description and (doi 10.1140/epje/i2019-11803-2). Defaults to `True`.
+            dependent_idx (int) : Only applicable when `use_zarate=True` (default behaviour). The index of the dependent
+                                    species. Defaults to the last species.
         """
+        if N is None:
+            N = self.default_N
+
         if N < 2:
             warnings.warn('Thermal diffusion is a 2nd order phenomena, cannot be computed for N < 2 (got N = '
                           + str(N) + ')', RuntimeWarning, stacklevel=2)
             return np.full((self.ncomps, self.ncomps), np.nan)
+
+        if use_zarate is True:
+            D = self.interdiffusion(T, Vm, x, N=N, frame_of_reference='zarate', dependent_idx=dependent_idx, use_binary=False)
+            DT = self.thermal_diffusion_coeff(T, Vm, x, N=N, frame_of_reference='zarate', dependent_idx=dependent_idx)
+            return np.linalg.solve(D, DT)
+
         alpha = self.thermal_diffusion_factor(T, Vm, x, N=N)
         return alpha / T
 
@@ -734,9 +793,9 @@ class py_KineticGas:
 
         ----------------------------------------------------
 
-        $$ J_q = L_{qq} \nabla (1 / T) - \sum_{i=1}^{N_c-1}(1 / T) L_{qi} \nabla_T \Psi_i $$
+        $$ J_q = L_{qq} \nabla (1 / T) - \sum_{i=1}^{N_c-1}(1 / T) L_{qi} \nabla_T \Psi_{i; p, x} $$
 
-        $$ J_i = L_{iq} \nabla (1 / T) - \sum_{j=1}^{N_c-1}(1 / T) L_{ij} \nabla_T \Psi_j $$
+        $$ J_i = L_{iq} \nabla (1 / T) - \sum_{j=1}^{N_c-1}(1 / T) L_{ij} \nabla_T \Psi_{j; p, x} $$
 
         Where
 
@@ -775,7 +834,7 @@ class py_KineticGas:
             k_T = self.thermal_diffusion_ratio(T, Vm, x, N=N)
             for i in range(self.ncomps - 1):
                 for j in range(self.ncomps - 1):
-                    L[0, i + 1] += L[i + 1, j + 1] * Boltzmann * T * ((k_T[j] / self.m[j]) - (k_T[-1] / self.m[-1]))
+                    L[0, i + 1] -= L[i + 1, j + 1] * Boltzmann * T * (((1 - k_T[j]) / self.m[j]) - ((1 - k_T[-1]) / self.m[-1]))
 
                 L[i + 1, 0] = L[0, i + 1]
 
@@ -786,7 +845,7 @@ class py_KineticGas:
 
             L[0, 0] = T ** 2 * cond
             for i in range(self.ncomps - 1):
-                L[0, 0] += Boltzmann * T * L[0, i + 1] * ((k_T[i] / self.m[i]) - (k_T[-1] / self.m[-1]))
+                L[0, 0] -= Boltzmann * T * L[0, i + 1] * (((1 - k_T[i]) / self.m[i]) - ((1 - k_T[-1]) / self.m[-1]))
 
             return L
 
