@@ -6,8 +6,63 @@ Purpose: Wrapper for the HardSphere class.
 import numpy as np
 from numpy import pi
 from scipy.constants import Avogadro, Boltzmann as kB
+from scipy.optimize import root
 from pykingas import cpp_HardSphere
-from pykingas.py_KineticGas import py_KineticGas
+from pykingas.py_KineticGas import py_KineticGas, IdealGas
+
+class HardSphereEoS:
+
+    def __init__(self, cpp_model, sigma):
+        self.ncomps = len(sigma)
+        self.VAPPH = 1
+        self.cpp_model = cpp_model
+        self.sigma = sigma
+
+    def pressure_tv(self, T, V, n):
+        x = n / sum(n)
+        rho = Avogadro / V
+        chi = self.cpp_model.get_rdf(rho, T, x)
+        return HS_pressure(rho, T, x, self.sigma, chi),
+
+    def specific_volume(self, T, p, n, phase, dvdn=False):
+        v_init = Avogadro * kB * T / p
+        v = root(lambda Vm : self.pressure_tv(T, Vm[0], n)[0] - p, x0=np.array([v_init])).x[0]
+        if dvdn is False:
+            return v,
+
+        dvdn = np.empty(self.ncomps)
+        eps = min(n) * 1e-3
+        for i in range(self.ncomps):
+            nm1 = np.array([xi for xi in n])
+            np1 = np.array([xi for xi in n])
+            nm1[i] -= eps
+            np1[i] += eps
+
+            vm1 = self.specific_volume(T, p, nm1, 2)[0] * sum(nm1)
+            vp1 = self.specific_volume(T, p, np1, 2)[0] * sum(np1)
+            dvdn[i] =  (vp1 - vm1) / (2 * eps)
+
+        return v, dvdn
+
+    def chemical_potential_tv(self, T, V, n, dmudn=False):
+        n = np.array(n)
+        x = n / sum(n)
+        Vm = V / sum(n)
+        rho = Avogadro / Vm
+        chi = self.cpp_model.get_rdf(rho, T, x)
+        mu = mu_func(rho, T, x, self.sigma, chi) * Avogadro
+        return_tuple = (mu, )
+        if dmudn is True:
+            dn = min(n) / 1e3
+            dmudn = np.empty((self.ncomps, self.ncomps))
+            for i in range(self.ncomps):
+                dn_arr = np.zeros(self.ncomps)
+                dn_arr[i] = dn
+                mu_p, = self.chemical_potential_tv(T, V, n + dn_arr)
+                mu_m, = self.chemical_potential_tv(T, V, n - dn_arr)
+                dmudn[i] = (mu_p - mu_m) / (2 * dn)
+            return_tuple += (dmudn, )
+        return return_tuple
 
 def HS_pressure(rho, T, x, sigma, chi):
     p = rho * kB * T
@@ -73,43 +128,8 @@ class HardSphere(py_KineticGas):
                                 + np.vstack(tuple(sigma for _ in range(self.ncomps))).transpose())
 
         self.cpp_kingas = cpp_HardSphere(self.mole_weights, self.sigma, is_idealgas)
-
-    def get_Eij(self, Vm, T, x):
-        r"""Utility
-        Compute the factors
-
-        $$ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k \neq j}}, $$
-
-        where $n_i$ is the molar density of species $i$.
-        &&
-        Args:
-            Vm (float) : Molar volume [m3 / mol]
-            T (float) : Temperature [K]
-            x (array_like) : Molar composition
-
-        Returns:
-            (2D array) : The factors E[i][j] = $ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k \neq j}}$, where $n_i$
-                                is the molar density of species $i$. Unit [1 / mol]
-        """
-        x = np.array(x)
-        rho = Avogadro / Vm
-        n = rho * x
-
-        E = np.empty((self.ncomps, self.ncomps))
-        dmudrho = np.empty((self.ncomps, self.ncomps))
-        for j in range(self.ncomps):
-            dn = np.zeros(self.ncomps)
-            dn[j] = 1e-2 * n[j]
-            drho = dn[j]
-            x_1 = (n - dn / 2) / sum(n - dn / 2)
-            x1 = (n + dn / 2) / sum(n + dn / 2)
-            chi_1 = self.cpp_kingas.get_rdf(rho - drho / 2, T, x_1)
-            chi1 = self.cpp_kingas.get_rdf(rho + drho / 2, T, x1)
-            mu_1 = mu_func(rho - drho / 2, T, x_1, self.sigma, chi_1)
-            mu1 = mu_func(rho + drho / 2, T, x1, self.sigma, chi1)
-
-            for i in range(self.ncomps):
-                dmudrho[i, j] = (mu1[i] - mu_1[i]) / dn[j]
-                E[i][j] = (n[i] / (kB * T)) * (mu1[i] - mu_1[i]) / dn[j]
-        return E
+        if self.is_idealgas is True:
+            self.eos = IdealGas(comps)
+        else:
+            self.eos = HardSphereEoS(self.cpp_kingas, self.sigma)
 
