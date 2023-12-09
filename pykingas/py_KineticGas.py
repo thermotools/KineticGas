@@ -405,6 +405,8 @@ class py_KineticGas:
         """
         if N is None:
             N = self.default_N
+        while dependent_idx < 0:
+            dependent_idx += self.ncomps
         self.check_valid_composition(x)
 
         if N < 2:
@@ -593,21 +595,60 @@ class py_KineticGas:
 
         return alpha
 
-    def soret_coefficient(self, T, Vm, x, N=None):
+    def soret_coefficient(self, T, Vm, x, N=None, use_zarate=True, dependent_idx=-1):
         r"""TV-Property
-        Compute the Soret coefficients, $S_{T, ij}$ defined as
-        $S_{T, ij} = \alpha_{ij} / T$
+        Compute the Soret coefficients, $S_{T, ij}$. If `use_zarate=False`, the Soret coefficient is defined by
+
+        $$ S_{T, ij} = \alpha_{ij} / T $$
+
+        where $\alpha_{ij}$ are the thermal diffusion factors. If `use_zarate=True`, uses the definition proposed by
+        Ortiz de Zarate in (doi 10.1140/epje/i2019-11803-2), i.e.
+
+        $$ X^{-1} D^{(x)} X (S_T) = (D_T) $$
+
+        where $(S_T)$ and $(D_T)$ indicate the vectors of Soret coefficients and thermal diffusion coefficients.
+        Or, following the notation in the memo on definitions of diffusion and thermal diffusion coefficients,
+
+        $$ D^{(z)} (S_T) = (D_T). $$
+
+        The Soret coefficients defined this way satisfy
+
+        $$ X (S_T) \nabla T = - (\nabla x) $$
+
+        and
+
+        $$ W (S_T) \nabla T = - (\nabla w) $$
+
+        which in a binary mixture reduces to the same as the definition used when `use_zarate=False`, i.e.
+
+        $$ S_T = - \frac{\nabla x_1}{x_1 (1 - x_1) \nabla T}$$
+
+        if species 2 is the dependent species.
+
         &&
         Args:
             T (float) : Temperature [K]
             Vm (float) : Molar volume [m3 / mol]
             x (array_like) : Molar composition
             N (int, optional) : Enskog approximation order (>= 2)
+            use_zarate (bool, optional) : Use Ortiz de Zarate formulation of the Soret coefficient, as given in the
+                                        method description and (doi 10.1140/epje/i2019-11803-2). Defaults to `True`.
+            dependent_idx (int) : Only applicable when `use_zarate=True` (default behaviour). The index of the dependent
+                                    species. Defaults to the last species.
         """
+        if N is None:
+            N = self.default_N
+
         if N < 2:
             warnings.warn('Thermal diffusion is a 2nd order phenomena, cannot be computed for N < 2 (got N = '
                           + str(N) + ')', RuntimeWarning, stacklevel=2)
             return np.full((self.ncomps, self.ncomps), np.nan)
+
+        if use_zarate is True:
+            D = self.interdiffusion(T, Vm, x, N=N, frame_of_reference='zarate', dependent_idx=dependent_idx, use_binary=False)
+            DT = self.thermal_diffusion_coeff(T, Vm, x, N=N, frame_of_reference='zarate', dependent_idx=dependent_idx)
+            return np.linalg.solve(D, DT)
+
         alpha = self.thermal_diffusion_factor(T, Vm, x, N=N)
         return alpha / T
 

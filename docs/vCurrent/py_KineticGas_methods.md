@@ -6,7 +6,7 @@ permalink: /vcurrent/py_KineticGas_methods.html
 ---
 
 <!--- 
-Generated at: 2023-11-07T12:52:48.301205
+Generated at: 2023-11-15T07:55:56.877658
 This is an auto-generated file, generated using the script at KineticGas/pyUtils/markdown_from_docstrings.py
 The file is created by parsing the docstrings of the methods in the 
 py_KineticGas class. For instructions on how to use the parser routines, see the
@@ -23,7 +23,7 @@ The `py_KineticGas` class, found in `pykingas/py_KineticGas.py`, is the core of 
     * [interdiffusion](#interdiffusionself-t-vm-x-nnone-use_independenttrue-dependent_idxnone-frame_of_referencecon-use_binarytrue-solvent_idxnone)
     * [interdiffusion_general](#interdiffusion_generalself-t-vm-x-nnone)
     * [resistivity_matrix](#resistivity_matrixself-t-vm-x-n2-formulationt-psi-frame_of_referencecom-use_thermal_conductivitynone)
-    * [soret_coefficient](#soret_coefficientself-t-vm-x-nnone)
+    * [soret_coefficient](#soret_coefficientself-t-vm-x-nnone-use_zaratetrue-dependent_idx-1)
     * [thermal_conductivity](#thermal_conductivityself-t-vm-x-nnone)
     * [thermal_diffusion_coeff](#thermal_diffusion_coeffself-t-vm-x-nnone-use_independentfalse-dependent_idxnone-frame_of_referencecon-solvent_idxnone)
     * [thermal_diffusion_factor](#thermal_diffusion_factorself-t-vm-x-nnone)
@@ -96,7 +96,7 @@ Computing properties as a function of temperature and volume.
     * [interdiffusion](#interdiffusionself-t-vm-x-nnone-use_independenttrue-dependent_idxnone-frame_of_referencecon-use_binarytrue-solvent_idxnone)
     * [interdiffusion_general](#interdiffusion_generalself-t-vm-x-nnone)
     * [resistivity_matrix](#resistivity_matrixself-t-vm-x-n2-formulationt-psi-frame_of_referencecom-use_thermal_conductivitynone)
-    * [soret_coefficient](#soret_coefficientself-t-vm-x-nnone)
+    * [soret_coefficient](#soret_coefficientself-t-vm-x-nnone-use_zaratetrue-dependent_idx-1)
     * [thermal_conductivity](#thermal_conductivityself-t-vm-x-nnone)
     * [thermal_diffusion_coeff](#thermal_diffusion_coeffself-t-vm-x-nnone-use_independentfalse-dependent_idxnone-frame_of_referencecon-solvent_idxnone)
     * [thermal_diffusion_factor](#thermal_diffusion_factorself-t-vm-x-nnone)
@@ -323,9 +323,35 @@ mass frame of reference. The formulation is only implemented for ideal gases.
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The resistivity matrix, contents will vary depending on the `formulation` kwarg. 
 
-### `soret_coefficient(self, T, Vm, x, N=None)`
-Compute the Soret coefficients, $S_{T, ij}$ defined as
-$S_{T, ij} = \alpha_{ij} / T$
+### `soret_coefficient(self, T, Vm, x, N=None, use_zarate=True, dependent_idx=-1)`
+Compute the Soret coefficients, $S_{T, ij}$. If `use_zarate=False`, the Soret coefficient is defined by
+
+$$ S_{T, ij} = \alpha_{ij} / T $$
+
+where $\alpha_{ij}$ are the thermal diffusion factors. If `use_zarate=True`, uses the definition proposed by
+Ortiz de Zarate in (doi 10.1140/epje/i2019-11803-2), i.e.
+
+$$ X^{-1} D^{(x)} X (S_T) = (D_T) $$
+
+where $(S_T)$ and $(D_T)$ indicate the vectors of Soret coefficients and thermal diffusion coefficients.
+Or, following the notation in the memo on definitions of diffusion and thermal diffusion coefficients,
+
+$$ D^{(z)} (S_T) = (D_T). $$
+
+The Soret coefficients defined this way satisfy
+
+$$ X (S_T) \nabla T = - (\nabla x) $$
+
+and
+
+$$ W (S_T) \nabla T = - (\nabla w) $$
+
+which in a binary mixture reduces to the same as the definition used when `use_zarate=False`, i.e.
+
+$$ S_T = - \frac{\nabla x_1}{x_1 (1 - x_1) \nabla T}$$
+
+if species 2 is the dependent species.
+
  
 
 #### Args:
@@ -344,7 +370,15 @@ $S_{T, ij} = \alpha_{ij} / T$
 
 &nbsp;&nbsp;&nbsp;&nbsp; **N (int, optional) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Enskog approximation order (>= 2) 
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Enskog approximation order (>= 2)
+
+&nbsp;&nbsp;&nbsp;&nbsp; **use_zarate (bool, optional) :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Use Ortiz de Zarate formulation of the Soret coefficient, as given in themethod description and (doi 10.1140/epje/i2019-11803-2). Defaults to `True`. 
+
+&nbsp;&nbsp;&nbsp;&nbsp; **dependent_idx (int) :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Only applicable when `use_zarate=True` (default behaviour). The index of the dependentspecies. Defaults to the last species.  
 
 ### `thermal_conductivity(self, T, Vm, x, N=None)`
 Compute the thermal conductivity, $\lambda$. For models initialized with `is_idealgas=True`, the thermal
