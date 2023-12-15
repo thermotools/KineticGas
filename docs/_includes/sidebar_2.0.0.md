@@ -1,3 +1,4 @@
+* [Installation](/KineticGas/v2.0.0/source_build.html)
 * [Getting started - In Python](/KineticGas/v2.0.0/getting_started_py.html)
     * [Initialising a Model](/KineticGas/v2.0.0/getting_started_py.html#initialising-a-model)
     * [Doing calculations](/KineticGas/v2.0.0/getting_started_py.html#making-predictions)
@@ -15,7 +16,6 @@
     * [`MieKinGas` - The RET-Mie Model](/KineticGas/v2.0.0/MieKinGas_methods.html)
   * [`HardSphere` - The RET-HS Model](/KineticGas/v2.0.0/HardSphere_methods.html)
 * [Component identifiers](/KineticGas/v2.0.0/fluid_identifiers.html)
-* [Installation](/KineticGas/v2.0.0/source_build.html)
 * [Structure](/KineticGas/v2.0.0/structure.html)
 * [Latest version (beta)](/KineticGas/)
 * [v2.0.0](/KineticGas/v2.0.0/home.html)

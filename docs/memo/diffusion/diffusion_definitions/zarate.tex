@@ -1,6 +1,6 @@
 \section{Ortiz de Zárate}
 
-Ortiz de Zárate showed that one may define the diffusion- and thermal diffusion coefficients such that they are equivalent in the centre of mass (CoM) and centre of moles (CoN) frame of reference (FoR). We denote these frame-independent coefficients as $\Vec{D}_T^{(z)}$ and $\Mat{D}^{(z)}$, and they are defined through
+Ortiz de Zárate showed that one may define the diffusion- and thermal diffusion coefficients such that they are equivalent in the centre of mass (CoM) and centre of moles (CoN) frame of reference (FoR).\cite{ortiz2019definition} We denote these frame-independent coefficients as $\Vec{D}_T^{(z)}$ and $\Mat{D}^{(z)}$, and they are defined through
 \begin{equation}
     \begin{pmatrix}J_1 \\ J_2 \\ \vdots \\ J_{N-1} \end{pmatrix}^{(n, n)} = - c\left\{
     \Mat{X}
@@ -41,7 +41,7 @@ To compute the coefficients $\Vec{D}_T^{(z)}$ and $\Mat{D}^{(z)}$, use the optio
 \begin{equation}
     \begin{split}
         \Mat{D}^{(x)} &= \Mat{X} \Mat{D}^{(z)} \Mat{X}^{-1}, \quad \text{and} \\
-        \Mat{D}^{(w)} &= \Mat{W} \Mat{D}^{(z)} \Mat{W}^{-1}
+        \Mat{D}^{(w)} &= \Mat{W} \Mat{D}^{(z)} \Mat{W}^{-1},
     \end{split}
 \end{equation}
-use the options \code{frame\_of\_reference='zarate\_x'} and \code{frame\_of\_reference='zarate\_w'}
+as defined by Ortiz de Zárate,\cite{ortiz2019definition} use the options \code{frame\_of\_reference='zarate\_x'} and \code{frame\_of\_reference='zarate\_w'}
