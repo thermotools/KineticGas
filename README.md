@@ -22,7 +22,7 @@ The package is implemented mostly in C++ to handle the numerical computations in
 
 KineticGas can be used to predict diffusion coefficients, thermal diffusion coefficients, viscosities and thermal conductivities in gas mixtures, and is reliable over a large range of temperatures and pressures. The package also contains an extensive database of fluid parameters collected from the open literature.
 
-For the full documentation, check out the [KineticGas homepage.](https://thermotools.github.io/KineticGas)
+*Note:* For the full, version controlled documentation and user guide, see the [KineticGas homepage.](https://thermotools.github.io/KineticGas)
 
 ![](https://thermotools.github.io/KineticGas/v2.0.0/graphics/all.gif?raw=true)
 
@@ -118,7 +118,9 @@ Running `cmake` from the `cpp` directory should produce an MSVC solution file. B
 
 # Getting started: In Python
 
-In addition to this explanation, some examples may be found in the [pyExamples directory](https://github.com/thermotools/KineticGas_private/tree/main/pyExamples).
+*Note:* The primary sources of documentation and user guides for the KineticGas package are found on the [KineticGas homepage.](https://thermotools.github.io/KineticGas)
+
+In addition to this explanation, some examples may be found in the [pyExamples directory](https://github.com/thermotools/KineticGas/tree/main/pyExamples).
 
 ## Initializing a model
 
