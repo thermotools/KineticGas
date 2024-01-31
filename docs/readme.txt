@@ -1,3 +1,9 @@
+# KineticGas Homepage
+
+This directory contains the source code for the KineticGas Homepage, hosted at [https://thermotools.github.io/KineticGas/](https://thermotools.github.io/KineticGas/). The page contains guides for installation and getting started, as well as extensive documentation. Documentation for all versions released to PyPI are also archived there, and a bug tracker for previously released versions can be found.
+
+# Building and testing the page locally  
+
 To test locally: Navigate to this directory and
     `bundle install`
     `bundle exec jekyll serve`
