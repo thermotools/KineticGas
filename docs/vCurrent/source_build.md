@@ -83,6 +83,7 @@ export CC=/opt/homebrew/bin/gcc-13
 export CXX=/opt/homebrew/bin/g++-13
 ```
    * **NOTE**: You may need to delete the file `cpp/release/CMakeCache.txt` for changes to take effect.
+   * See also: [This stackoverflow question](https://stackoverflow.com/questions/73758291/is-there-a-way-to-specify-the-c-standard-of-clangd-without-recompiling-it) for info
  * If none of the above works, please feel free to leave an issue.
 
 ### For Windows

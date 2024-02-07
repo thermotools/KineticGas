@@ -78,6 +78,9 @@ For MacOS running on Intel, or other operating systems, KineticGas must currentl
 
 ## Building from source
 
+**Note** For instructions on building different versions of `KineticGas`, as well as a guide to solving known, possible 
+build issues, see the [KineticGas homepage.](https://thermotools.github.io/KineticGas)
+
 A build system using `cmake` and `make` is set up to support Mac, Linux and Windows. For Mac machines running on intel chips, one compiler flag must be modified.
 
 ### First Try - For Mac/Linux
