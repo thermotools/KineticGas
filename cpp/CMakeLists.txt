@@ -1,7 +1,7 @@
 project(KineticGas LANGUAGES C CXX)
 
 cmake_minimum_required(VERSION 3.12)
-# set(PYBIND11_PYTHON_VERSION "3.10")
+set(PYBIND11_PYTHON_VERSION "3.11")
 string(ASCII 27 Esc)
 message("${Esc}[34mPYBIND11_PYTHON_VERSION is : ${PYBIND11_PYTHON_VERSION}")
 message("${Esc}[34mPYTHON_EXECUTABLE is : ${PYTHON_EXECUTABLE}")
@@ -9,8 +9,8 @@ message("${Esc}[34mPYTHON_EXECUTABLE is : ${PYTHON_EXECUTABLE}")
 set(PYBIND11_ROOT "/usr/local/include/pybind11") # This path must contain the pybind11 root dir.
 
 if(NOT MSVC)
-  set(CMAKE_CXX_COMPILER /usr/bin/g++)
-  set(CMAKE_C_COMPILER /usr/bin/gcc)
+  # set(CMAKE_CXX_COMPILER /opt/homebrew/bin/g++-13)
+  # set(CMAKE_C_COMPILER /opt/homebrew/bin/gcc-13)
   if(APPLE)
     set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-unknown-pragmas -Wno-sign-compare -std=c++17 -pthread -arch arm64")
   else()
@@ -20,7 +20,7 @@ if(NOT MSVC)
   set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -DDEBUG -Wno-unused-parameter -Wno-unused-const-variable")
 endif(NOT MSVC)
 
-set(SOURCES KineticGas.cpp KineticGas_mthr.cpp Spherical.cpp MieKinGas.cpp
+set(SOURCES KineticGas.cpp KineticGas_mthr.cpp Spherical.cpp MieKinGas.cpp QuantumMie.cpp
             Integration/Integration.cpp Factorial.cpp bindings.cpp)
 
 if (CMAKE_BUILD_TYPE MATCHES Release)

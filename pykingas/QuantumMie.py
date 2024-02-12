@@ -1,7 +1,10 @@
 from pykingas import MieType, cpp_QuantumMie
+from pykingas.MieKinGas import MieKinGas
 from thermopack.saftvrqmie import saftvrqmie
 import numpy as np
 from warnings import warn
+from scipy.optimize import root
+from scipy.constants import Boltzmann, Avogadro
 
 class QuantumMie(MieType.MieType):
 
@@ -10,14 +13,15 @@ class QuantumMie(MieType.MieType):
                  la=None, lr=None, lij=0, kij=0,
                  N=4, FH_order=None, is_idealgas=False,
                  parameter_ref='default', use_eos=None):
-        '''
-        :param comps (str): Comma-separated list of components
-
+        """
         If parameters are explicitly supplied, these will be used instead of those in the database
-        :param FH_order (int) : Feynman-Hibbs correction order (0 = Standard Mie potential, 
+
+        Args:
+            comps (str): Comma-separated list of components
+            FH_order (int) : Feynman-Hibbs correction order (0 = Standard Mie potential,
                                                                 1 = 1st order correction, 
                                                                 2 = 2nd order correction)
-        '''
+        """
 
         super().__init__(comps, 'q-Mie',
                             mole_weights=mole_weights, sigma=sigma,
@@ -81,6 +85,15 @@ class QuantumMie(MieType.MieType):
         """
         return self.cpp_kingas.get_sigma_min(T)
 
+    def get_C(self):
+        """Utility
+        Get the Mie-potential C prefactors
+
+        Returns:
+            2d array : prefactors [-]
+        """
+        return self.cpp_kingas.C
+
     def potential(self, i, j, r, T):
         """Utility
         Evaluate the interaction potential between types i and j at distance r
@@ -119,3 +132,39 @@ class QuantumMie(MieType.MieType):
             float : Second derivative of potential [N / m]
         """
         return self.cpp_kingas.potential_dblderivative_rr(i, j, r, T)
+
+    def get_effective_mie_model(self, T, fit_la=False):
+        """Utility
+        Fit parameters of an effective Mie potential that has the same root, well depth, position of minimum, and
+        first and second derivatives at the root. If `fit_la=False` (default), only gives equal first derivative at root.
+
+        Args:
+             T (float) : Temperature [K]
+             fit_la (bool) : If false, set la=6, and only solve for lr. If True, fit both la and lr.
+        Returns:
+            MieKinGas : An initialised model with the effective parameters.
+        """
+        if self._is_singlecomp is False:
+            raise NotImplementedError("Method only implemented for single component systems so far!")
+
+        sigma = np.diag(self.get_sigma_eff(T))[0]
+        eps = np.diag(self.get_epsilon_eff(T))[0]
+        r_min = np.diag(self.get_sigma_min(T))[0]
+        d = [self.potential_r(i, i, sigma, T) for i in range(self.ncomps)][0]
+
+        if fit_la is True:
+            d2 = [self.potential_rr(i, i, sigma, T) for i in range(self.ncomps)][0]
+            A = sigma / r_min
+            B = - eps / (d * sigma)
+            C = - (eps / (d * sigma)) - (d2 * eps / d ** 2)
+
+            lambda_a = root(lambda la: A ** la + B * la + C, x0=np.array([6.0])).x[0]
+        else:
+            lambda_a = 6
+
+        lambda_r = - (d * sigma / eps) * (sigma / r_min) ** lambda_a
+        comps = self.comps[0]
+        mw = self.mole_weights[0] * Avogadro * 1e3
+        mie = MieKinGas(comps, mole_weights=[mw, mw], sigma=[sigma, sigma], eps_div_k=[eps / Boltzmann, eps / Boltzmann],
+                        la=[lambda_a, lambda_a], lr=[lambda_r, lambda_r], use_eos=self.eos)
+        return mie

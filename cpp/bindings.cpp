@@ -124,6 +124,8 @@ PYBIND11_MODULE(KineticGas_d, handle){
         Spherical_potential_bindings(MieKinGas)
         Spherical_bindings(MieKinGas)
         Mie_rdf_bindings(MieKinGas)
+        .def("potential_derivative_r", &MieKinGas::potential_derivative_r)
+        .def("potential_dblderivative_rr", &MieKinGas::potential_dblderivative_rr)
         .def("g1", py::overload_cast<double, double,
                                     const std::vector<double>&>(&MieKinGas::rdf_g1_func))
         .def("g2", py::overload_cast<double, double,
@@ -152,6 +154,7 @@ PYBIND11_MODULE(KineticGas_d, handle){
             )
         KineticGas_bindings(QuantumMie)
         Spherical_bindings(QuantumMie)
+        .def_readonly("C", &QuantumMie::C)
         .def("get_sigma_eff", &QuantumMie::get_sigma_eff)
         .def("get_epsilon_eff", &QuantumMie::get_epsilon_eff)
         .def("get_sigma_min", &QuantumMie::get_sigma_min)

@@ -172,3 +172,27 @@ class MieType(KineticGas):
             float : Interaction potential [J]
         """
         return self.cpp_kingas.potential(i, j, r)
+
+    def potential_r(self, i, j, r):
+        """Utility
+        Evaluate the derivative of the interaction potential between types i and j at distance r
+
+        Args:
+            i, j (int) : Component indices
+            r (float) : Distance [m]
+        Returns:
+            float : First derivative of interaction potential [N]
+        """
+        return self.cpp_kingas.potential_derivative_r(i, j, r)
+
+    def potential_rr(self, i, j, r):
+        """Utility
+        Evaluate the second derivative of the interaction potential between types i and j at distance r
+
+        Args:
+            i, j (int) : Component indices
+            r (float) : Distance [m]
+        Returns:
+            float : Second derivative of interaction potential [N / m]
+        """
+        return self.cpp_kingas.potential_dblderivative_rr(i, j, r)

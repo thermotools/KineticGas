@@ -2,10 +2,10 @@
 # Script to build the KineticGas module and run tests. Can be used with options
 set -e
 
-py_version=${1-"-DPYBIND11_PYTHON_VERSION=3"}
+py_version=${1-"-DPYBIND11_PYTHON_VERSION=3 -DPYTHON_EXECUTABLE=$(which python)"}
 
-export CC=/usr/bin/gcc
-export CXX=/usr/bin/g++
+export CC=/opt/homebrew/bin/gcc-13
+export CXX=/opt/homebrew/bin/g++-13
 
 echo "Building KineticGas Release"
 
