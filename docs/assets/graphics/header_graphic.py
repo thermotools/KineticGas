@@ -164,31 +164,23 @@ def k(x, z):
     return sum(ki(x, z) for ki in klist) * mod(x)
 
 if __name__ == '__main__':
-    xl = np.linspace(-3, 3, 50)
+    xl = np.linspace(-3, 3, 150)
 
     def norm(x):
         return (x + 3) / 6
 
     plt.figure(figsize=(10, 5))
 
-    nz = [50 for _ in range(4)]
+    nz = [250 for _ in range(4)]
     funclist = [h, g, f, k]
-    xlims = [0] + [len(xl) // (4 - N) for N in range(4)]
-    alpha_list = [[0.05 , 0.075, 0.075 , 0.05  ],
-                  [0.075, 0.05 , 0.05  , 0.075 ],
-                  [0.05 , 0.075, 0.075 , 0.05  ],
-                  [0.075, 0.05 , 0.05  , 0.075 ]]
 
     color_xshifts = [0.1, -0.2, 0.2, -0.1]
-    alpha_list = np.array(alpha_list) + 0.05
 
     for fi, func in enumerate(funclist):
         zl = np.linspace(0, 1, nz[fi])
         for z in zl:
-            for xli in range(1, len(xlims)):
-                for i in range(xlims[xli - 1], xlims[xli]):
-                    plt.plot(xl[i : i + 2], func(xl[i : i + 2], z), color=cmap2d(norm(xl[i]) + color_xshifts[fi], z)
-                             , alpha=alpha_list[xli - 1][fi] * min(1, abs(xl[i])**2 + 0.05))
+            for i in range(0, len(xl)):
+                plt.plot(xl[i : i + 2], func(xl[i : i + 2], z), color=cmap2d(norm(xl[i]) + color_xshifts[fi], z), alpha=0.05)
 
     # NOTE: Because I couldn't figure out how to completely remove the green background from the header, the background
     #       figure needs to have white backing (not be transparent). Someone that knows more CSS than me can probably
@@ -203,6 +195,6 @@ if __name__ == '__main__':
     plt.gca().set_facecolor('white')
 
     plt.xlim(min(xl), max(xl))
-    plt.ylim(-1, 4)
-    plt.savefig('header.pdf', bbox_inches='tight', pad_inches=0)
+    plt.ylim(-2, 4)
+    plt.savefig('header.png', bbox_inches='tight', pad_inches=0, dpi=96)
     plt.show()
