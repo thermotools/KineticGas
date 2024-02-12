@@ -1094,6 +1094,7 @@ class py_KineticGas:
     def get_contact_diameters(self, particle_density, T, x):
         """cpp-interface
         Compute collision diameters given by Eq. (40) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+        *Note* Returns zeros for models initialised with is_idealgas=True.
         &&
         Args:
             particle_density (float) : Particle density (not molar!) [1 / m3]
