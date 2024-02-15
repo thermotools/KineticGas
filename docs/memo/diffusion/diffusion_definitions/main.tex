@@ -1,0 +1,27 @@
+\documentclass{article}
+\input{preamble}
+\input{commands}
+
+\title{Definitions of diffusion coefficients}
+\author{Vegard Gjeldvik Jervell}
+\date{November 2023}
+
+\begin{document}
+
+
+\maketitle
+\tableofcontents
+
+\section{Introduction}
+Diffusion- and thermal diffusion coefficients can be defined in a plethora of ways, which can quickly lead to confusion. This memo aims to clearly state how diffusion coefficients computed using the KineticGas package with various options are defined, and serve as a starting point for users that wish to use the KineticGas package together with other definitions of diffusion and thermal diffusion coefficients. 
+
+\input{diffusion}
+\input{thermal_diffusion}
+\input{zarate}
+
+\clearpage
+
+\bibliographystyle{ieeetr}
+\bibliography{bibliografi}
+
+\end{document}

@@ -1,0 +1,29 @@
+\section{Thermal Diffusion}
+
+Thermal diffusion coefficients are defined through an extension of the equations in Sec. \ref{sec:diffusion}, using the same notation as is present there, thermal diffusion coefficients computed using the KineticGas package are defined through
+\begin{equation}
+    \begin{pmatrix}J_1 \\ J_2 \\ \vdots \\ J_N \end{pmatrix}^{(n, f)} = 
+    \begin{pmatrix}
+    D_{T,1} \\ D_{T,2} \\ \vdots \\ D_{T,N}    
+    \end{pmatrix}^{(f, l)} \nabla \ln T -
+    \begin{bmatrix}
+    D_{11} & D_{12} & \hdots & D_{1N} \\
+    D_{21} & D_{22} & \hdots & D_{2N} \\
+    \vdots & \vdots & \ddots & \vdots \\
+    D_{N1} & D_{N2} & \hdots & D_{NN}
+    \end{bmatrix}^{(f, l)}
+    \begin{pmatrix}\nabla c_1 \\ \nabla c_2 \\ \vdots \\ \nabla c_N \end{pmatrix}
+    \label{eq:thdiff_definition}
+\end{equation}
+or, more compactly
+\begin{equation}
+    \Vec{J}^{(n, f)} = \Vec{D}_T^{(f, l)} \nabla \ln T - \Mat{D}^{(f, l)} \nabla \Vec{c}.
+\end{equation}
+
+Note that because in the presence of a temperature gradient, the Gibbs-Duhem equation no longer reduces to 
+\begin{equation}
+    \sum_i x_i \nabla \mu_i = 0,
+\end{equation}
+the choice of dependent component ($l$) will not only effect the diffusion matrix $\Mat{D}^{(f, l)}$, but also the thermal diffusion vector $\Vec{D}_T^{(f, l)}$. Just as for the diffusion matrix, the frame of reference and choice of dependent component for thermal diffusion coefficients is selected with the options \code{frame\_of\_reference} and \code{dependent\_idx}, with the \code{thermal\_diffusion\_coeff} method. 
+
+Also, just as for the diffusion matrix, thermal diffusion coefficients computed using the KineticGas package are defined through Eq. \eqref{eq:thdiff_definition}, i.e. with $\nabla \ln T$ and the \textit{molar concentration gradients} as the driving forces, and with the fluxes on a \textit{molar} basis.

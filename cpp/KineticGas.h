@@ -76,6 +76,7 @@ class KineticGas{
     virtual double omega(int i, int j, int l, int r, double T) = 0;
 
     // The "distance between particles" at contact.
+    // NOTE: Will Return [0, 0, ... 0] for models with is_idealgas=True.
     virtual std::vector<std::vector<double>> get_contact_diameters(double rho, double T, const std::vector<double>& x) = 0;
     
     /* 

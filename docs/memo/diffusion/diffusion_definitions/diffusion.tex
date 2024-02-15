@@ -1,0 +1,133 @@
+\section{Diffusion Coefficients}\label{sec:diffusion}
+
+When defining the diffusion coefficients we must make a set of choices:
+\begin{itemize}
+    \item What frame of reference do the coefficients apply to?
+    \item What basis are the fluxes measured in?
+    \item What forces are our driving forces?
+    \item Are we using an independent or dependent set of driving forces?
+    \item If we are using an independent set: What is the dependent driving force?
+\end{itemize}
+
+In this memo, the notation $J_i^{(x, f)}$ is used to denote a flux on the $x$ basis, in the $f$ frame of reference, such that a molar flux in the mole-centre frame of reference is denoted $J_i^{(n, n)}$, and the corresponding mass flux is $J_i^{(m, n)}  = m_i J_i^{(n, n)}$, where $m_i$ is the molar mass of species $i$. Diffusion coefficients are denoted $D_{ij}^{(f,l)}$, where the indices indicate 
+
+\begin{itemize}
+    \item $i$ : The flux the diffusion coefficient applies to.
+    \item $j$ : The force the diffusion coefficient applies to.
+    \item $f$ : The frame of reference the diffusion coefficient applies to.
+    \item $l$ : The index of the dependent force. The index $l$ is omitted for diffusion coefficients defined using a dependent set of forces.
+\end{itemize}
+
+This indexing may at first seem excessive, but it is required in order to accurately differentiate between the different definitions discussed here. Using this notation, we can write Ficks' law on a molar basis in the centre of moles (CoN) frame of reference (FoR) for an arbitrary multicomponent mixture as
+\begin{equation}
+    J_i^{(n,n)} = - \sum_{j \neq l} D_{ij}^{(n,l)} \nabla c_j
+\end{equation}
+where we have used the molar concentrations as driving forces, and chosen to use an independent set of driving forces, as the dependent gradient $\nabla c_l$ is constrained by the Gibbs-Duhem equation
+\begin{equation}
+    \sum_{j} x_j \nabla \mu_j = 0.
+\end{equation}
+
+For a binary ideal gas mixture, taking $l = 2$, this reduces to
+\begin{equation}
+    \begin{split}
+        J_1^{(n, n)} = - D_{11}^{(n, 2)} \nabla c_1, &\quad J_2^{(n, n)} = - D_{21}^{(n, 2)} \nabla c_1, \\
+        J_1^{(n, n)} = - J_2^{(n, n)} \quad &\iff \quad D_{11}^{(n, 2)} = - D_{21}^{(n, 2)},
+    \end{split}
+\end{equation}
+a commonly known formulation of Ficks' law in binary mixtures.
+
+To most easily expand our formulation of Ficks' law from binary to multicomponent mixtures, and to facilitate keeping track of indices, the KineticGas package always\footnote{See note on the option \code{use\_binary=True}.} returns an $N \times N$ diffusion matrix, defined through
+\begin{equation}
+    \begin{pmatrix}J_1 \\ J_2 \\ \vdots \\ J_N \end{pmatrix}^{(n, f)} = -
+    \begin{bmatrix}
+    D_{11} & D_{12} & \hdots & D_{1N} \\
+    D_{21} & D_{22} & \hdots & D_{2N} \\
+    \vdots & \vdots & \ddots & \vdots \\
+    D_{N1} & D_{N2} & \hdots & D_{NN}
+    \end{bmatrix}^{(f, l)}
+    \begin{pmatrix}\nabla c_1 \\ \nabla c_2 \\ \vdots \\ \nabla c_N \end{pmatrix}
+    \label{eq:diff_definition}
+\end{equation}
+where the dependent species, $l$, is selected with the \code{dependent\_idx} option (default is last component, $l = N$). For the described binary case mentioned above (CoN FoR, species 2 as the dependent species), this reduces to
+\begin{equation}
+    \begin{pmatrix}J_1 \\ J_2\end{pmatrix}^{(n, n)} = -
+    \begin{bmatrix}
+    D_{11} & 0 \\
+    D_{21} & 0 \\
+    \end{bmatrix}^{(n, 2)}
+    \begin{pmatrix}\nabla c_1 \\ \nabla c_2\end{pmatrix}
+\end{equation}
+
+where, as described above, the coefficients fulfil $D_{11}^{(n, 2)} = - D_{21}^{(n, 2)}$. If we select species 1 as the dependent component, the resulting matrix is
+\begin{equation}
+    \begin{pmatrix}J_1 \\ J_2\end{pmatrix}^{(n, n)} = -
+    \begin{bmatrix}
+    0 & D_{12} \\
+    0 & D_{22} \\
+    \end{bmatrix}^{(n, 1)}
+    \begin{pmatrix}\nabla c_1 \\ \nabla c_2\end{pmatrix}
+\end{equation}
+where, because for an ideal binary mixture at isothermal, isobaric conditions, $\nabla c_1 = - \nabla c_2$, and in the CoN FoR, $J_1^{(n, n)} = - J_2^{(n, n)}$, we have $D_{12}^{(n, 1)} = - D_{11}^{(n, 2)}$ and $D_{22}^{(n, 1)} = - D_{12}^{(n, 1)} = D_{11}^{(n, 2)}$. A similar, but slightly more intricate relation, holds also for non-ideal mixtures.\cite{retmie} Because the binary system is often of interest, and we only need one diffusion coefficient to describe the system, using the option \code{use\_binary=True}\footnote{The default for binary systems is \code{use\_binary=True}.} with the \code{interdiffusion} method, will return the diffusion coefficient
+\begin{equation}
+    D^{(f)} = 
+    \begin{cases}
+        D_{11}^{(f, 2)} (= - D_{21}^{(f, 2)}), & \text{if} \quad \code{\text{dependent\_idx}} = 2 \quad \text{(default)}\\
+        D_{22}^{(f, 1)} (= - D_{12}^{(f, 1)}), & \text{if} \quad \code{\text{dependent\_idx}} = 1 
+    \end{cases}
+\end{equation}
+where $f$ indicates the frame of reference, such that the diffusion coefficient returned by default for a binary system is the one fulfilling
+\begin{equation}
+    J_1^{(n, n)} = - D^{(n)} \nabla c_1,
+\end{equation}
+the common formulation of Ficks' law in the CoN FoR.
+
+\subsection{Dependent driving forces}
+When translating between definitions of the diffusion coefficient it may be convenient to have access to diffusion coefficients defined using a \textit{dependent} set of driving forces. These are then computed by selecting the option \code{use\_independent=False}, and are defined through
+\begin{equation}
+    \begin{pmatrix}J_1 \\ J_2 \\ \vdots \\ J_N \end{pmatrix}^{(n, f)} = -
+    \begin{bmatrix}
+    D_{11} & D_{12} & \hdots & D_{1N} \\
+    D_{21} & D_{22} & \hdots & D_{2N} \\
+    \vdots & \vdots & \ddots & \vdots \\
+    D_{N1} & D_{N2} & \hdots & D_{NN}
+    \end{bmatrix}^{(f)}
+    \begin{pmatrix}\nabla c_1 \\ \nabla c_2 \\ \vdots \\ \nabla c_N \end{pmatrix}
+\end{equation}
+and in the binary case reduce to
+\begin{equation}
+    \begin{split}
+        J_1^{(n, f)} &= - D_{11}^{(f)} \nabla c_1 - D_{12}^{(f)} \nabla c_2 \\
+        J_2^{(n, f)} &= - D_{21}^{(f)} \nabla c_1 - D_{22}^{(f)} \nabla c_2.
+    \end{split}
+\end{equation}
+Note that this diffusion matrix is not unique, and not necessarily invertible. It is primarily of interest because it gives easy access to the coefficients given in Eq. (19) of Ref. \cite{retmie}. For practical calculations it is recommended to always use an independent set of driving forces.
+
+\subsection{Frames of Reference}
+
+In the centre of moles (CoN, default) frame of reference (FoR), the molar fluxes are subject to the constraint
+\begin{equation}
+    \sum_i J_i^{(n, n)} = 0.
+\end{equation}
+in e.g. CFD calculations, we are typically more interested in fluxes in the centre of mass (CoM, barycentric) FoR. These are subject to the constraint
+\begin{equation}
+    \sum_i J_i^{(m, m)} = \sum_i m_i J_i^{(n, m)} = 0.
+\end{equation}
+We compute diffusion coefficients that apply in the CoM FoR by using the option \code{frame\_of\_reference='CoM'} with the \code{interdiffusion} method, which then returns the matrix of diffusion coefficients corresponding to the equation
+\begin{equation}
+    \begin{pmatrix}J_1 \\ J_2 \\ \vdots \\ J_N \end{pmatrix}^{(n, m)} = -
+    \begin{bmatrix}
+    D_{11} & D_{12} & \hdots & D_{1N} \\
+    D_{21} & D_{22} & \hdots & D_{2N} \\
+    \vdots & \vdots & \ddots & \vdots \\
+    D_{N1} & D_{N2} & \hdots & D_{NN}
+    \end{bmatrix}^{(m, l)}
+    \begin{pmatrix}\nabla c_1 \\ \nabla c_2 \\ \vdots \\ \nabla c_N \end{pmatrix}
+\end{equation}
+where, again, $l$ indicates the dependent component (default is last component), and $D_{il} = 0$ for all $i$. This matrix is related to the diffusion matrix in the CoN FoR by the transformation matrix given in the supporting material to Ref. \cite{retmie}.
+
+For all frames of reference (Exception: See section on Ortiz de Zárate.) the definition used for the diffusion coefficients returned by the KineticGas package is that in Eq. \eqref{eq:diff_definition}, that is:
+\begin{itemize}
+    \item The fluxes are on a \textit{molar basis}.
+    \item The driving forces are the \textit{molar concentration gradients}.
+\end{itemize}
+
