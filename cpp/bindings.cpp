@@ -59,17 +59,6 @@ namespace py = pybind11;
         .def("w_integrand", &Model::w_integrand) \
         .def("w_integral", &Model::w_integral)
 
-#define Mie_rdf_bindings(Model) \
-        .def("model_rdf", py::overload_cast<double, double, const std::vector<double>&>(&Model::model_rdf))\
-        .def("gHS", &Model::rdf_HS)\
-        .def("g1", py::overload_cast<double, \
-                                    const std::vector<double>&, \
-                                    const std::vector<std::vector<double>>&>(&Model::rdf_g1_func))\
-        .def("g2", py::overload_cast<double, double, \
-                                    const std::vector<double>&,\
-                                    const std::vector<std::vector<double>>&, \
-                                    const std::vector<std::vector<double>>&>(&Model::rdf_g2_func))
-
 
 #ifndef DEBUG
 PYBIND11_MODULE(KineticGas_r, handle){
@@ -112,43 +101,59 @@ PYBIND11_MODULE(KineticGas_d, handle){
         .def(py::init<vector1d, vector2d, vector2d, vector3d, vector3d, bool>())
         KineticGas_bindings(Sutherland)
         Spherical_potential_bindings(Sutherland)
-        Spherical_bindings(Sutherland);
-        // .def("rdf_g0", &Sutherland::rdf_g0_func)
+        Spherical_bindings(Sutherland)
+        .def("get_sigma_eff", &Sutherland::get_sigma_eff)
+        .def("get_sigma_min", &Sutherland::get_sigma_min)
+        .def("get_epsilon_eff", &Sutherland::get_epsilon_eff)
+        .def("get_BH_diameters", &Sutherland::get_BH_diameters)
+        .def("rdf_g0", py::overload_cast<double, double, const vector1d&>(&Sutherland::rdf_g0_func))
+        .def("rdf_g1", py::overload_cast<double, double, const vector1d&>(&Sutherland::rdf_g1_func))
+        .def("da1_drho", &Sutherland::da1_drho_func)
+        .def("da1s_drho", &Sutherland::da1s_drho_func)
+        .def("zeta_eff", py::overload_cast<double, const vector1d&, const vector2d&, double>(&Sutherland::zeta_eff_func))
+        .def("dzeta_eff_drho", py::overload_cast<double, const vector1d&, const vector2d&, double>(&Sutherland::dzeta_eff_drho_func))
+        .def("zeta_x", &Sutherland::zeta_x_func)
+        .def("a1s", py::overload_cast<double, double, const vector1d&, const vector2d&>(&Sutherland::a_1s_func))
+        .def("B_func", py::overload_cast<double, const vector1d&, const vector2d&, const vector2d&>(&Sutherland::B_func))
+        // Functions above this comment have been tested to reproduce MieKinGas
+        
+        ;
         // .def("rdf_g1", &Sutherland::rdf_g1_func);
 
     py::class_<MieKinGas>(handle, "cpp_MieKinGas")
-        .def(py::init<
-                        std::vector<double>,
-                        std::vector<std::vector<double>>,
-                        std::vector<std::vector<double>>,
-                        std::vector<std::vector<double>>,
-                        std::vector<std::vector<double>>,
-                        bool
+        .def(py::init<vector1d,
+                      vector2d,
+                      vector2d,
+                      vector2d,
+                      vector2d,
+                      bool
                     >()
             )
         KineticGas_bindings(MieKinGas)
         Spherical_potential_bindings(MieKinGas)
         Spherical_bindings(MieKinGas)
-        Mie_rdf_bindings(MieKinGas)
-        .def("g1", py::overload_cast<double, double,
-                                    const std::vector<double>&>(&MieKinGas::rdf_g1_func))
-        .def("g2", py::overload_cast<double, double,
-                                    const std::vector<double>&>(&MieKinGas::rdf_g2_func))
-        .def("a1s", py::overload_cast<double, double, const std::vector<double>&,
-                                        const std::vector<std::vector<double>>&>(&MieKinGas::a_1s_func))
-        .def("da1s_drho", py::overload_cast<double, double, const std::vector<double>&,
-                                        const std::vector<std::vector<double>>&>(&MieKinGas::da1s_drho_func))
+        .def("get_BH_diameters", &MieKinGas::get_BH_diameters)
+        .def("rdf_g0", &MieKinGas::rdf_HS)
+        .def("rdf_g1", py::overload_cast<double, double, const vector1d&>(&MieKinGas::rdf_g1_func))
+        .def("da1_drho", py::overload_cast<double, double, const vector1d&>(&MieKinGas::da1ij_drho_func))
+        .def("da1s_drho", py::overload_cast<double, const vector1d&, const vector2d&, const vector2d&>(&MieKinGas::da1s_drho_func))
+        .def("zeta_eff", &MieKinGas::zeta_eff_func)
+        .def("dzeta_eff_drho", &MieKinGas::dzeta_eff_drho_func)
+        .def("zeta_x", &MieKinGas::zeta_x_func)
+        .def("a1s", py::overload_cast<double, double, const vector1d&, const vector2d&>(&MieKinGas::a_1s_func))
+        .def("B_func", py::overload_cast<double, const vector1d&, const vector2d&, const vector2d&>(&MieKinGas::B_func))
+
+        .def("g2", py::overload_cast<double, double, const vector1d&>(&MieKinGas::rdf_g2_func))
         .def("get_dBH", &MieKinGas::get_BH_diameters)
         .def("a1ij", &MieKinGas::a1ij_func)
-        .def("da1ij_drho", py::overload_cast<double, double, const std::vector<double>&>(&MieKinGas::da1ij_drho_func))
-        .def("a2ij",  py::overload_cast<double, double, const std::vector<double>&>(&MieKinGas::a2ij_func))
-        .def("da2ij_drho", py::overload_cast<double, double, const std::vector<double>&>(&MieKinGas::da2ij_drho_func))
-        .def("get_BH_diameters", &MieKinGas::get_BH_diameters);
+        .def("a2ij",  py::overload_cast<double, double, const vector1d&>(&MieKinGas::a2ij_func))
+        .def("da2ij_drho", py::overload_cast<double, double, const vector1d&>(&MieKinGas::da2ij_drho_func));
+        
     
     py::class_<HardSphere>(handle, "cpp_HardSphere")
         .def(py::init<
-                        std::vector<double>,
-                        std::vector<std::vector<double>>,
+                        vector1d,
+                        vector2d,
                         bool
                     >()
             )
@@ -160,8 +165,8 @@ PYBIND11_MODULE(KineticGas_d, handle){
     
     py::class_<PseudoHardSphere>(handle, "cpp_PseudoHardSphere")
         .def(py::init<
-                        std::vector<double>,
-                        std::vector<std::vector<double>>,
+                        vector1d,
+                        vector2d,
                         bool
                     >()
             )

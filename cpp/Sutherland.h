@@ -14,14 +14,15 @@ class Sutherland : public Spherical{
     vector3d C;
     vector3d lambda;
     size_t nterms;
-    vector2d sigma_min;
     vector2d sigma_eff;
+    vector2d sigma_min;
     vector2d eps_eff;
 
     public:
     Sutherland(vector1d mole_weights, vector2d sigma, vector2d eps, vector3d C, vector3d lambda, bool is_idealgas=false)
-        : Spherical(mole_weights, sigma, is_idealgas), eps{eps}, C{C}, lambda{lambda}, nterms{C[0][0].size()}
-        {compute_sigma_eff(), compute_epsilon_eff();}
+        : Spherical(mole_weights, sigma, is_idealgas), eps{eps}, C{C}, lambda{lambda}, nterms{C.size()}, 
+        sigma_eff(Ncomps, vector1d(Ncomps, 0.)), sigma_min(Ncomps, vector1d(Ncomps, 0.)), eps_eff(Ncomps, vector1d(Ncomps, 0.))
+        {compute_sigma_eff(); compute_epsilon_eff();}
     
     virtual double potential(int i, int j, double r) override;
     virtual double potential_derivative_r(int i, int j, double r) override;
@@ -30,36 +31,43 @@ class Sutherland : public Spherical{
 
     void compute_sigma_eff();
     void compute_epsilon_eff();
-    vector2d get_sigma_min();
-    vector2d get_sigma_eff();
-    vector2d get_epsilon_eff();
+    inline vector2d get_sigma_eff(){compute_sigma_eff(); return sigma_eff;};
+    inline vector2d get_sigma_min(){compute_epsilon_eff(); return sigma_min;};
+    inline vector2d get_epsilon_eff(){compute_epsilon_eff(); return eps_eff;};
 
     virtual vector2d model_rdf(double rho, double T, const vector1d& mole_fracs) override;
-
-    vector2d rdf_g0_func(double rho, const vector1d& x, const vector2d& d_BH);
-    vector2d rdf_g1_func(double rho, const vector1d& x, const vector2d& d_BH);
-    vector2d rdf_g1_func(double rho, double T, const vector1d& x);
-    vector2d rdf_g2_func(double rho, double T, const vector1d& x, const vector2d& d_BH, const vector2d& x0);
+    vector2d rdf_g0_func(double rho, double T, const vector1d& x); // Tested vs. Mie : OK
+    vector2d rdf_g1_func(double rho, double T, const vector1d& x); // Tested vs. Mie : OK
     vector2d rdf_g2_func(double rho, double T, const vector1d& x);
+
+    virtual vector2d get_BH_diameters(double T); // Tested vs. Mie : OK
+    vector2d da1_drho_func(double rho, const vector1d& x, const vector2d& d_BH);
+    vector2d da1s_drho_func(double rho, const vector1d& x, const vector2d& d_BH, const vector2d& lambda_k); // Tested vs. Mie : OK
     
-    virtual vector2d get_BH_diameters(double T);
+    vector2d rdf_g0_func(double rho, const vector1d& x, const vector2d& d_BH); // Tested vs. Mie : OK
+    vector2d rdf_g1_func(double rho, const vector1d& x, const vector2d& d_BH); // Tested vs. Mie : OK
+    vector2d rdf_g2_func(double rho, double T, const vector1d& x, const vector2d& d_BH, const vector2d& x0);
+    
     vector2d get_x0(const vector2d& d_BH);
     vector2d get_xeff(const vector2d& d_BH);
 
-    private:
-    vector2d a_1s_func(double rho, const vector1d& x, double zeta_x, const vector2d& d_BH, const vector2d& lambda_k);
-    vector2d a_1s_func(double rho, double T, const vector1d& x, const vector2d& lambda_k);
-    vector2d da1s_drho_func(double rho, const vector1d& x, const vector2d& d_BH, const vector2d& lambda_k);
-    vector2d da1_drho_func(double rho, const vector1d& x, const vector2d& d_BH);
-    vector2d B_func(double rho, const std::vector<double>& x, double zeta_x, const vector2d& x_eff, const vector2d& d_BH, const vector2d& lambda_k);
+    vector2d a_1s_func(double rho, const vector1d& x, double zeta_x, const vector2d& d_BH, const vector2d& lambda_k); // Tested vs. Mie : OK
+    vector2d a_1s_func(double rho, double T, const vector1d& x, const vector2d& lambda_k); // Tested vs. Mie : OK
+    
+    vector2d B_func(double rho, const vector1d& x, double zeta_x, const vector2d& x_eff, const vector2d& d_BH, const vector2d& lambda_k); // Tested vs. Mie : OK 
+    vector2d B_func(double rho, const vector1d& x, const vector2d& d_BH, const vector2d& lambda_k); // Tested vs. Mie : OK 
     vector2d dBdrho_func(double rho, const vector1d& x, double zeta_x, const vector2d& x_eff, const vector2d& d_BH, const vector2d& lambda_k);
     vector2d I_func(const vector2d& xeff, const vector2d& lambda_k);
     vector2d J_func(const vector2d& xeff, const vector2d& lambda_k);
 
-    double zeta_x_func(double rho, const vector1d& x, const vector2d& d_BH);
+    double zeta_x_func(double rho, const vector1d& x, const vector2d& d_BH); // Tested vs. Mie : OK
     double dzetax_drho_func(const vector1d& x, const vector2d& d_BH);
-    double zeta_eff_func(double rho,  const vector1d& x, double zeta_x, double lambdaijk);
-    double dzeta_eff_drho_func(double rho, const std::vector<double>& x, const vector2d& d_BH, double lambdaijk);
+    double zeta_eff_func(double rho, const vector1d& x, double zeta_x, double lambdaijk); // Tested vs. Mie : OK
+    double zeta_eff_func(double rho, const vector1d& x, const vector2d& d_BH, double lambdaijk){
+        double zeta_x = zeta_x_func(rho, x, d_BH);
+        return zeta_eff_func(rho, x, zeta_x, lambdaijk);
+    }
+    double dzeta_eff_drho_func(double rho, const std::vector<double>& x, const vector2d& d_BH, double lambdaijk); // Tested vs. Mie : OK
 };
 
 namespace sutherland_rdf{

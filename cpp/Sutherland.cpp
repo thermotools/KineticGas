@@ -1,5 +1,33 @@
 #include "Sutherland.h"
 
+double Sutherland::potential(int i, int j, double r){
+    double p{0.0};
+    for (size_t k = 0; k < nterms; k++){
+        p += C[k][i][j] * pow(sigma[i][j] / r, lambda[k][i][j]);
+    }
+    return eps[i][j] * p;
+}
+
+double Sutherland::potential_derivative_r(int i, int j, double r){
+    double p{0.0};
+    for (size_t k = 0; k < nterms; k++){
+        p -= C[k][i][j] * lambda[k][i][j] * pow(sigma[i][j], lambda[k][i][j]) / pow(r, lambda[k][i][j] + 1);
+    }
+    return eps[i][j] * p;
+}
+
+double Sutherland::potential_dblderivative_rr(int i, int j, double r){
+    double p{0.0};
+    for (size_t k = 0; k < nterms; k++){
+        p += C[k][i][j] * lambda[k][i][j] * (lambda[k][i][j] + 1.) * pow(sigma[i][j], lambda[k][i][j]) / pow(r, lambda[k][i][j] + 2);
+    }
+    return eps[i][j] * p;
+}
+
+vector2d Sutherland::get_contact_diameters(double rho, double T, const vector1d& x){
+    throw std::runtime_error("Collision diameters not implemented for Sutherland!");
+}
+
 void Sutherland::compute_sigma_eff(){
     for (int i = 0; i < Ncomps; i++){
         for (int j = i; j < Ncomps; j++){
@@ -12,41 +40,16 @@ void Sutherland::compute_sigma_eff(){
     }
 }
 
-
 void Sutherland::compute_epsilon_eff(){
     sigma_min = sigma_eff;
     for (int i = 0; i < Ncomps; i++){
         for (int j = i; j < Ncomps; j++){
-            while (abs(potential_derivative_r(i, j, sigma_min[i][j])) / eps[i][j] > 1e-6){
+            while (abs(potential_derivative_r(i, j, sigma_min[i][j])) * sigma_eff[i][j] / eps[i][j] > 1e-10){
                 sigma_min[i][j] -= potential_derivative_r(i, j, sigma_min[i][j]) / potential_dblderivative_rr(i, j, sigma_min[i][j]);
             }
-            eps[i][j] = eps[j][i] = - potential(i, j, sigma_min[i][j]);
+            eps_eff[i][j] = eps_eff[j][i] = - potential(i, j, sigma_min[i][j]);
         }
     }
-}
-
-double Sutherland::potential(int i, int j, double r){
-    double p{0.0};
-    for (int n = 0; n < nterms; n++){
-        p += C[i][j][n] * pow(sigma[i][j] / r, lambda[i][j][n]);
-    }
-    return eps[i][j] * p;
-}
-
-double Sutherland::potential_derivative_r(int i, int j, double r){
-    double p{0.0};
-    for (int n = 0; n < nterms; n++){
-        p -= C[i][j][n] * lambda[i][j][n] * pow(sigma[i][j], lambda[i][j][n]) / pow(r, lambda[i][j][n] + 1);
-    }
-    return eps[i][j] * p;
-}
-
-double Sutherland::potential_dblderivative_rr(int i, int j, double r){
-    double p{0.0};
-    for (int n = 0; n < nterms; n++){
-        p += C[i][j][n] * lambda[i][j][n] * (lambda[i][j][n] + 1.) * pow(sigma[i][j], lambda[i][j][n]) / pow(r, lambda[i][j][n] + 2);
-    }
-    return eps[i][j] * p;
 }
 
 vector2d Sutherland::model_rdf(double rho, double T, const vector1d& x){
@@ -85,6 +88,11 @@ vector2d Sutherland::rdf_g0_func(double rho, const vector1d& x, const vector2d& 
     return rdf;
 }
 
+vector2d Sutherland::rdf_g0_func(double rho, double T, const vector1d& x){
+    vector2d d_BH = get_BH_diameters(T);
+    return rdf_g0_func(rho, x, d_BH);
+}
+
 vector2d Sutherland::rdf_g1_func(double rho, const vector1d& x, const vector2d& d_BH){
     vector2d g1(Ncomps, std::vector<double>(Ncomps, 0.));
     vector2d dadr = da1_drho_func(rho, x, d_BH);
@@ -96,7 +104,7 @@ vector2d Sutherland::rdf_g1_func(double rho, const vector1d& x, const vector2d& 
         vector2d B_k = B_func(rho, x, zeta_x, x0, d_BH, lambda[k]);
         for (int i = 0; i < Ncomps; i++){
             for (int j = i; j < Ncomps; j++){
-                g1[i][j] += lambda[i][j][k] * C[k][i][j] * pow(x0[i][j], lambda[i][j][k]) * (a1s_k[i][j] + B_k[i][j]) / rho;
+                g1[i][j] += lambda[k][i][j] * C[k][i][j] * pow(x0[i][j], lambda[k][i][j]) * (a1s_k[i][j] + B_k[i][j]) / rho;
             }
         }
     }
@@ -295,6 +303,12 @@ vector2d Sutherland::B_func(double rho, const std::vector<double>& x, double zet
     return B;
 }
 
+vector2d Sutherland::B_func(double rho, const vector1d& x, const vector2d& d_BH, const vector2d& lambda_k){
+    double zeta_x = zeta_x_func(rho, x, d_BH);
+    vector2d x_eff = get_xeff(d_BH);
+    return B_func(rho, x, zeta_x, x_eff, d_BH, lambda_k);
+}
+
 vector2d Sutherland::I_func(const vector2d& xeff, const vector2d& lambda_k){
     vector2d I(Ncomps, std::vector<double>(Ncomps));
     for (int i = 0; i < Ncomps; i++){
@@ -339,7 +353,7 @@ vector2d Sutherland::da1s_drho_func(double rho, const vector1d& x, const vector2
     vector2d  da1sdrho(Ncomps, std::vector<double>(Ncomps));
     for (int i = 0; i < Ncomps; i++){
         for (int j = i; j < Ncomps; j++){
-            double ze = zeta_eff_func(rho, x, d_BH[i][j], lambda_k[i][j]);
+            double ze = zeta_eff_func(rho, x, d_BH, lambda_k[i][j]);
             double dzedrho = dzeta_eff_drho_func(rho, x, d_BH, lambda_k[i][j]);
             da1sdrho[i][j] = -2. * (PI * eps[i][j] * pow(d_BH[i][j], 3) / (lambda_k[i][j] - 3)) 
                                     * (((1. - ze / 2.) / pow(1 - ze, 3)) 
