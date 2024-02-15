@@ -1,10 +1,7 @@
 '''
 Author: Vegard Gjeldvik Jervell
-Purpose: Wrapper for the MieKinGas class. Handles mixing of sigma and epsilon parameters before initialising cpp-side.
+Purpose: Wrapper for the MieKinGas class. Calls the MieType initializer with the appropriate parameter set identifier.
 '''
-import numpy as np
-from scipy.constants import Boltzmann, Avogadro
-from scipy.integrate import quad
 from pykingas import cpp_MieKinGas, MieType
 from thermopack.saftvrmie import saftvrmie
 
@@ -19,7 +16,7 @@ class MieKinGas(MieType.MieType):
         If parameters are explicitly supplied through optional arguments, these will be used instead of those in the database.
         To supply specific parameters for only some components, give `None` for the components that should use the database
         value
-
+        &&
         Args:
             comps (str) : Comma-separated list of components
             mole_weights (1D array) : Molar weights [g/mol]

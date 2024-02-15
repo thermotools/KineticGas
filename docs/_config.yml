@@ -17,7 +17,8 @@ data_sources:
 includes_dir: _includes
 
 pypi_url: 'https://pypi.org/project/pykingas/'
-
+repository_url: 'https://github.com/thermotools/KineticGas'
+repository: 'thermotools/KineticGas'
 
 defaults:
   -

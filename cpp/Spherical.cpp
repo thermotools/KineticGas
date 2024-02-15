@@ -14,7 +14,7 @@ Spherical::Spherical(std::vector<double> mole_weights,
 
 }
 
-double Spherical::omega(const int& i, const int& j, const int& l, const int& r, const double& T){
+double Spherical::omega(int i, int j, int l, int r, double T){
     OmegaPoint point{i, j, l, r, T}, sympoint{j, i, l, r, T};
     const std::map<OmegaPoint, double>::iterator pos = omega_map.find(point);
     if (pos == omega_map.end()){
@@ -29,7 +29,7 @@ double Spherical::omega(const int& i, const int& j, const int& l, const int& r, 
     return pos->second;
 }
 
-double Spherical::w_integral(const int& i, const int& j, const double& T, const int& l, const int& r){
+double Spherical::w_integral(int i, int j, double T, int l, int r){
     Point origin{1e-7, 1e-7};
     Point end{8, 5};
     double dg{0.5}, db{0.03125};
@@ -47,9 +47,9 @@ double Spherical::w_integral(const int& i, const int& j, const double& T, const 
     return I;
 }
 
-double Spherical::w_integrand(const int& i, const int& j, const double& T, 
-                                        const double& g, const double& b,
-                                        const int& l, const int& r){ // Using b = b / sigma to better scale the axes. Multiply the final integral by sigma.
+double Spherical::w_integrand(int i, int j, double T, 
+                                        double g, double b,
+                                        int l, int r){ // Using b = b / sigma to better scale the axes. Multiply the final integral by sigma.
     const double chi_val = chi(i, j, T, g, b * sigma[i][j]);
     return 2 * exp(- pow(g, 2)) * pow(g, 2.0 * r + 3.0) * (1 - pow(cos(chi_val), l)) * b;
 };

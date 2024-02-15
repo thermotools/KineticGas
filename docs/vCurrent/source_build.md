@@ -51,6 +51,39 @@ The `bash` script `cpp/build_kingas.sh` uses `cmake` and `make` to compile the b
    * Where `<path/to/python>` can (usually) be replaced by `$(which python)`.
    * Alternatively, add the line `set(PYBIND11_PYTHON_VERSION 3)` to the top of the file `cpp/CMakeLists.txt`
    * Or: add the line `set(PYTHON_EXECUTABLE "<path/to/python>"`
+ * If `cmake` starts looping infinitely:
+   * You may be getting a message of the type :
+```
+You have changed variables that require your cache to be deleted.
+Configure will be re-run and you may have to reset some variables.
+The following variables have changed:
+CMAKE_C_COMPILER= /Library/Developer/CommandLineTools/usr/bin/cc
+CMAKE_CXX_COMPILER= /Library/Developer/CommandLineTools/usr/bin/c++
+CMAKE_CXX_COMPILER= /Library/Developer/CommandLineTools/usr/bin/c++
+```
+   * To fix this: Ensure that there are no `set(CMAKE_CXX_COMPILER <path/to/compiler>)` or `set(CMAKE_C_COMPILER <path/to/compiler>)` statements in `cpp/CMakeLists.txt`. If you need to specify a compiler, do so by using the `export CC=<path/to/compiler>` and `export CXX=<path/to/compiler>` statements in `cpp/build.sh`.
+     * It appears that everything works fine as long as the environment variables `CC` and `CXX` match the variables `CMAKE_C_COMPILER` and `CMAKE_CXX_COMPILER`.
+     * **NOTE** : You may need to delete the file `cpp/release/CMakeCache.txt` for changes to take effect.
+ * If you get an error message when the file `bindings.cpp` is compiling, that originates from the `pybind11` headers:
+   * You are likely getting an error of the type
+```
+ error: address of overloaded function '<some_func>' does not match required type 'pybind11::overload_cast<some stuff>'
+```
+and 
+```
+error: static_assert failed due to requirement 'detail::integral_constant<bool, false>::value' "pybind11::overload_cast<...> requires compiling in C++14 mode"
+```
+   * and you are likely using `clang` compiled for the C++-11 standard. (The compiler located in `/usr/...` on Mac is likely `clang`, even though it is called `gcc`)
+   * To fix the issue: 
+     * Install `gcc` with [homebrew](https://formulae.brew.sh/formula/gcc).
+     * Locate the compilers you've installed (`which gcc-13` and `which g++-13` should work if you installed gcc version 13.x.x)
+     * Set the environment variables `CC` and `CXX` in `cpp/build.sh` to the path to these compilers by modifying the `export` statements. For example
+```
+export CC=/opt/homebrew/bin/gcc-13
+export CXX=/opt/homebrew/bin/g++-13
+```
+   * **NOTE**: You may need to delete the file `cpp/release/CMakeCache.txt` for changes to take effect.
+   * See also: [This stackoverflow question](https://stackoverflow.com/questions/73758291/is-there-a-way-to-specify-the-c-standard-of-clangd-without-recompiling-it) for info
  * If none of the above works, please feel free to leave an issue.
 
 ### For Windows

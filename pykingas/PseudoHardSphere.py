@@ -3,8 +3,10 @@ Author: Vegard Gjeldvik Jervell
 Purpose: Wrapper for the PseudoHardSphere class.
 '''
 
-from pykingas import cpp_PseudoHardSphere, KineticGas
+from pykingas import cpp_PseudoHardSphere
+from pykingas.py_KineticGas import py_KineticGas
 import numpy as np
+from scipy.constants import Boltzmann as kB, pi, Avogadro
 
 def HS_pressure(rho, T, x, sigma, chi):
     p = rho * kB * T
@@ -36,7 +38,7 @@ def mu_func(rho, T, x, sigma, chi):
                             - (Z2 * sigma[i][i] / Z3)**3 * (2 * np.log(Z) + Z3 * (2 - Z3) / Z))
     return mu
 
-class PseudoHardSphere(KineticGas):
+class PseudoHardSphere(py_KineticGas):
 
     def __init__(self, comps, mole_weights=None, sigma=None, N=3, is_idealgas=False,
                     parameter_ref='default'):

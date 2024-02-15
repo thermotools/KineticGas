@@ -1,7 +1,9 @@
 import os
 
-KINETICGAS_ROOT = os.path.dirname(__file__) + '/../'
-MARKDOWN_DIR = KINETICGAS_ROOT + 'docs/vCurrent/'
+def get_root_and_markdown_dir(version):
+    root = os.path.dirname(__file__) + '/../'
+    md_dir = root + 'docs/v' + version + '/'
+    return root, md_dir
 
 def remove_illegal_link_chars(link_str):
     """

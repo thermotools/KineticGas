@@ -18,13 +18,13 @@ class HardSphere : public KineticGas {
         : KineticGas(mole_weights, is_idealgas), sigma{sigmaij}{
     }
     
-    double omega(const int& i, const int& j, const int& l, const int& r, const double& T) override {
+    double omega(int i, int j, int l, int r, double T) override {
         double w = w_integral(i, j, T, l, r); 
         if (i == j) return pow(sigma.at(i).at(j), 2) * sqrt((PI * BOLTZMANN * T) / m.at(i)) * w;
         return 0.5 * pow(sigma.at(i).at(j), 2) * sqrt(2 * PI * BOLTZMANN * T / (m0[i][j] * M[i][j] * M[j][i])) * w;
     }
 
-    double w_integral(const int& i, const int& j, const double& T, const int& l, const int& r){
+    double w_integral(int i, int j, double T, int l, int r){
         int f = Fac(r + 1).eval();
         if (l % 2 == 0){
             return 0.25 * (2 - ((1.0 / (l + 1)) * 2)) * f;

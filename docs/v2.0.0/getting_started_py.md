@@ -103,7 +103,7 @@ from pykingas.MieKinGas import MieKinGas
 
 kin = MieKinGas('O2,N2,CO2,C1') # Mixture of air with carbon dioxide and methane, modeled with RET-Mie
 T = 800 # Kelvin
-Vm = 66.5 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
+Vm = 0.0665 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
 x = [0.05, 0.25, 0.5, 0.2] # Molar composition
 
 cond = kin.thermal_conductivity(T, Vm, x, N=2) # Thermal conductivity [W / m K]
@@ -120,7 +120,7 @@ from pykingas.MieKinGas import MieKinGas
 
 kin = MieKinGas('O2,N2,CO2,C1') # Mixture of air with carbon dioxide and methane, modeled with RET-Mie
 T = 800 # Kelvin
-Vm = 66.5 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
+Vm = 0.0665 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
 x = [0.05, 0.25, 0.5, 0.2] # Molar composition
 
 visc = kin.viscosity(T, Vm, x, N=2) # Shear viscosity [Pa s]
@@ -128,7 +128,11 @@ visc = kin.viscosity(T, Vm, x, N=2) # Shear viscosity [Pa s]
 
 ### Diffusion coefficients
 
-Diffusion coefficients may be defined in many different ways, and depend upon the frame of reference (FoR). For a more in-depth discussion on this see the supporting information of [Revised Enskog Theory for Mie fluids: Prediction of diffusion coefficients, thermal diffusion coefficients, viscosities and thermal conductivities.]()
+Diffusion coefficients may be defined in many different ways, and depend upon the frame of reference (FoR). For a more in-depth 
+discussion on this see the supporting information of [Revised Enskog Theory for Mie fluids: Prediction of diffusion coefficients, 
+thermal diffusion coefficients, viscosities and thermal conductivities. ](https://pubs.aip.org/aip/jcp/article/158/22/224101/2895227/Revised-Enskog-theory-for-Mie-fluids-Prediction-of)
+For more details on the definitions available in the KineticGas package, see the [memo on definitions of the diffusion 
+coefficient.](/KineticGas/memo/diffusion/diffusion_definitions.pdf)
 
 The interface to all diffusion coefficients is the method `interdiffusion(self, T, Vm, x, N)`, where `T` is the temperature, `Vm` is the molar volume, `x` is the molar composition and `N` is the Enskog approximation order.
 
@@ -147,7 +151,7 @@ from pykingas.MieKinGas import MieKinGas
 
 kin = MieKinGas('AR,KR') # RET-Mie for a mixture of argon and krypton
 T = 300 # Kelvin
-Vm = 25 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
+Vm = 0.025 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
 x = [0.3, 0.7] # Molar composition
 
 D = kin.interdiffusion(T, Vm, x, N=2) # Binary diffusion coefficient [m^2 / s]
@@ -166,7 +170,7 @@ from pykingas.MieKinGas import MieKinGas
 
 kin = MieKinGas('AR,KR') # RET-Mie for a mixture of argon and krypton
 T = 300 # Kelvin
-Vm = 25 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
+Vm = 0.025 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
 x = [0.3, 0.7] # Molar composition
 
 D_CoN = kin.interdiffusion(T, Vm, x, N=2, frame_of_reference='CoN') # Diffusion coefficient in the CoN FoR
@@ -231,7 +235,9 @@ The `frame_of_reference` kwarg works as normal when `use_independet=False`.
 
 Thermal diffusion is characterised by several common coefficients, the thermal diffusion coefficients $D_{T,i}^{(FoR)}$, the thermal diffusion factor $\alpha_{ij}$, the thermal diffusion ratios $k_{T, i}$ and the Soret coefficients $S_{T,i}$.
 
-Of these, the thermal diffusion coefficients, $D_{T,i}^{(FoR)}$, carry the same ambiguity as the diffusion coefficients in their dependency on the frame of reference (FoR) and choice of dependent gradient.
+Of these, the thermal diffusion coefficients, $D_{T,i}^{(FoR)}$, carry the same ambiguity as the diffusion coefficients 
+in their dependency on the frame of reference (FoR) and choice of dependent gradient. For more details on the definitions 
+available in the KineticGas package, see the [memo on definitions of the diffusion coefficient.](/KineticGas/memo/diffusion/diffusion_definitions.pdf)
 
 #### The Thermal diffusion factors
 
@@ -246,7 +252,7 @@ from pykingas.MieKinGas import MieKinGas
 
 kin = MieKinGas('C1,C3,CO2') # RET-Mie for a mixture of methane, propane and CO2
 T = 300 # Kelvin
-Vm = 25 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
+Vm = 0.025 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
 x = [0.3, 0.6, 0.1] # Molar composition
 
 alpha = kin.thermal_diffusion_factor(T, Vm, x, N=2) # Thermal diffusion factors [dimensionless]
@@ -278,7 +284,7 @@ from pykingas.MieKinGas import MieKinGas
 
 kin = MieKinGas('C1,O2,CO2') # RET-Mie for a mixture of methane, oxygen and CO2
 T = 300 # Kelvin
-Vm = 25 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
+Vm = 0.025 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
 x = [0.3, 0.6, 0.1] # Molar composition
 
 DT = kin.thermal_diffusion_coeff(T, Vm, x, N=2) # Thermal diffusion coefficients in the CoN FoR [mol / m s]

@@ -1,0 +1,29 @@
+\documentclass{article}
+\input{preamble}
+\input{commands}
+\title{Binary limits of ternary systems}
+\author{Vegard Gjeldvik Jervell}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+\section{Introduction}
+
+This memo discusses the binary limit of diffusion- and thermal diffusion coefficients in ternary systems, i.e. the behaviour of the coefficients when the mole fraction of one species in the system approaches zero. As an initial remark, please note that if one of the mole fractions is exactly zero, the solutions to Eq. (6), (8) and (10) in \cite{retmie} are ill-defined, such that we cannot model a binary system as a ternary system where one mole fraction is exactly zero. We can, however, investigate the behaviour when one mole fraction approaches zero.
+
+The purpose of this memo is to give some insight into which ternary coefficients approach various binary coefficients in the binary limit, as well as showing how the formulation of the force-flux relations in the respective binary and ternary systems effects these relations.
+
+Finally, the current memo serves as a consistency check for the ternary coefficients computed using the KineticGas package.
+
+\input{diffusion}
+\clearpage
+\input{thermal_diffusion}
+
+\clearpage
+
+\bibliographystyle{ieeetr}
+\bibliography{bibliografi}
+
+\end{document}

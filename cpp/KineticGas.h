@@ -73,9 +73,10 @@ class KineticGas{
     KineticGas(std::vector<double> mole_weights, bool is_idealgas);
     virtual ~KineticGas(){};
     // Collision integrals
-    virtual double omega(const int& i, const int& j, const int& l, const int& r, const double& T) = 0;
+    virtual double omega(int i, int j, int l, int r, double T) = 0;
 
     // The "distance between particles" at contact.
+    // NOTE: Will Return [0, 0, ... 0] for models with is_idealgas=True.
     virtual std::vector<std::vector<double>> get_contact_diameters(double rho, double T, const std::vector<double>& x) = 0;
     
     /* 
@@ -84,7 +85,7 @@ class KineticGas{
        If a potential model is implemented only for the ideal gas state, its implementation
        of model_rdf should throw an std::invalid_argument error.
     */
-    virtual std::vector<std::vector<double>> model_rdf(double T, double rho, const std::vector<double>& mole_fracs) = 0;
+    virtual std::vector<std::vector<double>> model_rdf(double rho, double T, const std::vector<double>& mole_fracs) = 0;
 
     std::vector<double> get_wt_fracs(const std::vector<double> mole_fracs); // Compute weight fractions from mole fractions
     std::vector<std::vector<double>> get_rdf(double rho, double T, const std::vector<double>& mole_fracs) {
@@ -96,26 +97,24 @@ class KineticGas{
 // -------------------------------------------------- Square bracket integrals -------------------------------------------- //
 
     // Linear combination weights by Tompson, Tipton and Lloyalka
-    double A(const int& p, const int& q, const int& r, const int& l);
-    double A_prime(const int& p, const int& q, const int& r, const int& l, const double& tmp_M1, const double& tmp_M2);
-    double A_trippleprime(const int& p, const int& q, const int& r, const int& l);
+    double A(int p, int q, int r, int l) const;
+    double A_prime(int p, int q, int r, int l, double tmp_M1, double tmp_M2) const;
+    double A_trippleprime(int p, int q, int r, int l) const;
 
     // The diffusion and conductivity related square bracket integrals
-    double H_ij(const int& p, const int& q, const int& i, const int& j, const double& T); // [S^(p)_{3/2}(U^2_i), S^(q)_{3/2}(U^2_j)]_{ij}
-    double H_i(const int& p, const int& q, const int& i, const int& j, const double& T);  // [S^(p)_{3/2}(U^2_i), S^(q)_{3/2}(U^2_i)]_{ij}
-    double H_simple(const int& p, const int& q, const int& i, const double& T);           // [S^(p)_{3/2}(U^2_i), S^(q)_{3/2}(U^2_i)]_{i}
+    double H_ij(int p, int q, int i, int j, double T); // [S^(p)_{3/2}(U^2_i), S^(q)_{3/2}(U^2_j)]_{ij}
+    double H_i(int p, int q, int i, int j, double T);  // [S^(p)_{3/2}(U^2_i), S^(q)_{3/2}(U^2_i)]_{ij}
+    double H_simple(int p, int q, int i, double T);           // [S^(p)_{3/2}(U^2_i), S^(q)_{3/2}(U^2_i)]_{i}
 
     // Linear combination weights by Tompson, Tipton and Lloyalka
-    double B_prime(const int& p, const int& q, const int& r, const int& l,
-                    const double& M1, const double& M2);
-    double B_dblprime(const int& p, const int& q, const int& r, const int& l,
-                        const double& M1, const double& M2);
-    double B_trippleprime(const int& p, const int& q, const int& r, const int& l);
+    double B_prime(int p, int q, int r, int l, double M1, double M2) const;
+    double B_dblprime(int p, int q, int r, int l, double M1, double M2) const;
+    double B_trippleprime(int p, int q, int r, int l) const;
 
     // Viscosity related square bracket integrals
-    double L_ij(const int& p, const int& q, const int& i, const int& j, const double& T); // [S^(p)_{5/2}(U^2_i), S^(q)_{5/2}(U^2_j)]_{ij}
-    double L_i(const int& p, const int& q, const int& i, const int& j, const double& T);  // [S^(p)_{5/2}(U^2_i), S^(q)_{5/2}(U^2_i)]_{ij}
-    double L_simple(const int& p, const int& q, const int& i, const double& T);           // [S^(p)_{5/2}(U^2_i), S^(q)_{5/2}(U^2_i)]_{i}
+    double L_ij(int p, int q, int i, int j, double T); // [S^(p)_{5/2}(U^2_i), S^(q)_{5/2}(U^2_j)]_{ij}
+    double L_i(int p, int q, int i, int j, double T);  // [S^(p)_{5/2}(U^2_i), S^(q)_{5/2}(U^2_i)]_{ij}
+    double L_simple(int p, int q, int i, double T);           // [S^(p)_{5/2}(U^2_i), S^(q)_{5/2}(U^2_i)]_{i}
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------- //
 // ---------------------------------- Matrices and vectors for multicomponent, density corrected solutions -------------------------------------- //
