@@ -52,7 +52,7 @@ double MieKinGas::omega_recursive_factor(int i, int j, int l, int r, double T_st
     // Given in Fokin, Popov and Kalashnikov, High Temperature, Vol. 37, No. 1 (1999)
     // See also: Hirchfelder, Curtiss & Bird, Molecular Theory of Gases and Liquids.
     // For reduced integrals : omega(l, r + 1) / omega(l, r) = 1 + (d omega(l, r) / d lnT^*) / (r + 2)
-    if ((l > 1) || (r > 2)) throw std::runtime_error("No recursive factor available!");
+    if ((l > 2) || (r > 3)) {throw std::runtime_error("No recursive factor available!");}
     double dlnomega_dlnT = - (2 / lr[i][j]);
     double a_m;
     for (int n = 2; n < 7; n++){
