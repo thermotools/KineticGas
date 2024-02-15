@@ -299,7 +299,7 @@ std::vector<double> KineticGas::get_viscosity_vector(double rho, double T, const
 //                 A_pqrl factors, used for conductivity and diffusion                                 //
 // --------------------------------------------------------------------------------------------------- //
 
-double KineticGas::A(const int& p, const int& q, const int& r, const int& l){
+double KineticGas::A(int p, int q, int r, int l) const {
     double value{0.0};
     int max_i = std::min(std::min(p, q), std::min(r, p + q + 1 - r));
     for (int i = l - 1; i <= max_i; i++){
@@ -310,8 +310,7 @@ double KineticGas::A(const int& p, const int& q, const int& r, const int& l){
     return value;
 }
 
-double KineticGas::A_prime(const int& p, const int& q, const int& r, const int& l,
-                            const double& tmp_M1, const double& tmp_M2){
+double KineticGas::A_prime(int p, int q, int r, int l, double tmp_M1, double tmp_M2) const {
     double F = (pow(tmp_M1, 2) + pow(tmp_M2, 2)) / (2 * tmp_M1 * tmp_M2);
     double G = (tmp_M1 - tmp_M2) / tmp_M2;
 
@@ -344,12 +343,11 @@ double KineticGas::A_prime(const int& p, const int& q, const int& r, const int& 
 //                            B_pqrl factors, used for viscosity                                       //
 // --------------------------------------------------------------------------------------------------- //
 
-inline Frac poch(const int& z, const int& n){ // Pochhammer notation (z)_n, used in the B-factors
+inline Frac poch(int z, int n){ // Pochhammer notation (z)_n, used in the B-factors
     return Fac(z + n - 1) / Fac(z - 1);
 }
 
-double KineticGas::B_prime(const int& p, const int& q, const int& r, const int& l,
-                            const double& M1, const double& M2){
+double KineticGas::B_prime(int p, int q, int r, int l, double M1, double M2) const {
     if (r == p + q + 3) return 0.0;
     double val{0.0};
     double inner{0.0};
@@ -387,8 +385,7 @@ double KineticGas::B_prime(const int& p, const int& q, const int& r, const int& 
     return val;
 }
 
-double KineticGas::B_dblprime(const int& p, const int& q, const int& r, const int& l,
-                                const double& M1, const double& M2){
+double KineticGas::B_dblprime(int p, int q, int r, int l, double M1, double M2) const {
     if (r == p + q + 3) return 0.0;
     double val{0.0};
     Frac num;
@@ -426,7 +423,7 @@ double KineticGas::B_dblprime(const int& p, const int& q, const int& r, const in
 //                      H-integrals, used for conductivity and diffusion                               //
 // --------------------------------------------------------------------------------------------------- //
 
-double KineticGas::H_ij(const int& p, const int& q, const int& i, const int& j, const double& T){
+double KineticGas::H_ij(int p, int q, int i, int j, double T){
     double tmp_M1{M[i][j]}, tmp_M2{M[j][i]};
     double value{0.0};
     int max_l = std::min(p, q) + 1;
@@ -441,7 +438,7 @@ double KineticGas::H_ij(const int& p, const int& q, const int& i, const int& j, 
     return value;
 }
 
-double KineticGas::H_i(const int& p, const int& q, const int& i, const int& j, const double& T){
+double KineticGas::H_i(int p, int q, int i, int j, double T){
     double tmp_M1{M[i][j]}, tmp_M2{M[j][i]};
     double value{0.0};
 
@@ -461,7 +458,7 @@ double KineticGas::H_i(const int& p, const int& q, const int& i, const int& j, c
 //                               L-integrals, used for viscosity                                       //
 // --------------------------------------------------------------------------------------------------- //
 
-double KineticGas::L_ij(const int& p, const int& q, const int& i, const int& j, const double& T){
+double KineticGas::L_ij(int p, int q, int i, int j, double T){
     double val{0.0};
     double M1{M[i][j]};
     double M2{M[j][i]};
@@ -473,7 +470,7 @@ double KineticGas::L_ij(const int& p, const int& q, const int& i, const int& j, 
     val *= 16.0 / 3.0;
     return val;
 }
-double KineticGas::L_i(const int& p, const int& q, const int& i, const int& j, const double& T){
+double KineticGas::L_i(int p, int q, int i, int j, double T){
     double val{0.0}, M1{M[i][j]}, M2{M[j][i]};
     for (int l = 1; l <= std::min(p, q) + 2; l++){
         for (int r = l; r <= p + q + 4 - l; r++){

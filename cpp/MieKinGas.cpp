@@ -8,7 +8,7 @@ See : J. Chem. Phys. 139, 154504 (2013); https://doi.org/10.1063/1.4819786
 
 using namespace mie_rdf_constants;
 
-double MieKinGas::omega(const int& i, const int& j, const int& l, const int& r, const double& T){
+double MieKinGas::omega(int i, int j, int l, int r, double T){
     if ((l <= 2) && (r <= 3) && (abs(la[i][j] - 6.) < 1e-10)){ // Use Correlation by Fokin, Popov and Kalashnikov, High Temperature, Vol. 37, No. 1 (1999)
         // NOTE: There is a typo in Eq. (4b) in the article, ln(1/m) should be ln(m).
         // See: I. H. Bell et. al. J. Chem. Eng. Data (2020), https://doi.org/10.1021/acs.jced.9b00455
