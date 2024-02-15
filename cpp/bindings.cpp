@@ -3,6 +3,7 @@
 #include "MieKinGas.h"
 #include "HardSphere.h"
 #include "PseudoHardSphere.h"
+#include "Sutherland.h"
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 #include "pybind11/operators.h"
@@ -106,6 +107,14 @@ PYBIND11_MODULE(KineticGas_d, handle){
             strm << "ij = " << p.i << p.j << ", l = " << p.l << ", r = " << p.r << " T = " << p.T_dK << " dK";
             return strm.str();
         });
+
+    py::class_<Sutherland>(handle, "cpp_Sutherland")
+        .def(py::init<vector1d, vector2d, vector2d, vector3d, vector3d, bool>())
+        KineticGas_bindings(Sutherland)
+        Spherical_potential_bindings(Sutherland)
+        Spherical_bindings(Sutherland);
+        // .def("rdf_g0", &Sutherland::rdf_g0_func)
+        // .def("rdf_g1", &Sutherland::rdf_g1_func);
 
     py::class_<MieKinGas>(handle, "cpp_MieKinGas")
         .def(py::init<
