@@ -616,6 +616,7 @@ std::vector<std::vector<double>> MieKinGas::gamma_corr(double zeta_x, double T){
             double theta = exp(eps[i][j] / (BOLTZMANN * T)) + 1.;
             gamma[i][j] = phi[0] * (1 - tanh(phi[1] * (phi[2] - alpha[i][j]))) 
                         * zeta_x * theta * exp(phi[3] * zeta_x + phi[4] * pow(zeta_x, 2));
+            gamma[j][i] = gamma[i][j];
         }
     }
     return gamma;

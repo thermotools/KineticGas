@@ -98,6 +98,7 @@ class MieKinGas : public Spherical {
     std::vector<std::vector<double>> get_b_max(double T);
     std::vector<std::vector<double>> get_contact_diameters(double rho, double T, const std::vector<double>& x) override;
     virtual std::vector<std::vector<double>> get_BH_diameters(double T);
+    std::vector<std::vector<double>> get_vdw_alpha(){return alpha;}
 
     // Methods for computing the radial distribution function at contact
     std::vector<std::vector<double>> model_rdf(double rho, double T, const std::vector<double>& x) override;
@@ -152,6 +153,13 @@ class MieKinGas : public Spherical {
     std::vector<std::vector<double>> da2ij_div_chi_drho_func(double rho, const std::vector<double>& x, double K_HS, 
                                                 const std::vector<std::vector<double>>& d_BH,
                                                 const std::vector<std::vector<double>>& x0);
+    std::vector<std::vector<double>> da2ij_div_chi_drho_func(double rho, double T, const std::vector<double>& x){
+        std::vector<std::vector<double>> d_BH = get_BH_diameters(T);
+        double zeta_x = zeta_x_func(rho, x, d_BH);
+        double K_HS = K_HS_func(zeta_x);
+        std::vector<std::vector<double>> x0 = get_x0(d_BH);
+        return da2ij_div_chi_drho_func(rho, x, K_HS, d_BH, x0);
+    }
 
     std::vector<std::vector<double>> rdf_chi_func(double rho, const std::vector<double>& x,
                                                 const std::vector<std::vector<double>>& d_BH);
@@ -159,6 +167,11 @@ class MieKinGas : public Spherical {
                                                     const std::vector<std::vector<double>>& d_BH);
     
     std::vector<std::vector<double>> gamma_corr(double zeta_x, double T);
+    std::vector<std::vector<double>> gamma_corr(double rho, double T, const std::vector<double>& x){
+        std::vector<std::vector<double>> d_BH = get_BH_diameters(T);
+        double zeta_x = zeta_x_func(rho, x, d_BH);
+        return gamma_corr(zeta_x, T);
+    }
 
     inline double K_HS_func(double zeta_x){
         return pow(1 - zeta_x, 4) / (1 + 4 * zeta_x + 4 * pow(zeta_x, 2) - 4 * pow(zeta_x, 3) + pow(zeta_x, 4));
