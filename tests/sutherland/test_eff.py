@@ -57,10 +57,28 @@ def test_mie_epsilon_eff(comps, i, j, silent=False):
         print(abs(epsilon[i][j] - epsilon_eff[i][j]) / epsilon[i][j])
     assert abs(epsilon[i][j] - epsilon_eff[i][j]) < 1e-10
 
+@pytest.mark.parametrize('comps', ['H2', 'AR,C1', 'KR,CO2,O2'])
+@pytest.mark.parametrize('i', [0, 1, 2])
+@pytest.mark.parametrize('j', [0, 1, 2])
+def test_vdw_alpha(comps, i, j, silent=False):
+    mie = MieKinGas(comps)
+    smie = S_MieKinGas(comps)
+    if (i >= mie.ncomps) or (j >= mie.ncomps):
+        return
+
+    s_alpha = smie.cpp_kingas.get_vdw_alpha()
+    alpha = mie.cpp_kingas.get_vdw_alpha()
+    if silent is False:
+        print(f'alpha (mie) : {alpha[i][j]}')
+        print(f'alpha (sut) : {s_alpha[i][j]}')
+        print(f'Diff : {alpha[i][j] - s_alpha[i][j]}')
+    assert abs(alpha[i][j] - s_alpha[i][j]) < 1e-10
+
+
 if __name__ == '__main__':
     complist = ['H2', 'AR,C1', 'KR,CO2,O2']
     for comps in complist:
         for i in range(3):
             for j in range(3):
                 print(comps, i, j)
-                test_mie_epsilon_eff(comps, i, j)
+                test_vdw_alpha(comps, i, j)

@@ -52,17 +52,28 @@ void Sutherland::compute_epsilon_eff(){
     }
 }
 
+void Sutherland::compute_vdw_alpha(){
+    for (size_t i = 0; i < Ncomps; i++){
+        for (size_t j = 0; j < Ncomps; j++){
+            for (size_t k = 0; k < nterms; k++){
+                vdw_alpha[i][j] -= C[k][i][j] * eps[i][j] * pow(sigma[i][j] / sigma_eff[i][j], lambda[k][i][j]) / (lambda[k][i][j] - 3.);
+            }
+            vdw_alpha[i][j] /= eps_eff[i][j];
+        }
+    }
+}
+
 vector2d Sutherland::model_rdf(double rho, double T, const vector1d& x){
     double beta = (1. / (BOLTZMANN * T));
     vector2d d_BH = get_BH_diameters(T);
-    vector2d x0 = get_x0(d_BH);
+    vector2d x_eff = get_xeff(d_BH);
     vector2d gHS = rdf_g0_func(rho, x, d_BH);
     vector2d g1 = rdf_g1_func(rho, x, d_BH);
-    // vector2d g2 = rdf_g2_func(rho, T, x, d_BH, x0);
+    vector2d g2 = rdf_g2_func(rho, T, x, d_BH, x_eff);
     vector2d g(Ncomps, vector1d(Ncomps));
     for (int i = 0; i < Ncomps; i++){
         for (int j = i; j < Ncomps; j++){
-            g[i][j] = gHS[i][j] * exp(beta * eps[i][j] * (g1[i][j] / gHS[i][j])); //  + pow(beta * eps[i][j], 2) * (g2[i][j] / gHS[i][j]));
+            g[i][j] = gHS[i][j] * exp(beta * eps[i][j] * (g1[i][j] / gHS[i][j]) + pow(beta * eps[i][j], 2) * (g2[i][j] / gHS[i][j]));
             g[j][i] = g[i][j];
         }
     }
@@ -123,59 +134,67 @@ vector2d Sutherland::rdf_g1_func(double rho, double T, const std::vector<double>
     return rdf_g1_func(rho, x, d_BH);
 }
 
-/*
-vector2d rdf_g2_func(double rho, double T, const vector1d& x, const vector2d& d_BH, const vector2d& x0){
+vector2d Sutherland::rdf_g2_func(double rho, double T, const vector1d& x, const vector2d& d_BH, const vector2d& x_eff){
     vector2d g2(Ncomps, std::vector<double>(Ncomps));
-    vector2d _la(Ncomps, std::vector<double>(Ncomps));
-    vector2d _lr(Ncomps, std::vector<double>(Ncomps));
-    vector2d la_lr(Ncomps, std::vector<double>(Ncomps));
     
     double zeta_x = zeta_x_func(rho, x, d_BH);
     double K_HS = K_HS_func(zeta_x);
-    vector2d rdf_chi = rdf_chi_func(rho, x, d_BH);
-    vector2d rdf_chi_HS = rdf_chi_func(rho, x, sigma);
-    vector2d drdf_chi_drho = drdf_chi_drho_func(rho, x, d_BH);
-    for (int i = 0; i < Ncomps; i++){
-        for (int j = i; j < Ncomps; j++){
-            _la[i][j] = _la[j][i] = 2 * la[i][j];
-            _lr[i][j] = _lr[j][i] = 2 * lr[i][j];
-            la_lr[i][j] = la_lr[j][i] = la[i][j] + lr[i][j];
+
+    for (size_t k = 0; k < nterms; k++){
+        for (size_t l = 0; l < nterms; l++){
+            vector2d lambda_kl = get_lambda_kl(k, l);
+            vector2d a1s_kl = a_1s_func(rho, x, zeta_x, d_BH, lambda_kl);
+            vector2d B_kl = B_func(rho, x, zeta_x, x_eff, d_BH, lambda_kl);
+            for (size_t i = 0; i < Ncomps; i++){
+                for (size_t j = i; j < Ncomps; j++){
+                    g2[i][j] -= K_HS * eps[i][j] * C[k][i][j] * C[l][i][j] * lambda[k][i][j] * pow(x_eff[i][j], lambda_kl[i][j]) * (a1s_kl[i][j] + B_kl[i][j]) / rho;
+                }
+            }
         }
     }
-    vector2d a1s_la = a_1s_func(rho, x, d_BH, _la);
-    vector2d a1s_lr = a_1s_func(rho, x, d_BH, _lr);
-    vector2d a1s_la_lr = a_1s_func(rho, x, d_BH, la_lr);
-    vector2d B_la = B_func(rho, x, d_BH, _la);
-    vector2d B_lr = B_func(rho, x, d_BH, _lr);
-    vector2d B_la_lr = B_func(rho, x, d_BH, la_lr);
-    vector2d da2ij_div_chi_drho = da2ij_div_chi_drho_func(rho, x, K_HS, d_BH, x0);
-    vector2d a2ij = a2ij_func(rho, x, K_HS, rdf_chi_HS, d_BH, x0);
-    double zeta_x_HS = zeta_x_func(rho, x, sigma);
+    vector2d da2ij_div_chi_drho = da2ij_div_chi_drho_func(rho, x, K_HS, d_BH, x_eff);
+    double zeta_x_HS = zeta_x_func(rho, x, sigma_eff);
     vector2d gamma_c = gamma_corr(zeta_x_HS, T);
-    for (int i = 0; i < Ncomps; i++){
-        for (int j = i; j < Ncomps; j++){
-            g2[i][j] = (1 + gamma_c[i][j])
-                        * (1. / (2 * PI * pow(eps[i][j], 2) * pow(d_BH[i][j], 3))) 
-                        * (3 * da2ij_div_chi_drho[i][j] 
-                            + eps[i][j] * K_HS * pow(C[i][j], 2) 
-                                * (- lr[i][j] * pow(x0[i][j], 2 * lr[i][j]) * (a1s_lr[i][j] + B_lr[i][j]) / rho
-                                    + la_lr[i][j] * pow(x0[i][j], la_lr[i][j]) * (a1s_la_lr[i][j] + B_la_lr[i][j]) / rho
-                                    -  la[i][j] * pow(x0[i][j], 2 * la[i][j]) * (a1s_la[i][j] + B_la[i][j]) / rho
-                                    )
-                            );
+    for (size_t i = 0; i < Ncomps; i++){
+        for (size_t j = i; j < Ncomps; j++){
+            g2[i][j] += 3. * da2ij_div_chi_drho[i][j];
+            g2[i][j] *= (1 + gamma_c[i][j]) * (1. / (2. * PI * pow(eps[i][j], 2) * pow(d_BH[i][j], 3))) ;
             g2[j][i] = g2[i][j];
         }
     }
     return g2;
 }
 
-
-vector2d rdf_g2_func(double rho, double T, const vector1d& x){
+vector2d Sutherland::rdf_g2_func(double rho, double T, const vector1d& x){
     vector2d d_BH = get_BH_diameters(T);
-    vector2d x0 = get_x0(d_BH);
-    return rdf_g2_func(rho, T, x, d_BH, x0);
+    vector2d x_eff = get_xeff(d_BH);
+    return rdf_g2_func(rho, T, x, d_BH, x_eff);
 }
-*/
+
+vector2d Sutherland::get_lambda_kl(size_t k, size_t l){
+    vector2d lambda_kl(Ncomps, vector1d(Ncomps, 0.));
+    for (size_t i = 0; i < Ncomps; i++){
+        for (size_t j = 0; j < Ncomps; j++){
+            lambda_kl[j][i] = lambda_kl[i][j] = lambda[k][i][j] + lambda[l][i][j];
+        }
+    }
+    return lambda_kl;
+}
+
+vector2d Sutherland::gamma_corr(double zeta_x, double T){
+    vector2d gamma(Ncomps, std::vector<double>(Ncomps));
+    constexpr double phi[5] = {10., 10., 0.57, -6.7, -8.};
+
+    for (int i = 0; i < Ncomps; i++){
+        for (int j = i; j < Ncomps; j++){
+            double theta = exp(eps[i][j] / (BOLTZMANN * T)) + 1.;
+            gamma[i][j] = phi[0] * (1 - tanh(phi[1] * (phi[2] - vdw_alpha[i][j]))) 
+                        * zeta_x * theta * exp(phi[3] * zeta_x + phi[4] * pow(zeta_x, 2));
+            gamma[j][i] = gamma[i][j];
+        }
+    }
+    return gamma;
+}
 
 vector2d Sutherland::get_BH_diameters(double T){
     // Gauss-Legendre points taken from SAFT-VR-MIE docs (see: ThermoPack)
@@ -216,6 +235,106 @@ vector2d Sutherland::get_xeff(const vector2d& d_BH){
         }
     }
     return x_eff;
+}
+
+vector2d Sutherland::da2ij_div_chi_drho_func(double rho, const vector1d& x, double K_HS, const vector2d& d_BH, const vector2d& x_eff){
+    double zeta_x = zeta_x_func(rho, x, d_BH);
+    double dzxdr = dzetax_drho_func(x, d_BH);
+    double dKHS_drho = dKHS_drho_func(zeta_x, dzxdr);
+    vector2d rdf_chi_HS = rdf_chi_func(rho, x, sigma);
+    vector2d a2ij = a2ij_func(rho, x, K_HS, rdf_chi_HS, d_BH, x_eff);
+    vector2d dchi_HS_drho = drdf_chi_drho_func(rho, x, sigma);
+    vector2d da2ij_drho(Ncomps, std::vector<double>(Ncomps));
+
+    for (size_t k = 0; k < nterms; k++){
+        for (size_t l = 0; l < nterms; l++){
+            vector2d lambda_kl = get_lambda_kl(k, l);
+            vector2d da1s_drho = da1s_drho_func(rho, x, d_BH, lambda_kl);
+            vector2d dB_drho = dBdrho_func(rho, x, zeta_x, x_eff, d_BH, lambda_kl);
+            for (size_t i = 0; i < Ncomps; i++){
+                for (size_t j = i; j < Ncomps; j++){
+                    da2ij_drho[i][j] += .5 * K_HS * eps[i][j] * C[k][i][j] * C[l][i][j]
+                                    * pow(x_eff[i][j], lambda_kl[i][j]) * (da1s_drho[i][j] + dB_drho[i][j]);
+
+                }
+            }
+        }
+    }
+    for (size_t i = 0; i < Ncomps; i++){
+        for (size_t j = i; j < Ncomps; j++){
+            da2ij_drho[i][j] += dKHS_drho * (a2ij[i][j] / (K_HS * (1 + rdf_chi_HS[i][j])));
+            da2ij_drho[j][i] = da2ij_drho[i][j];
+        }
+    }
+    return da2ij_drho;
+}
+
+vector2d Sutherland::a2ij_func(double rho, const vector1d& x, double K_HS, const vector2d& rdf_chi_HS, const vector2d& d_BH, const vector2d& x_eff){
+    std::vector<std::vector<double>> a2ij(Ncomps, std::vector<double>(Ncomps, 0.0));
+    double zeta_x = zeta_x_func(rho, x, d_BH);
+    for (size_t k = 0; k < nterms; k++){
+        for (size_t l = k; l < nterms; l++){
+            double multiplicity = (l == k) ? 1. : 2.;
+            vector2d lambda_kl = get_lambda_kl(k, l);
+            vector2d a1s = a_1s_func(rho, x, zeta_x, d_BH, lambda_kl);
+            vector2d B = B_func(rho, x, d_BH, lambda_kl);
+            for (size_t i = 0; i < Ncomps; i++){
+                for (size_t j = i; j < Ncomps; j++){
+                    a2ij[i][j] += multiplicity * C[k][i][j] * C[l][i][j] * pow(x_eff[i][j], lambda_kl[i][j]) * (a1s[i][j] + B[i][j]);
+
+                }
+            }
+        }
+    }
+    for (size_t i = 0; i < Ncomps; i++){
+        for (size_t j = i; j < Ncomps; j++){
+            a2ij[i][j] *= 0.5 * K_HS * (1 + rdf_chi_HS[i][j]) * eps[i][j];
+            a2ij[j][i] = a2ij[i][j];
+        }
+    }
+    return a2ij;
+}
+
+vector2d Sutherland::rdf_chi_func(double rho, const vector1d& x, const vector2d& d_BH){
+    vector2d rdf_chi(Ncomps, vector1d(Ncomps));
+    double zeta_x = zeta_x_func(rho, x, d_BH);
+    for (int i = 0; i < Ncomps; i++){
+        for (int j = i; j < Ncomps; j++){
+            vector1d f = f_corr(vdw_alpha[i][j]);
+            rdf_chi[i][j] = f[0] * zeta_x + f[1] * pow(zeta_x, 5) + f[2] * pow(zeta_x, 8);
+            rdf_chi[j][i] = rdf_chi[i][j];
+        }
+    }
+    return rdf_chi;
+}
+
+vector1d Sutherland::f_corr(double alpha){
+    std::vector<double> f(3);
+    for (int i = 0; i < 3; i++){
+        double num{0.0}, denom{1.0};
+        for (int n = 0; n <= 3; n++){
+            num += sutherland_rdf::phi[n][i] * pow(alpha, n);
+        }
+        for (int n = 4; n <= 6; n++){
+            denom += sutherland_rdf::phi[n][i] * pow(alpha, n - 3);
+        }
+        f[i] = num / denom;
+    }
+    return f;
+}
+
+vector2d Sutherland::drdf_chi_drho_func(double rho, const vector1d& x, const vector2d& d_BH){
+    vector2d drdf_chi_drho(Ncomps, vector1d(Ncomps, 0.0));
+    double zeta_x = zeta_x_func(rho, x, d_BH);
+    double dzdr = dzetax_drho_func(x, d_BH);
+    for (int i = 0; i < Ncomps; i++){
+        for (int j = i; j < Ncomps; j++){
+            std::vector<double> f = f_corr(vdw_alpha[i][j]);
+            drdf_chi_drho[i][j] = dzdr * (f[0] + 5. * f[1] * pow(zeta_x, 4) + 8. * f[2] * pow(zeta_x, 7));
+            drdf_chi_drho[j][i] = drdf_chi_drho[i][j];
+        }
+    }
+    return drdf_chi_drho;
 }
 
 double Sutherland::zeta_x_func(double rho, const vector1d& x, const vector2d& d_BH){

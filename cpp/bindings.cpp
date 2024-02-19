@@ -105,9 +105,11 @@ PYBIND11_MODULE(KineticGas_d, handle){
         .def("get_sigma_eff", &Sutherland::get_sigma_eff)
         .def("get_sigma_min", &Sutherland::get_sigma_min)
         .def("get_epsilon_eff", &Sutherland::get_epsilon_eff)
+        .def("get_vdw_alpha", &Sutherland::get_vdw_alpha)
         .def("get_BH_diameters", &Sutherland::get_BH_diameters)
         .def("rdf_g0", py::overload_cast<double, double, const vector1d&>(&Sutherland::rdf_g0_func))
         .def("rdf_g1", py::overload_cast<double, double, const vector1d&>(&Sutherland::rdf_g1_func))
+        .def("rdf_g2", py::overload_cast<double, double, const vector1d&>(&Sutherland::rdf_g2_func))
         .def("da1_drho", &Sutherland::da1_drho_func)
         .def("da1s_drho", &Sutherland::da1s_drho_func)
         .def("zeta_eff", py::overload_cast<double, const vector1d&, const vector2d&, double>(&Sutherland::zeta_eff_func))
@@ -115,8 +117,10 @@ PYBIND11_MODULE(KineticGas_d, handle){
         .def("zeta_x", &Sutherland::zeta_x_func)
         .def("a1s", py::overload_cast<double, double, const vector1d&, const vector2d&>(&Sutherland::a_1s_func))
         .def("B_func", py::overload_cast<double, const vector1d&, const vector2d&, const vector2d&>(&Sutherland::B_func))
+        .def("da2_div_chi_drho", py::overload_cast<double, double, const vector1d&>(&Sutherland::da2ij_div_chi_drho_func))
+        .def("gamma_corr", py::overload_cast<double, double, const vector1d&>(&Sutherland::gamma_corr))
         // Functions above this comment have been tested to reproduce MieKinGas
-        
+        .def()
         ;
         // .def("rdf_g1", &Sutherland::rdf_g1_func);
 
@@ -133,6 +137,7 @@ PYBIND11_MODULE(KineticGas_d, handle){
         Spherical_potential_bindings(MieKinGas)
         Spherical_bindings(MieKinGas)
         .def("get_BH_diameters", &MieKinGas::get_BH_diameters)
+        .def("get_vdw_alpha", &MieKinGas::get_vdw_alpha)
         .def("rdf_g0", &MieKinGas::rdf_HS)
         .def("rdf_g1", py::overload_cast<double, double, const vector1d&>(&MieKinGas::rdf_g1_func))
         .def("da1_drho", py::overload_cast<double, double, const vector1d&>(&MieKinGas::da1ij_drho_func))
@@ -143,11 +148,14 @@ PYBIND11_MODULE(KineticGas_d, handle){
         .def("a1s", py::overload_cast<double, double, const vector1d&, const vector2d&>(&MieKinGas::a_1s_func))
         .def("B_func", py::overload_cast<double, const vector1d&, const vector2d&, const vector2d&>(&MieKinGas::B_func))
 
-        .def("g2", py::overload_cast<double, double, const vector1d&>(&MieKinGas::rdf_g2_func))
+        .def("rdf_g2", py::overload_cast<double, double, const vector1d&>(&MieKinGas::rdf_g2_func))
         .def("get_dBH", &MieKinGas::get_BH_diameters)
         .def("a1ij", &MieKinGas::a1ij_func)
         .def("a2ij",  py::overload_cast<double, double, const vector1d&>(&MieKinGas::a2ij_func))
-        .def("da2ij_drho", py::overload_cast<double, double, const vector1d&>(&MieKinGas::da2ij_drho_func));
+        .def("da2ij_drho", py::overload_cast<double, double, const vector1d&>(&MieKinGas::da2ij_drho_func))
+        .def("da2_div_chi_drho", py::overload_cast<double, double, const vector1d&>(&MieKinGas::da2ij_div_chi_drho_func))
+        .def("gamma_corr", py::overload_cast<double, double, const vector1d&>(&MieKinGas::gamma_corr))
+        ;
         
     
     py::class_<HardSphere>(handle, "cpp_HardSphere")
