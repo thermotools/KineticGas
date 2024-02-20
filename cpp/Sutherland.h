@@ -24,12 +24,12 @@ class Sutherland : public Spherical{
         : Spherical(mole_weights, sigma, is_idealgas), eps{eps}, C{C}, lambda{lambda}, nterms{C.size()}, 
         sigma_eff(Ncomps, vector1d(Ncomps, 0.)), sigma_min(Ncomps, vector1d(Ncomps, 0.)), eps_eff(Ncomps, vector1d(Ncomps, 0.)),
         vdw_alpha(Ncomps, vector1d(Ncomps, 0.))
-        {compute_sigma_eff(); compute_epsilon_eff(); compute_vdw_alpha();}
+        {compute_sigma_eff(); compute_epsilon_eff(); compute_vdw_alpha(); std::cout << "is_idealgas : " << is_idealgas << std::endl;}
     
     virtual double potential(int i, int j, double r) override;
     virtual double potential_derivative_r(int i, int j, double r) override;
     virtual double potential_dblderivative_rr(int i, int j, double r) override;
-    virtual vector2d get_contact_diameters(double rho, double T, const vector1d& x) override;
+    virtual vector2d get_b_max(double T) override;
 
     void compute_sigma_eff(); // Tested vs. Mie : OK
     void compute_epsilon_eff(); // Tested vs. Mie : OK

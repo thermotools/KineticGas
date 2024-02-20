@@ -24,8 +24,20 @@ double Sutherland::potential_dblderivative_rr(int i, int j, double r){
     return eps[i][j] * p;
 }
 
-vector2d Sutherland::get_contact_diameters(double rho, double T, const vector1d& x){
-    throw std::runtime_error("Collision diameters not implemented for Sutherland!");
+vector2d Sutherland::get_b_max(double T){
+    std::vector<std::vector<int>> ierr(Ncomps, std::vector<int>(Ncomps, 1));
+    vector2d b_max = Spherical::get_b_max(T, ierr);
+    for (size_t i = 0; i < Ncomps; i++){
+        for (size_t j = i; j < Ncomps; j++){
+            if (ierr[i][j]) {
+                std::cout << "Could not compute upper integration limit for collision diameter (" << i << ", " << j
+                            << ") using Barker-Henderson diameter as fallback value." << std::endl;
+                vector2d d_BH = get_BH_diameters(T);
+                b_max[j][i] = b_max[i][j] = d_BH[i][j];
+            }
+        }
+    }
+    return b_max;
 }
 
 void Sutherland::compute_sigma_eff(){

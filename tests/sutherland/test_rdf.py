@@ -6,7 +6,7 @@ from pykingas.MieKinGas import MieKinGas
 from scipy.constants import Avogadro, Boltzmann
 import numpy as np
 import pytest
-from tools import equal
+from s_tools import equal
 
 complist = ['H2', 'AR,C1', 'KR,CO2,O2']
 idx_list = [0, 1, 2, 3]

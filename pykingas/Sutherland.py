@@ -8,9 +8,18 @@ from thermopack.saftvrmie import saftvrmie
 class Sutherland(py_KineticGas):
 
     def __init__(self, mole_weights, sigma, eps_div_k, C, lambdas, N=3, is_idealgas=False):
-        # Note: Inheriting classes are responsible for calling the py_KineticGas constructor
+        """
+        Note: When initializing for a specific set of components, the inheriting class should call the py_KineticGas
+        constructor first, in order to retrieve the component parameters and initialize various attributes, then
+        compute the coefficients and exponents required to call the Sutherland constructor.
+        """
 
-        assert hasattr(self, 'ncomps')
+        # Assuming that the fluids attribute will be set only if the py_KineticGas constructor has already been called.
+        if not hasattr(self, 'fluids'):
+            ncomps = len(mole_weights)
+            comps = ','.join(['PSEUDO' for _ in range(ncomps)])
+            super().__init__(comps, mole_weights=mole_weights, N=N, is_idealgas=is_idealgas)
+
         assert np.shape(sigma) == (self.ncomps, self.ncomps)
         assert np.shape(eps_div_k) == (self.ncomps, self.ncomps)
         assert np.shape(C)[0] == np.shape(lambdas)[0]
@@ -56,7 +65,15 @@ class S_MieKinGas(Sutherland):
         """
         py_KineticGas.__init__(self, comps, mole_weights=mole_weights, N=N, is_idealgas=is_idealgas)
 
-        self.eos = saftvrmie(comps)
+        if self.is_idealgas is False:
+            if use_eos is None:
+                self.eos = saftvrmie()
+                if parameter_ref == 'default':
+                    self.eos.init(comps)
+                else:
+                    self.eos.init(comps, parameter_reference=parameter_ref)
+            else:
+                self.eos = use_eos
 
         self.lij = lij
         self.kij = kij
@@ -126,7 +143,7 @@ class S_MieKinGas(Sutherland):
 
         self.C = (self.lr / (self.lr - self.la)) * (self.lr / self.la) ** (self.la / (self.lr - self.la))
 
-        super().__init__(self.mole_weights, self.sigma, self.epsilon_ij / Boltzmann, [self.C, - self.C], [self.lr, self.la])
+        super().__init__(self.mole_weights, self.sigma, self.epsilon_ij / Boltzmann, [self.C, - self.C], [self.lr, self.la], is_idealgas=is_idealgas)
     
     def get_epsilon_matrix(self, eps_div_k, kij):
         """Utility
@@ -165,7 +182,7 @@ class S_MieKinGas(Sutherland):
         return sigma_ij
 
     def get_lambda_matrix(self, lambdas, lij):
-        """Utility
+        r"""Utility
         Compute pair-interaction $\lambda_r$ parameters, apply mixing parameter.
         &&
         Args:
@@ -180,3 +197,25 @@ class S_MieKinGas(Sutherland):
     
     def get_C_matrix(self):
         return (self.lr / (self.lr - self.la)) * (self.lr / self.la) ** (self.la / (self.lr - self.la))
+
+class PureSutherland(Sutherland):
+
+    def __init__(self, mole_weights, sigma, eps_div_k, C, lambdas, N=3, is_idealgas=False):
+        """Constructor
+        Construct a Sutherland model for a pure component
+        &&
+        Args:
+            mole_weights (float) : Molar mass [g / mol]
+            sigma (float) : Size scale [m]
+            eps_div_k (float) : Energy scale divided by Boltzmanns constant [K]
+            C (Iterable[float]) : Sutherland coefficients
+            lambdas (Iterable[float]) : Sutherland exponents
+            N (int, optional) : Default Enskog approximation order, defaults to 3.
+            is_idealgas (bool, optional) : Whether model is at infinite dilution, defaults to false.
+        """
+        mole_weights = np.ones((2, 2)) * mole_weights
+        sigma = np.ones((2, 2)) * sigma
+        eps_div_k = np.ones((2, 2)) * eps_div_k
+        C = np.ones((2, 2)) * C
+        lambdas = np.ones((2, 2)) * lambdas
+        super().__init__(mole_weights, sigma, eps_div_k, C, lambdas, N=N, is_idealgas=is_idealgas)
