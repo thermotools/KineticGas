@@ -214,7 +214,7 @@ vector2d Sutherland::get_BH_diameters(double T){
     double beta = 1. / (BOLTZMANN * T);
     for (int i = 0; i < Ncomps; i++){
         for (int n = 0; n < 10; n++){
-            d_BH[i][i] += sutherland_rdf::gl_w[n] * (1. - exp(- beta * potential(i, i, sigma[i][i] * (sutherland_rdf::gl_x[n] + 1) / 2.)));
+            d_BH[i][i] += rdf_constants.gl_w[n] * (1. - exp(- beta * potential(i, i, sigma[i][i] * (rdf_constants.gl_x[n] + 1) / 2.)));
         }
         d_BH[i][i] *= sigma[i][i] / 2;
     }
@@ -325,10 +325,10 @@ vector1d Sutherland::f_corr(double alpha){
     for (int i = 0; i < 3; i++){
         double num{0.0}, denom{1.0};
         for (int n = 0; n <= 3; n++){
-            num += sutherland_rdf::phi[n][i] * pow(alpha, n);
+            num += rdf_constants.phi[n][i] * pow(alpha, n);
         }
         for (int n = 4; n <= 6; n++){
-            denom += sutherland_rdf::phi[n][i] * pow(alpha, n - 3);
+            denom += rdf_constants.phi[n][i] * pow(alpha, n - 3);
         }
         f[i] = num / denom;
     }
@@ -364,7 +364,7 @@ double Sutherland::zeta_eff_func(double rho,  const vector1d& x, double zeta_x, 
     std::vector<double> c_coeffs(4, 0.0);
     for (int i = 0; i < 4; i++){
         for (int j = 0; j < 4; j++){
-            c_coeffs[i] += sutherland_rdf::C_coeff_matr[i][j] * pow(lambdaijk, - j);
+            c_coeffs[i] += rdf_constants.C_coeff_matr[i][j] * pow(lambdaijk, - j);
         }
     }
     double zeta_eff{0.0};
@@ -379,7 +379,7 @@ double Sutherland::dzeta_eff_drho_func(double rho, const std::vector<double>& x,
     std::vector<double> c_coeffs(4, 0.0);
     for (int i = 0; i < 4; i++){
         for (int j = 0; j < 4; j++){
-            c_coeffs[i] += sutherland_rdf::C_coeff_matr[i][j] * pow(lambdaijk, - j);
+            c_coeffs[i] += rdf_constants.C_coeff_matr[i][j] * pow(lambdaijk, - j);
         }
     }
     double zeta_x = zeta_x_func(rho, x, d_BH);
@@ -482,9 +482,10 @@ vector2d Sutherland::da1_drho_func(double rho, const vector1d& x, const vector2d
 
 vector2d Sutherland::da1s_drho_func(double rho, const vector1d& x, const vector2d& d_BH, const vector2d& lambda_k){
     vector2d  da1sdrho(Ncomps, std::vector<double>(Ncomps));
+    double zeta_x = zeta_x_func(rho, x, d_BH);
     for (int i = 0; i < Ncomps; i++){
         for (int j = i; j < Ncomps; j++){
-            double ze = zeta_eff_func(rho, x, d_BH, lambda_k[i][j]);
+            double ze = zeta_eff_func(rho, x, zeta_x, lambda_k[i][j]);
             double dzedrho = dzeta_eff_drho_func(rho, x, d_BH, lambda_k[i][j]);
             da1sdrho[i][j] = -2. * (PI * eps[i][j] * pow(d_BH[i][j], 3) / (lambda_k[i][j] - 3)) 
                                     * (((1. - ze / 2.) / pow(1 - ze, 3)) 

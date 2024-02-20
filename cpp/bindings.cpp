@@ -69,11 +69,6 @@ PYBIND11_MODULE(KineticGas_d, handle){
     handle.def("ipow", &ipow);
     handle.def("factorial_tests", &factorial_tests);
 
-    // handle.def("zeta_x", &mie_rdf::zeta_x_func);
-    // handle.def("dzeta_x_drho", &mie_rdf::dzetax_drho_func);
-    // handle.def("zeta_eff", &mie_rdf::zeta_eff_func);
-    // handle.def("dzeta_eff_drho", &mie_rdf::dzeta_eff_drho_func);
-
     py::class_<Product>(handle, "Product")
         .def(py::init<int>())
         .def(py::init<double>())
@@ -110,15 +105,13 @@ PYBIND11_MODULE(KineticGas_d, handle){
         .def("rdf_g0", py::overload_cast<double, double, const vector1d&>(&Sutherland::rdf_g0_func))
         .def("rdf_g1", py::overload_cast<double, double, const vector1d&>(&Sutherland::rdf_g1_func))
         .def("rdf_g2", py::overload_cast<double, double, const vector1d&>(&Sutherland::rdf_g2_func))
+        // Functions below this comment are only exposed for testing purposes
         .def("da1_drho", &Sutherland::da1_drho_func)
         .def("da1s_drho", &Sutherland::da1s_drho_func)
-        .def("zeta_eff", py::overload_cast<double, const vector1d&, const vector2d&, double>(&Sutherland::zeta_eff_func))
         .def("dzeta_eff_drho", py::overload_cast<double, const vector1d&, const vector2d&, double>(&Sutherland::dzeta_eff_drho_func))
         .def("zeta_x", &Sutherland::zeta_x_func)
         .def("a1s", py::overload_cast<double, double, const vector1d&, const vector2d&>(&Sutherland::a_1s_func))
         .def("B_func", py::overload_cast<double, const vector1d&, const vector2d&, const vector2d&>(&Sutherland::B_func))
-        .def("da2_div_chi_drho", py::overload_cast<double, double, const vector1d&>(&Sutherland::da2ij_div_chi_drho_func))
-        .def("gamma_corr", py::overload_cast<double, double, const vector1d&>(&Sutherland::gamma_corr))
         // Functions above this comment have been tested to reproduce MieKinGas
         ;
         // .def("rdf_g1", &Sutherland::rdf_g1_func);

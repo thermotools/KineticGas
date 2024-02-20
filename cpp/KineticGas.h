@@ -78,23 +78,42 @@ class KineticGas{
     // The "distance between particles" at contact.
     // NOTE: Will Return [0, 0, ... 0] for models with is_idealgas=True.
     virtual std::vector<std::vector<double>> get_collision_diameters(double rho, double T, const std::vector<double>& x) = 0;
-    
-    /* 
-       The radial distribution function "at contact" for the given potential model
-       model_rdf is only called if object is initialized with is_idealgas=true
-       If a potential model is implemented only for the ideal gas state, its implementation
-       of model_rdf should throw an std::invalid_argument error.
-    */
-    virtual std::vector<std::vector<double>> model_rdf(double rho, double T, const std::vector<double>& mole_fracs) = 0;
+
+    // Radial distribution function "at contact". Inheriting classes must implement model_rdf.
     std::vector<std::vector<double>> get_rdf(double rho, double T, const std::vector<double>& mole_fracs) {
         if (is_idealgas) return std::vector<std::vector<double>>(Ncomps, std::vector<double>(Ncomps, 1.));
         return model_rdf(rho, T, mole_fracs);
     }
+    /*
+       The radial distribution function "at contact" for the given potential model. model_rdf is only called if object
+       is initialized with is_idealgas=true. If a potential model is implemented only for the ideal gas state, its
+       implementation of model_rdf should throw an std::invalid_argument error.
+    */
+    virtual std::vector<std::vector<double>> model_rdf(double rho, double T, const std::vector<double>& mole_fracs) = 0;
 
     std::vector<double> get_wt_fracs(const std::vector<double> mole_fracs); // Compute weight fractions from mole fractions
 
+    // ------------------------------------------------------------------------------------------------------------------------- //
+    // ----- Matrices and vectors for the sets of equations (6-10) in Revised Enskog Theory for Mie fluids  -------------------- //
+    // ----- doi : 10.1063/5.0149865, which are solved to obtain the Sonine polynomial expansion coefficients ------------------ //
+    // ----- for the velocity distribution functions. -------------------------------------------------------------------------- //
+
+    std::vector<std::vector<double>> get_conductivity_matrix(double rho, double T, const std::vector<double>& x, int N);
+    std::vector<double> get_diffusion_vector(double rho, double T, const std::vector<double>& x, int N);
+    double get_Lambda_ijpq(int i, int j, int p, int q, double rho, double T, const std::vector<double>& x);
+    std::vector<std::vector<double>> get_diffusion_matrix(double rho, double T, const std::vector<double>& x, int N);
+    std::vector<double> get_conductivity_vector(double rho, double T, const std::vector<double>& x, int N);
+    std::vector<std::vector<double>> get_viscosity_matrix(double rho, double T, const std::vector<double>&x, int N);
+    std::vector<double> get_viscosity_vector(double rho, double T, const std::vector<double>& x, int N);
+
+    std::vector<double> get_K_factors(double rho, double T, const std::vector<double>& mole_fracs); // Eq. (1.2) of 'multicomponent docs'
+    std::vector<double> get_K_prime_factors(double rho, double T, const std::vector<double>& mole_fracs); // Eq. (5.4) of 'multicomponent docs'
+
 // ------------------------------------------------------------------------------------------------------------------------ //
-// -------------------------------------------------- Square bracket integrals -------------------------------------------- //
+// --------------------------------------- KineticGas internals are below here -------------------------------------------- //
+// -------------------------------- End users should not need to care about any of this ----------------------------------- //
+// ------------------------------------------------------------------------------------------------------------------------ //
+// ---------------------------------------------- Square bracket integrals ------------------------------------------------ //
 
     // Linear combination weights by Tompson, Tipton and Lloyalka
     double A(int p, int q, int r, int l) const;
@@ -115,23 +134,6 @@ class KineticGas{
     double L_ij(int p, int q, int i, int j, double T); // [S^(p)_{5/2}(U^2_i), S^(q)_{5/2}(U^2_j)]_{ij}
     double L_i(int p, int q, int i, int j, double T);  // [S^(p)_{5/2}(U^2_i), S^(q)_{5/2}(U^2_i)]_{ij}
     double L_simple(int p, int q, int i, double T);           // [S^(p)_{5/2}(U^2_i), S^(q)_{5/2}(U^2_i)]_{i}
-
-// ---------------------------------------------------------------------------------------------------------------------------------------------- //
-// ---------------------------------- Matrices and vectors for multicomponent, density corrected solutions -------------------------------------- //
-
-    std::vector<std::vector<double>> get_conductivity_matrix(double rho, double T, const std::vector<double>& x, int N);
-    std::vector<double> get_diffusion_vector(double rho, double T, const std::vector<double>& x, int N);
-    double get_Lambda_ijpq(int i, int j, int p, int q, double rho, double T, const std::vector<double>& x);
-    std::vector<std::vector<double>> get_diffusion_matrix(double rho, double T, const std::vector<double>& x, int N);
-    std::vector<double> get_conductivity_vector(double rho, double T, const std::vector<double>& x, int N);
-    std::vector<std::vector<double>> get_viscosity_matrix(double rho, double T, const std::vector<double>&x, int N);
-    std::vector<double> get_viscosity_vector(double rho, double T, const std::vector<double>& x, int N);
-    
-
-    // Eq. (1.2) of 'multicomponent docs'
-    std::vector<double> get_K_factors(double rho, double T, const std::vector<double>& mole_fracs);
-    // Eq. (5.4) of 'multicomponent docs'
-    std::vector<double> get_K_prime_factors(double rho, double T, const std::vector<double>& mole_fracs);
 
 // ----------------------------------------------------------------------------------------------------------------------------------- //
 // --------------------------------------- Methods to facilitate multithreading ------------------------------------------------------ //
