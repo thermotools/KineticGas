@@ -73,52 +73,30 @@ class KineticGas{
     KineticGas(std::vector<double> mole_weights, bool is_idealgas);
     virtual ~KineticGas(){};
     // Collision integrals
-    virtual double omega(const int& i, const int& j, const int& l, const int& r, const double& T) = 0;
+    virtual double omega(int i, int j, int l, int r, double T) = 0;
 
     // The "distance between particles" at contact.
-    virtual std::vector<std::vector<double>> get_contact_diameters(double rho, double T, const std::vector<double>& x) = 0;
-    
-    /* 
-       The radial distribution function "at contact" for the given potential model
-       model_rdf is only called if object is initialized with is_idealgas=true
-       If a potential model is implemented only for the ideal gas state, its implementation
-       of model_rdf should throw an std::invalid_argument error.
-    */
-    virtual std::vector<std::vector<double>> model_rdf(double rho, double T, const std::vector<double>& mole_fracs) = 0;
+    // NOTE: Will Return [0, 0, ... 0] for models with is_idealgas=True.
+    virtual std::vector<std::vector<double>> get_collision_diameters(double rho, double T, const std::vector<double>& x) = 0;
 
-    std::vector<double> get_wt_fracs(const std::vector<double> mole_fracs); // Compute weight fractions from mole fractions
+    // Radial distribution function "at contact". Inheriting classes must implement model_rdf.
     std::vector<std::vector<double>> get_rdf(double rho, double T, const std::vector<double>& mole_fracs) {
         if (is_idealgas) return std::vector<std::vector<double>>(Ncomps, std::vector<double>(Ncomps, 1.));
         return model_rdf(rho, T, mole_fracs);
     }
+    /*
+       The radial distribution function "at contact" for the given potential model. model_rdf is only called if object
+       is initialized with is_idealgas=true. If a potential model is implemented only for the ideal gas state, its
+       implementation of model_rdf should throw an std::invalid_argument error.
+    */
+    virtual std::vector<std::vector<double>> model_rdf(double rho, double T, const std::vector<double>& mole_fracs) = 0;
 
-// ------------------------------------------------------------------------------------------------------------------------ //
-// -------------------------------------------------- Square bracket integrals -------------------------------------------- //
+    std::vector<double> get_wt_fracs(const std::vector<double> mole_fracs); // Compute weight fractions from mole fractions
 
-    // Linear combination weights by Tompson, Tipton and Lloyalka
-    double A(const int& p, const int& q, const int& r, const int& l);
-    double A_prime(const int& p, const int& q, const int& r, const int& l, const double& tmp_M1, const double& tmp_M2);
-    double A_trippleprime(const int& p, const int& q, const int& r, const int& l);
-
-    // The diffusion and conductivity related square bracket integrals
-    double H_ij(const int& p, const int& q, const int& i, const int& j, const double& T); // [S^(p)_{3/2}(U^2_i), S^(q)_{3/2}(U^2_j)]_{ij}
-    double H_i(const int& p, const int& q, const int& i, const int& j, const double& T);  // [S^(p)_{3/2}(U^2_i), S^(q)_{3/2}(U^2_i)]_{ij}
-    double H_simple(const int& p, const int& q, const int& i, const double& T);           // [S^(p)_{3/2}(U^2_i), S^(q)_{3/2}(U^2_i)]_{i}
-
-    // Linear combination weights by Tompson, Tipton and Lloyalka
-    double B_prime(const int& p, const int& q, const int& r, const int& l,
-                    const double& M1, const double& M2);
-    double B_dblprime(const int& p, const int& q, const int& r, const int& l,
-                        const double& M1, const double& M2);
-    double B_trippleprime(const int& p, const int& q, const int& r, const int& l);
-
-    // Viscosity related square bracket integrals
-    double L_ij(const int& p, const int& q, const int& i, const int& j, const double& T); // [S^(p)_{5/2}(U^2_i), S^(q)_{5/2}(U^2_j)]_{ij}
-    double L_i(const int& p, const int& q, const int& i, const int& j, const double& T);  // [S^(p)_{5/2}(U^2_i), S^(q)_{5/2}(U^2_i)]_{ij}
-    double L_simple(const int& p, const int& q, const int& i, const double& T);           // [S^(p)_{5/2}(U^2_i), S^(q)_{5/2}(U^2_i)]_{i}
-
-// ---------------------------------------------------------------------------------------------------------------------------------------------- //
-// ---------------------------------- Matrices and vectors for multicomponent, density corrected solutions -------------------------------------- //
+    // ------------------------------------------------------------------------------------------------------------------------- //
+    // ----- Matrices and vectors for the sets of equations (6-10) in Revised Enskog Theory for Mie fluids  -------------------- //
+    // ----- doi : 10.1063/5.0149865, which are solved to obtain the Sonine polynomial expansion coefficients ------------------ //
+    // ----- for the velocity distribution functions. -------------------------------------------------------------------------- //
 
     std::vector<std::vector<double>> get_conductivity_matrix(double rho, double T, const std::vector<double>& x, int N);
     std::vector<double> get_diffusion_vector(double rho, double T, const std::vector<double>& x, int N);
@@ -127,23 +105,49 @@ class KineticGas{
     std::vector<double> get_conductivity_vector(double rho, double T, const std::vector<double>& x, int N);
     std::vector<std::vector<double>> get_viscosity_matrix(double rho, double T, const std::vector<double>&x, int N);
     std::vector<double> get_viscosity_vector(double rho, double T, const std::vector<double>& x, int N);
-    
 
-    // Eq. (1.2) of 'multicomponent docs'
-    std::vector<double> get_K_factors(double rho, double T, const std::vector<double>& mole_fracs);
-    // Eq. (5.4) of 'multicomponent docs'
-    std::vector<double> get_K_prime_factors(double rho, double T, const std::vector<double>& mole_fracs);
+    std::vector<double> get_K_factors(double rho, double T, const std::vector<double>& mole_fracs); // Eq. (1.2) of 'multicomponent docs'
+    std::vector<double> get_K_prime_factors(double rho, double T, const std::vector<double>& mole_fracs); // Eq. (5.4) of 'multicomponent docs'
+
+// ------------------------------------------------------------------------------------------------------------------------ //
+// --------------------------------------- KineticGas internals are below here -------------------------------------------- //
+// -------------------------------- End users should not need to care about any of this ----------------------------------- //
+// ------------------------------------------------------------------------------------------------------------------------ //
+// ---------------------------------------------- Square bracket integrals ------------------------------------------------ //
+
+    // Linear combination weights by Tompson, Tipton and Lloyalka
+    double A(int p, int q, int r, int l) const;
+    double A_prime(int p, int q, int r, int l, double tmp_M1, double tmp_M2) const;
+    double A_trippleprime(int p, int q, int r, int l) const;
+
+    // The diffusion and conductivity related square bracket integrals
+    double H_ij(int p, int q, int i, int j, double T); // [S^(p)_{3/2}(U^2_i), S^(q)_{3/2}(U^2_j)]_{ij}
+    double H_i(int p, int q, int i, int j, double T);  // [S^(p)_{3/2}(U^2_i), S^(q)_{3/2}(U^2_i)]_{ij}
+    double H_simple(int p, int q, int i, double T);           // [S^(p)_{3/2}(U^2_i), S^(q)_{3/2}(U^2_i)]_{i}
+
+    // Linear combination weights by Tompson, Tipton and Lloyalka
+    double B_prime(int p, int q, int r, int l, double M1, double M2) const;
+    double B_dblprime(int p, int q, int r, int l, double M1, double M2) const;
+    double B_trippleprime(int p, int q, int r, int l) const;
+
+    // Viscosity related square bracket integrals
+    double L_ij(int p, int q, int i, int j, double T); // [S^(p)_{5/2}(U^2_i), S^(q)_{5/2}(U^2_j)]_{ij}
+    double L_i(int p, int q, int i, int j, double T);  // [S^(p)_{5/2}(U^2_i), S^(q)_{5/2}(U^2_i)]_{ij}
+    double L_simple(int p, int q, int i, double T);           // [S^(p)_{5/2}(U^2_i), S^(q)_{5/2}(U^2_i)]_{i}
 
 // ----------------------------------------------------------------------------------------------------------------------------------- //
 // --------------------------------------- Methods to facilitate multithreading ------------------------------------------------------ //
     /*
-        Filling the A-matrix is the most computationally intensive part of the module
-        The matrix elements may be computed independently. Therefore the functions fill_A_matrix_<ij>() have been
-        implemented to facilitate multithreading. j indicates the number of functions the matrix generation has been split
-        over, i differentiates between functions.
-        So fill_A_matrix_i4 is a set of four functions intended to be run on four separate threads, while
-        fill_A_matrix_i2 is a set of two functions intended to be run on two separate threads.
-        For a graphical representation of how the functions split the matrix, see the implementation file.
+        Computing collision integrals is the most computationally intensive part of computing a transport property,
+        given that one does not use correlations for the computation. Therefore, computed collision integrals are stored
+        in this->omega_map. These methods are used to deduce which collision integrals are required to compute a given
+        property, and then split the computation of those integrals among several threads. When computation of the
+        property proceeds, the integrals are then retrieved from this->omega_map.
+
+        To adjust the number of threads used to compute collision integrals, set the compile-time constant Ncores in
+        KineticGas_mthr.cpp. In practice, very little is to be gained by increasing this beyond 10, unless you are
+        using high Enskog approximation orders (>4), or are working with a large number of components (because there
+        is no point in using more threads than required integrals).
     */
     void precompute_omega(const std::vector<int>& i_vec, const std::vector<int>& j_vec,
                         const std::vector<int>& l_vec, const std::vector<int>& r_vec, double T);

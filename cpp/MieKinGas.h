@@ -56,13 +56,13 @@ class MieKinGas : public Spherical {
     }
 
 
-    double omega(const int& i, const int& j, const int& l, const int& r, const double& T) override;
+    double omega(int i, int j, int l, int r, double T) override;
     double omega_correlation(int i, int j, int l, int r, double T_star);
     double omega_recursive_factor(int i, int j, int l, int r, double T);
     // The hard sphere integrals are used as the reducing factor for the correlations.
     // So we need to compute the hard-sphere integrals to convert the reduced collision integrals from the
     // Correlation by Fokin et. al. to the "real" collision integrals.
-    inline double omega_hs(const int& i, const int& j, const int& l, const int& r, const double& T){
+    inline double omega_hs(int i, int j, int l, int r, double T){
         double w = PI * pow(sigma[i][j], 2) * 0.5 * (r + 1);
         for (int ri = r; ri > 1; ri--) {w *= ri;}
         if (l % 2 == 0){
@@ -95,9 +95,10 @@ class MieKinGas : public Spherical {
     // Contact diameter related methods
     // bmax[i][j] is in units of sigma[i][j]
     // bmax = The maximum value of the impact parameter at which deflection angle (chi) is positive
-    virtual std::vector<std::vector<double>> get_b_max(double T);
-    virtual std::vector<std::vector<double>> get_contact_diameters(double rho, double T, const std::vector<double>& x) override;
+    std::vector<std::vector<double>> get_b_max(double T);
+    std::vector<std::vector<double>> get_collision_diameters(double rho, double T, const std::vector<double>& x) override;
     virtual std::vector<std::vector<double>> get_BH_diameters(double T);
+    std::vector<std::vector<double>> get_vdw_alpha(){return alpha;}
 
     // Methods for computing the radial distribution function at contact
     // Note: A lot of these methods have two overloads: One that takes the temperature and computes the BH diameter,
@@ -159,6 +160,13 @@ class MieKinGas : public Spherical {
     std::vector<std::vector<double>> da2ij_div_chi_drho_func(double rho, const std::vector<double>& x, double K_HS, 
                                                 const std::vector<std::vector<double>>& d_BH,
                                                 const std::vector<std::vector<double>>& x0);
+    std::vector<std::vector<double>> da2ij_div_chi_drho_func(double rho, double T, const std::vector<double>& x){
+        std::vector<std::vector<double>> d_BH = get_BH_diameters(T);
+        double zeta_x = zeta_x_func(rho, x, d_BH);
+        double K_HS = K_HS_func(zeta_x);
+        std::vector<std::vector<double>> x0 = get_x0(d_BH);
+        return da2ij_div_chi_drho_func(rho, x, K_HS, d_BH, x0);
+    }
 
     std::vector<std::vector<double>> rdf_chi_func(double rho, const std::vector<double>& x,
                                                 const std::vector<std::vector<double>>& d_BH);
@@ -166,6 +174,11 @@ class MieKinGas : public Spherical {
                                                     const std::vector<std::vector<double>>& d_BH);
     
     std::vector<std::vector<double>> gamma_corr(double zeta_x, double T);
+    std::vector<std::vector<double>> gamma_corr(double rho, double T, const std::vector<double>& x){
+        std::vector<std::vector<double>> d_BH = get_BH_diameters(T);
+        double zeta_x = zeta_x_func(rho, x, d_BH);
+        return gamma_corr(zeta_x, T);
+    }
 
     inline double K_HS_func(double zeta_x){
         return pow(1 - zeta_x, 4) / (1 + 4 * zeta_x + 4 * pow(zeta_x, 2) - 4 * pow(zeta_x, 3) + pow(zeta_x, 4));

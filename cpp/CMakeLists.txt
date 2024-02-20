@@ -9,8 +9,8 @@ message("${Esc}[34mPYTHON_EXECUTABLE is : ${PYTHON_EXECUTABLE}")
 set(PYBIND11_ROOT "/usr/local/include/pybind11") # This path must contain the pybind11 root dir.
 
 if(NOT MSVC)
-  # set(CMAKE_CXX_COMPILER /opt/homebrew/bin/g++-13)
-  # set(CMAKE_C_COMPILER /opt/homebrew/bin/gcc-13)
+  # set(CMAKE_CXX_COMPILER /usr/bin/g++) # Setting these can, on some systems, cause cmake to go into an infinite loop (see: build.sh to set the compiler)
+  # set(CMAKE_C_COMPILER /usr/bin/gcc) # Setting these can, on some systems, cause cmake to go into an infinite loop (see: build.sh to set the compiler)
   if(APPLE)
     set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-unknown-pragmas -Wno-sign-compare -std=c++17 -pthread -arch arm64")
   else()
@@ -20,7 +20,7 @@ if(NOT MSVC)
   set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -DDEBUG -Wno-unused-parameter -Wno-unused-const-variable")
 endif(NOT MSVC)
 
-set(SOURCES KineticGas.cpp KineticGas_mthr.cpp Spherical.cpp MieKinGas.cpp QuantumMie.cpp
+set(SOURCES KineticGas.cpp KineticGas_mthr.cpp Spherical.cpp MieKinGas.cpp Sutherland.cpp QuantumMie.cpp
             Integration/Integration.cpp Factorial.cpp bindings.cpp)
 
 if (CMAKE_BUILD_TYPE MATCHES Release)

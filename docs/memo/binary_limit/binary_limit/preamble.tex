@@ -1,0 +1,53 @@
+\usepackage[a4paper, left=2.5cm, right=2.5cm, top=3cm,bottom=3cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+% \usepackage{todonotes}
+% \presetkeys{todonotes}{inline}{}
+
+\usepackage[square, numbers, comma, sort&compress]{natbib}
+\renewcommand\refname{References} % Adding title to referece section
+
+\usepackage{xr-hyper} % For cross-referencing between the main article and supporting information
+\usepackage[hidelinks]{hyperref}
+\usepackage{stackengine} %Stacking symbols
+\usepackage[version=4]{mhchem} %chemical equations
+
+\usepackage{siunitx} %get SI units
+\DeclareSIUnit{\atm}{atm}
+\DeclareSIUnit{\angstrom}{\AA}
+\DeclareSIUnit\bar{bar}
+
+\renewcommand{\thefootnote}{\roman{footnote}} % Footnotes using roman numerals
+
+\usepackage{float} %stuff that floats around
+% \usepackage{dblfloatfix}    % To enable figure* floats at the bottom of page (figure must be declared before the page on which it should appear)
+\usepackage{multirow}
+\usepackage{booktabs}  %tables and stuff
+\usepackage{tabularx}
+\newcolumntype{Y}{>{\centering\arraybackslash}X} % To make tabularx spread the content across the column
+\AtBeginDocument{% workaround for \toprule, \midrule and \bottomrule for revtex documentclass
+  \heavyrulewidth=.08em
+  \lightrulewidth=.05em
+  \cmidrulewidth=.03em
+  \belowrulesep=.65ex
+  \belowbottomsep=0pt
+  \aboverulesep=.4ex
+  \abovetopsep=0pt
+  \cmidrulesep=\doublerulesep
+  \cmidrulekern=.5em
+  \defaultaddspace=.5em
+}
+
+
+\usepackage{graphicx} %extra options when inputting figures
+\usepackage[caption=false]{subfig} %subfigures
+\usepackage{afterpage}
+
+\usepackage{enumitem} % for listing stuff (bulletpoints and so on)
+\usepackage{setspace} %if you want to change linespacing
+\usepackage[parfill]{parskip} %spacing between paragraphs
+
+\usepackage{amsmath, amssymb}
+\usepackage{MnSymbol}
+\usepackage{mathrsfs} % Nice, curly caligraphic with \mathscr
+\usepackage{textgreek}

@@ -22,9 +22,6 @@
 #define _LIBCPP_DEBUG 1
 #endif
 
-#define pprintf(flt) std::printf("%f", flt); std::printf("\n")
-#define pprinti(i) std::printf("%i", i); std::printf("\n")
-
 // --------------------------------------------------------------------------------------------------- //
 // -------------------------------Constructor and helper functions------------------------------------ //
 
@@ -66,7 +63,7 @@ std::vector<double> KineticGas::get_K_factors(double rho, double T, const std::v
 
     std::vector<std::vector<double>> rdf = get_rdf(rho, T, mole_fracs);
     std::vector<double> K(Ncomps, 0.);
-    std::vector<std::vector<double>> cd = get_contact_diameters(rho, T, mole_fracs);
+    std::vector<std::vector<double>> cd = get_collision_diameters(rho, T, mole_fracs);
     for (int i = 0; i < Ncomps; i++){
         for (int j = 0; j < Ncomps; j++){
             K[i] += mole_fracs[j] * pow(cd[i][j], 3) * M[i][j] * M[j][i] * rdf[i][j];
@@ -83,7 +80,7 @@ std::vector<double> KineticGas::get_K_prime_factors(double rho, double T, const 
 
     std::vector<std::vector<double>> rdf = get_rdf(rho, T, mole_fracs);
     std::vector<double> K_prime(Ncomps, 0.);
-    std::vector<std::vector<double>> cd = get_contact_diameters(rho, T, mole_fracs);
+    std::vector<std::vector<double>> cd = get_collision_diameters(rho, T, mole_fracs);
     for (int i = 0; i < Ncomps; i++){
         for (int j = 0; j < Ncomps; j++){
             K_prime[i] += mole_fracs[j] * M[j][i] * pow(cd[i][j], 3.) * rdf[i][j];
@@ -110,7 +107,6 @@ std::vector<double> KineticGas::get_K_prime_factors(double rho, double T, const 
 
 std::vector<std::vector<double>> KineticGas::get_conductivity_matrix(double rho, double T, const std::vector<double>& x, int N){
     std::vector<std::vector<double>> rdf = get_rdf(rho, T, x);
-    std::vector<double> K = get_K_factors(rho, T, x);
     std::vector<std::vector<double>> matr(N * Ncomps, std::vector<double>(N * Ncomps, 0.));
     std::vector<double> wt_fracs = get_wt_fracs(x);
 
@@ -163,8 +159,8 @@ std::vector<double> KineticGas::get_conductivity_vector(double rho, double T, co
     std::vector<double> K = get_K_factors(rho, T, x);
     std::vector<double> l(Ncomps * N, 0.);
     l[1] = x[0] * K[0] * 4. / (5. * BOLTZMANN); // Lambda_1^{(p > 0} block
-    for (int i = 1; i < N; i++){
-        l[N * i + i] = x[i] * K[i] * 4. / (5. * BOLTZMANN); // Lambda_{i > 1} block
+    for (int i = 1; i < Ncomps; i++){
+        l[N + (Ncomps - 1) + (i - 1)] = x[i] * K[i] * 4. / (5. * BOLTZMANN); // Lambda_{i > 1} block
     }
     return l;
 }
@@ -172,9 +168,7 @@ std::vector<double> KineticGas::get_conductivity_vector(double rho, double T, co
 
 std::vector<std::vector<double>> KineticGas::get_diffusion_matrix(double rho, double T, const std::vector<double>& x, int N){
     std::vector<std::vector<double>> rdf = get_rdf(rho, T, x);
-    std::vector<double> K_fact = get_K_factors(rho, T, x);
     std::vector<std::vector<double>> matr(N*pow(Ncomps, 2), std::vector<double>(N*pow(Ncomps, 2), 0.));
-    std::vector<std::vector<double>> d = get_contact_diameters(rho, T, x);
     std::vector<double> wt_fracs = get_wt_fracs(x);
 
     precompute_diffusion_omega(N, T); // Compute all the collision integrals required for this diffusion matrix
@@ -299,7 +293,7 @@ std::vector<double> KineticGas::get_viscosity_vector(double rho, double T, const
 //                 A_pqrl factors, used for conductivity and diffusion                                 //
 // --------------------------------------------------------------------------------------------------- //
 
-double KineticGas::A(const int& p, const int& q, const int& r, const int& l){
+double KineticGas::A(int p, int q, int r, int l) const {
     double value{0.0};
     int max_i = std::min(std::min(p, q), std::min(r, p + q + 1 - r));
     for (int i = l - 1; i <= max_i; i++){
@@ -310,8 +304,7 @@ double KineticGas::A(const int& p, const int& q, const int& r, const int& l){
     return value;
 }
 
-double KineticGas::A_prime(const int& p, const int& q, const int& r, const int& l,
-                            const double& tmp_M1, const double& tmp_M2){
+double KineticGas::A_prime(int p, int q, int r, int l, double tmp_M1, double tmp_M2) const {
     double F = (pow(tmp_M1, 2) + pow(tmp_M2, 2)) / (2 * tmp_M1 * tmp_M2);
     double G = (tmp_M1 - tmp_M2) / tmp_M2;
 
@@ -344,12 +337,11 @@ double KineticGas::A_prime(const int& p, const int& q, const int& r, const int& 
 //                            B_pqrl factors, used for viscosity                                       //
 // --------------------------------------------------------------------------------------------------- //
 
-inline Frac poch(const int& z, const int& n){ // Pochhammer notation (z)_n, used in the B-factors
+inline Frac poch(int z, int n){ // Pochhammer notation (z)_n, used in the B-factors
     return Fac(z + n - 1) / Fac(z - 1);
 }
 
-double KineticGas::B_prime(const int& p, const int& q, const int& r, const int& l,
-                            const double& M1, const double& M2){
+double KineticGas::B_prime(int p, int q, int r, int l, double M1, double M2) const {
     if (r == p + q + 3) return 0.0;
     double val{0.0};
     double inner{0.0};
@@ -387,8 +379,7 @@ double KineticGas::B_prime(const int& p, const int& q, const int& r, const int& 
     return val;
 }
 
-double KineticGas::B_dblprime(const int& p, const int& q, const int& r, const int& l,
-                                const double& M1, const double& M2){
+double KineticGas::B_dblprime(int p, int q, int r, int l, double M1, double M2) const {
     if (r == p + q + 3) return 0.0;
     double val{0.0};
     Frac num;
@@ -426,7 +417,7 @@ double KineticGas::B_dblprime(const int& p, const int& q, const int& r, const in
 //                      H-integrals, used for conductivity and diffusion                               //
 // --------------------------------------------------------------------------------------------------- //
 
-double KineticGas::H_ij(const int& p, const int& q, const int& i, const int& j, const double& T){
+double KineticGas::H_ij(int p, int q, int i, int j, double T){
     double tmp_M1{M[i][j]}, tmp_M2{M[j][i]};
     double value{0.0};
     int max_l = std::min(p, q) + 1;
@@ -441,7 +432,7 @@ double KineticGas::H_ij(const int& p, const int& q, const int& i, const int& j, 
     return value;
 }
 
-double KineticGas::H_i(const int& p, const int& q, const int& i, const int& j, const double& T){
+double KineticGas::H_i(int p, int q, int i, int j, double T){
     double tmp_M1{M[i][j]}, tmp_M2{M[j][i]};
     double value{0.0};
 
@@ -461,7 +452,7 @@ double KineticGas::H_i(const int& p, const int& q, const int& i, const int& j, c
 //                               L-integrals, used for viscosity                                       //
 // --------------------------------------------------------------------------------------------------- //
 
-double KineticGas::L_ij(const int& p, const int& q, const int& i, const int& j, const double& T){
+double KineticGas::L_ij(int p, int q, int i, int j, double T){
     double val{0.0};
     double M1{M[i][j]};
     double M2{M[j][i]};
@@ -473,7 +464,7 @@ double KineticGas::L_ij(const int& p, const int& q, const int& i, const int& j, 
     val *= 16.0 / 3.0;
     return val;
 }
-double KineticGas::L_i(const int& p, const int& q, const int& i, const int& j, const double& T){
+double KineticGas::L_i(int p, int q, int i, int j, double T){
     double val{0.0}, M1{M[i][j]}, M2{M[j][i]};
     for (int l = 1; l <= std::min(p, q) + 2; l++){
         for (int r = l; r <= p + q + 4 - l; r++){

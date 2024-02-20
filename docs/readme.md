@@ -1,3 +1,9 @@
+# KineticGas Homepage
+
+This directory contains the source code for the KineticGas Homepage, hosted at [https://thermotools.github.io/KineticGas/](https://thermotools.github.io/KineticGas/). The page contains guides for installation and getting started, as well as extensive documentation. Documentation for all versions released to PyPI are also archived there, and a bug tracker for previously released versions can be found.
+
+# Building and testing the page locally  
+
 To test locally: Navigate to this directory and
     `bundle install`
     `bundle exec jekyll serve`
@@ -21,10 +27,10 @@ The plan for the future is that when a new version is released:
 
 Convention for permalinks:
     Permalinks ALWAYS correspond to the absolute path to the file, taking `thermopack/docs/` as the root directory.
-    So the permalink to the file at `thermopack/docs/v2.1.0/home.html` is `permalink: /v2.1.0/home.html`
+    So the permalink to the file at `thermopack/docs/v2.0.0/home.html` is `permalink: /v2.0.0/home.html`
     NOTE: When linking to a [file](<my_link_here>) `/thermopack` must be prepended to whatever the permalink to that file
-    is. So to generate a link to the file at `thermopack/docs/v2.1.0/home.html`, you would write
-        [this is v2.1.0](/thermopack/v2.1.0/home.html)
+    is. So to generate a link to the file at `thermopack/docs/v2.0.0/home.html`, you would write
+        [this is v2.0.0](/thermopack/v2.0.0/home.html)
     NOTE: The files you see are ´.md´ files, but they are compiled to `.html` when the page is pushed. That is why we
     link to `some_page.html`, not `some_page.md`.
 
@@ -43,8 +49,8 @@ The "homepage" is generated from `index.md` in this directory. The name of that 
 All subpages are generated from various markdown files, found in the directories
  * metapages/
   * Contains files that are common to all versions, such as citation and contact info.
- * v2.1.0/
-  * Contains files that may change between versions, and apply to v2.1.0
+ * v2.0.0/
+  * Contains files that may change between versions, and apply to v2.0.0
  * vCurrent/
   * Contains files that may change between versions, and apply to the current version on GitHub.
  * memo/
@@ -56,22 +62,21 @@ keep reading for more info on the sidebar.
 The sidebar is dynamic, in the sense that its behaviour will change depending on what version you are viewing.
 All the sidebars are generated from the markdown files found in _includes/.
 
-The point of having a dynamic sidebar is that if someone clicks on `v2.1.0` in the sidebar, they are taken to a page
+The point of having a dynamic sidebar is that if someone clicks on `v2.0.0` in the sidebar, they are taken to a page
 where the `Documentation`, `Installation`, `Component Identifiers` etc. links in the sidebar link to documentation and installation guides for
-v2.1.0. This means we don't need to clutter the sidebar with an ever-increasing number of links to different versions, like
+v2.0.0. This means we don't need to clutter the sidebar with an ever-increasing number of links to different versions, like
+    Documentation v2.0.0
     Documentation v2.1.0
-    Documentation v2.2.0
     ... etc ...
 
 All markdown files used to generate subpages contain a header, with information about how they are processed by the
 html-templates. They look like this:
 ```
 ---
-version: 2.1.0 (Leave empty, for pages with no specific version)
-sidebar_file: sidebar_2.1.0.md (Only supply this for files that should not use _layouts/sidebar.md, the default sidebar)
+version: 2.0.0 (Leave empty for pages with no specific version, i.e. write "version:")
 layout: home (The html-template to use)
-title: ThermoPack v2.1.0 (The page title)
-permalink: /v2.1.0/home.html (The link to use to get to this page. Note that when linking to a page, the full link `/thermopack/v2.1.0/home.html` must be used.
+title: KineticGas v2.0.0 (The page title)
+permalink: /v2.0.0/home.html (The link to use to get to this page. Note that when linking to a page, the full link `/thermopack/v2.0.0/home.html` must be used.
                                 NOTE: Links cannot contain uppercase letters!)
 ---
 ```

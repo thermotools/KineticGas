@@ -13,10 +13,7 @@ Contains: The abstract class 'Spherical', inheriting from 'KineticGas'. This cla
 
 class Spherical : public KineticGas {
     public:
-    // In the general case, sigma is a scaling parameter
-    // On the order of the molecular size. Its specific physical meaning 
-    // is different for different potential models. It may also be without physical meaning
-    std::vector<std::vector<double>> sigma;
+
 
     Spherical(std::vector<double> mole_weights, 
                 std::vector<std::vector<double>> sigmaij,
@@ -27,15 +24,25 @@ class Spherical : public KineticGas {
     virtual double potential(int i, int j, double r) = 0;
     virtual double potential_derivative_r(int i, int j, double r) = 0;
     virtual double potential_dblderivative_rr(int i, int j, double r) = 0;
-    virtual std::vector<std::vector<double>> model_rdf(double rho, double T, const std::vector<double>& mole_fracs) override = 0;
-    virtual std::vector<std::vector<double>> get_contact_diameters(double rho, double T, const std::vector<double>& x) override = 0;
 
-    double omega(const int& i, const int& j, const int& l, const int& r, const double& T) override;
-    double w_integral(const int& i, const int& j, const double& T, const int& l, const int& r); // Dimentionless collision integral for spherical potentials
-    double w_integrand(const int& i, const int& j, const double& T, 
-                            const double& g, const double& b, 
-                            const int& l, const int& r);
-    std::function<double(int, int, double, double, double, int, int)> w_integrand_export; // Will bind w_integrand to this function such that it can be passed to the external integration module
+    virtual double omega(int i, int j, int l, int r, double T) override;
+    virtual std::vector<std::vector<double>> get_collision_diameters(double rho, double T, const std::vector<double>& x) override;
+    virtual std::vector<std::vector<double>> model_rdf(double rho, double T, const std::vector<double>& mole_fracs) = 0;
+
+    // ------------------------------------------------------------------------------------------------------------------- //
+    // -------------------------- Spherical Internals are below here ----------------------------------------------------- //
+    // ---------------------- End users should not need to care about anythin below -------------------------------------- //
+    // ------------------------------------------------------------------------------------------------------------------- //
+
+    // In the general case, sigma is a scaling parameter
+    // On the order of the molecular size. Its specific physical meaning
+    // is different for different potential models. It may also be without physical meaning
+    std::vector<std::vector<double>> sigma;
+
+    virtual std::vector<std::vector<double>> get_b_max(double T, std::vector<std::vector<int>>& ierr);
+    // This method is responsible for calling get_b_max(T, ierr), and handling eventual failures.
+    // Most inheritance should only require overriding the failure handling, not the computation in get_b_max(T, ierr)
+    virtual std::vector<std::vector<double>> get_b_max(double T);
 
     // Helper functions for computing dimentionless collision integrals
     double theta(int i, int j, const double T, const double g, const double b);
@@ -48,4 +55,9 @@ class Spherical : public KineticGas {
     virtual double get_R_rootfunc(int i, int j, double T, double g, double b, double& r);
     virtual double get_R_rootfunc_derivative(int i, int j, double T, double g, double b, double& r);
     double chi(int i, int j, double T, double g, double b);
+
+    double w_integral(int i, int j, double T, int l, int r); // Dimentionless collision integral for spherical potentials
+    double w_integrand(int i, int j, double T, double g, double b, int l, int r);
+    std::function<double(int, int, double, double, double, int, int)> w_integrand_export; // Will bind w_integrand to this function such that it can be passed to the external integration module
+
 };

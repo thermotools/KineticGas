@@ -77,9 +77,9 @@ std::vector<std::vector<double>> QuantumMie::get_BH_diameters(double T){
     return d_BH;
 }
 
-std::vector<std::vector<double>> QuantumMie::get_contact_diameters(double rho, double T, const std::vector<double>& x){
+std::vector<std::vector<double>> QuantumMie::get_collision_diameters(double rho, double T, const std::vector<double>& x){
     set_eff_sigma_eps(T);
-    return MieKinGas::get_contact_diameters(rho, T, x);
+    return MieKinGas::get_collision_diameters(rho, T, x);
 }
 
 double QuantumMie::theta_integrand_dblderivative(int i, int j, double T, double r, double g, double b){

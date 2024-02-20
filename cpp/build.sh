@@ -4,8 +4,8 @@ set -e
 
 py_version=${1-"-DPYBIND11_PYTHON_VERSION=3 -DPYTHON_EXECUTABLE=$(which python)"}
 
-export CC=/opt/homebrew/bin/gcc-13
-export CXX=/opt/homebrew/bin/g++-13
+export CC=/opt/homebrew/bin/gcc-13 # Modify as needed, commonly set to /usr/bin/gcc
+export CXX=/opt/homebrew/bin/g++-13 # Modify as needed, commonly set to /usr/bin/g++
 
 echo "Building KineticGas Release"
 

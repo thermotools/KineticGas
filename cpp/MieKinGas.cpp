@@ -8,7 +8,7 @@ See : J. Chem. Phys. 139, 154504 (2013); https://doi.org/10.1063/1.4819786
 
 using namespace mie_rdf_constants;
 
-double MieKinGas::omega(const int& i, const int& j, const int& l, const int& r, const double& T){
+double MieKinGas::omega(int i, int j, int l, int r, double T){
     if ((l <= 2) && (r <= 3) && (abs(la[i][j] - 6.) < 1e-10)){ // Use Correlation by Fokin, Popov and Kalashnikov, High Temperature, Vol. 37, No. 1 (1999)
         // NOTE: There is a typo in Eq. (4b) in the article, ln(1/m) should be ln(m).
         // See: I. H. Bell et. al. J. Chem. Eng. Data (2020), https://doi.org/10.1021/acs.jced.9b00455
@@ -51,31 +51,17 @@ double MieKinGas::omega_recursive_factor(int i, int j, int l, int r, double T_st
     // Higher order collision integrals can be computed from the derivative of lower order ones using the recursion
     // Given in Fokin, Popov and Kalashnikov, High Temperature, Vol. 37, No. 1 (1999)
     // See also: Hirchfelder, Curtiss & Bird, Molecular Theory of Gases and Liquids.
-    // For reduced integrals : omega(l, r + 1) / omega(l, r) = 1 + (d omega(l, r) / d T^*) / (r + 2)
-    if (l == r){
-        double dlnomega_dT = - (2 / (lr[i][j] * T_star));
-        double a_m;
-        for (int n = 2; n < 7; n++){
-            a_m = omega_correlation_factors[l - 1][n - 1][0] + (omega_correlation_factors[l - 1][n - 1][1] / lr[i][j])
-                    + pow(lr[i][j], -2.) * (omega_correlation_factors[l - 1][n - 1][2]
-                                            + omega_correlation_factors[l - 1][n - 1][3] * log(lr[i][j]));
-            dlnomega_dT += (1 / (r + 2)) * a_m * pow(T_star, (-1. - n) / 2.) * (1. - n) / 2.;
-        }
-        return 1. + (dlnomega_dT * omega_correlation(i, j, l, r, T_star)) / (r + 2);
+    // For reduced integrals : omega(l, r + 1) / omega(l, r) = 1 + (d omega(l, r) / d lnT^*) / (r + 2)
+    if ((l > 2) || (r > 3)) {throw std::runtime_error("No recursive factor available!");}
+    double dlnomega_dlnT = - (2 / lr[i][j]);
+    double a_m;
+    for (int n = 2; n < 7; n++){
+        a_m = omega_correlation_factors[l - 1][n - 1][0] + (omega_correlation_factors[l - 1][n - 1][1] / lr[i][j])
+                + pow(lr[i][j], -2.) * (omega_correlation_factors[l - 1][n - 1][2]
+                                        + omega_correlation_factors[l - 1][n - 1][3] * log(lr[i][j]));
+        dlnomega_dlnT += a_m * pow(T_star, - (n - 1.) / 2.) * (1. - n) / 2.;
     }
-    else if ((l == 1) && (r == 2)){
-        double a_m;
-        double Cr{0.0};
-        for (int n = 2; n < 7; n++){
-            a_m = omega_correlation_factors[l - 1][n - 1][0] + (omega_correlation_factors[l - 1][n - 1][1] / lr[i][j])
-                    + pow(lr[i][j], -2) * (omega_correlation_factors[l - 1][n - 1][2]
-                                            + omega_correlation_factors[l - 1][n - 1][3] * log(lr[i][j]));
-            Cr += (1 / (r + 2)) * a_m * pow(T_star, (-3. - n) / 2.) * ((1. - n) / 2.) * ((-1. - n) / 2.);
-        }
-        double C11 = omega_recursive_factor(i, j, l, r - 1, T_star);
-        return 1 + (Cr / ((r + 2) * C11)) + (C11 - 1) * (r + 1) / (r + 2);
-    }
-    throw std::runtime_error("No recursive factor available!");
+    return 1. + dlnomega_dlnT / (r + 2);
 }
 
 std::vector<std::vector<double>> MieKinGas::model_rdf(double rho, double T, const std::vector<double>& x){
@@ -236,15 +222,20 @@ std::vector<std::vector<double>> MieKinGas::get_b_max(double T){
         return bmax;
     }
 
-std::vector<std::vector<double>> MieKinGas::get_contact_diameters(double rho, double T, const std::vector<double>& x){
+std::vector<std::vector<double>> MieKinGas::get_collision_diameters(double rho, double T, const std::vector<double>& x){
+        // Evaluate the integral of Eq. (40) in RET for Mie fluids (doi: 10.1063/5.0149865)
+        // Note: For models with is_idealgas==true, zeros are returned, as there is no excluded volume at infinite dilution.
         // Weights and nodes for 6-point Gauss-Legendre quadrature
         constexpr int n_gl_points = 6;
         constexpr double gl_points[n_gl_points] = {-0.93246951, -0.66120939, -0.23861919, 0.23861919, 0.66120939, 0.93246951};
         constexpr double gl_weights[n_gl_points] = {0.17132449, 0.36076157, 0.46791393, 0.46791393, 0.36076157, 0.17132449};
 
         const double g_avg = sqrt(1. / PI); // Average dimensionless relative speed of collision
+        std::vector<std::vector<double>> avg_R(Ncomps, std::vector<double>(Ncomps, 0.));
+        if (is_idealgas) {
+            return avg_R;
+        }
         std::vector<std::vector<double>> bmax = get_b_max(T);
-        std::vector<std::vector<double>> avg_R(Ncomps, std::vector<double>(Ncomps, 0));
         double point, weight;
 
         for (int i = 0; i < Ncomps; i++){
@@ -628,6 +619,7 @@ std::vector<std::vector<double>> MieKinGas::gamma_corr(double zeta_x, double T){
             double theta = exp(eps[i][j] / (BOLTZMANN * T)) + 1.;
             gamma[i][j] = phi[0] * (1 - tanh(phi[1] * (phi[2] - alpha[i][j]))) 
                         * zeta_x * theta * exp(phi[3] * zeta_x + phi[4] * pow(zeta_x, 2));
+            gamma[j][i] = gamma[i][j];
         }
     }
     return gamma;

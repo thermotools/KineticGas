@@ -118,7 +118,7 @@ class QuantumMie : public MieKinGas{
     inline std::vector<std::vector<double>> get_alpha(double T){set_eff_sigma_eps(T); set_alpha(T); return alpha;}
 
     std::vector<std::vector<double>> get_BH_diameters(double T) override;
-    virtual std::vector<std::vector<double>> get_contact_diameters(double rho, double T, const std::vector<double>& x) override;
+    virtual std::vector<std::vector<double>> get_collision_diameters(double rho, double T, const std::vector<double>& x) override;
     std::vector<std::vector<double>> model_rdf(double rho, double T, const std::vector<double>& x) override;
 
     inline double get_R_rootfunc(int i, int j, double T, double g, double b, double& r) override {
