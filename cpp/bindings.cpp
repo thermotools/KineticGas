@@ -33,7 +33,7 @@ namespace py = pybind11;
         .def("get_rdf", &Model::get_rdf) \
         .def("get_K_factors", &Model::get_K_factors) \
         .def("get_K_prime_factors", &Model::get_K_prime_factors)\
-        .def("get_contact_diameters", &Model::get_contact_diameters) \
+        .def("get_collision_diameters", &Model::get_collision_diameters) \
         \
         .def_readwrite("omega_map", &Model::omega_map)
 
@@ -120,7 +120,6 @@ PYBIND11_MODULE(KineticGas_d, handle){
         .def("da2_div_chi_drho", py::overload_cast<double, double, const vector1d&>(&Sutherland::da2ij_div_chi_drho_func))
         .def("gamma_corr", py::overload_cast<double, double, const vector1d&>(&Sutherland::gamma_corr))
         // Functions above this comment have been tested to reproduce MieKinGas
-        .def()
         ;
         // .def("rdf_g1", &Sutherland::rdf_g1_func);
 

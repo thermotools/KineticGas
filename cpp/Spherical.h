@@ -28,7 +28,7 @@ class Spherical : public KineticGas {
     virtual double potential_derivative_r(int i, int j, double r) = 0;
     virtual double potential_dblderivative_rr(int i, int j, double r) = 0;
 
-    double omega(int i, int j, int l, int r, double T) override;
+    virtual double omega(int i, int j, int l, int r, double T) override;
     double w_integral(int i, int j, double T, int l, int r); // Dimentionless collision integral for spherical potentials
     double w_integrand(int i, int j, double T, double g, double b, int l, int r);
     std::function<double(int, int, double, double, double, int, int)> w_integrand_export; // Will bind w_integrand to this function such that it can be passed to the external integration module

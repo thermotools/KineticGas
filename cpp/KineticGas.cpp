@@ -63,7 +63,7 @@ std::vector<double> KineticGas::get_K_factors(double rho, double T, const std::v
 
     std::vector<std::vector<double>> rdf = get_rdf(rho, T, mole_fracs);
     std::vector<double> K(Ncomps, 0.);
-    std::vector<std::vector<double>> cd = get_contact_diameters(rho, T, mole_fracs);
+    std::vector<std::vector<double>> cd = get_collision_diameters(rho, T, mole_fracs);
     for (int i = 0; i < Ncomps; i++){
         for (int j = 0; j < Ncomps; j++){
             K[i] += mole_fracs[j] * pow(cd[i][j], 3) * M[i][j] * M[j][i] * rdf[i][j];
@@ -80,7 +80,7 @@ std::vector<double> KineticGas::get_K_prime_factors(double rho, double T, const 
 
     std::vector<std::vector<double>> rdf = get_rdf(rho, T, mole_fracs);
     std::vector<double> K_prime(Ncomps, 0.);
-    std::vector<std::vector<double>> cd = get_contact_diameters(rho, T, mole_fracs);
+    std::vector<std::vector<double>> cd = get_collision_diameters(rho, T, mole_fracs);
     for (int i = 0; i < Ncomps; i++){
         for (int j = 0; j < Ncomps; j++){
             K_prime[i] += mole_fracs[j] * M[j][i] * pow(cd[i][j], 3.) * rdf[i][j];

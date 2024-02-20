@@ -6,7 +6,7 @@ permalink: /vcurrent/HardSphere_methods.html
 ---
 
 <!--- 
-Generated at: 2023-11-06T12:02:00.297154
+Generated at: 2024-02-20T11:23:17.426846
 This is an auto-generated file, generated using the script at KineticGas/pyUtils/markdown_from_docstrings.py
 The file is created by parsing the docstrings of the methods in the 
 HardSphere class. For instructions on how to use the parser routines, see the
@@ -18,8 +18,6 @@ RET-HS Model. This class implements utility methods to access mixing parameters 
 ## Table of contents
   * [Constructor](#constructor)
     * [\_\_init\_\_](#__init__self-comps-mole_weightsnone-sigmanone-n4-is_idealgasfalse-parameter_refdefault)
-  * [Utility methods](#utility-methods)
-    * [get_Eij](#get_eijself-vm-t-x)
 
 ## Constructor
 
@@ -53,41 +51,4 @@ value
 &nbsp;&nbsp;&nbsp;&nbsp; **parameter_ref (str) :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Id for parameter set to use 
-
-## Utility methods
-
-Set- and get methods for interaction parameters, mixing parameters ...
-
-### Table of contents
-  * [Utility methods](#utility-methods)
-    * [get_Eij](#get_eijself-vm-t-x)
-
-
-### `get_Eij(self, Vm, T, x)`
-Compute the factors
-
-$$ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k \neq j}}, $$
-
-where $n_i$ is the molar density of species $i$.
- 
-
-#### Args:
-
-&nbsp;&nbsp;&nbsp;&nbsp; **Vm (float) :** 
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Molar volume [m3 / mol]
-
-&nbsp;&nbsp;&nbsp;&nbsp; **T (float) :** 
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Temperature [K]
-
-&nbsp;&nbsp;&nbsp;&nbsp; **x (array_like) :** 
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Molar composition 
-
-#### Returns:
-
-&nbsp;&nbsp;&nbsp;&nbsp; **(2D array) :** 
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The factors E[i][j] = $ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k \neq j}}$, where $n_i$is the molar density of species $i$. Unit [1 / mol]  
 

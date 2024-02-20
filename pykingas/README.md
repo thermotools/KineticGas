@@ -1,23 +1,26 @@
 <!--- 
-Generated at: 2023-06-09T08:35:40.151941
+Generated at: 2024-02-20T11:23:29.324965
 This is an auto-generated file, generated using the script at KineticGas/docs/join_docs.py
 The file is created by joining the contents of the files
     KineticGas/docs/markdown/
-        header.md
-        toc_pypi.md
-        cite_acknowl_licence.md
-        pypi_structure.md
-        getting_started_py.md
-        fluid_identifiers.md
+        readme_parts/header.md
+        readme_parts/toc_pypi.md
+        metapages/cite_acknowl_licence.md
+        readme_parts/pypi_structure.md
+        vCurrent/getting_started_py.md
+        vCurrent/fluid_identifiers.md
 --->
 # KineticGas
+
 KineticGas is an implementation of Revised Enskog Theory (RET) for spherical potentials. The most notable of which is the implementation of RET-Mie, the Revised Enskog Theory for Mie fluids. 
 
 The package is implemented mostly in C++ to handle the numerical computations involved in evaluating the collision integrals and the radial distribution function at contact for the target fluids, with the possibility of setting up multithreading at compile time.
 
 KineticGas can be used to predict diffusion coefficients, thermal diffusion coefficients, viscosities and thermal conductivities in gas mixtures, and is reliable over a large range of temperatures and pressures. The package also contains an extensive database of fluid parameters collected from the open literature.
 
-![](https://github.com/thermotools/KineticGas/blob/main/docs/figures/all.gif?raw=true)
+For the full documentation, check out the [KineticGas homepage.](https://thermotools.github.io/KineticGas)
+
+![](https://thermotools.github.io/KineticGas/v2.0.0/graphics/all.gif?raw=true)
 
 
 ## Table of contents
@@ -29,7 +32,12 @@ KineticGas can be used to predict diffusion coefficients, thermal diffusion coef
    * [Structure](#Structure)
    * [Fluid indentifiers](#fluid-identifiers)
 
-## Please cite
+---
+layout: default
+version: 
+title: Please Cite
+permalink: /please_cite.html
+---
 
 KineticGas has been developed throughout a series of two works. If you are referencing the package, please cite the works
 
@@ -49,7 +57,12 @@ The KineticGas package is distributed as free software under the MIT licence.
 
 
 
-# Getting started: In Python
+---
+layout: default
+version: 
+title: Getting started - In Python
+permalink: /vcurrent/getting_started_py.html
+---
 
 In addition to this explanation, some examples may be found in the [pyExamples directory](https://github.com/thermotools/KineticGas_private/tree/main/pyExamples).
 
@@ -149,7 +162,7 @@ from pykingas.MieKinGas import MieKinGas
 
 kin = MieKinGas('O2,N2,CO2,C1') # Mixture of air with carbon dioxide and methane, modeled with RET-Mie
 T = 800 # Kelvin
-Vm = 66.5 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
+Vm = 0.0665 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
 x = [0.05, 0.25, 0.5, 0.2] # Molar composition
 
 cond = kin.thermal_conductivity(T, Vm, x, N=2) # Thermal conductivity [W / m K]
@@ -166,7 +179,7 @@ from pykingas.MieKinGas import MieKinGas
 
 kin = MieKinGas('O2,N2,CO2,C1') # Mixture of air with carbon dioxide and methane, modeled with RET-Mie
 T = 800 # Kelvin
-Vm = 66.5 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
+Vm = 0.0665 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
 x = [0.05, 0.25, 0.5, 0.2] # Molar composition
 
 visc = kin.viscosity(T, Vm, x, N=2) # Shear viscosity [Pa s]
@@ -174,7 +187,10 @@ visc = kin.viscosity(T, Vm, x, N=2) # Shear viscosity [Pa s]
 
 ### Diffusion coefficients
 
-Diffusion coefficients may be defined in many different ways, and depend upon the frame of reference (FoR). For a more in-depth discussion on this see the supporting information of [Revised Enskog Theory for Mie fluids: Prediction of diffusion coefficients, thermal diffusion coefficients, viscosities and thermal conductivities.]()
+Diffusion coefficients may be defined in many different ways, and depend upon the frame of reference (FoR). For a more in-depth 
+discussion on this see the supporting information of [Revised Enskog Theory for Mie fluids: Prediction of diffusion coefficients, 
+thermal diffusion coefficients, viscosities and thermal conductivities.](https://pubs.aip.org/aip/jcp/article/158/22/224101/2895227/Revised-Enskog-theory-for-Mie-fluids-Prediction-of) For more details on the definitions available in the KineticGas package, see the [memo on definitions of the diffusion 
+coefficient.](/KineticGas/memo/diffusion/diffusion_definitions.pdf)
 
 The interface to all diffusion coefficients is the method `interdiffusion(self, T, Vm, x, N)`, where `T` is the temperature, `Vm` is the molar volume, `x` is the molar composition and `N` is the Enskog approximation order.
 
@@ -193,7 +209,7 @@ from pykingas.MieKinGas import MieKinGas
 
 kin = MieKinGas('AR,KR') # RET-Mie for a mixture of argon and krypton
 T = 300 # Kelvin
-Vm = 25 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
+Vm = 0.025 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
 x = [0.3, 0.7] # Molar composition
 
 D = kin.interdiffusion(T, Vm, x, N=2) # Binary diffusion coefficient [m^2 / s]
@@ -212,7 +228,7 @@ from pykingas.MieKinGas import MieKinGas
 
 kin = MieKinGas('AR,KR') # RET-Mie for a mixture of argon and krypton
 T = 300 # Kelvin
-Vm = 25 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
+Vm = 0.025 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
 x = [0.3, 0.7] # Molar composition
 
 D_CoN = kin.interdiffusion(T, Vm, x, N=2, frame_of_reference='CoN') # Diffusion coefficient in the CoN FoR
@@ -277,7 +293,9 @@ The `frame_of_reference` kwarg works as normal when `use_independet=False`.
 
 Thermal diffusion is characterised by several common coefficients, the thermal diffusion coefficients $D_{T,i}^{(FoR)}$, the thermal diffusion factor $\alpha_{ij}$, the thermal diffusion ratios $k_{T, i}$ and the Soret coefficients $S_{T,i}$.
 
-Of these, the thermal diffusion coefficients, $D_{T,i}^{(FoR)}$, carry the same ambiguity as the diffusion coefficients in their dependency on the frame of reference (FoR) and choice of dependent gradient.
+Of these, the thermal diffusion coefficients, $D_{T,i}^{(FoR)}$, carry the same ambiguity as the diffusion coefficients 
+in their dependency on the frame of reference (FoR) and choice of dependent gradient. For more details on the definitions 
+available in the KineticGas package, see the [memo on definitions of the diffusion coefficient.](/KineticGas/memo/diffusion/diffusion_definitions.pdf)
 
 #### The Thermal diffusion factors
 
@@ -292,7 +310,7 @@ from pykingas.MieKinGas import MieKinGas
 
 kin = MieKinGas('C1,C3,CO2') # RET-Mie for a mixture of methane, propane and CO2
 T = 300 # Kelvin
-Vm = 25 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
+Vm = 0.025 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
 x = [0.3, 0.6, 0.1] # Molar composition
 
 alpha = kin.thermal_diffusion_factor(T, Vm, x, N=2) # Thermal diffusion factors [dimensionless]
@@ -324,7 +342,7 @@ from pykingas.MieKinGas import MieKinGas
 
 kin = MieKinGas('C1,O2,CO2') # RET-Mie for a mixture of methane, oxygen and CO2
 T = 300 # Kelvin
-Vm = 25 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
+Vm = 0.025 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
 x = [0.3, 0.6, 0.1] # Molar composition
 
 DT = kin.thermal_diffusion_coeff(T, Vm, x, N=2) # Thermal diffusion coefficients in the CoN FoR [mol / m s]
@@ -381,38 +399,43 @@ $$J_{CO2} = D_{T}[2] \nabla \ln T - D[2, 0] \nabla n_{C1} - D[2, 1] \nabla n_{O2
 
 The `frame_of_reference` kwarg works as normal when setting `use_independent=False`.
 
-# Fluid identifiers
+---
+layout: default
+version: 
+title: Fluid identifiers
+permalink: /vcurrent/fluid_identifiers.html
+---
 
 *Note* : Many of these fluid parameters have been pulled directly from the [ThermoPack](https://github.com/thermotools/thermopack) fluid database for SAFT-VR Mie parameters. In the cases where SAFT-VR Mie uses segment numbers $>1$ to describe the fluids, the parameter sets cannot be expected to be suitable for use with RET-Mie.
 
-| Fluid name | Fluid identifyer | CAS |
-| ---------- | ---------------- | --- |
-| Argon | AR | 7440-37-1 |
-| Methane | C1 | 74-82-8 |
-| Ethane | C2 | 74-84-0 |
-| Propane | C3 | 74-98-6 |
-| Carbon dioxide | CO2 | 124-38-9 |
-| Deuterium | D2 | 7782-39-0 |
-| Hydrogen | H2 | 1333-74-0 |
-| Water | H2O | 7732-18-5 |
-| Helium-4 | HE | 7440-59-7 |
-| Krypton | KR | 7439-90-9 |
-| Lennard-jones_fluid | LJF |  |
-| Nitrogen | N2 | 7727-37-9 |
-| N-decane | NC10 | 124-18-5 |
-| N-pentadecane | NC15 | 629-62-9 |
-| N-eicosane | NC20 | 112-95-8 |
-| N-docosane | NC22 | 629-97-0 |
-| N-butane | NC4 | 106-97-8 |
-| N-pentan | NC5 | 109-66-0 |
-| N-hexane | NC6 | 110-54-3 |
-| N-heptane | NC7 | 142-82-5 |
-| N-octane | NC8 | 111-65-9 |
-| N-nonane | NC9 | 111-84-2 |
-| Neon | NE | 7440-01-9 |
-| Ortho-hydrogen | O-H2 | 1333-74-0 |
-| Oxygen | O2 | 7782-44-7 |
-| Para-hydrogen | P-H2 | 1333-74-0 |
-| Xenon | XE | 7440-63-3 |
+| Fluid name | Fluid identifier | CAS |
+| ---------- |------------------| --- |
+| Argon | AR               | 7440-37-1 |
+| Methane | C1               | 74-82-8 |
+| Ethane | C2               | 74-84-0 |
+| Propane | C3               | 74-98-6 |
+| Carbon dioxide | CO2              | 124-38-9 |
+| Deuterium | D2               | 7782-39-0 |
+| Hydrogen | H2               | 1333-74-0 |
+| Water | H2O              | 7732-18-5 |
+| Helium-4 | HE               | 7440-59-7 |
+| Krypton | KR               | 7439-90-9 |
+| Lennard-jones_fluid | LJF              |  |
+| Nitrogen | N2               | 7727-37-9 |
+| N-decane | NC10             | 124-18-5 |
+| N-pentadecane | NC15             | 629-62-9 |
+| N-eicosane | NC20             | 112-95-8 |
+| N-docosane | NC22             | 629-97-0 |
+| N-butane | NC4              | 106-97-8 |
+| N-pentan | NC5              | 109-66-0 |
+| N-hexane | NC6              | 110-54-3 |
+| N-heptane | NC7              | 142-82-5 |
+| N-octane | NC8              | 111-65-9 |
+| N-nonane | NC9              | 111-84-2 |
+| Neon | NE               | 7440-01-9 |
+| Ortho-hydrogen | O-H2             | 1333-74-0 |
+| Oxygen | O2               | 7782-44-7 |
+| Para-hydrogen | P-H2             | 1333-74-0 |
+| Xenon | XE               | 7440-63-3 |
 
 

@@ -77,7 +77,7 @@ class KineticGas{
 
     // The "distance between particles" at contact.
     // NOTE: Will Return [0, 0, ... 0] for models with is_idealgas=True.
-    virtual std::vector<std::vector<double>> get_contact_diameters(double rho, double T, const std::vector<double>& x) = 0;
+    virtual std::vector<std::vector<double>> get_collision_diameters(double rho, double T, const std::vector<double>& x) = 0;
     
     /* 
        The radial distribution function "at contact" for the given potential model
@@ -86,12 +86,12 @@ class KineticGas{
        of model_rdf should throw an std::invalid_argument error.
     */
     virtual std::vector<std::vector<double>> model_rdf(double rho, double T, const std::vector<double>& mole_fracs) = 0;
-
-    std::vector<double> get_wt_fracs(const std::vector<double> mole_fracs); // Compute weight fractions from mole fractions
     std::vector<std::vector<double>> get_rdf(double rho, double T, const std::vector<double>& mole_fracs) {
         if (is_idealgas) return std::vector<std::vector<double>>(Ncomps, std::vector<double>(Ncomps, 1.));
         return model_rdf(rho, T, mole_fracs);
     }
+
+    std::vector<double> get_wt_fracs(const std::vector<double> mole_fracs); // Compute weight fractions from mole fractions
 
 // ------------------------------------------------------------------------------------------------------------------------ //
 // -------------------------------------------------- Square bracket integrals -------------------------------------------- //
@@ -136,13 +136,16 @@ class KineticGas{
 // ----------------------------------------------------------------------------------------------------------------------------------- //
 // --------------------------------------- Methods to facilitate multithreading ------------------------------------------------------ //
     /*
-        Filling the A-matrix is the most computationally intensive part of the module
-        The matrix elements may be computed independently. Therefore the functions fill_A_matrix_<ij>() have been
-        implemented to facilitate multithreading. j indicates the number of functions the matrix generation has been split
-        over, i differentiates between functions.
-        So fill_A_matrix_i4 is a set of four functions intended to be run on four separate threads, while
-        fill_A_matrix_i2 is a set of two functions intended to be run on two separate threads.
-        For a graphical representation of how the functions split the matrix, see the implementation file.
+        Computing collision integrals is the most computationally intensive part of computing a transport property,
+        given that one does not use correlations for the computation. Therefore, computed collision integrals are stored
+        in this->omega_map. These methods are used to deduce which collision integrals are required to compute a given
+        property, and then split the computation of those integrals among several threads. When computation of the
+        property proceeds, the integrals are then retrieved from this->omega_map.
+
+        To adjust the number of threads used to compute collision integrals, set the compile-time constant Ncores in
+        KineticGas_mthr.cpp. In practice, very little is to be gained by increasing this beyond 10, unless you are
+        using high Enskog approximation orders (>4), or are working with a large number of components (because there
+        is no point in using more threads than required integrals).
     */
     void precompute_omega(const std::vector<int>& i_vec, const std::vector<int>& j_vec,
                         const std::vector<int>& l_vec, const std::vector<int>& r_vec, double T);

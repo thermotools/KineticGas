@@ -408,7 +408,7 @@ class py_KineticGas:
         a = self.compute_cond_vector(particle_density, T, x, N=N)
         P = self.get_P_factors(Vm, T, x)
         rdf = self.get_rdf(particle_density, T, x)
-        cd = self.get_contact_diameters(particle_density, T, x)
+        cd = self.get_collision_diameters(particle_density, T, x)
 
         b = np.empty((self.ncomps, self.ncomps)) # Precomputing some factors that are used many places later
         if self.is_idealgas is True:
@@ -514,7 +514,7 @@ class py_KineticGas:
         Dij = self.interdiffusion(T, Vm, x, N=N, frame_of_reference='CoM',
                                   use_binary=False, use_independent=True, dependent_idx=self.ncomps - 1)
         rdf = self.get_rdf(particle_density, T, x)
-        cd = self.get_contact_diameters(particle_density, T, x)
+        cd = self.get_collision_diameters(particle_density, T, x)
         P = self.get_P_factors(Vm, T, x)
         A = np.zeros((self.ncomps, self.ncomps))
 
@@ -617,7 +617,7 @@ class py_KineticGas:
         a = self.compute_cond_vector(particle_density, T, x, N=N)
         rdf = self.get_rdf(particle_density, T, x)
         K = self.cpp_kingas.get_K_factors(particle_density, T, x)
-        cd = self.get_contact_diameters(particle_density, T, x)
+        cd = self.get_collision_diameters(particle_density, T, x)
         d = self.compute_diffusion_coeff_vector(particle_density, T, x, N=N)
         d = self.reshape_diffusion_coeff_vector(d)
 
@@ -661,7 +661,7 @@ class py_KineticGas:
 
         particle_density = Avogadro / Vm
         b = self.compute_visc_vector(T, particle_density, x, N=N)
-        cd = self.get_contact_diameters(particle_density, T, x)
+        cd = self.get_collision_diameters(particle_density, T, x)
         rdf = self.get_rdf(particle_density, T, x)
         K_prime = self.cpp_kingas.get_K_prime_factors(particle_density, T, x)
 
@@ -902,7 +902,7 @@ class py_KineticGas:
             raise KeyError('Invalid frame of reference key : ' + FoR)
 
     def get_com_2_con_matr(self, x):
-        """FOR-Transform
+        r"""FOR-Transform
         Get transformation matrix from centre of mass (CoM) to centre of moles (CoN).
         &&
         Args:
@@ -919,7 +919,7 @@ class py_KineticGas:
         return psi
 
     def get_com_2_solv_matr(self, x, solvent_idx):
-        """FOR-Transform
+        r"""FOR-Transform
         Get transformation matrix from centre of mass (CoM) to solvent (solvent) frame of reference
         &&
         Args:
@@ -940,7 +940,7 @@ class py_KineticGas:
         return psi
 
     def get_com_2_cov_matr(self, T, Vm, x):
-        """FOR-Transform
+        r"""FOR-Transform
         Get centre of mass (CoM) to centre of volume (CoV) transformation matrix
         &&
         Args:
@@ -962,7 +962,7 @@ class py_KineticGas:
         return psi
 
     def get_solv_2_solv_matr(self, x, prev_solv_idx, new_solv_idx):
-        """FOR-Transform
+        r"""FOR-Transform
         Get solvent-to-solvent frame of reference transformation matrix
         &&
         Args:
@@ -1091,7 +1091,7 @@ class py_KineticGas:
         self.check_valid_composition(mole_fracs)
         return np.array(self.cpp_kingas.get_diffusion_vector(particle_density, T, mole_fracs, N))
 
-    def get_contact_diameters(self, particle_density, T, x):
+    def get_collision_diameters(self, particle_density, T, x):
         """cpp-interface
         Compute collision diameters given by Eq. (40) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
         *Note* Returns zeros for models initialised with is_idealgas=True.
@@ -1108,7 +1108,7 @@ class py_KineticGas:
         if key in self.computed_cd.keys():
             return self.computed_cd[key]
 
-        cd = self.cpp_kingas.get_contact_diameters(particle_density, T, x)
+        cd = self.cpp_kingas.get_collision_diameters(particle_density, T, x)
         self.computed_cd[key] = cd
         return cd
 
@@ -1137,7 +1137,7 @@ class py_KineticGas:
     #####################################################
 
     def compute_diffusion_coeff_vector(self, particle_density, T, mole_fracs, N=None):
-        """Utility
+        r"""Utility
         Compute the diffusive response function Sonine polynomial expansion coefficients by solving the set of equations
 
         $$D d = \delta$$
@@ -1176,7 +1176,7 @@ class py_KineticGas:
         return d
 
     def reshape_diffusion_coeff_vector(self, d):
-        """Utility
+        r"""Utility
         The vector returned by `compute_diffusion_coeff_vector` contains the diffusive response function sonine
         polynomial expansion coefficients (eg. $d_{i, j}^{(q)}$ ).
         To more easily access the correct coefficients, this method reshapes the vector to a matrix indiced
@@ -1237,7 +1237,7 @@ class py_KineticGas:
         return dth
 
     def compute_cond_vector(self, particle_density, T, mole_fracs, N=None):
-        """Utility
+        r"""Utility
         Compute the thermal response function Sonine polynomial expansion coefficients by solving the set of equations
 
         $$\Lambda \ell = \lambda$$
@@ -1283,7 +1283,7 @@ class py_KineticGas:
         return np.array(a)
     
     def compute_visc_vector(self, T, particle_density, mole_fracs, N=None):
-        """Utility
+        r"""Utility
         Compute the viscous response function Sonine polynomial expansion coefficients by solving the set of equations
 
         $$\Beta b = \beta$$

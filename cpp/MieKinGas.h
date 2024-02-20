@@ -96,7 +96,7 @@ class MieKinGas : public Spherical {
     // bmax[i][j] is in units of sigma[i][j]
     // bmax = The maximum value of the impact parameter at which deflection angle (chi) is positive
     std::vector<std::vector<double>> get_b_max(double T);
-    std::vector<std::vector<double>> get_contact_diameters(double rho, double T, const std::vector<double>& x) override;
+    std::vector<std::vector<double>> get_collision_diameters(double rho, double T, const std::vector<double>& x) override;
     virtual std::vector<std::vector<double>> get_BH_diameters(double T);
     std::vector<std::vector<double>> get_vdw_alpha(){return alpha;}
 

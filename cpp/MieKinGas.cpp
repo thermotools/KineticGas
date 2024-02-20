@@ -219,7 +219,7 @@ std::vector<std::vector<double>> MieKinGas::get_b_max(double T){
         return bmax;
     }
 
-std::vector<std::vector<double>> MieKinGas::get_contact_diameters(double rho, double T, const std::vector<double>& x){
+std::vector<std::vector<double>> MieKinGas::get_collision_diameters(double rho, double T, const std::vector<double>& x){
         // Evaluate the integral of Eq. (40) in RET for Mie fluids (doi: 10.1063/5.0149865)
         // Note: For models with is_idealgas==true, zeros are returned, as there is no excluded volume at infinite dilution.
         // Weights and nodes for 6-point Gauss-Legendre quadrature
