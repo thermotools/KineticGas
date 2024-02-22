@@ -26,10 +26,18 @@ class Sutherland : public Spherical{
     public:
     Sutherland(vector1d mole_weights, vector2d sigma, vector2d eps, vector3d C, vector3d lambda, bool is_idealgas=false)
         : Spherical(mole_weights, sigma, is_idealgas), eps{eps}, C{C}, lambda{lambda}, nterms{C.size()}, 
-        sigma_eff(Ncomps, vector1d(Ncomps, 0.)), sigma_min(Ncomps, vector1d(Ncomps, 0.)), eps_eff(Ncomps, vector1d(Ncomps, 0.)),
+        sigma_eff{sigma}, sigma_min{sigma}, eps_eff(Ncomps, vector1d(Ncomps, 0.)),
         vdw_alpha(Ncomps, vector1d(Ncomps, 0.))
         {compute_sigma_eff(); compute_epsilon_eff(); compute_vdw_alpha();}
-    
+
+    Sutherland(vector1d mole_weights, vector2d sigma, vector2d eps, size_t nterms, bool is_idealgas=false)
+        : Spherical(mole_weights, sigma, is_idealgas), eps{eps}, nterms{nterms}, sigma_eff(Ncomps, vector1d(Ncomps, 0.)),
+        sigma_min(Ncomps, vector1d(Ncomps, 0.)), eps_eff(Ncomps, vector1d(Ncomps, 0.)), vdw_alpha(Ncomps, vector1d(Ncomps, 0.))
+        {
+        C = vector3d(nterms, vector2d(Ncomps, vector1d(Ncomps, 0.)));
+        lambda = vector3d(nterms, vector2d(Ncomps, vector1d(Ncomps, 0.)));
+        }
+
     virtual double potential(int i, int j, double r) override;
     virtual double potential_derivative_r(int i, int j, double r) override;
     virtual double potential_dblderivative_rr(int i, int j, double r) override;

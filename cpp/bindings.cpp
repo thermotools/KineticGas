@@ -149,6 +149,18 @@ PYBIND11_MODULE(KineticGas_d, handle){
         .def("da2_div_chi_drho", py::overload_cast<double, double, const vector1d&>(&MieKinGas::da2ij_div_chi_drho_func))
         .def("gamma_corr", py::overload_cast<double, double, const vector1d&>(&MieKinGas::gamma_corr))
         ;
+
+   py::class_<QuantumMie>(handle, "cpp_QuantumMie")
+        .def(py::init<vector1d, vector2d, vector2d, vector2d, vector2d, std::vector<int>, bool>())
+        KineticGas_bindings(QuantumMie)
+        Spherical_bindings(QuantumMie)
+        .def("potential", py::overload_cast<int, int, double, double>(&QuantumMie::potential))
+        .def("potential_derivative_r", py::overload_cast<int, int, double, double>(&QuantumMie::potential_derivative_r))
+        .def("potential_dblderivative_rr", py::overload_cast<int, int, double, double>(&QuantumMie::potential_dblderivative_rr))
+        .def("get_sigma_eff", py::overload_cast<double>(&QuantumMie::get_sigma_eff))
+        .def("get_sigma_min", py::overload_cast<double>(&QuantumMie::get_sigma_min))
+        .def("get_epsilon_eff", py::overload_cast<double>(&QuantumMie::get_epsilon_eff))
+        ;
         
     
     py::class_<HardSphere>(handle, "cpp_HardSphere")

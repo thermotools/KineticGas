@@ -43,7 +43,6 @@ vector2d Sutherland::get_b_max(double T){
 void Sutherland::compute_sigma_eff(){
     for (int i = 0; i < Ncomps; i++){
         for (int j = i; j < Ncomps; j++){
-            sigma_eff[i][j] = sigma[i][j];
             while (abs(potential(i, j, sigma_eff[i][j])) / eps[i][j] > 1e-6){
                 sigma_eff[i][j] -= potential(i, j, sigma_eff[i][j]) / potential_derivative_r(i, j, sigma_eff[i][j]);
             }
@@ -53,7 +52,6 @@ void Sutherland::compute_sigma_eff(){
 }
 
 void Sutherland::compute_epsilon_eff(){
-    sigma_min = sigma_eff;
     for (int i = 0; i < Ncomps; i++){
         for (int j = i; j < Ncomps; j++){
             while (abs(potential_derivative_r(i, j, sigma_min[i][j])) * sigma_eff[i][j] / eps[i][j] > 1e-10){

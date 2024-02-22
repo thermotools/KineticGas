@@ -1,9 +1,9 @@
 {
-  "ident": "PSEUDO",
-  "formula": "Ps",
-  "cas_number": "0000-00-0",
-  "name": "Pseudo",
-  "aliases": [
-    "Pseudo"
-  ]
+    "ident": "PSEUDO",
+    "formula": "Ps",
+    "cas_number": "0000-00-0",
+    "name": "Pseudo",
+    "aliases": [
+        "Pseudo"
+    ]
 }
