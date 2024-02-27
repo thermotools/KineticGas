@@ -160,6 +160,7 @@ PYBIND11_MODULE(KineticGas_d, handle){
         .def("get_sigma_eff", py::overload_cast<double>(&QuantumMie::get_sigma_eff))
         .def("get_sigma_min", py::overload_cast<double>(&QuantumMie::get_sigma_min))
         .def("get_epsilon_eff", py::overload_cast<double>(&QuantumMie::get_epsilon_eff))
+        .def("get_BH_diameters", &QuantumMie::get_BH_diameters)
         ;
         
     

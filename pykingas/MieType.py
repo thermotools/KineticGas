@@ -46,8 +46,6 @@ class MieType(py_KineticGas):
             for i, pot in potential:
                 if pot == 'q-Mie':
                     potential[i] = f'Mie-FH{self.fluids[i]["default_fh_order"]}'
-
-        print(potential)
         
         try:
             self.fluids = [self.fluids[i][potential[i]][parameter_ref] for i in range(self.ncomps)]

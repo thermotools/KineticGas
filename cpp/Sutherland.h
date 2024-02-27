@@ -42,16 +42,16 @@ class Sutherland : public Spherical{
     virtual double potential_derivative_r(int i, int j, double r) override;
     virtual double potential_dblderivative_rr(int i, int j, double r) override;
 
-    inline vector2d get_sigma_eff(){return sigma_eff;} // Tested vs. Mie : OK
-    inline vector2d get_sigma_min(){return sigma_min;} // Tested vs. Mie : OK
-    inline vector2d get_epsilon_eff(){return eps_eff;} // Tested vs. Mie : OK
-    inline vector2d get_vdw_alpha(){return vdw_alpha;} // Tested vs. Mie : OK
+    inline vector2d get_sigma_eff(){return sigma_eff;}
+    inline vector2d get_sigma_min(){return sigma_min;}
+    inline vector2d get_epsilon_eff(){return eps_eff;}
+    inline vector2d get_vdw_alpha(){return vdw_alpha;}
 
-    virtual vector2d model_rdf(double rho, double T, const vector1d& mole_fracs) override; // Tested vs. Mie : OK
-    vector2d rdf_g0_func(double rho, double T, const vector1d& x); // Tested vs. Mie : OK
-    vector2d rdf_g1_func(double rho, double T, const vector1d& x); // Tested vs. Mie : OK
-    vector2d rdf_g2_func(double rho, double T, const vector1d& x); // Tested vs. Mie : OK
-    virtual vector2d get_BH_diameters(double T); // Tested vs. Mie : OK
+    virtual vector2d model_rdf(double rho, double T, const vector1d& mole_fracs) override;
+    vector2d rdf_g0_func(double rho, double T, const vector1d& x);
+    vector2d rdf_g1_func(double rho, double T, const vector1d& x);
+    vector2d rdf_g2_func(double rho, double T, const vector1d& x);
+    virtual vector2d get_BH_diameters(double T);
     // vector2d get_collision_diameters(double rho, double T, const std::vector<double>& x); // Implemented in Spherical
 
     // ------------------------------------------------------------------------------------------------------------------- //

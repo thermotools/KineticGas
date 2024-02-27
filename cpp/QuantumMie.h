@@ -36,12 +36,12 @@ class QuantumMie : public Sutherland{
 
     QuantumMie(vector1d mole_weights, vector2d sigma, vector2d eps, vector2d la, vector2d lr, std::vector<int> FH_order, bool is_idealgas);
 
-    inline double Q1(size_t i, size_t j, const vector2d& lambda){
-        return lambda[i][j] * (lambda[i][j] - 1);
+    inline double Q1(size_t i, size_t j, const vector2d& lamb){
+        return lamb[i][j] * (lamb[i][j] - 1);
     }
 
-    inline double Q2(size_t i, size_t j, const vector2d& lambda){
-        return 0.5 * (lambda[i][j] + 2) * (lambda[i][j] + 1) * Q1(i, j, lambda);
+    inline double Q2(size_t i, size_t j, const vector2d& lamb){
+        return 0.5 * (lamb[i][j] + 2) * (lamb[i][j] + 1) * Q1(i, j, lamb);
     }
 
     inline double D(int i, int j, double T){

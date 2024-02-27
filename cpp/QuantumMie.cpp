@@ -24,12 +24,17 @@ QuantumMie::QuantumMie(vector1d mole_weights, vector2d sigma, vector2d eps, vect
                 if (FH_order[j] > 1) mu2_inv += 1. / m[j];
                 double D1_factor = pow(HBAR, 2) * mu1_inv / (24.0 * BOLTZMANN);
                 double D2_factor = pow(HBAR, 2) * mu2_inv / (24.0 * BOLTZMANN);
-                std::cout << "Init D factors : " << D1_factor << ", " << D2_factor << std::endl;
                 Q_factors[0][i][j] = Q_factors[0][j][i] = C[0][i][j] * D1_factor * Q1(i, j, lr) * pow(sigma[i][j], -2);
                 Q_factors[1][i][j] = Q_factors[1][j][i] = C[1][i][j] * D1_factor * Q1(i, j, la) * pow(sigma[i][j], -2);
-                Q_factors[2][i][j] = Q_factors[2][j][i] = C[0][i][j] * D2_factor * Q2(i, j, lr) * pow(sigma[i][j], -4);
-                Q_factors[3][i][j] = Q_factors[3][j][i] = C[1][i][j] * D2_factor * Q2(i, j, la) * pow(sigma[i][j], -4);
+                Q_factors[2][i][j] = Q_factors[2][j][i] = C[0][i][j] * pow(D2_factor, 2) * Q2(i, j, lr) * pow(sigma[i][j], -4);
+                Q_factors[3][i][j] = Q_factors[3][j][i] = C[1][i][j] * pow(D2_factor, 2) * Q2(i, j, la) * pow(sigma[i][j], -4);
             }
+        }
+        if (*(std::max_element(FH_order.begin(), FH_order.end())) == 0){
+            nterms = 2;
+        }
+        else if (*(std::max_element(FH_order.begin(), FH_order.end())) == 1){
+            nterms = 4;
         }
     }
 
@@ -40,7 +45,7 @@ void QuantumMie::set_temperature(double T){
     for (size_t k = 2; k < nterms; k++){
         for (size_t i = 0; i < Ncomps; i++){
             for (size_t j = i; j < Ncomps; j++){
-                C[k][i][j] = C[k][j][i] = Q_factors[k - 2][i][j] / T;
+                C[k][i][j] = C[k][j][i] = Q_factors[k - 2][i][j] / pow(T, k / 2); // Integer division, such that k = {2, 3} => pow(T, 1), k = {4, 5} => pow(T, 2) etc.
             }
         }
     }
