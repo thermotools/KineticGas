@@ -64,11 +64,6 @@ struct OmegaPoint{
 
 class KineticGas{
     public:
-    const unsigned long Ncomps; // must be ulong to be initialised from mole_weights.size()
-    const bool is_idealgas;
-    std::vector<double> m;
-    std::vector<std::vector<double>> M, m0;
-    std::map<OmegaPoint, double> omega_map;
 
     KineticGas(std::vector<double> mole_weights, bool is_idealgas);
     virtual ~KineticGas(){};
@@ -112,6 +107,15 @@ class KineticGas{
 // ------------------------------------------------------------------------------------------------------------------------ //
 // --------------------------------------- KineticGas internals are below here -------------------------------------------- //
 // -------------------------------- End users should not need to care about any of this ----------------------------------- //
+
+    protected:
+    const size_t Ncomps;
+    const bool is_idealgas;
+    std::vector<double> m;
+    std::vector<std::vector<double>> M, m0;
+    std::map<OmegaPoint, double> omega_map;
+
+    private:
 // ------------------------------------------------------------------------------------------------------------------------ //
 // ---------------------------------------------- Square bracket integrals ------------------------------------------------ //
 
