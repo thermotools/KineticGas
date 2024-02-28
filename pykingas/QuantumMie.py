@@ -34,13 +34,13 @@ class QuantumMie(MieType.MieType):
         super().__init__(comps, potentials,
                             mole_weights=mole_weights, sigma=sigma,
                             eps_div_k=eps_div_k, la=la, lr=lr, lij=lij, kij=kij,
-                            N=N, parameter_ref=parameter_ref)
+                            N=N, parameter_ref=parameter_ref, is_idealgas=is_idealgas)
 
         fh_orders_db = np.array([self.fluids[i]['FH_order'] for i in range(self.ncomps)])
-
         self.__FH_orders = fh_orders_db
         self.cpp_kingas = cpp_QuantumMie(self.mole_weights, self.sigma_ij, self.epsilon_ij, self.la, self.lr, 
                                             self.__FH_orders, is_idealgas)
+        print(f'Self is idealgas : {self.is_idealgas}')
         if self.is_idealgas is False:
             if use_eos is None:
                 self.eos = saftvrqmie()
@@ -146,27 +146,27 @@ class QuantumMie(MieType.MieType):
         Returns:
             MieKinGas : An initialised model with the effective parameters.
         """
-        if self._is_singlecomp is False:
-            raise NotImplementedError("Method only implemented for single component systems so far!")
 
-        sigma = np.diag(self.get_sigma_eff(T))[0]
-        eps = np.diag(self.get_epsilon_eff(T))[0]
-        r_min = np.diag(self.get_sigma_min(T))[0]
-        d = [self.potential_r(i, i, sigma, T) for i in range(self.ncomps)][0]
+        sigma = np.diag(self.get_sigma_eff(T))
+        eps = np.diag(self.get_epsilon_eff(T))
+        r_min = np.diag(self.get_sigma_min(T))
+        d = np.array([self.potential_r(i, i, sigma[i], T) for i in range(self.ncomps)])
 
         if fit_la is True:
-            d2 = [self.potential_rr(i, i, sigma, T) for i in range(self.ncomps)][0]
+            d2 = [self.potential_rr(i, i, sigma[i], T) for i in range(self.ncomps)]
             A = sigma / r_min
             B = - eps / (d * sigma)
             C = - (eps / (d * sigma)) - (d2 * eps / d ** 2)
 
-            lambda_a = root(lambda la: A ** la + B * la + C, x0=np.array([6.0])).x[0]
+            sol = root(lambda la: A ** la + B * la + C, x0=np.array([6.0 for _ in range(self.ncomps)]))
+            print(sol)
+            lambda_a = sol.x
         else:
-            lambda_a = 6
+            lambda_a = [6 for _ in range(self.ncomps)]
 
         lambda_r = - (d * sigma / eps) * (sigma / r_min) ** lambda_a
-        comps = self.comps[0]
-        mw = self.mole_weights[0] * Avogadro * 1e3
-        mie = MieKinGas(comps, mole_weights=[mw, mw], sigma=[sigma, sigma], eps_div_k=[eps / Boltzmann, eps / Boltzmann],
-                        la=[lambda_a, lambda_a], lr=[lambda_r, lambda_r], use_eos=self.eos)
+        comps = ','.join(self.comps)
+        mw = self.mole_weights * Avogadro * 1e3
+        mie = MieKinGas(comps, mole_weights=mw, sigma=sigma, eps_div_k=eps / Boltzmann,
+                        la=lambda_a, lr=lambda_r, use_eos=self.eos)
         return mie

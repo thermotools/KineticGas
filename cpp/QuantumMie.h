@@ -12,6 +12,7 @@ Note : This class also overrides the methods of Spherical that call the potentia
 #pragma once
 #include "Sutherland.h"
 #include "global_params.h"
+#include <mutex>
 
 class QuantumMie : public Sutherland{
     public:
@@ -36,17 +37,9 @@ class QuantumMie : public Sutherland{
 
     QuantumMie(vector1d mole_weights, vector2d sigma, vector2d eps, vector2d la, vector2d lr, std::vector<int> FH_order, bool is_idealgas);
 
-    inline double Q1(size_t i, size_t j, const vector2d& lamb){
-        return lamb[i][j] * (lamb[i][j] - 1);
-    }
-
-    inline double Q2(size_t i, size_t j, const vector2d& lamb){
-        return 0.5 * (lamb[i][j] + 2) * (lamb[i][j] + 1) * Q1(i, j, lamb);
-    }
-
-    inline double D(int i, int j, double T){
-        double mu = 1.0 / ( (1.0 / m[i]) + (1.0 / m[j]));
-        return pow(HBAR, 2) / (24.0 * mu * BOLTZMANN * T);
+    double omega(int i, int j, int l, int r, double T) override {
+        set_temperature(T);
+        return Sutherland::omega(i, j, l, r, T);
     }
 
     double potential(int i, int j, double r, double T){
@@ -64,16 +57,17 @@ class QuantumMie : public Sutherland{
         return Sutherland::potential_dblderivative_rr(i, j, r);
     }
 
-    inline vector2d get_sigma_eff(double T){set_temperature(T); return sigma_eff;} // Tested vs. Mie : OK
-    inline vector2d get_sigma_min(double T){set_temperature(T); return sigma_min;} // Tested vs. Mie : OK
-    inline vector2d get_epsilon_eff(double T){set_temperature(T); return eps_eff;} // Tested vs. Mie : OK
-    inline vector2d get_vdw_alpha(double T){set_temperature(T); return vdw_alpha;} // Tested vs. Mie : OK
+    inline vector2d get_sigma_eff(double T){set_temperature(T); return sigma_eff;}
+    inline vector2d get_sigma_min(double T){set_temperature(T); return sigma_min;}
+    inline vector2d get_epsilon_eff(double T){set_temperature(T); return eps_eff;}
+    inline vector2d get_vdw_alpha(double T){set_temperature(T); return vdw_alpha;}
 
     std::vector<std::vector<double>> get_BH_diameters(double T) override;
-    virtual std::vector<std::vector<double>> get_collision_diameters(double rho, double T, const std::vector<double>& x) override;
+    std::vector<std::vector<double>> get_collision_diameters(double rho, double T, const std::vector<double>& x) override;
     std::vector<std::vector<double>> model_rdf(double rho, double T, const std::vector<double>& x) override;
 
     private:
+    double current_temperature = -1.;
     void set_temperature(double T);
     void set_sigma_to_cached(double T, size_t* insert_idx_p);
     void compute_sigma_eps_eff(double T);
@@ -81,4 +75,31 @@ class QuantumMie : public Sutherland{
     using Sutherland::potential;
     using Sutherland::potential_derivative_r;
     using Sutherland::potential_dblderivative_rr;
+
+    inline double Q1(size_t i, size_t j, const vector2d& lamb){
+        return lamb[i][j] * (lamb[i][j] - 1);
+    }
+
+    inline double Q2(size_t i, size_t j, const vector2d& lamb){
+        return 0.5 * (lamb[i][j] + 2) * (lamb[i][j] + 1) * Q1(i, j, lamb);
+    }
+
+    // NOTE: This method is private, because set_temperature MUST called before calling this method.
+    // If you need to compute a collision integral, use the public override of omega.
+    void precompute_omega(const std::vector<int>& i_vec, const std::vector<int>& j_vec,
+                        const std::vector<int>& l_vec, const std::vector<int>& r_vec, double T) override
+     {
+        for (int idx = 0; idx < i_vec.size(); idx++){
+            Sutherland::omega(i_vec[idx], j_vec[idx], l_vec[idx], r_vec[idx], T); // Computed values are stored in omega_map
+        }
+     }
+
+    void precompute_conductivity_omega(int N, double T) override {
+        set_temperature(T);
+        KineticGas::precompute_conductivity_omega(N, T);
+    }
+    void precompute_viscosity_omega(int N, double T) override {
+        set_temperature(T);
+        KineticGas::precompute_viscosity_omega(N, T);
+    }
 };

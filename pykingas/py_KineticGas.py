@@ -105,7 +105,7 @@ class py_KineticGas:
                                 In addition, several density-dependent factors are set to zero, to ensure consistency with
                                 the ideal gas law / Gibbs-Duhem for an ideal gas.
         """
-
+        print(f'Initialising : {comps}')
         self._is_singlecomp = False
         self.default_N = N
         self.is_idealgas=is_idealgas
@@ -1312,10 +1312,13 @@ class py_KineticGas:
         self.check_valid_composition(mole_fracs)
         if (T, particle_density, tuple(mole_fracs), N) in self.computed_b_points.keys():
             return self.computed_b_points[(T, particle_density, tuple(mole_fracs), N)]
-        
+
+        print(f'Computing Viscosity for {self.comps} at : ')
+        print(f'rho : {particle_density / 1e30}, T : {T}, mole_fracs : {mole_fracs}, N : {N}')
         B = self.cpp_kingas.get_viscosity_matrix(particle_density, T, mole_fracs, N)
         beta = self.cpp_kingas.get_viscosity_vector(particle_density, T, mole_fracs, N)
 
+        print(f'Got beta : {beta}')
         if any(np.isnan(np.array(B).flatten())):
             warnings.warn('Viscosity matrix contained NAN elements!')
             b = np.array([np.nan for _ in beta])

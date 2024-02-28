@@ -69,6 +69,7 @@ void Sutherland::compute_epsilon_eff(){
 void Sutherland::compute_vdw_alpha(){
     for (size_t i = 0; i < Ncomps; i++){
         for (size_t j = 0; j < Ncomps; j++){
+            vdw_alpha[i][j] = 0.;
             for (size_t k = 0; k < nterms; k++){
                 vdw_alpha[i][j] -= C[k][i][j] * eps[i][j] * pow(sigma[i][j] / sigma_eff[i][j], lambda[k][i][j]) / (lambda[k][i][j] - 3.);
             }
@@ -287,7 +288,7 @@ vector2d Sutherland::da2ij_div_chi_drho_func(double rho, const vector1d& x, doub
 }
 
 vector2d Sutherland::a2ij_func(double rho, const vector1d& x, double K_HS, const vector2d& rdf_chi_HS, const vector2d& d_BH, const vector2d& x_eff){
-    std::vector<std::vector<double>> a2ij(Ncomps, std::vector<double>(Ncomps, 0.0));
+    vector2d a2ij(Ncomps, std::vector<double>(Ncomps, 0.0));
     double zeta_x = zeta_x_func(rho, x, d_BH);
     const vector2d x0 = get_x0(d_BH);
     for (size_t k = 0; k < nterms; k++){

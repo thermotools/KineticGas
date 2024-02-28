@@ -43,7 +43,7 @@ class MieType(py_KineticGas):
             potential = [potential[0], potential[0]]
 
         if 'q-Mie' in potential:
-            for i, pot in potential:
+            for i, pot in enumerate(potential):
                 if pot == 'q-Mie':
                     potential[i] = f'Mie-FH{self.fluids[i]["default_fh_order"]}'
         
@@ -51,6 +51,8 @@ class MieType(py_KineticGas):
             self.fluids = [self.fluids[i][potential[i]][parameter_ref] for i in range(self.ncomps)]
         except KeyError:
             for i in range(self.ncomps):
+                if potential[i] not in self.fluids[i].keys():
+                    raise KeyError(f'Component {self.comps[i]} does not have parameters for {potential[i]}.')
                 if parameter_ref not in self.fluids[i][potential[i]]:
                     warn('Missing parameter_ref ' + parameter_ref + ' for component ' + self.fluids[i]['ident'],
                          stacklevel=2)

@@ -38,16 +38,16 @@ class Sutherland : public Spherical{
         lambda = vector3d(nterms, vector2d(Ncomps, vector1d(Ncomps, 0.)));
         }
 
-    virtual double potential(int i, int j, double r) override;
-    virtual double potential_derivative_r(int i, int j, double r) override;
-    virtual double potential_dblderivative_rr(int i, int j, double r) override;
+    double potential(int i, int j, double r) override;
+    double potential_derivative_r(int i, int j, double r) override;
+    double potential_dblderivative_rr(int i, int j, double r) override;
 
     inline vector2d get_sigma_eff(){return sigma_eff;}
     inline vector2d get_sigma_min(){return sigma_min;}
     inline vector2d get_epsilon_eff(){return eps_eff;}
     inline vector2d get_vdw_alpha(){return vdw_alpha;}
 
-    virtual vector2d model_rdf(double rho, double T, const vector1d& mole_fracs) override;
+    vector2d model_rdf(double rho, double T, const vector1d& mole_fracs) override;
     vector2d rdf_g0_func(double rho, double T, const vector1d& x);
     vector2d rdf_g1_func(double rho, double T, const vector1d& x);
     vector2d rdf_g2_func(double rho, double T, const vector1d& x);
@@ -58,7 +58,7 @@ class Sutherland : public Spherical{
     // -------------------------- Sutherland Internals are below here ---------------------------------------------------- //
     // ---------------------- End users should not need to care about anything below -------------------------------------- //
     // ------------------------------------------------------------------------------------------------------------------- //
-
+    protected:
     vector2d eps;
     vector3d C;
     vector3d lambda;
@@ -68,15 +68,15 @@ class Sutherland : public Spherical{
     vector2d eps_eff;
     vector2d vdw_alpha;
 
-    virtual vector2d get_b_max(double T) override;
+    vector2d get_b_max(double T) override;
 
-    void compute_sigma_eff(); // Tested vs. Mie : OK
-    void compute_epsilon_eff(); // Tested vs. Mie : OK
-    void compute_vdw_alpha(); // Tested vs. Mie : OK
+    void compute_sigma_eff();
+    void compute_epsilon_eff();
+    void compute_vdw_alpha();
 
-    vector2d rdf_g0_func(double rho, const vector1d& x, const vector2d& d_BH); // Tested vs. Mie : OK
-    vector2d rdf_g1_func(double rho, const vector1d& x, const vector2d& d_BH); // Tested vs. Mie : OK
-    vector2d rdf_g2_func(double rho, double T, const vector1d& x, const vector2d& d_BH, const vector2d& x_eff); // Tested vs. Mie : OK
+    vector2d rdf_g0_func(double rho, const vector1d& x, const vector2d& d_BH);
+    vector2d rdf_g1_func(double rho, const vector1d& x, const vector2d& d_BH);
+    vector2d rdf_g2_func(double rho, double T, const vector1d& x, const vector2d& d_BH, const vector2d& x_eff);
 
     vector2d get_lambda_kl(size_t k, size_t l); // lambda_kl[i, j] = lambda_k[i, j] + lambda_l[i, j]
     vector2d get_x0(const vector2d& d_BH); // x0 = sigma / d_BH
@@ -86,7 +86,7 @@ class Sutherland : public Spherical{
     double zeta_x_func(double rho, const vector1d& x, const vector2d& d_BH); // Eq. (A13) in svrm
     double dzetax_drho_func(const vector1d& x, const vector2d& d_BH); // Derivative of zeta_x wrt. density
     double zeta_eff_func(double rho, const vector1d& x, double zeta_x, double lambdaijk); // Eq. (A17) in svrm
-    double dzeta_eff_drho_func(double rho, const std::vector<double>& x, const vector2d& d_BH, double lambdaijk); // Tested vs. Mie : OK
+    double dzeta_eff_drho_func(double rho, const std::vector<double>& x, const vector2d& d_BH, double lambdakij);
 
     vector2d da1_drho_func(double rho, const vector1d& x, const vector2d& d_BH); // Derivative of a1 wrt. density
     vector2d a2ij_func(double rho, const vector1d& x, double K_HS, const vector2d& rdf_chi_HS, const vector2d& d_BH, const vector2d& x_eff); // Eq. (A20) in svrm
@@ -144,41 +144,4 @@ class Sutherland : public Spherical{
                                 {8.0956883, 3.7090  , 0.0}
                             }
                             };
-};
-
-
-
-namespace noname_go_away{
-
-// Gauss Legendre points for computing barker henderson diamenter (see: ThermoPack, SAFT-VR-Mie docs)
-constexpr double gl_x[10] = {-0.973906528517171720078, -0.8650633666889845107321,
-                            -0.6794095682990244062343, -0.4333953941292471907993,
-                            -0.1488743389816312108848,  0.1488743389816312108848,
-                            0.4333953941292471907993,  0.6794095682990244062343,
-                            0.8650633666889845107321,  0.973906528517171720078};
-constexpr double gl_w[10] = {0.0666713443086881375936, 0.149451349150580593146,
-                            0.219086362515982043996, 0.2692667193099963550912,
-                            0.2955242247147528701739, 0.295524224714752870174,
-                            0.269266719309996355091, 0.2190863625159820439955,
-                            0.1494513491505805931458, 0.0666713443086881375936};
-
-constexpr double C_coeff_matr[4][4] // See Eq. A18 of J. Chem. Phys. 139, 154504 (2013); https://doi.org/10.1063/1.4819786
-    {
-        {0.81096, 1.7888, -37.578, 92.284},
-        {1.0205, -19.341, 151.26, -463.50},
-        {-1.9057, 22.845, -228.14, 973.92},
-        {1.0885, -6.1962, 106.98, -677.64}
-    };
-
-constexpr double phi[7][3] // J. Chem. Phys. 139, 154504 (2013); https://doi.org/10.1063/1.4819786, Table II
-        {
-            {7.5365557, -359.44 , 1550.9 },
-            {-37.60463, 1825.6  , -5070.1},
-            {71.745953, -3168.0 , 6534.6 },
-            {-46.83552, 1884.2  , -3288.7},
-            {-2.467982, -0.82376, -2.7171},
-            {-0.50272 , -3.1935 , 2.0883 },
-            {8.0956883, 3.7090  , 0.0}
-        };
-
 };

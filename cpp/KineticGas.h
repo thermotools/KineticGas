@@ -115,6 +115,32 @@ class KineticGas{
     std::vector<std::vector<double>> M, m0;
     std::map<OmegaPoint, double> omega_map;
 
+// ----------------------------------------------------------------------------------------------------------------------------------- //
+// --------------------------------------- Methods to facilitate multithreading ------------------------------------------------------ //
+    /*
+        Computing collision integrals is the most computationally intensive part of computing a transport property,
+        given that one does not use correlations for the computation. Therefore, computed collision integrals are stored
+        in this->omega_map. These methods are used to deduce which collision integrals are required to compute a given
+        property, and then split the computation of those integrals among several threads. When computation of the
+        property proceeds, the integrals are then retrieved from this->omega_map.
+
+        To adjust the number of threads used to compute collision integrals, set the compile-time constant Ncores in
+        KineticGas_mthr.cpp. In practice, very little is to be gained by increasing this beyond 10, unless you are
+        using high Enskog approximation orders (>4), or are working with a large number of components (because there
+        is no point in using more threads than required integrals).
+
+        These need to be protected instead of private, because QuantumMie needs to override them to prevent a race condition
+        without locking everything with a mutex on every call to omega.
+    */
+    virtual void precompute_conductivity_omega(int N, double T);
+    virtual void precompute_viscosity_omega(int N, double T);
+    virtual void precompute_omega(const std::vector<int>& i_vec, const std::vector<int>& j_vec,
+                        const std::vector<int>& l_vec, const std::vector<int>& r_vec, double T);
+
+    private:
+    void precompute_diffusion_omega(int N, double T); // Forwards call to precompute_conductivity_omega. Override that instead.
+    void precompute_th_diffusion_omega(int N, double T); // Forwards call to precompute_conductivity_omega. Override that instead.
+
     private:
 // ------------------------------------------------------------------------------------------------------------------------ //
 // ---------------------------------------------- Square bracket integrals ------------------------------------------------ //
@@ -138,29 +164,6 @@ class KineticGas{
     double L_ij(int p, int q, int i, int j, double T); // [S^(p)_{5/2}(U^2_i), S^(q)_{5/2}(U^2_j)]_{ij}
     double L_i(int p, int q, int i, int j, double T);  // [S^(p)_{5/2}(U^2_i), S^(q)_{5/2}(U^2_i)]_{ij}
     double L_simple(int p, int q, int i, double T);           // [S^(p)_{5/2}(U^2_i), S^(q)_{5/2}(U^2_i)]_{i}
-
-// ----------------------------------------------------------------------------------------------------------------------------------- //
-// --------------------------------------- Methods to facilitate multithreading ------------------------------------------------------ //
-    /*
-        Computing collision integrals is the most computationally intensive part of computing a transport property,
-        given that one does not use correlations for the computation. Therefore, computed collision integrals are stored
-        in this->omega_map. These methods are used to deduce which collision integrals are required to compute a given
-        property, and then split the computation of those integrals among several threads. When computation of the
-        property proceeds, the integrals are then retrieved from this->omega_map.
-
-        To adjust the number of threads used to compute collision integrals, set the compile-time constant Ncores in
-        KineticGas_mthr.cpp. In practice, very little is to be gained by increasing this beyond 10, unless you are
-        using high Enskog approximation orders (>4), or are working with a large number of components (because there
-        is no point in using more threads than required integrals).
-    */
-    void precompute_omega(const std::vector<int>& i_vec, const std::vector<int>& j_vec,
-                        const std::vector<int>& l_vec, const std::vector<int>& r_vec, double T);
-    void precompute_conductivity_omega(int N, double T);
-    void precompute_diffusion_omega(int N, double T);
-    void precompute_th_diffusion_omega(int N, double T);
-    void precompute_viscosity_omega(int N, double T);
-
-
 };
 
 inline int delta(int i, int j) {return (i == j) ? 1 : 0;}

@@ -1,5 +1,7 @@
 #include "QuantumMie.h"
 #include <iostream>
+#include <mutex>
+#include <thread>
 
 QuantumMie::QuantumMie(vector1d mole_weights, vector2d sigma, vector2d eps, vector2d la, vector2d lr, std::vector<int> FH_order, bool is_idealgas)
         : Sutherland(mole_weights, sigma, eps, 6, is_idealgas), FH_order{FH_order}, Q_factors(4, vector2d(Ncomps, vector1d(Ncomps, 0.)))
@@ -39,9 +41,8 @@ QuantumMie::QuantumMie(vector1d mole_weights, vector2d sigma, vector2d eps, vect
     }
 
 void QuantumMie::set_temperature(double T){
-    static double current_T = -1.;
-    if (current_T == T) return;
-    current_T = T;
+    if (T == current_temperature) return;
+    current_temperature = T;
     for (size_t k = 2; k < nterms; k++){
         for (size_t i = 0; i < Ncomps; i++){
             for (size_t j = i; j < Ncomps; j++){
@@ -54,10 +55,6 @@ void QuantumMie::set_temperature(double T){
 }
 
 void QuantumMie::compute_sigma_eps_eff(double T){
-    static double current_T = -1.;
-    if (T == current_T) return;
-    current_T = T;
-
     /*
         Search the vector computed_T to find the highest temperature that is lower than T,
         set sigma_min and sigma_eff to the values previously computed at that temperature,
