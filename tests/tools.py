@@ -7,7 +7,7 @@ from pykingas.QuantumMie import QuantumMie
 
 FLTEPS = 1e-10
 
-models = [QuantumMie]
+models = [MieKinGas, HardSphere, S_MieKinGas, QuantumMie]
 
 def check_eq(a, b):
     if abs(a - b) > FLTEPS:
