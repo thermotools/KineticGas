@@ -40,7 +40,7 @@ class QuantumMie(MieType.MieType):
         self.__FH_orders = fh_orders_db
         self.cpp_kingas = cpp_QuantumMie(self.mole_weights, self.sigma_ij, self.epsilon_ij, self.la, self.lr, 
                                             self.__FH_orders, is_idealgas)
-        print(f'Self is idealgas : {self.is_idealgas}')
+
         if self.is_idealgas is False:
             if use_eos is None:
                 self.eos = saftvrqmie()
@@ -159,7 +159,6 @@ class QuantumMie(MieType.MieType):
             C = - (eps / (d * sigma)) - (d2 * eps / d ** 2)
 
             sol = root(lambda la: A ** la + B * la + C, x0=np.array([6.0 for _ in range(self.ncomps)]))
-            print(sol)
             lambda_a = sol.x
         else:
             lambda_a = [6 for _ in range(self.ncomps)]
