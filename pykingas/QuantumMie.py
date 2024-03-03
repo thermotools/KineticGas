@@ -19,7 +19,7 @@ class QuantumMie(MieType.MieType):
 
         Args:
             comps (str): Comma-separated list of components
-            FH_orders (list[int]) : Feynman-Hibbs correction orders (0 = Standard Mie potential,
+            FH_orders (list[int] or int) : Feynman-Hibbs correction orders (0 = Standard Mie potential,
                                                                      1 = 1st order correction,
                                                                      2 = 2nd order correction)
         """
