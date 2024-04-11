@@ -204,7 +204,7 @@ vector2d Sutherland::gamma_corr(double zeta_x, double T){
 
     for (int i = 0; i < Ncomps; i++){
         for (int j = i; j < Ncomps; j++){
-            double theta = exp(eps[i][j] / (BOLTZMANN * T)) + 1.;
+            double theta = exp(eps[i][j] / (BOLTZMANN * T)) - 1.;
             gamma[i][j] = phi[0] * (1 - tanh(phi[1] * (phi[2] - vdw_alpha[i][j]))) 
                         * zeta_x * theta * exp(phi[3] * zeta_x + phi[4] * pow(zeta_x, 2));
             gamma[j][i] = gamma[i][j];
@@ -214,14 +214,15 @@ vector2d Sutherland::gamma_corr(double zeta_x, double T){
 }
 
 vector2d Sutherland::get_BH_diameters(double T){
-    // Gauss-Legendre points taken from SAFT-VR-MIE docs (see: ThermoPack)
-    vector2d d_BH(Ncomps, std::vector<double>(Ncomps, 0.0));
+    // 20-point Gauss-Legendre from 0.5 sigma to 1 sigma. Using constant value of 1 for integrand within (0, 0.5) sigma.
+    std::vector<std::vector<double>> d_BH(Ncomps, std::vector<double>(Ncomps, 0.0));
     double beta = 1. / (BOLTZMANN * T);
     for (int i = 0; i < Ncomps; i++){
-        for (int n = 0; n < 10; n++){
-            d_BH[i][i] += rdf_constants.gl_w[n] * (1. - exp(- beta * potential(i, i, sigma_eff[i][i] * (rdf_constants.gl_x[n] + 1) / 2.)));
+        d_BH[i][i] = 2.;
+        for (int n = 0; n < 20; n++){
+            d_BH[i][i] += rdf_constants.gl_w[n] * (1. - exp(- beta * potential(i, i, sigma[i][i] * (rdf_constants.gl_x[n] / 4. + 3. / 4.))));
         }
-        d_BH[i][i] *= sigma_eff[i][i] / 2;
+        d_BH[i][i] *= sigma[i][i] / 4.;
     }
     for (int i = 0; i < Ncomps - 1; i++){
         for (int j = i + 1; j < Ncomps; j++){
@@ -447,6 +448,12 @@ vector2d Sutherland::B_func(double rho, const vector1d& x, const vector2d& d_BH,
     return B_func(rho, x, zeta_x, x_eff, d_BH, lambda_k);
 }
 
+vector2d Sutherland::B_func(double rho, double T, const vector1d& x, const vector2d& lambda)
+{
+    std::vector<std::vector<double>> d_BH = get_BH_diameters(T);
+    return B_func(rho, x, d_BH, lambda);
+}
+
 vector2d Sutherland::I_func(const vector2d& xeff, const vector2d& lambda_k){
     vector2d I(Ncomps, std::vector<double>(Ncomps));
     for (int i = 0; i < Ncomps; i++){
@@ -513,11 +520,22 @@ vector2d Sutherland::dBdrho_func(double rho, const vector1d& x, double zeta_x, c
     vector2d dBdrho(Ncomps, std::vector<double>(Ncomps));
     for (int i = 0; i < Ncomps; i++){
         for (int j = i; j < Ncomps; j++){
-            dBdrho[i][j] = B[i][j] / rho + 2. * PI * eps[i][j] * d_BH[i][j] * dzxdrho 
-                            * (I[i][j] * (2.5 - zeta_x) / pow(1 - zeta_x, 4) 
-                                - 4.5 * J[i][j] * (1 + 3 * zeta_x - pow(zeta_x, 2)) / pow(1 - zeta_x, 2));
+            dBdrho[i][j] = B[i][j] / rho
+                            + 2. * PI * rho * eps[i][j] * pow(d_BH[i][j], 3)
+                            * (I[i][j] * (- 0.5 * (1 - zeta_x) + 3. * (1. - 0.5 * zeta_x)) / pow(1 - zeta_x, 4)
+                                - J[i][j] * (9. * (1. + 2. * zeta_x) * (1. - zeta_x) + 27. * zeta_x * (1. + zeta_x)) / (2. * pow(1 - zeta_x, 4))
+                                ) * dzxdrho;
             dBdrho[j][i] = dBdrho[i][j];
         }
     }
     return dBdrho;
+}
+
+vector2d Sutherland::dBdrho_func(double rho, double T, const vector1d& x, const vector2d& lambda_k)
+{
+    vector2d d_BH = get_BH_diameters(T);
+    double zeta_x = zeta_x_func(rho, x, d_BH);
+    vector2d x_eff = get_xeff(d_BH);
+
+    return dBdrho_func(rho, x, zeta_x, x_eff, d_BH, lambda_k);
 }

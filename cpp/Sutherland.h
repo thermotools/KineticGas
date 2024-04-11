@@ -16,8 +16,8 @@ using vector2d = std::vector<vector1d>;
 using vector3d = std::vector<vector2d>;
 
 struct RDFConstants{
-    double gl_x[10]; // Gauss Legendre points for computing barker henderson diamenter
-    double gl_w[10]; // Gauss Legendre points for computing barker henderson diamenter
+    double gl_x[20]; // Gauss Legendre points for computing barker henderson diamenter
+    double gl_w[20]; // Gauss Legendre points for computing barker henderson diamenter
     double C_coeff_matr[4][4]; // See Eq. (A18) in svrm (https://doi.org/10.1063/1.4819786)
     double phi[7][3]; // Table II in svrm (https://doi.org/10.1063/1.4819786)
 };
@@ -101,7 +101,9 @@ class Sutherland : public Spherical{
     
     vector2d B_func(double rho, const vector1d& x, double zeta_x, const vector2d& x_eff, const vector2d& d_BH, const vector2d& lambda_k); // Eq. (A12) in svrm
     vector2d B_func(double rho, const vector1d& x, const vector2d& d_BH, const vector2d& lambda_k); // Forwards call to B_func
+    vector2d B_func(double rho, double T, const vector1d& x, const vector2d& lambda); // Forwards call to B_func
     vector2d dBdrho_func(double rho, const vector1d& x, double zeta_x, const vector2d& x_eff, const vector2d& d_BH, const vector2d& lambda_k); // Derivative wrt. density
+    vector2d dBdrho_func(double rho, double T, const vector1d& x, const vector2d& lambda_k);
     vector2d I_func(const vector2d& xeff, const vector2d& lambda_k); // Eq. (A14) in svrm (https://doi.org/10.1063/1.4819786)
     vector2d J_func(const vector2d& xeff, const vector2d& lambda_k); // Eq. (A15) in svrm (https://doi.org/10.1063/1.4819786)
 
@@ -114,19 +116,29 @@ class Sutherland : public Spherical{
     }
 
     static constexpr RDFConstants rdf_constants{
-                            { // gl_x (see: ThermoPack, SAFT-VR Mie memo)
-                            -0.973906528517171720078, -0.8650633666889845107321,
-                            -0.6794095682990244062343, -0.4333953941292471907993,
-                            -0.1488743389816312108848,  0.1488743389816312108848,
-                            0.4333953941292471907993,  0.6794095682990244062343,
-                            0.8650633666889845107321,  0.973906528517171720078
+                            { // Gauss-Legendre nodes (20 points), see get_BH_diameters
+                            -0.9931285991850949, -0.9639719272779139,
+                            -0.912234428251326, -0.8391169718222187,
+                            -0.7463319064601508, -0.636053680726515,
+                            -0.5108670019508271, -0.37370608871541955,
+                            -0.22778585114164507, -0.07652652113349737,
+                            0.07652652113349737, 0.22778585114164507,
+                            0.37370608871541955, 0.5108670019508271,
+                            0.636053680726515, 0.7463319064601508,
+                            0.8391169718222187, 0.912234428251326,
+                            0.9639719272779139, 0.9931285991850949
                             },
-                            { // gl_w (see: ThermoPack, SAFT-VR Mie memo)
-                            0.0666713443086881375936, 0.149451349150580593146,
-                            0.219086362515982043996, 0.2692667193099963550912,
-                            0.2955242247147528701739, 0.295524224714752870174,
-                            0.269266719309996355091, 0.2190863625159820439955,
-                            0.1494513491505805931458, 0.0666713443086881375936
+                            { // Gauss-Legendre weights (20 points), see get_BH_diameters
+                            0.017614007139152742, 0.040601429800386134,
+                            0.06267204833410799, 0.08327674157670514,
+                            0.1019301198172403, 0.11819453196151845,
+                            0.13168863844917675, 0.14209610931838218,
+                            0.149172986472604, 0.15275338713072611,
+                            0.15275338713072611, 0.149172986472604,
+                            0.14209610931838218, 0.13168863844917675,
+                            0.11819453196151845, 0.1019301198172403,
+                            0.08327674157670514, 0.06267204833410799,
+                            0.040601429800386134, 0.017614007139152742
                             },
                             { // C_coeff_matr (See: Eq. (A18) in svrm)
                                 {0.81096, 1.7888, -37.578, 92.284},
