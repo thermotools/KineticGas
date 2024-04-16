@@ -112,7 +112,7 @@ PYBIND11_MODULE(KineticGas_d, handle){
         .def("get_BH_diameters", &Sutherland::get_BH_diameters)
         .def("rdf_g0", py::overload_cast<double, double, const vector1d&>(&Sutherland::rdf_g0_func))
         .def("rdf_g1", py::overload_cast<double, double, const vector1d&>(&Sutherland::rdf_g1_func))
-        .def("rdf_g2", py::overload_cast<double, double, const vector1d&>(&Sutherland::rdf_g2_func))
+        .def("rdf_g2", py::overload_cast<double, double, const vector1d&, bool>(&Sutherland::rdf_g2_func))
         ;
         // Functions below this comment are only exposed for testing purposes
         // .def("da1_drho", &Sutherland::da1_drho_func)
@@ -173,6 +173,7 @@ PYBIND11_MODULE(KineticGas_d, handle){
         .def("get_sigma_min", py::overload_cast<double>(&QuantumMie::get_sigma_min))
         .def("get_epsilon_eff", py::overload_cast<double>(&QuantumMie::get_epsilon_eff))
         .def("get_BH_diameters", &QuantumMie::get_BH_diameters)
+        .def("saft_rdf", &QuantumMie::saft_rdf)
         ;
         
     

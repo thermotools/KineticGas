@@ -78,13 +78,14 @@ void Sutherland::compute_vdw_alpha(){
     }
 }
 
-vector2d Sutherland::model_rdf(double rho, double T, const vector1d& x){
+vector2d Sutherland::saft_rdf(double rho, double T, const std::vector<double>& x, int order, bool g2_correction)
+{
     double beta = (1. / (BOLTZMANN * T));
     vector2d d_BH = get_BH_diameters(T);
     vector2d x_eff = get_xeff(d_BH);
     vector2d gHS = rdf_g0_func(rho, x, d_BH);
-    vector2d g1 = rdf_g1_func(rho, x, d_BH);
-    vector2d g2 = rdf_g2_func(rho, T, x, d_BH, x_eff);
+    vector2d g1 = (order > 0) ? rdf_g1_func(rho, x, d_BH) : vector2d(Ncomps, vector1d(Ncomps, 0.0));
+    vector2d g2 = (order > 0) ? rdf_g2_func(rho, T, x, d_BH, x_eff, g2_correction) : vector2d(Ncomps, vector1d(Ncomps, 0.0));
     vector2d g(Ncomps, vector1d(Ncomps));
     for (int i = 0; i < Ncomps; i++){
         for (int j = i; j < Ncomps; j++){
@@ -150,7 +151,7 @@ vector2d Sutherland::rdf_g1_func(double rho, double T, const std::vector<double>
     return rdf_g1_func(rho, x, d_BH);
 }
 
-vector2d Sutherland::rdf_g2_func(double rho, double T, const vector1d& x, const vector2d& d_BH, const vector2d& x_eff){
+vector2d Sutherland::rdf_g2_func(double rho, double T, const vector1d& x, const vector2d& d_BH, const vector2d& x_eff, bool g2_correction){
     vector2d g2(Ncomps, std::vector<double>(Ncomps));
 
     const vector2d x0 = get_x0(d_BH);
@@ -171,7 +172,7 @@ vector2d Sutherland::rdf_g2_func(double rho, double T, const vector1d& x, const 
     }
     vector2d da2ij_div_chi_drho = da2ij_div_chi_drho_func(rho, x, K_HS, d_BH, x_eff);
     double zeta_x_HS = zeta_x_func(rho, x, sigma_eff);
-    vector2d gamma_c = gamma_corr(zeta_x_HS, T);
+    vector2d gamma_c = g2_correction ? gamma_corr(zeta_x_HS, T) : vector2d(Ncomps, vector1d(Ncomps, 0.0));
     for (size_t i = 0; i < Ncomps; i++){
         for (size_t j = i; j < Ncomps; j++){
             g2[i][j] += 3. * da2ij_div_chi_drho[i][j];
@@ -182,10 +183,10 @@ vector2d Sutherland::rdf_g2_func(double rho, double T, const vector1d& x, const 
     return g2;
 }
 
-vector2d Sutherland::rdf_g2_func(double rho, double T, const vector1d& x){
+vector2d Sutherland::rdf_g2_func(double rho, double T, const vector1d& x, bool g2_correction){
     vector2d d_BH = get_BH_diameters(T);
     vector2d x_eff = get_xeff(d_BH);
-    return rdf_g2_func(rho, T, x, d_BH, x_eff);
+    return rdf_g2_func(rho, T, x, d_BH, x_eff, g2_correction);
 }
 
 vector2d Sutherland::get_lambda_kl(size_t k, size_t l){

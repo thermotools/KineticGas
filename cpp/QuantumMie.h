@@ -62,9 +62,16 @@ class QuantumMie : public Sutherland{
     inline vector2d get_epsilon_eff(double T){set_temperature(T); return eps_eff;}
     inline vector2d get_vdw_alpha(double T){set_temperature(T); return vdw_alpha;}
 
-    std::vector<std::vector<double>> get_BH_diameters(double T) override;
-    std::vector<std::vector<double>> get_collision_diameters(double rho, double T, const std::vector<double>& x) override;
-    std::vector<std::vector<double>> model_rdf(double rho, double T, const std::vector<double>& x) override;
+    vector2d get_BH_diameters(double T) override;
+    vector2d get_collision_diameters(double rho, double T, const std::vector<double>& x) override;
+    vector2d model_rdf(double rho, double T, const std::vector<double>& x) override {
+        set_temperature(T);
+        return Sutherland::model_rdf(rho, T, x);
+    }
+    inline vector2d saft_rdf(double rho, double T, const std::vector<double>& x, int order=2, bool g2_correction=true) override {
+        set_temperature(T);
+        return Sutherland::saft_rdf(rho, T, x, order, g2_correction);
+    }
 
     private:
     double current_temperature = -1.;

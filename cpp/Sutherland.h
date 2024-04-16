@@ -47,10 +47,15 @@ class Sutherland : public Spherical{
     inline vector2d get_epsilon_eff(){return eps_eff;}
     inline vector2d get_vdw_alpha(){return vdw_alpha;}
 
-    vector2d model_rdf(double rho, double T, const vector1d& mole_fracs) override;
+    inline std::vector<std::vector<double>> model_rdf(double rho, double T, const std::vector<double>& x) override {
+        return saft_rdf(rho, T, x, 2);
+    }
+     // To directly compute the RDF at different pertubation orders. Not used in property computations.
+    virtual vector2d saft_rdf(double rho, double T, const std::vector<double>& x, int order=2, bool g2_correction=true);
+
     vector2d rdf_g0_func(double rho, double T, const vector1d& x);
     vector2d rdf_g1_func(double rho, double T, const vector1d& x);
-    vector2d rdf_g2_func(double rho, double T, const vector1d& x);
+    vector2d rdf_g2_func(double rho, double T, const vector1d& x, bool g2_correction=true);
     virtual vector2d get_BH_diameters(double T);
     // vector2d get_collision_diameters(double rho, double T, const std::vector<double>& x); // Implemented in Spherical
 
@@ -76,7 +81,7 @@ class Sutherland : public Spherical{
 
     vector2d rdf_g0_func(double rho, const vector1d& x, const vector2d& d_BH);
     vector2d rdf_g1_func(double rho, const vector1d& x, const vector2d& d_BH);
-    vector2d rdf_g2_func(double rho, double T, const vector1d& x, const vector2d& d_BH, const vector2d& x_eff);
+    vector2d rdf_g2_func(double rho, double T, const vector1d& x, const vector2d& d_BH, const vector2d& x_eff, bool g2_correction=true);
 
     vector2d get_lambda_kl(size_t k, size_t l); // lambda_kl[i, j] = lambda_k[i, j] + lambda_l[i, j]
     vector2d get_x0(const vector2d& d_BH); // x0 = sigma / d_BH

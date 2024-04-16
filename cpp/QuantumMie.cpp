@@ -136,11 +136,6 @@ void QuantumMie::compute_sigma_eps_eff(double T){
     }
 }
 
-std::vector<std::vector<double>> QuantumMie::model_rdf(double rho, double T, const std::vector<double>& x){
-    set_temperature(T);
-    return Sutherland::model_rdf(rho, T, x);
-}
-
 std::vector<std::vector<double>> QuantumMie::get_BH_diameters(double T){
     set_temperature(T);
     return Sutherland::get_BH_diameters(T);
