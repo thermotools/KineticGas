@@ -14,7 +14,7 @@ Spherical::Spherical(std::vector<double> mole_weights,
 
 }
 
-double Spherical::omega(const int& i, const int& j, const int& l, const int& r, const double& T){
+double Spherical::omega(int i, int j, int l, int r, double T){
     OmegaPoint point{i, j, l, r, T}, sympoint{j, i, l, r, T};
     const std::map<OmegaPoint, double>::iterator pos = omega_map.find(point);
     if (pos == omega_map.end()){
@@ -29,7 +29,31 @@ double Spherical::omega(const int& i, const int& j, const int& l, const int& r, 
     return pos->second;
 }
 
-double Spherical::w_integral(const int& i, const int& j, const double& T, const int& l, const int& r){
+double Spherical::omega_tester(int i, int j, int l, int r, double T, IntegrationParam& param){
+    double w = w_integral_tester(i, j, T, l, r, param);
+    if (i == j) return pow(sigma[i][j], 2) * sqrt((PI * BOLTZMANN * T) / m[i]) * w;
+    return 0.5 * pow(sigma[i][j], 2) * sqrt(2 * PI * BOLTZMANN * T / (m0[i][j] * M[i][j] * M[j][i])) * w;
+}
+
+double Spherical::w_integral_tester(int i, int j, double T, int l, int r, IntegrationParam& param){
+    double I = integrate2d(param.origin, param.end,
+                        param.dg, param.db,
+                        param.refinement_levels_g, param.refinement_levels_b,
+                        param.subdomain_dblder_limit,
+                        i, j, T, l, r,
+                        w_integrand_export);
+
+    return I;
+}
+
+double Spherical::w_integral(int i, int j, double T, int l, int r){
+    /*
+    Evaulate the dimensionless collision integral
+
+    See: The Kinetic Gas Theory of Mie fluids (V. G. Jervell, Norwegian University of Science and Technology, 2022)
+    https://ntnuopen.ntnu.no/ntnu-xmlui/handle/11250/3029213
+    For details on the integration routine implemented in integrate2d.
+    */
     Point origin{1e-7, 1e-7};
     Point end{8, 5};
     double dg{0.5}, db{0.03125};
@@ -47,17 +71,90 @@ double Spherical::w_integral(const int& i, const int& j, const double& T, const 
     return I;
 }
 
-double Spherical::w_integrand(const int& i, const int& j, const double& T, 
-                                        const double& g, const double& b,
-                                        const int& l, const int& r){ // Using b = b / sigma to better scale the axes. Multiply the final integral by sigma.
+double Spherical::w_integrand(int i, int j, double T, 
+                                        double g, double b,
+                                        int l, int r){ // Using b = b / sigma to better scale the axes. Multiply the final integral by sigma.
     const double chi_val = chi(i, j, T, g, b * sigma[i][j]);
     return 2 * exp(- pow(g, 2)) * pow(g, 2.0 * r + 3.0) * (1 - pow(cos(chi_val), l)) * b;
 };
 
+std::vector<std::vector<double>> Spherical::get_b_max(double T, std::vector<std::vector<int>>& ierr){
+        // bmax[i][j] in units of sigma[i][j]
+        // The maximum value of the impact parameter at which deflection angle (chi) is positive
+        const double g_avg = sqrt(4. / PI); // Average dimensionless relative velocity
+        std::vector<std::vector<double>> bmax(Ncomps, std::vector<double>(Ncomps, 0));
+        double b, db, chi_val;
+        for (int i = 0; i < Ncomps; i++){
+            for (int j = i; j < Ncomps; j++){
+                ierr[i][j] = ierr[j][i] = 0;
+                b = 0.5;
+                db = 0.1;
+                chi_val = chi(i, j, T, g_avg, b * sigma[i][j]);
+                while (abs(db) > 1e-5){
+                    if ((chi_val < 0 && db > 0) || (chi_val > 0 && db < 0)){
+                        db *= -0.5;
+                    }
+                    b += db;
+                    chi_val = chi(i, j, T, g_avg, b * sigma[i][j]);
+                    if (b > 10) { // Unable to converge, this failure should be handled in get_b_max(double T)
+                        ierr[i][j] = 1;
+                        break;
+                    }
+                }
+                bmax[j][i] = bmax[i][j] = b;
+            }
+        }
+        return bmax;
+    }
+
+std::vector<std::vector<double>> Spherical::get_b_max(double T){
+    std::vector<std::vector<int>> ierr(Ncomps, std::vector<int>(Ncomps, 1));
+    std::vector<std::vector<double>> b_max = get_b_max(T, ierr);
+    for (size_t i = 0; i < Ncomps; i++){
+        for (size_t j = i; j < Ncomps; j++){
+            if (ierr[i][j]) {
+                std::cout << "Could not compute upper integration limit for collision diameter (" << i << ", " << j
+                            << ") using sigma as fallback value." << std::endl;
+                b_max[j][i] = b_max[i][j] = sigma[i][j];
+            }
+        }
+    }
+    return b_max;
+}
+
+std::vector<std::vector<double>> Spherical::get_collision_diameters(double rho, double T, const std::vector<double>& x){
+    // Evaluate the integral of Eq. (40) in RET for Mie fluids (doi: 10.1063/5.0149865)
+    // Note: For models with is_idealgas==true, zeros are returned, as there is no excluded volume at infinite dilution.
+    // Weights and nodes for 6-point Gauss-Legendre quadrature
+    constexpr int n_gl_points = 6;
+    constexpr double gl_points[n_gl_points] = {-0.93246951, -0.66120939, -0.23861919, 0.23861919, 0.66120939, 0.93246951};
+    constexpr double gl_weights[n_gl_points] = {0.17132449, 0.36076157, 0.46791393, 0.46791393, 0.36076157, 0.17132449};
+
+    const double g_avg = sqrt(1. / PI); // Average dimensionless relative speed of collision
+    std::vector<std::vector<double>> avg_R(Ncomps, std::vector<double>(Ncomps, 0.));
+    if (is_idealgas) {
+        return avg_R;
+    }
+    std::vector<std::vector<double>> bmax = get_b_max(T);
+    double point, weight;
+
+    for (int i = 0; i < Ncomps; i++){
+        for (int j = i; j < Ncomps; j++){
+            for (int p = 0; p < n_gl_points; p++){
+                point = gl_points[p] * (bmax[i][j] / 2.) + bmax[i][j] / 2.;
+                weight = gl_weights[p] * bmax[i][j] / 2.;
+                avg_R[i][j] += get_R(i, j, T, g_avg, point * sigma[i][j]) * weight / bmax[i][j];
+            }
+            avg_R[j][i] = avg_R[i][j];
+        }
+    }
+    return avg_R;
+}
+
 /*
 Contains functions for computing the collision integrals
 Common variables are:
-    ij : collision type (1 for like molecules of type 1, 2 for type 2, and 12 or 21 for collisions of unlike molecules
+    i, j : Species indices
     T : Temperature [K]
     l, r : Collision integral indices (in omega and w_<potential_type> functions)
     g : Dimentionless relative velocity of molecules
@@ -72,7 +169,7 @@ Common variables are:
 #include "KineticGas.h"
 #include "Integration/Integration.h"
 
-#pragma region // Helper funcions for computing dimentionless collision integrals
+// Helper funcions for computing dimentionless collision integrals
 
 double Spherical::theta(int i, int j, const double T, const double g, const double b){
     #ifdef DEBUG
