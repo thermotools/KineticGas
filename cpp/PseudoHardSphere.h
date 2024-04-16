@@ -59,5 +59,5 @@ class PseudoHardSphere : public Spherical {
         return rdf;
     }
 
-    std::vector<std::vector<double>> get_contact_diameters(double rho, double T, const std::vector<double>& x) override {return sigma;}
+    std::vector<std::vector<double>> get_collision_diameters(double rho, double T, const std::vector<double>& x) override {return sigma;}
 };

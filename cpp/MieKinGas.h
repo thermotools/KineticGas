@@ -56,13 +56,13 @@ class MieKinGas : public Spherical {
     }
 
 
-    double omega(const int& i, const int& j, const int& l, const int& r, const double& T) override;
+    double omega(int i, int j, int l, int r, double T) override;
     double omega_correlation(int i, int j, int l, int r, double T_star);
     double omega_recursive_factor(int i, int j, int l, int r, double T);
     // The hard sphere integrals are used as the reducing factor for the correlations.
     // So we need to compute the hard-sphere integrals to convert the reduced collision integrals from the
     // Correlation by Fokin et. al. to the "real" collision integrals.
-    inline double omega_hs(const int& i, const int& j, const int& l, const int& r, const double& T){
+    inline double omega_hs(int i, int j, int l, int r, double T){
         double w = PI * pow(sigma[i][j], 2) * 0.5 * (r + 1);
         for (int ri = r; ri > 1; ri--) {w *= ri;}
         if (l % 2 == 0){
@@ -96,19 +96,35 @@ class MieKinGas : public Spherical {
     // bmax[i][j] is in units of sigma[i][j]
     // bmax = The maximum value of the impact parameter at which deflection angle (chi) is positive
     std::vector<std::vector<double>> get_b_max(double T);
-    std::vector<std::vector<double>> get_contact_diameters(double rho, double T, const std::vector<double>& x) override;
+    std::vector<std::vector<double>> get_collision_diameters(double rho, double T, const std::vector<double>& x) override;
     virtual std::vector<std::vector<double>> get_BH_diameters(double T);
+    std::vector<std::vector<double>> get_vdw_alpha(){return alpha;}
 
     // Methods for computing the radial distribution function at contact
-    std::vector<std::vector<double>> model_rdf(double rho, double T, const std::vector<double>& x) override;
+    // Note: A lot of these methods have two overloads: One that takes the temperature and density, and comptes
+    //      the BH diameter, packing fractions etc, and another that takes the BH diameters, packing fractions,
+    //      and other variables that must be pre-computed directly. I'm not sure which version of these is in primary use
+    //      In the "standard" call chain when `model_rdf` is called, but someone should at some point ensure that we
+    //      are not computing a bunch of unnessecary BH diameters.
+    // Note: For SAFT-type models, we
+    inline std::vector<std::vector<double>> model_rdf(double rho, double T, const std::vector<double>& x) override {
+        return saft_rdf(rho, T, x, 2);
+    }
+
+     // To directly compute the RDF at different pertubation orders. Not used in property computations.
+    std::vector<std::vector<double>> saft_rdf(double rho, double T, const std::vector<double>& x, int order=2, bool g2_correction=true);
+
+    std::vector<std::vector<double>> rdf_HS(double rho, const std::vector<double>& x,
+                                            const std::vector<std::vector<double>>& d_BH);
     std::vector<std::vector<double>> rdf_HS(double rho, double T, const std::vector<double>& x);
     std::vector<std::vector<double>> rdf_g1_func(double rho, const std::vector<double>& x,
                                                 const std::vector<std::vector<double>>& d_BH);
     std::vector<std::vector<double>> rdf_g1_func(double rho, double T, const std::vector<double>& x);
     std::vector<std::vector<double>> rdf_g2_func(double rho, double T, const std::vector<double>& x,
                                                 const std::vector<std::vector<double>>& d_BH,
-                                                const std::vector<std::vector<double>>& x0);
-    std::vector<std::vector<double>> rdf_g2_func(double rho, double T, const std::vector<double>& x);
+                                                const std::vector<std::vector<double>>& x0,
+                                                bool g2_correction=true);
+    std::vector<std::vector<double>> rdf_g2_func(double rho, double T, const std::vector<double>& x, bool g2_correction=true);
     std::vector<std::vector<double>> get_x0(const std::vector<std::vector<double>>& d_BH);
     std::vector<std::vector<double>> a_1s_func(double rho, const std::vector<double>& x,
                                                 const std::vector<std::vector<double>>& d_BH,
@@ -128,9 +144,13 @@ class MieKinGas : public Spherical {
     std::vector<std::vector<double>> B_func(double rho, const std::vector<double>& x,
                                             const std::vector<std::vector<double>>& d_BH,
                                             const std::vector<std::vector<double>>& lambda);
+    std::vector<std::vector<double>> B_func(double rho, double T, const std::vector<double>& x,
+                                                    const std::vector<std::vector<double>>& lambda);
     std::vector<std::vector<double>> dBdrho_func(double rho, const std::vector<double>& x,
                                                 const std::vector<std::vector<double>>& d_BH,
                                                 const std::vector<std::vector<double>>& lambda);
+    std::vector<std::vector<double>> dBdrho_func(double rho, double T, const std::vector<double>& x,
+                                                    const std::vector<std::vector<double>>& lambda);
 
     std::vector<std::vector<double>> a1ij_func(double rho, double T, const std::vector<double>& x);
 
@@ -152,6 +172,13 @@ class MieKinGas : public Spherical {
     std::vector<std::vector<double>> da2ij_div_chi_drho_func(double rho, const std::vector<double>& x, double K_HS, 
                                                 const std::vector<std::vector<double>>& d_BH,
                                                 const std::vector<std::vector<double>>& x0);
+    std::vector<std::vector<double>> da2ij_div_chi_drho_func(double rho, double T, const std::vector<double>& x){
+        std::vector<std::vector<double>> d_BH = get_BH_diameters(T);
+        double zeta_x = zeta_x_func(rho, x, d_BH);
+        double K_HS = K_HS_func(zeta_x);
+        std::vector<std::vector<double>> x0 = get_x0(d_BH);
+        return da2ij_div_chi_drho_func(rho, x, K_HS, d_BH, x0);
+    }
 
     std::vector<std::vector<double>> rdf_chi_func(double rho, const std::vector<double>& x,
                                                 const std::vector<std::vector<double>>& d_BH);
@@ -159,6 +186,11 @@ class MieKinGas : public Spherical {
                                                     const std::vector<std::vector<double>>& d_BH);
     
     std::vector<std::vector<double>> gamma_corr(double zeta_x, double T);
+    std::vector<std::vector<double>> gamma_corr(double rho, double T, const std::vector<double>& x){
+        std::vector<std::vector<double>> d_BH = get_BH_diameters(T);
+        double zeta_x = zeta_x_func(rho, x, d_BH);
+        return gamma_corr(zeta_x, T);
+    }
 
     inline double K_HS_func(double zeta_x){
         return pow(1 - zeta_x, 4) / (1 + 4 * zeta_x + 4 * pow(zeta_x, 2) - 4 * pow(zeta_x, 3) + pow(zeta_x, 4));
@@ -191,16 +223,26 @@ class MieKinGas : public Spherical {
 namespace mie_rdf_constants{
 
 // Gauss Legendre points for computing barker henderson diamenter (see: ThermoPack, SAFT-VR-Mie docs)
-constexpr double gl_x[10] = {-0.973906528517171720078, -0.8650633666889845107321,
-                            -0.6794095682990244062343, -0.4333953941292471907993,
-                            -0.1488743389816312108848,  0.1488743389816312108848,
-                            0.4333953941292471907993,  0.6794095682990244062343,
-                            0.8650633666889845107321,  0.973906528517171720078};
-constexpr double gl_w[10] = {0.0666713443086881375936, 0.149451349150580593146,
-                            0.219086362515982043996, 0.2692667193099963550912,
-                            0.2955242247147528701739, 0.295524224714752870174,
-                            0.269266719309996355091, 0.2190863625159820439955,
-                            0.1494513491505805931458, 0.0666713443086881375936};
+constexpr double gl_x[20] = {-0.9931285991850949, -0.9639719272779139,
+                            -0.912234428251326, -0.8391169718222187,
+                            -0.7463319064601508, -0.636053680726515,
+                            -0.5108670019508271, -0.37370608871541955,
+                            -0.22778585114164507, -0.07652652113349737,
+                            0.07652652113349737, 0.22778585114164507,
+                            0.37370608871541955, 0.5108670019508271,
+                            0.636053680726515, 0.7463319064601508,
+                            0.8391169718222187, 0.912234428251326,
+                            0.9639719272779139, 0.9931285991850949};
+constexpr double gl_w[20] = {0.017614007139152742, 0.040601429800386134,
+                            0.06267204833410799, 0.08327674157670514,
+                            0.1019301198172403, 0.11819453196151845,
+                            0.13168863844917675, 0.14209610931838218,
+                            0.149172986472604, 0.15275338713072611,
+                            0.15275338713072611, 0.149172986472604,
+                            0.14209610931838218, 0.13168863844917675,
+                            0.11819453196151845, 0.1019301198172403,
+                            0.08327674157670514, 0.06267204833410799,
+                            0.040601429800386134, 0.017614007139152742};
 
 constexpr double C_coeff_matr[4][4] // See Eq. A18 of J. Chem. Phys. 139, 154504 (2013); https://doi.org/10.1063/1.4819786
     {
