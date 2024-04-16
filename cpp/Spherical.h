@@ -11,6 +11,8 @@ Contains: The abstract class 'Spherical', inheriting from 'KineticGas'. This cla
 #include "Integration/Integration.h"
 #include "global_params.h"
 
+class IntegrationParam;
+
 class Spherical : public KineticGas {
     public:
 
@@ -25,6 +27,8 @@ class Spherical : public KineticGas {
     virtual double potential_dblderivative_rr(int i, int j, double r) = 0;
 
     double omega(int i, int j, int l, int r, double T) override;
+    double omega_tester(int i, int j, int l, int r, double T, IntegrationParam& param);
+    double w_integral_tester(int i, int j, double T, int l, int r, IntegrationParam& param);
     std::vector<std::vector<double>> get_collision_diameters(double rho, double T, const std::vector<double>& x) override;
     std::vector<std::vector<double>> model_rdf(double rho, double T, const std::vector<double>& mole_fracs) override = 0;
 
@@ -61,4 +65,20 @@ class Spherical : public KineticGas {
     double w_integrand(int i, int j, double T, double g, double b, int l, int r);
     std::function<double(int, int, double, double, double, int, int)> w_integrand_export; // Will bind w_integrand to this function such that it can be passed to the external integration module
 
+};
+
+class IntegrationParam{
+    public:
+    Point origin{1e-7, 1e-7};
+    Point end{8, 5};
+    double dg{0.5}, db{0.03125};
+    int refinement_levels_g{4};
+    int refinement_levels_b{16};
+    double subdomain_dblder_limit{1e-5};
+
+    void set_dg(double dg_){dg = dg_;}
+    void set_db(double db_){db = db_;}
+    void set_rlg(int rlg){refinement_levels_g = rlg;}
+    void set_rlb(int rlb){refinement_levels_b = rlb;}
+    void set_dblder_lim(double lim){subdomain_dblder_limit = lim;}
 };

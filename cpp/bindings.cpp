@@ -11,6 +11,8 @@
 #include <sstream>
 
 namespace py = pybind11;
+using vector1d = std::vector<double>;
+using vector2d = std::vector<vector1d>;
 
 #define KineticGas_bindings(Model) \
         .def("get_conductivity_vector", &Model::get_conductivity_vector) \

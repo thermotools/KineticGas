@@ -29,6 +29,23 @@ double Spherical::omega(int i, int j, int l, int r, double T){
     return pos->second;
 }
 
+double Spherical::omega_tester(int i, int j, int l, int r, double T, IntegrationParam& param){
+    double w = w_integral_tester(i, j, T, l, r, param);
+    if (i == j) return pow(sigma[i][j], 2) * sqrt((PI * BOLTZMANN * T) / m[i]) * w;
+    return 0.5 * pow(sigma[i][j], 2) * sqrt(2 * PI * BOLTZMANN * T / (m0[i][j] * M[i][j] * M[j][i])) * w;
+}
+
+double Spherical::w_integral_tester(int i, int j, double T, int l, int r, IntegrationParam& param){
+    double I = integrate2d(param.origin, param.end,
+                        param.dg, param.db,
+                        param.refinement_levels_g, param.refinement_levels_b,
+                        param.subdomain_dblder_limit,
+                        i, j, T, l, r,
+                        w_integrand_export);
+
+    return I;
+}
+
 double Spherical::w_integral(int i, int j, double T, int l, int r){
     /*
     Evaulate the dimensionless collision integral
