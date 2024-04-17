@@ -46,13 +46,13 @@ class MieKinGas : public Spherical {
         return C[i][j] * eps[i][j] * (pow(sigma[i][j] / r, lr[i][j]) - pow(sigma[i][j] / r, la[i][j]));
     }
     double potential_derivative_r(int i, int j, double r) override {
-        return C[i][j] * eps[i][j] * ((la[i][j] * pow(sigma[i][j], la[i][j]) / pow(r, la[i][j] + 1)) 
-                                        - (lr[i][j] * pow(sigma[i][j], lr[i][j]) / pow(r, lr[i][j] + 1)));
+        return C[i][j] * eps[i][j] * ((la[i][j] * pow(sigma[i][j] / r, la[i][j]) / r)
+                                        - (lr[i][j] * pow(sigma[i][j] / r, lr[i][j]) / r));
     }
 
     double potential_dblderivative_rr(int i, int j, double r) override {
-        return C[i][j] * eps[i][j] * ((lr[i][j] * (lr[i][j] + 1) * pow(sigma[i][j], lr[i][j]) / pow(r, lr[i][j] + 2)) 
-                                    - (la[i][j] * (la[i][j] + 1) * pow(sigma[i][j], la[i][j]) / pow(r, la[i][j] + 2)));
+        return C[i][j] * eps[i][j] * ((lr[i][j] * (lr[i][j] + 1) * pow(sigma[i][j] / r, lr[i][j]) / pow(r, 2))
+                                    - (la[i][j] * (la[i][j] + 1) * pow(sigma[i][j] / r, la[i][j]) / pow(r, 2)));
     }
 
 

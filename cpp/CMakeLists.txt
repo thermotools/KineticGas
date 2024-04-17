@@ -2,7 +2,7 @@ cmake_policy(VERSION 3.12)
 project(KineticGas LANGUAGES C CXX)
 
 cmake_minimum_required(VERSION 3.12)
-set(PYBIND11_PYTHON_VERSION "3.11")
+set(PYBIND11_PYTHON_VERSION "3")
 string(ASCII 27 Esc)
 message("${Esc}[34mPYBIND11_PYTHON_VERSION is : ${PYBIND11_PYTHON_VERSION}")
 message("${Esc}[34mPYTHON_EXECUTABLE is : ${PYTHON_EXECUTABLE}")
