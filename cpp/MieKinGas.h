@@ -163,6 +163,19 @@ class MieKinGas : public Spherical {
                                                 const std::vector<std::vector<double>>& d_BH,
                                                 const std::vector<std::vector<double>>& x0);
     std::vector<std::vector<double>> a2ij_func(double rho, double T, const std::vector<double>& x);
+    std::vector<std::vector<double>> a2ij_div_chi_func(double rho, double T, const std::vector<double>& x){
+        std::vector<std::vector<double>> a2ij = a2ij_func(rho, T, x);
+        std::vector<std::vector<double>> d_BH = get_BH_diameters(T);
+        std::vector<std::vector<double>> rdf_chi = rdf_chi_func(rho, x);
+        std::vector<std::vector<double>> a2ij_div_chi(Ncomps, std::vector<double>(Ncomps, 0.0));
+        for (size_t i = 0; i < Ncomps; i++){
+            for (size_t j = i; j < Ncomps; j++){
+                a2ij_div_chi[i][j] = a2ij[i][j] / (1 + rdf_chi[i][j]);
+                a2ij_div_chi[j][i] = a2ij_div_chi[i][j];
+            }
+        }
+        return a2ij_div_chi;
+    }
 
     std::vector<std::vector<double>> da2ij_drho_func(double rho, const std::vector<double>& x, double K_HS, 
                                                     const std::vector<std::vector<double>>& d_BH,
@@ -180,10 +193,8 @@ class MieKinGas : public Spherical {
         return da2ij_div_chi_drho_func(rho, x, K_HS, d_BH, x0);
     }
 
-    std::vector<std::vector<double>> rdf_chi_func(double rho, const std::vector<double>& x,
-                                                const std::vector<std::vector<double>>& d_BH);
-    std::vector<std::vector<double>> drdf_chi_drho_func(double rho, const std::vector<double>& x,
-                                                    const std::vector<std::vector<double>>& d_BH);
+    std::vector<std::vector<double>> rdf_chi_func(double rho, const std::vector<double>& x);
+    std::vector<std::vector<double>> drdf_chi_drho_func(double rho, const std::vector<double>& x);
     
     std::vector<std::vector<double>> gamma_corr(double zeta_x, double T);
     std::vector<std::vector<double>> gamma_corr(double rho, double T, const std::vector<double>& x){

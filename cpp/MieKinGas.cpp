@@ -143,9 +143,7 @@ std::vector<std::vector<double>> MieKinGas::rdf_g2_func(double rho, double T, co
     
     double zeta_x = zeta_x_func(rho, x, d_BH);
     double K_HS = K_HS_func(zeta_x);
-    std::vector<std::vector<double>> rdf_chi = rdf_chi_func(rho, x, d_BH);
-    std::vector<std::vector<double>> rdf_chi_HS = rdf_chi_func(rho, x, sigma);
-    std::vector<std::vector<double>> drdf_chi_drho = drdf_chi_drho_func(rho, x, d_BH);
+    std::vector<std::vector<double>> rdf_chi_HS = rdf_chi_func(rho, x);
     for (int i = 0; i < Ncomps; i++){
         for (int j = i; j < Ncomps; j++){
             _la[i][j] = _la[j][i] = 2 * la[i][j];
@@ -462,11 +460,10 @@ std::vector<std::vector<double>> MieKinGas::da1ij_drho_func(double rho, double T
     return da1ij_drho_func(rho, x, d_BH);
 }
 
-std::vector<std::vector<double>> MieKinGas::rdf_chi_func(double rho, const std::vector<double>& x,
-                                                            const std::vector<std::vector<double>>& d_BH)
+std::vector<std::vector<double>> MieKinGas::rdf_chi_func(double rho, const std::vector<double>& x)
 {
     std::vector<std::vector<double>> rdf_chi(Ncomps, std::vector<double>(Ncomps));
-    double zeta_x = zeta_x_func(rho, x, d_BH);
+    double zeta_x = zeta_x_func(rho, x, sigma);
     for (int i = 0; i < Ncomps; i++){
         for (int j = i; j < Ncomps; j++){
             std::vector<double> f = f_corr(alpha[i][j]);
@@ -477,12 +474,11 @@ std::vector<std::vector<double>> MieKinGas::rdf_chi_func(double rho, const std::
     return rdf_chi;
 }
 
-std::vector<std::vector<double>> MieKinGas::drdf_chi_drho_func(double rho, const std::vector<double>& x,
-                                                                const std::vector<std::vector<double>>& d_BH)
+std::vector<std::vector<double>> MieKinGas::drdf_chi_drho_func(double rho, const std::vector<double>& x)
 {
     std::vector<std::vector<double>> drdf_chi_drho(Ncomps, std::vector<double>(Ncomps));
-    double zeta_x = zeta_x_func(rho, x, d_BH);
-    double dzdr = dzetax_drho_func(x, d_BH);
+    double zeta_x = zeta_x_func(rho, x, sigma);
+    double dzdr = dzetax_drho_func(x, sigma);
     for (int i = 0; i < Ncomps; i++){
         for (int j = i; j < Ncomps; j++){
             std::vector<double> f = f_corr(alpha[i][j]);
@@ -530,7 +526,7 @@ std::vector<std::vector<double>> MieKinGas::a2ij_func(double rho, double T, cons
 {
     std::vector<std::vector<double>> d_BH = get_BH_diameters(T);
     std::vector<std::vector<double>> x0 = get_x0(d_BH);
-    std::vector<std::vector<double>> rdf_chi_HS = rdf_chi_func(rho, x, sigma);
+    std::vector<std::vector<double>> rdf_chi_HS = rdf_chi_func(rho, x);
     double zeta_x = zeta_x_func(rho, x, d_BH);
     double K_HS = K_HS_func(zeta_x);
     return a2ij_func(rho, x, K_HS, rdf_chi_HS, d_BH, x0);
@@ -554,9 +550,9 @@ std::vector<std::vector<double>> MieKinGas::da2ij_drho_func(double rho, const st
     double zeta_x = zeta_x_func(rho, x, d_BH);
     double dzxdr = dzetax_drho_func(x, d_BH);
     double dKHS_drho = dKHS_drho_func(zeta_x, dzxdr);
-    std::vector<std::vector<double>> rdf_chi_HS = rdf_chi_func(rho, x, sigma);
+    std::vector<std::vector<double>> rdf_chi_HS = rdf_chi_func(rho, x);
     std::vector<std::vector<double>> a2ij = a2ij_func(rho, x, K_HS, rdf_chi_HS, d_BH, x0);
-    std::vector<std::vector<double>> dchi_HS_drho = drdf_chi_drho_func(rho, x, sigma);
+    std::vector<std::vector<double>> dchi_HS_drho = drdf_chi_drho_func(rho, x);
     std::vector<std::vector<double>> da1s_la = da1s_drho_func(rho, x, d_BH, _la);
     std::vector<std::vector<double>> da1s_lr = da1s_drho_func(rho, x, d_BH, _lr);
     std::vector<std::vector<double>> da1s_la_lr = da1s_drho_func(rho, x, d_BH, la_lr);
@@ -596,9 +592,9 @@ std::vector<std::vector<double>> MieKinGas::da2ij_div_chi_drho_func(double rho, 
     double zeta_x = zeta_x_func(rho, x, d_BH);
     double dzxdr = dzetax_drho_func(x, d_BH);
     double dKHS_drho = dKHS_drho_func(zeta_x, dzxdr);
-    std::vector<std::vector<double>> rdf_chi_HS = rdf_chi_func(rho, x, sigma);
+    std::vector<std::vector<double>> rdf_chi_HS = rdf_chi_func(rho, x);
     std::vector<std::vector<double>> a2ij = a2ij_func(rho, x, K_HS, rdf_chi_HS, d_BH, x0);
-    std::vector<std::vector<double>> dchi_HS_drho = drdf_chi_drho_func(rho, x, sigma);
+    std::vector<std::vector<double>> dchi_HS_drho = drdf_chi_drho_func(rho, x);
     std::vector<std::vector<double>> da1s_la = da1s_drho_func(rho, x, d_BH, _la);
     std::vector<std::vector<double>> da1s_lr = da1s_drho_func(rho, x, d_BH, _lr);
     std::vector<std::vector<double>> da1s_la_lr = da1s_drho_func(rho, x, d_BH, la_lr);
