@@ -21,11 +21,12 @@ QuantumMie::QuantumMie(vector1d mole_weights, vector2d sigma, vector2d eps, vect
 
                 double mu1_inv{0.}, mu2_inv{0.};
                 if (FH_order[i] > 0) mu1_inv += 1. / m[i];
-                if (FH_order[i] > 1) mu2_inv += 1. / m[i];
                 if (FH_order[j] > 0) mu1_inv += 1. / m[j];
+                if (FH_order[i] > 1) mu2_inv += 1. / m[i];
                 if (FH_order[j] > 1) mu2_inv += 1. / m[j];
                 double D1_factor = pow(HBAR, 2) * mu1_inv / (24.0 * BOLTZMANN);
                 double D2_factor = pow(HBAR, 2) * mu2_inv / (24.0 * BOLTZMANN);
+
                 Q_factors[0][i][j] = Q_factors[0][j][i] = C[0][i][j] * D1_factor * Q1(i, j, lr) * pow(sigma[i][j], -2);
                 Q_factors[1][i][j] = Q_factors[1][j][i] = C[1][i][j] * D1_factor * Q1(i, j, la) * pow(sigma[i][j], -2);
                 Q_factors[2][i][j] = Q_factors[2][j][i] = C[0][i][j] * pow(D2_factor, 2) * Q2(i, j, lr) * pow(sigma[i][j], -4);

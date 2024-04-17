@@ -71,7 +71,7 @@ using vector2d = std::vector<vector1d>;
 #ifndef DEBUG
 PYBIND11_MODULE(KineticGas_r, handle){
 #else
-PYBIND11_MODULE(KineticGas_d, handle){
+PYBIND11_MODULE(KineticGas_r, handle){
 #endif
     handle.doc() = "Is this documentation? This is documentation.";
     handle.def("ipow", &ipow);
@@ -146,6 +146,9 @@ PYBIND11_MODULE(KineticGas_d, handle){
         .def("da1s_drho", py::overload_cast<double, double, const vector1d&, const vector2d&>(&MieKinGas::da1s_drho_func))
         .def("B_func", py::overload_cast<double, double, const vector1d&, const vector2d&>(&MieKinGas::B_func))
         .def("dBdrho_func", py::overload_cast<double, double, const vector1d&, const vector2d&>(&MieKinGas::dBdrho_func))
+        .def("a2", py::overload_cast<double, double, const vector1d&>(&MieKinGas::a2ij_func))
+        .def("a2_div_chi", &MieKinGas::a2ij_div_chi_func)
+        .def("da2_div_chi_drho", py::overload_cast<double, double, const vector1d&>(&MieKinGas::da2ij_div_chi_drho_func))
         ;
         // .def("da1_drho", py::overload_cast<double, double, const vector1d&>(&MieKinGas::da1ij_drho_func))
         // .def("da1s_drho", py::overload_cast<double, const vector1d&, const vector2d&, const vector2d&>(&MieKinGas::da1s_drho_func))
@@ -174,6 +177,13 @@ PYBIND11_MODULE(KineticGas_d, handle){
         .def("get_epsilon_eff", py::overload_cast<double>(&QuantumMie::get_epsilon_eff))
         .def("get_BH_diameters", &QuantumMie::get_BH_diameters)
         .def("saft_rdf", &QuantumMie::saft_rdf)
+        .def("a1", py::overload_cast<double, double, const vector1d&>(&QuantumMie::a1_func))
+        .def("a1s", py::overload_cast<double, double, const vector1d&, const vector2d&>(&QuantumMie::a_1s_func))
+        .def("B_func", py::overload_cast<double, double, const vector1d&, const vector2d&>(&QuantumMie::B_func))
+        .def("da1dr", py::overload_cast<double, double, const vector1d&>(&QuantumMie::da1_drho_func))
+        // .def("a2", py::overload_cast<double, double, const vector1d&>(&QuantumMie::a2ij_func))
+        .def("a2_div_chi", &QuantumMie::a2ij_div_chi_func)
+        .def("da2_div_chi_drho", py::overload_cast<double, double, const vector1d&>(&QuantumMie::da2ij_div_chi_drho_func))
         ;
         
     

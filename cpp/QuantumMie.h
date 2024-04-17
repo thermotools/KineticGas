@@ -73,6 +73,36 @@ class QuantumMie : public Sutherland{
         return Sutherland::saft_rdf(rho, T, x, order, g2_correction);
     }
 
+    inline vector2d a1_func(double rho, double T, const vector1d& x) override {
+        set_temperature(T);
+        return Sutherland::a1_func(rho, T, x);
+    }
+
+    inline vector2d a_1s_func(double rho, double T, const vector1d& x, const vector2d& lambda) override {
+        set_temperature(T);
+        return Sutherland::a_1s_func(rho, T, x, lambda);
+    }
+
+    inline vector2d B_func(double rho, double T, const vector1d& x, const vector2d& lambda) override {
+        set_temperature(T);
+        return Sutherland::B_func(rho, T, x, lambda);
+    }
+
+    inline vector2d da1_drho_func(double rho, double T, const vector1d& x) override {
+        set_temperature(T);
+        return Sutherland::da1_drho_func(rho, T, x);
+    }
+
+    inline vector2d a2ij_div_chi_func(double rho, double T, const vector1d& x) override {
+        set_temperature(T);
+        return Sutherland::a2ij_div_chi_func(rho, T, x);
+    }
+
+    inline vector2d da2ij_div_chi_drho_func(double rho, double T, const vector1d& x) override {
+        set_temperature(T);
+        return Sutherland::da2ij_div_chi_drho_func(rho, T, x);
+    }
+
     private:
     double current_temperature = -1.;
     void set_temperature(double T);

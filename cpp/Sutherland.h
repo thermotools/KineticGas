@@ -93,20 +93,50 @@ class Sutherland : public Spherical{
     double zeta_eff_func(double rho, const vector1d& x, double zeta_x, double lambdaijk); // Eq. (A17) in svrm
     double dzeta_eff_drho_func(double rho, const std::vector<double>& x, const vector2d& d_BH, double lambdakij);
 
+    virtual vector2d a1_func(double rho, double T, const vector1d& x);
+    vector2d a1_func(double rho, const vector1d& x, const vector2d& d_BH);
+    virtual vector2d da1_drho_func(double rho, double T, const vector1d& x){
+        const vector2d d_BH = get_BH_diameters(T);
+        return da1_drho_func(rho, x, d_BH);
+    }
     vector2d da1_drho_func(double rho, const vector1d& x, const vector2d& d_BH); // Derivative of a1 wrt. density
+    virtual vector2d a2ij_div_chi_func(double rho, double T, const vector1d& x){
+        const vector2d d_BH = get_BH_diameters(T);
+        const vector2d x_eff = get_xeff(d_BH);
+        const vector2d rdf_chi_HS = rdf_chi_func(rho, x);
+        const double zeta_x = zeta_x_func(rho, x, d_BH);
+        const double K_HS = K_HS_func(zeta_x);
+        const vector2d a2ij = a2ij_func(rho, x, K_HS, rdf_chi_HS, d_BH, x_eff);
+        vector2d a2ij_div_chi(Ncomps, vector1d(Ncomps, 0.0));
+        std::cout << "Sut : (" << zeta_x << ", " << K_HS << ") : " << a2ij[0][0] << std::endl;
+        for (size_t i = 0; i < Ncomps; i++){
+            for (size_t j = i; j < Ncomps; j++){
+                a2ij_div_chi[i][j] = a2ij[i][j] / (1 + rdf_chi_HS[i][j]);
+                a2ij_div_chi[j][i] = a2ij_div_chi[i][j];
+            }
+        }
+        return a2ij_div_chi;
+    }
     vector2d a2ij_func(double rho, const vector1d& x, double K_HS, const vector2d& rdf_chi_HS, const vector2d& d_BH, const vector2d& x_eff); // Eq. (A20) in svrm
     vector2d da2ij_div_chi_drho_func(double rho, const vector1d& x, double K_HS, const vector2d& d_BH, const vector2d& x_eff); // Derivative of (a_2 / (1 + chi)) wrt. density
-    vector2d rdf_chi_func(double rho, const vector1d& x, const vector2d& d_BH); // Eq. (A22) in svrm
-    vector2d drdf_chi_drho_func(double rho, const vector1d& x, const vector2d& d_BH); // Derivative of chi (from Eq. (22) in svrm)
+    virtual vector2d da2ij_div_chi_drho_func(double rho, double T, const vector1d& x){
+        const vector2d d_BH = get_BH_diameters(T);
+        const vector2d x_eff = get_xeff(d_BH);
+        const double zeta_x = zeta_x_func(rho, x, d_BH);
+        const double K_HS = K_HS_func(zeta_x);
+        return da2ij_div_chi_drho_func(rho, x, K_HS, d_BH, x_eff);
+    }
+    vector2d rdf_chi_func(double rho, const vector1d& x); // Eq. (A22) in svrm
+    vector2d drdf_chi_drho_func(double rho, const vector1d& x); // Derivative of chi (from Eq. (22) in svrm)
     vector1d f_corr(double alpha); // Eq. (A26) in svrm
 
+    virtual vector2d a_1s_func(double rho, double T, const vector1d& x, const vector2d& lambda_k); // Forwards call to a_1s_func
     vector2d a_1s_func(double rho, const vector1d& x, double zeta_x, const vector2d& d_BH, const vector2d& lambda_k); // Eq. (A16) in svrm (https://doi.org/10.1063/1.4819786)
-    vector2d a_1s_func(double rho, double T, const vector1d& x, const vector2d& lambda_k); // Forwards call to a_1s_func
     vector2d da1s_drho_func(double rho, const vector1d& x, const vector2d& d_BH, const vector2d& lambda_k); // Derivative of a1s wrt. density
-    
+
+    virtual vector2d B_func(double rho, double T, const vector1d& x, const vector2d& lambda); // Forwards call to B_func
     vector2d B_func(double rho, const vector1d& x, double zeta_x, const vector2d& x_eff, const vector2d& d_BH, const vector2d& lambda_k); // Eq. (A12) in svrm
     vector2d B_func(double rho, const vector1d& x, const vector2d& d_BH, const vector2d& lambda_k); // Forwards call to B_func
-    vector2d B_func(double rho, double T, const vector1d& x, const vector2d& lambda); // Forwards call to B_func
     vector2d dBdrho_func(double rho, const vector1d& x, double zeta_x, const vector2d& x_eff, const vector2d& d_BH, const vector2d& lambda_k); // Derivative wrt. density
     vector2d dBdrho_func(double rho, double T, const vector1d& x, const vector2d& lambda_k);
     vector2d I_func(const vector2d& xeff, const vector2d& lambda_k); // Eq. (A14) in svrm (https://doi.org/10.1063/1.4819786)
