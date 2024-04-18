@@ -190,13 +190,14 @@ class py_KineticGas:
                                 is the molar density of species $i$. Unit [1 / mol]
         """
         if self._is_singlecomp is True:
-            x = [0.5, 0.5]
-            _, dmudn_pure = self.eos.chemical_potential_tv(T, Vm, [0.5], dmudn=True)
-            dmudrho_pure = Vm * dmudn_pure
+            _, dmudn_pure = self.eos.chemical_potential_tv(T, Vm, [1.], dmudn=True)
+            RT = Avogadro * Boltzmann * T
+            dmudrho_pure = Vm * dmudn_pure[0][0]
             dmudrho = np.zeros((2, 2))
             rho = 1 / Vm
-            dmudrho[0, 0] = dmudrho[1, 1] = dmudrho_pure + Avogadro * Boltzmann * T / rho
-            dmudrho[0, 1] = dmudrho[1, 0] = dmudrho_pure - Avogadro * Boltzmann * T / rho
+            dmudrho[0, 0] = dmudrho_pure + RT * x[1] / (rho * x[0])
+            dmudrho[0, 1] = dmudrho[1, 0] = dmudrho_pure - RT / rho
+            dmudrho[1, 1] = dmudrho_pure + RT * x[0] / (rho * x[1])
             dmudrho /= Avogadro
         else:
             _, dmudn = self.eos.chemical_potential_tv(T, Vm, x, dmudn=True)
@@ -501,7 +502,7 @@ class py_KineticGas:
 
         key = tuple((T, Vm, tuple(x), N))
         if key in self.computed_kT.keys():
-            return self.computed_kT[key]
+            return np.array(self.computed_kT[key])
 
         if N < 2:
             warnings.warn('Thermal diffusion is a 2nd order phenomena, cannot be computed for N < 2 (got N = '
@@ -846,6 +847,14 @@ class py_KineticGas:
         return self.thermal_diffusion_factor(T, Vm, x, N=N)
 
     def thermal_coductivity_tp(self, T, p, x, N=None):
+        """Deprecated
+        Slightly embarrasing typo in method name... Keeping alive for a while because some code out there uses this one.
+        """
+        warnings.warn('This method will be removed! Use thermal_conductivity_tp. (Note the missing "N")', DeprecationWarning)
+        Vm, = self.eos.specific_volume(T, p, x, self.eos.VAPPH)  # Assuming vapour phase
+        return self.thermal_conductivity(T, Vm, x, N=N)
+
+    def thermal_conductivity_tp(self, T, p, x, N=None):
         """Tp-property
         Compute molar volume using the internal equation of state (`self.eos`), assuming vapour, and pass the call to
         `self.thermal_conductivity`. See `self.thermal_conductivity` for documentation.
