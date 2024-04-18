@@ -51,7 +51,7 @@ def test_singlecomp_binary(m, sigma, eps_div_k, la, lr):
     Test that initializing a single component, and a binary mixture of identical species gives the same output.
     See: PR #27
     """
-    kin1 = MieKinGas('AR', mole_weights=[m * Avogadro * 1e3, m * Avogadro * 1e3], sigma=[sigma, sigma],
+    kin1 = MieKinGas('LJF', mole_weights=[m * Avogadro * 1e3, m * Avogadro * 1e3], sigma=[sigma, sigma],
                      eps_div_k=[eps_div_k, eps_div_k], la=[la, la], lr=[lr, lr])
     kin2 = MieKinGas('AR,KR', mole_weights=[m * Avogadro * 1e3, m * Avogadro * 1e3],
                      sigma=[sigma, sigma], eps_div_k=[eps_div_k, eps_div_k], la=[la, la], lr=[lr, lr])
