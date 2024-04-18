@@ -190,13 +190,14 @@ class py_KineticGas:
                                 is the molar density of species $i$. Unit [1 / mol]
         """
         if self._is_singlecomp is True:
-            x = [0.5, 0.5]
-            _, dmudn_pure = self.eos.chemical_potential_tv(T, Vm, [0.5], dmudn=True)
+            _, dmudn_pure = self.eos.chemical_potential_tv(T, Vm, [1.], dmudn=True)
+            RT = Avogadro * Boltzmann * T
             dmudrho_pure = Vm * dmudn_pure
             dmudrho = np.zeros((2, 2))
             rho = 1 / Vm
-            dmudrho[0, 0] = dmudrho[1, 1] = dmudrho_pure + Avogadro * Boltzmann * T / rho
-            dmudrho[0, 1] = dmudrho[1, 0] = dmudrho_pure - Avogadro * Boltzmann * T / rho
+            dmudrho[0, 0] = dmudrho_pure + RT * x[1] / (rho * x[0])
+            dmudrho[0, 1] = dmudrho[1, 0] = dmudrho_pure - RT / rho
+            dmudrho[1, 1] = dmudrho_pure + RT * x[0] / (rho * x[1])
             dmudrho /= Avogadro
         else:
             _, dmudn = self.eos.chemical_potential_tv(T, Vm, x, dmudn=True)
