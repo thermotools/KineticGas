@@ -204,7 +204,7 @@ vector2d Sutherland::gamma_corr(double zeta_x, double T){
 
     for (int i = 0; i < Ncomps; i++){
         for (int j = i; j < Ncomps; j++){
-            double theta = exp(eps[i][j] / (BOLTZMANN * T)) - 1.;
+            double theta = exp(eps_eff[i][j] / (BOLTZMANN * T)) - 1.;
             gamma[i][j] = phi[0] * (1 - tanh(phi[1] * (phi[2] - vdw_alpha[i][j]))) 
                         * zeta_x * theta * exp(phi[3] * zeta_x + phi[4] * pow(zeta_x, 2));
             gamma[j][i] = gamma[i][j];

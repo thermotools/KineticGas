@@ -209,13 +209,13 @@ class MieType(py_KineticGas):
         """
         return self.cpp_kingas.potential_dblderivative_rr(i, j, r)
 
-    def saft_rdf(self, particle_density, T, x, order=2, g2_correction=True):
+    def saft_rdf(self, T, Vm, x, order=2, g2_correction=True):
         """cpp-interface
         Compute the radial distribution function at contact
         &&
         Args:
-            particle_density (float) : Particle density (not molar!) [1 / m3]
             T (float) : Temperature [K]
+            Vm (float) : Molar volume [m3/mol]
             x (list[float]) : Molar composition [-]
             order (int) : Pertubation order
             g2_correction (bool) : Use correction factor for g2?
@@ -223,6 +223,7 @@ class MieType(py_KineticGas):
         Returns:
             2d array : RDF at contact, indexed by component pair.
         """
+        particle_density = (1 / Vm) * Avogadro
         key = tuple((particle_density, T, tuple(x)))
         if key in self.computed_rdf.keys():
             return self.computed_rdf[key]
