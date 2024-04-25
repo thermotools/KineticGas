@@ -127,7 +127,7 @@ class py_KineticGas:
         """
         self._is_singlecomp = False
         self.default_N = N
-        self.is_idealgas=is_idealgas
+        self.is_idealgas = is_idealgas
         self.computed_d_points = {} # dict of state points in which (d_1, d0, d1) have already been computed
         self.computed_a_points = {}  # dict of state points in which (a_1, a1) have already been computed
         self.computed_b_points = {}  # dict of state points in which (b_1, b1) have already been computed
@@ -653,7 +653,7 @@ class py_KineticGas:
         alpha = self.thermal_diffusion_factor(T, Vm, x, N=N)
         return alpha / T
 
-    def thermal_conductivity(self, T, Vm, x, N=None, idealgas=None, include_internal=False, contributions='all'):
+    def thermal_conductivity(self, T, Vm, x, N=None, idealgas=None, include_internal=True, contributions='all', p=None):
         r"""TV-Property
         Compute the thermal conductivity, $\lambda$. For models initialized with `is_idealgas=True`, the thermal
         conductivity is not a function of density (i.e. $d \lambda / d V_m = 0$).
@@ -666,7 +666,7 @@ class py_KineticGas:
             N (int, optional) : Enskog approximation order (>= 2)
             idealgas (bool, optional) : Return infinite dilution value? Defaults to model default (set on init).
             include_internal (bool, optional) : Include contribution from internal degrees of freedom, computed using
-                                                Eucken equation (doi.org/10.6028/NIST.IR.8209). Defaults to False.
+                                                Eucken equation (doi.org/10.6028/NIST.IR.8209). Defaults to True.
             contributions (str, optional) : Return only specific contributions, can be ('all', '(i)nternal',
                                             '(t)ranslational', '(d)ensity', or several of the above, such as 'tid' or 'td'.
                                             If several contributions are selected, these are returned in an array of
@@ -699,16 +699,26 @@ class py_KineticGas:
         lambda_prime *= (5 * Boltzmann / 4)
 
         lambda_int = 0
-        if include_internal is True:
-            f_int = 1.32e3
-            eta_0 = self.viscosity(T, Vm, x, N=N, idealgas=True)
-            Cp_factor = 0
-            for i in range(self.ncomps):
-                _, Cpi_id = self.eos.idealenthalpysingle(T, (1 if self._is_singlecomp else (i + 1)), dhdt=True)
-                Mi = self.mole_weights[i] * Avogadro * 1e3  # Mole weight in g / mol
-                Cp_factor += x[i] * (Cpi_id - 5 * gas_constant / 2) / Mi
+        from pyrefprop import RefProp
+        eos_lst = [RefProp(c) for c in self.comps]
+        if p is None:
+            p, = self.eos.pressure_tv(T, Vm, x)
+        if p < 0:
+            lambda_int = np.nan
+        else:
+            if include_internal is True:
+                f_int = 1.32e3
+                eta_0 = self.viscosity(T, Vm, x, N=N, idealgas=True)
+                Cp = 0
+                M = sum(self.mole_weights * x) * Avogadro * 1e3
+                for i in range(self.ncomps):
+                    Cpi_id = eos_lst[i].ideal_heat_capacity(T, p, [1])
+                    # _, Cpi_id = self.eos.idealenthalpysingle(T, 1, dhdt=True)
+                    # Mi = self.mole_weights[i] * Avogadro * 1e3  # Mole weight in g / mol
+                    Cp += x[i] * Cpi_id
 
-            lambda_int = f_int * eta_0 * Cp_factor
+                Cp_factor = (Cp - 5 * gas_constant / 2) / M
+                lambda_int = f_int * eta_0 * Cp_factor
 
         lambda_dblprime = 0
         if idealgas is False:  # lambda_dblprime is only nonzero when density corrections are present, and vanishes at infinite dilution
@@ -942,7 +952,7 @@ class py_KineticGas:
         `self.thermal_conductivity`. See `self.thermal_conductivity` for documentation.
         """
         Vm, = self.eos.specific_volume(T, p, x, self.eos.VAPPH)  # Assuming vapour phase
-        return self.thermal_conductivity(T, Vm, x, N=N)
+        return self.thermal_conductivity(T, Vm, x, N=N, p=p)
 
     def viscosity_tp(self, T, p, x, N=None):
         """Tp-property
