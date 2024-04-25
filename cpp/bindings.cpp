@@ -5,6 +5,7 @@
 #include "HardSphere.h"
 #include "PseudoHardSphere.h"
 #include "Sutherland.h"
+#include "ModTangToennis.h"
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 #include "pybind11/operators.h"
@@ -176,6 +177,8 @@ PYBIND11_MODULE(KineticGas_r, handle){
         .def("get_sigma_min", py::overload_cast<double>(&QuantumMie::get_sigma_min))
         .def("get_epsilon_eff", py::overload_cast<double>(&QuantumMie::get_epsilon_eff))
         .def("get_BH_diameters", &QuantumMie::get_BH_diameters)
+        .def("set_active_fitted_rdf", &QuantumMie::set_active_fitted_rdf)
+        .def("set_fitted_rdf_coeffs", &QuantumMie::set_fitted_rdf_coeffs)
         .def("saft_rdf", &QuantumMie::saft_rdf)
         .def("a1", py::overload_cast<double, double, const vector1d&>(&QuantumMie::a1_func))
         .def("a1s", py::overload_cast<double, double, const vector1d&, const vector2d&>(&QuantumMie::a_1s_func))
@@ -185,8 +188,26 @@ PYBIND11_MODULE(KineticGas_r, handle){
         .def("a2_div_chi", &QuantumMie::a2ij_div_chi_func)
         .def("da2_div_chi_drho", py::overload_cast<double, double, const vector1d&>(&QuantumMie::da2ij_div_chi_drho_func))
         ;
-        
-    
+
+    py::class_<TangToennisParam>(handle, "cpp_TangToennisParam")
+        .def(py::init<double, double, double, vector1d,
+                        double, double, double, double,
+                        vector1d>()
+             )
+        ;
+
+    py::class_<ModTangToennis>(handle, "cpp_ModTangToennis")
+        .def(py::init<TangToennisParam,
+                        vector1d,
+                        vector2d,
+                        bool>()
+             )
+        KineticGas_bindings(ModTangToennis)
+        .def("potential", &ModTangToennis::potential)
+        .def("potential_r", &ModTangToennis::potential_derivative_r)
+        .def("potential_rr", &ModTangToennis::potential_dblderivative_rr)
+        ;
+
     py::class_<HardSphere>(handle, "cpp_HardSphere")
         .def(py::init<
                         vector1d,
