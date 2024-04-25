@@ -172,9 +172,6 @@ Common variables are:
 // Helper funcions for computing dimentionless collision integrals
 
 double Spherical::theta(int i, int j, const double T, const double g, const double b){
-    #ifdef DEBUG
-        std::printf("Calling theta!\n");
-    #endif
     // Compute deflection angle for a collision
     if (b / sigma[i][j] > 10) return PI / 2;
     if (b / sigma[i][j] < 1e-3) return 0;
@@ -183,9 +180,6 @@ double Spherical::theta(int i, int j, const double T, const double g, const doub
 }
 
 double Spherical::theta_lim(int i, int j, const double T, const double g){
-    #ifdef DEBUG
-        std::printf("Calling theta lim!\n");
-    #endif
     double b = 10 * sigma[i][j];
     double R = get_R(i, j, T, g, b);
     return theta_integral(i, j, T, R, g, b);
@@ -228,14 +222,7 @@ double Spherical::theta_integrand_dblderivative(int i, int j, double T, double r
     const double core_prime = 4 * pow(r, 3) / pow(b, 2) - a * (4 * pow(r, 3) * u + pow(r, 4) * u_prime) - 2 * r;
     const double core_dblprime = 12.0 * pow(r, 2) / pow(b, 2) - a * (12 * pow(r, 2) * u + 8 * pow(r, 3) * u_prime + pow(r, 4) * u_dblprime) - 2;
 
-    // std::printf("    %i%i %E %E %E %E \n", i, j, T, r/sigma[i][j], g, b);
     double val = (3.0 / 4.0) * pow(core, -2.5) * pow(core_prime, 2) - 0.5 * pow(core, - 1.5) * core_dblprime;
-    #ifdef DEBUG
-        if (val < 0){
-            std::printf("\nd3tdr3 at r = %E sigma\n", r / sigma[i][j]);
-            std::printf("val = %E\n\n", val);
-        }
-    #endif
     return val;
 }
 
@@ -249,7 +236,7 @@ double Spherical::get_R_rootfunc_derivative(int i, int j, double T, double g, do
 
 double Spherical::get_R(int i, int j, double T, double g, double b){
     // Newtons method
-    double tol = 1e-5; // Relative to sigma_map[ij]
+    double tol = 1e-5; // Relative to sigma[i][j]
     double init_guess_factor = 1.0;
     double r = init_guess_factor * b;
     double f = get_R_rootfunc(i, j, T, g, b, r);
@@ -259,16 +246,10 @@ double Spherical::get_R(int i, int j, double T, double g, double b){
         if (next_r < 0){
             init_guess_factor *= 0.95;
             r = init_guess_factor * b;
-            #ifdef DEBUG
-                std::printf("Initial guess for R failed (r < 0), reducing to %E sigma\n\n", r / sigma[i][j]);
-            #endif
         }
         else if (f < 0 && f / dfdr < 0){
             init_guess_factor *= 0.95;
             r = init_guess_factor * b;
-            #ifdef DEBUG
-                std::printf("Initial guess for R failed (df/dr < 0 && f < 0), reducing to %E sigma\n\n", r / sigma[i][j]);
-            #endif
         }
         else{
             r = next_r;
@@ -277,10 +258,6 @@ double Spherical::get_R(int i, int j, double T, double g, double b){
         dfdr = get_R_rootfunc_derivative(i, j, T, g, b, r);
         next_r = r - f / dfdr;
     }
-    #ifdef DEBUG
-        std::printf("For b = %E sigma, g = %E\n", b / sigma[i][j], g);
-        std::printf("Found R at %E sigma\n\n", next_r / sigma[i][j]);
-    #endif
     return next_r;
 }
 

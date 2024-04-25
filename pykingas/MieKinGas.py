@@ -43,3 +43,9 @@ class MieKinGas(MieType.MieType):
                     self.eos.init(comps, parameter_reference=parameter_ref)
             else:
                 self.eos = use_eos
+
+    def get_vdw_alpha(self):
+        lr, la = self.lr[0][0], self.la[0][0]
+        C = (lr / (lr - la)) * (lr / la) ** (la / (lr - la))
+        print('mie : ', lr, la, C)
+        return C * ((1 / (la - 3)) - (1 / (lr - 3)))

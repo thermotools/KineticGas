@@ -22,6 +22,7 @@ if(NOT MSVC)
 endif(NOT MSVC)
 
 set(SOURCES KineticGas.cpp KineticGas_mthr.cpp Spherical.cpp MieKinGas.cpp Sutherland.cpp QuantumMie.cpp
+            ModTangToennis.cpp
             Integration/Integration.cpp Factorial.cpp bindings.cpp)
 
 if (CMAKE_BUILD_TYPE MATCHES Release)

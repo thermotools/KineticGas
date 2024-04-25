@@ -38,24 +38,24 @@ double ModTangToennis::potential(int i, int j, double r){
 }
 
 double ModTangToennis::potential_derivative_r(int i, int j, double r){
-    r *= 1e9; // Using nm internally
-    if (r < 0.4 * param.Re){
+    if (r * 1e9 < 0.4 * param.Re){
+        r *= 1e9;
         return - BOLTZMANN * param.A_tilde * exp(- param.a_tilde * r) * (param.a_tilde * r + 1) / pow(r, 2);
     }
-    double eps = 1e-10;
-    double u1 = potential(i, j, r * (1. + eps) * 1e-9);
-    double um1 = potential(i, j, r * (1. - eps) * 1e-9);
-    return BOLTZMANN * (u1 - um1) / (2. * eps * r);
+    double eps = 1e-6;
+    double u1 = potential(i, j, r * (1. + eps));
+    double um1 = potential(i, j, r * (1. - eps));
+    return (u1 - um1) / (2. * eps * r);
 }
 
 double ModTangToennis::potential_dblderivative_rr(int i, int j, double r){
-    r *= 1e9; // Using nm internally
-    if (r < 0.4 * param.Re){
+    if (r * 1e9 < 0.4 * param.Re){
+        r *= 1e9;
         return BOLTZMANN * param.A_tilde * exp(- param.a_tilde * r) * (pow(param.a_tilde * r, 2) + 2. * param.a_tilde * r + 2) / pow(r, 3);
     }
-    double eps = 1e-10;
-    double u1 = potential(i, j, r * (1. + eps) * 1e-9);
-    double u0 = potential(i, j, r * 1e-9);
-    double um1 = potential(i, j, r * (1. - eps) * 1e-9);
-    return BOLTZMANN * (u1 - 2 * u0 + um1) / pow(2. * eps * r, 2);
+    double eps = 1e-6;
+    double u1 = potential(i, j, r * (1. + eps));
+    double u0 = potential(i, j, r);
+    double um1 = potential(i, j, r * (1. - eps));
+    return (u1 - 2 * u0 + um1) / pow(2. * eps * r, 2);
 }
