@@ -22,19 +22,6 @@ class QuantumMie : public Sutherland{
     vector3d sigma_eff_cache;
     vector3d sigma_min_cache;
 
-    /* ------------------------------- TAKE HEED YE WHO COMETH HERE -----------------------------------*/
-    // To make inheriting methods from MieKinGas as painless as possible, this class uses the inheritted
-    // Attributes sigma and eps to holde the FH-Mie effective parameters, and uses sigma_0 and eps_0
-    // to hold the potential parameters. This allows us to override any method from MieKinGas by simply doing
-    //
-    //  double my_method(double T){
-    //      set_sigma_eff(T); set_epsilon_eff(T);
-    //      return MieKinGas::my_method(T);}
-    //
-    // But carries the caveat of having a "Statefull" class. I'm considering making that less dangerous by making
-    // A bunch of helper functions protected to prevent them being called without set_sigma_eff(T) being called first.
-    /* ---------------------------------- YE HATH NOW TAKEN HEED --------------------------------------*/
-
     QuantumMie(vector1d mole_weights, vector2d sigma, vector2d eps, vector2d la, vector2d lr, std::vector<int> FH_order, bool is_idealgas);
 
     double omega(int i, int j, int l, int r, double T) override {

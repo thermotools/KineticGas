@@ -47,11 +47,21 @@ class Sutherland : public Spherical{
     inline vector2d get_epsilon_eff(){return eps_eff;}
     inline vector2d get_vdw_alpha(){return vdw_alpha;}
 
-    inline std::vector<std::vector<double>> model_rdf(double rho, double T, const std::vector<double>& x) override {
+    inline vector2d model_rdf(double rho, double T, const std::vector<double>& x) override {
+        if (using_LJ_rdf_correlation){
+            double rdf = LJ_rdf_correlation(rho, T);
+            vector2d rdf_matr(Ncomps, vector1d(Ncomps, rdf));
+            return rdf_matr;
+        }
         return saft_rdf(rho, T, x, 2);
     }
      // To directly compute the RDF at different pertubation orders. Not used in property computations.
     virtual vector2d saft_rdf(double rho, double T, const std::vector<double>& x, int order=2, bool g2_correction=true);
+
+    vector2d get_collision_diameters(double rho, double T, const std::vector<double>& x) override {
+        if (collision_diameter_model_id == 3) return get_BH_diameters(T);
+        return Spherical::get_collision_diameters(rho, T, x);
+    }
 
     vector2d rdf_g0_func(double rho, double T, const vector1d& x);
     vector2d rdf_g1_func(double rho, double T, const vector1d& x);
@@ -59,11 +69,19 @@ class Sutherland : public Spherical{
     virtual vector2d get_BH_diameters(double T);
     // vector2d get_collision_diameters(double rho, double T, const std::vector<double>& x); // Implemented in Spherical
 
+    double LJ_rdf_correlation(double rho, double T);
+    void set_active_LJ_rdf(bool use_LJ_corr){
+        using_LJ_rdf_correlation = use_LJ_corr;
+    }
+
     // ------------------------------------------------------------------------------------------------------------------- //
     // -------------------------- Sutherland Internals are below here ---------------------------------------------------- //
     // ---------------------- End users should not need to care about anything below -------------------------------------- //
     // ------------------------------------------------------------------------------------------------------------------- //
+    vector2d get_b_max(double T) override;
+
     protected:
+    bool using_LJ_rdf_correlation = false;
     vector2d eps;
     vector3d C;
     vector3d lambda;
@@ -72,8 +90,6 @@ class Sutherland : public Spherical{
     vector2d sigma_min;
     vector2d eps_eff;
     vector2d vdw_alpha;
-
-    vector2d get_b_max(double T) override;
 
     void compute_sigma_eff();
     void compute_epsilon_eff();

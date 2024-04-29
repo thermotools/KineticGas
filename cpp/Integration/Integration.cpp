@@ -299,11 +299,6 @@ double integrate2d(const Point& origin, const Point& end,
     int Nysteps = refinement_levels_y;
     std::map<std::pair<int, int>, const double> evaluated_points;
 
-    #ifdef DEBUG
-        std::printf("Calling integrator with:\nOrigin : %E %E, End : %E, %E \ndx, dy : %E, %E\nRefinement : %i, %i\nArgs : %i, %E, %i, %i\n\n",
-                    origin.x, origin.y, end.x, end.y, dx, dy, refinement_levels_x, refinement_levels_y, arg_i, arg_j, arg_T, arg_l, arg_r);
-    #endif
-
     double val = integrate_adaptive(origin,
                                      Nx_origin, Ny_origin,
                                      Nx_end, Ny_end,
@@ -313,5 +308,16 @@ double integrate2d(const Point& origin, const Point& end,
                                      evaluated_points,
                                      arg_i, arg_j, arg_T, arg_l, arg_r,
                                      func);
+    return val;
+}
+
+double simpson(std::function<double(double)> func, double x0, double xN, int N_intervals){
+    double dx = (xN - x0) / N_intervals;
+    double val = func(x0) + func(xN);
+    for (size_t i = 1; i <= (N_intervals / 2) - 1; i++){
+        val += 4. * func(x0 + (2 * i - 1) * dx) + 2. * func(x0 + (2 * i) * dx);
+    }
+    val += 4. * func(xN - dx);
+    val *= dx / 3.;
     return val;
 }

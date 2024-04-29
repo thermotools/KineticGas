@@ -1,4 +1,6 @@
 #include "Spherical.h"
+#include "KineticGas.h"
+#include "Integration/Integration.h"
 
 Spherical::Spherical(std::vector<double> mole_weights,
                     std::vector<std::vector<double>> sigmaij,
@@ -27,23 +29,6 @@ double Spherical::omega(int i, int j, int l, int r, double T){
         return val;
     }
     return pos->second;
-}
-
-double Spherical::omega_tester(int i, int j, int l, int r, double T, IntegrationParam& param){
-    double w = w_integral_tester(i, j, T, l, r, param);
-    if (i == j) return pow(sigma[i][j], 2) * sqrt((PI * BOLTZMANN * T) / m[i]) * w;
-    return 0.5 * pow(sigma[i][j], 2) * sqrt(2 * PI * BOLTZMANN * T / (m0[i][j] * M[i][j] * M[j][i])) * w;
-}
-
-double Spherical::w_integral_tester(int i, int j, double T, int l, int r, IntegrationParam& param){
-    double I = integrate2d(param.origin, param.end,
-                        param.dg, param.db,
-                        param.refinement_levels_g, param.refinement_levels_b,
-                        param.subdomain_dblder_limit,
-                        i, j, T, l, r,
-                        w_integrand_export);
-
-    return I;
 }
 
 double Spherical::w_integral(int i, int j, double T, int l, int r){
@@ -78,7 +63,78 @@ double Spherical::w_integrand(int i, int j, double T,
     return 2 * exp(- pow(g, 2)) * pow(g, 2.0 * r + 3.0) * (1 - pow(cos(chi_val), l)) * b;
 };
 
-std::vector<std::vector<double>> Spherical::get_b_max(double T, std::vector<std::vector<int>>& ierr){
+inline double dimless_relative_vdf(double g){
+    return sqrt(2. / PI) * pow(g, 2) * exp(- 0.5 * pow(g, 2));
+}
+
+double Spherical::momentum_transfer(double T, double g, double b){
+    double chi_val = chi(0, 0, T, g, b * sigma[0][0]);
+    double U = sqrt(4 * BOLTZMANN * T / m[0]) * g;
+    return U * sqrt(2 * (1 - cos(chi_val)));
+}
+
+double Spherical::cd_weight_inner(double T, double g){
+    double bmax = get_b_max_g(g, T);
+    double bmid = get_bmid(g, T);
+    double val = simpson([&](double b){return momentum_transfer(T, g, b);}, 0., bmid, 20);
+    val += simpson([&](double b){return momentum_transfer(T, g, b);}, bmid, bmax, 20);
+    return val;
+}
+
+double Spherical::get_cd_weight_normalizer(double T){
+    double g0 = 0;
+    double g1 = 2.5;
+    double g_max = 4.;
+    int Ng = 20;
+    double I = simpson([&](double g){return cd_weight_inner(T, g) * dimless_relative_vdf(g);}, g0, g1, Ng);
+    if (collision_diameter_model_id == 1){
+        I += simpson([&](double g){return cd_weight_inner(T, g) * dimless_relative_vdf(g);}, g1, g_max, 10);
+    }
+    return I;
+}
+
+double Spherical::get_cd_weight(double T, double g, double b, double I){
+    return momentum_transfer(T, g, b) / I;
+}
+
+double Spherical::get_b_max_g(double g, double T){
+    double b, db, chi_val;
+    if (g == 0) return 10.;
+    b = 10.;
+    db = -0.5;
+    chi_val = chi(0, 0, T, g, b * sigma[0][0]);
+    while (abs(db) > 1e-3){
+        if (abs(chi_val) > 1e-3){
+            b -= db;
+            db *= 0.5;
+        }
+        b += db;
+        chi_val = chi(0, 0, T, g, b * sigma[0][0]);
+    }
+    return b;
+}
+
+double Spherical::get_bmid(double g, double T){
+    if (g == 0) return 5.;
+    double b = 0.5;
+    double db = 0.1;
+    double chi_val = chi(0, 0, T, g, b * sigma[0][0]);
+    while (abs(db) > 1e-5){
+        if ((chi_val < 0 && db > 0) || (chi_val > 0 && db < 0)){
+            db *= -0.5;
+        }
+        b += db;
+        chi_val = chi(0, 0, T, g, b * sigma[0][0]);
+        if (b > 10) {
+            std::cout << "bmid did not converge!" << std::endl;
+            throw std::runtime_error("Unable to converge bmid!");
+            break;
+        }
+    }
+    return b;
+}
+
+vector2d Spherical::get_b_max(double T, std::vector<std::vector<int>>& ierr){
         // bmax[i][j] in units of sigma[i][j]
         // The maximum value of the impact parameter at which deflection angle (chi) is positive
         const double g_avg = sqrt(4. / PI); // Average dimensionless relative velocity
@@ -107,7 +163,7 @@ std::vector<std::vector<double>> Spherical::get_b_max(double T, std::vector<std:
         return bmax;
     }
 
-std::vector<std::vector<double>> Spherical::get_b_max(double T){
+vector2d Spherical::get_b_max(double T){
     std::vector<std::vector<int>> ierr(Ncomps, std::vector<int>(Ncomps, 1));
     std::vector<std::vector<double>> b_max = get_b_max(T, ierr);
     for (size_t i = 0; i < Ncomps; i++){
@@ -122,7 +178,99 @@ std::vector<std::vector<double>> Spherical::get_b_max(double T){
     return b_max;
 }
 
-std::vector<std::vector<double>> Spherical::get_collision_diameters(double rho, double T, const std::vector<double>& x){
+vector2d Spherical::get_collision_diameters(double rho, double T, const std::vector<double>& x){
+    switch (collision_diameter_model_id) {
+    case 0:
+        return get_collision_diameters_model0(rho, T, x);
+    case 1:
+        return get_collision_diameters_model1(rho, T, x);
+    case 2:
+        return get_collision_diameters_model1(rho, T, x);
+    default:
+        throw std::runtime_error("Invalid collision diameter model id!"); // collision_diameter_model_id is private, so it shouldn't be possible to end up here.
+    }
+}
+
+double Spherical::cd_integrand(double T, double g, double b, double I){
+    const double wt = get_cd_weight(T, g, b, I);
+    const double R = get_R(0, 0, T, g, b * sigma[0][0]);
+    return wt * R;
+}
+
+double Spherical::cd_inner(double T, double g, double I){
+    const double bmax = get_b_max_g(g, T);
+    const double bmid = get_bmid(g, T);
+    const double b0 = 0.;
+    const int Nb = 20;
+    double val = simpson([&](double b){return cd_integrand(T, g, b, I);}, b0, bmid, Nb);
+    if (collision_diameter_model_id == 1) {
+        val += simpson([&](double b){return cd_integrand(T, g, b, I);}, bmid, bmax, Nb);
+    }
+    return val;
+}
+
+double Spherical::momentum_collision_diameter(double T){
+    const double I = get_cd_weight_normalizer(T);
+    const double g0 = 0.;
+    const double g1 = 2.5;
+    const double gmax = 4.;
+    const int Ng = 30;
+    const int Nb = 16;
+    double cd = simpson([&](double g){return cd_inner(T, g, I) * dimless_relative_vdf(g);}, g0, g1, Ng);
+    cd += simpson([&](double g){return cd_inner(T, g, I) * dimless_relative_vdf(g);}, g1, gmax, 10);
+    return cd;
+}
+
+vector2d Spherical::get_collision_diameters_model1(double rho, double T, const std::vector<double>& x){
+    if (m[0] != m[1]){
+        throw std::runtime_error("Collision diameter model 1 only implemented for equal-mass particles!.");
+    }
+    const double cd = momentum_collision_diameter(T);
+    vector2d cd_matr(Ncomps, vector1d(Ncomps, 0.));
+    for (size_t i = 0; i < Ncomps; i++){
+        for (size_t j = i; j < Ncomps; j++){
+            cd_matr[i][j] = cd_matr[j][i] = cd;
+        }
+    }
+    return cd_matr;
+
+    // double I = get_cd_weight_normalizer(T);
+    // double g0 = 1e-3;
+    // double b0 = 1e-3;
+    // double g_max = 3.5 + 1e-3;
+    // size_t ng = 16;
+    // double dg = (g_max - g0) / ng;
+    // size_t nb = 12;
+    // vector1d f_gvals(ng, 0.0);
+    // for (size_t gi = 0; gi < ng; gi++){
+    //     double g = g0 + gi * dg;
+    //     double b_max = get_b_max_g(g, T);
+    //     double db = (b_max - b0) / nb;
+    //     f_gvals[gi] = cd_integrand(T, g, b0, I) + cd_integrand(T, g, b_max, I);
+    //     for (size_t bi = 1; bi <= (nb / 2) - 1; bi++){
+    //         double b4 = b0 + (2 * bi - 1) * db;
+    //         double b2 = b0 + (2 * bi) * db;
+    //         f_gvals[gi] += 4 * cd_integrand(T, g, b4, I) + 2 * cd_integrand(T, g, b2, I);
+    //     }
+    //     f_gvals[gi] += 4 * cd_integrand(T, g, b0 + (nb - 1) * db, I);
+    //     f_gvals[gi] *= (db / 3.); //  * dimless_relative_vdf(g)
+    // }
+    // double cd = f_gvals[0] + f_gvals[ng - 1];
+    // for (size_t gi = 1; gi <= (ng / 2) - 1; gi++){
+    //     cd += 4 * f_gvals[2 * gi - 1] + 2 * f_gvals[2 * gi];
+    // }
+    // cd += 4 * f_gvals[ng - 1];
+    // cd *= dg / 3.;
+    // vector2d cd_matr(Ncomps, vector1d(Ncomps, 0.));
+    // for (size_t i = 0; i < Ncomps; i++){
+    //     for (size_t j = i; j < Ncomps; j++){
+    //         cd_matr[i][j] = cd_matr[j][i] = cd;
+    //     }
+    // }
+    // return cd_matr;
+}
+
+vector2d Spherical::get_collision_diameters_model0(double rho, double T, const std::vector<double>& x){
     // Evaluate the integral of Eq. (40) in RET for Mie fluids (doi: 10.1063/5.0149865)
     // Note: For models with is_idealgas==true, zeros are returned, as there is no excluded volume at infinite dilution.
     // Weights and nodes for 6-point Gauss-Legendre quadrature
@@ -130,7 +278,7 @@ std::vector<std::vector<double>> Spherical::get_collision_diameters(double rho, 
     constexpr double gl_points[n_gl_points] = {-0.93246951, -0.66120939, -0.23861919, 0.23861919, 0.66120939, 0.93246951};
     constexpr double gl_weights[n_gl_points] = {0.17132449, 0.36076157, 0.46791393, 0.46791393, 0.36076157, 0.17132449};
 
-    const double g_avg = sqrt(1. / PI); // Average dimensionless relative speed of collision
+    const double g_avg = 2. * sqrt(2. / PI); // Average dimensionless relative speed of collision
     std::vector<std::vector<double>> avg_R(Ncomps, std::vector<double>(Ncomps, 0.));
     if (is_idealgas) {
         return avg_R;
@@ -166,21 +314,18 @@ Common variables are:
     chi : Deflection angle, corresponds to pi - 2 * theta(R)
 */
 
-#include "KineticGas.h"
-#include "Integration/Integration.h"
-
 // Helper funcions for computing dimentionless collision integrals
 
 double Spherical::theta(int i, int j, const double T, const double g, const double b){
     // Compute deflection angle for a collision
-    if (b / sigma[i][j] > 10) return PI / 2;
+    if (b / sigma[i][j] > 100) return PI / 2;
     if (b / sigma[i][j] < 1e-3) return 0;
     double R = get_R(i, j, T, g, b);
-    return theta_integral(i, j, T, R, g, b); // - theta_lim(i, j, T, g) + PI / 2;
+    return theta_integral(i, j, T, R, g, b) - theta_lim(i, j, T, g) + PI / 2;
 }
 
 double Spherical::theta_lim(int i, int j, const double T, const double g){
-    double b = 10 * sigma[i][j];
+    double b = 100 * sigma[i][j];
     double R = get_R(i, j, T, g, b);
     return theta_integral(i, j, T, R, g, b);
 }
@@ -235,6 +380,7 @@ double Spherical::get_R_rootfunc_derivative(int i, int j, double T, double g, do
 }
 
 double Spherical::get_R(int i, int j, double T, double g, double b){
+    if ((b / sigma[i][j] < 1e-5) || (g < 1e-6)) return get_R0(i, j, T, g); // Treat separately (set b = 0, and handle g = 0 case)
     // Newtons method
     double tol = 1e-5; // Relative to sigma[i][j]
     double init_guess_factor = 1.0;
@@ -261,10 +407,43 @@ double Spherical::get_R(int i, int j, double T, double g, double b){
     return next_r;
 }
 
+double Spherical::get_R0(int i, int j, double T, double g){
+    double tol = 1e-6;
+    double Ek = BOLTZMANN * T * pow(g, 2);
+    double r = 0.9 * sigma[i][j];
+    double f = potential(i, j, r) - Ek;
+    while (f < 0){
+        r *= 0.8;
+        f = potential(i, j, r) - Ek;
+    }
+    double dfdr = potential_derivative_r(i, j, r);
+    while (abs(f / (dfdr * sigma[i][j])) > tol){
+        r -= f / dfdr;
+        f = potential(i, j, r) - Ek;
+        dfdr = potential_derivative_r(i, j, r);
+    }
+    return r;
+}
+
 double Spherical::chi(int i, int j, double T, double g, double b){
-    if (b / sigma[i][j] > 10) return 0;
+    if (b / sigma[i][j] > 100) return 0;
     double t = theta(i, j, T, g, b);
     return PI - 2.0 * t;
 }
 
+double Spherical::omega_tester(int i, int j, int l, int r, double T, IntegrationParam& param){
+    double w = w_integral_tester(i, j, T, l, r, param);
+    if (i == j) return pow(sigma[i][j], 2) * sqrt((PI * BOLTZMANN * T) / m[i]) * w;
+    return 0.5 * pow(sigma[i][j], 2) * sqrt(2 * PI * BOLTZMANN * T / (m0[i][j] * M[i][j] * M[j][i])) * w;
+}
 
+double Spherical::w_integral_tester(int i, int j, double T, int l, int r, IntegrationParam& param){
+    double I = integrate2d(param.origin, param.end,
+                        param.dg, param.db,
+                        param.refinement_levels_g, param.refinement_levels_b,
+                        param.subdomain_dblder_limit,
+                        i, j, T, l, r,
+                        w_integrand_export);
+
+    return I;
+}

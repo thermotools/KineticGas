@@ -82,4 +82,5 @@ double integrate2d(const Point& origin, const Point& end,
                     const int& arg_i, const int& arg_j, const double& arg_T, const int& arg_l, const int& arg_r,
                     std::function<double(int, int, double, double, double, int, int)> func);
 
+double simpson(std::function<double(double)> func, double x0, double xN, int N_intervals);
 

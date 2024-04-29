@@ -137,12 +137,12 @@ void QuantumMie::compute_sigma_eps_eff(double T){
     }
 }
 
-std::vector<std::vector<double>> QuantumMie::get_BH_diameters(double T){
+vector2d QuantumMie::get_BH_diameters(double T){
     set_temperature(T);
     return Sutherland::get_BH_diameters(T);
 }
 
-std::vector<std::vector<double>> QuantumMie::get_collision_diameters(double rho, double T, const std::vector<double>& x){
+vector2d QuantumMie::get_collision_diameters(double rho, double T, const std::vector<double>& x){
     set_temperature(T);
     return Sutherland::get_collision_diameters(rho, T, x);
 }

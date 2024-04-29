@@ -78,6 +78,23 @@ void Sutherland::compute_vdw_alpha(){
     }
 }
 
+double Sutherland::LJ_rdf_correlation(double rho, double T){
+    rho *= pow(sigma[0][0], 3);
+    T /= eps[0][0] / BOLTZMANN;
+    double rdf = 1.;
+    constexpr double a[5][5] = {{0.49304346593882, 2.1528349894745, -15.955682329017, 24.035999666294, -8.6437958513990},
+                                {-0.47031983115362, 1.1471647487376, 37.889828024211, -84.667121491179, 39.643914108411},
+                                {5.0325486243620, -25.915399226419, -18.862251310090, 107.63707381726, -66.602649735720},
+                                {-7.3633150434385, 51.553565337453, -40.519369256098, -38.796692647218, 44.605139198378},
+                                {2.9043607296043, -24.478812869291, 31.500186765040, -5.3368920371407, -9.5183440180133}};
+    for (int i = 0; i < 5; i++){
+        for (int j = 0; j < 5; j++){
+            rdf += a[i][j] * pow(rho, i + 1) * pow(T, - j);
+        }
+    }
+    return rdf;
+}
+
 vector2d Sutherland::saft_rdf(double rho, double T, const std::vector<double>& x, int order, bool g2_correction){
     double beta = (1. / (BOLTZMANN * T));
     vector2d d_BH = get_BH_diameters(T);
