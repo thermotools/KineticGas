@@ -26,7 +26,7 @@ jobs:
         if: runner.os == 'Windows'
 
       - name: Build wheels
-        run: python -m cibuildwheel --output-dir wheelhouse
+        run: bash cpp/build.sh && python -m cibuildwheel --output-dir wheelhouse
         # to supply options, put them in 'env', like:
         env:
           CIBW_ARCHS: auto64
