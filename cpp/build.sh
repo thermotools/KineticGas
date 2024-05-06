@@ -9,7 +9,7 @@ echo "Building KineticGas Release"
 [ ! -d "cpp/release" ] && mkdir cpp/release
 cd cpp/release
 cmake -DCMAKE_BUILD_TYPE=Release "${py_version}" ..
-make
+cmake --build .
 cd ../..
 echo "Copying binary to ${PWD}/pykingas/KineticGas_r.so"
 [ -f "pykingas/KineticGas_r.so" ] && rm pykingas/KineticGas_r.so
