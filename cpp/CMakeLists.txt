@@ -7,8 +7,6 @@ string(ASCII 27 Esc)
 message("${Esc}[34mPYBIND11_PYTHON_VERSION is : ${PYBIND11_PYTHON_VERSION}")
 message("${Esc}[34mPYTHON_EXECUTABLE is : ${PYTHON_EXECUTABLE}")
 
-set(PYBIND11_ROOT "/usr/local/include/pybind11") # This path must contain the pybind11 root dir.
-
 if(NOT MSVC)
   # set(CMAKE_CXX_COMPILER /usr/bin/g++) # Setting these can, on some systems, cause cmake to go into an infinite loop (see: build.sh to set the compiler)
   # set(CMAKE_C_COMPILER /usr/bin/gcc) # Setting these can, on some systems, cause cmake to go into an infinite loop (see: build.sh to set the compiler)
@@ -32,5 +30,5 @@ else()
     set(TARGET KineticGas_d)
 endif()
 
-add_subdirectory(${PYBIND11_ROOT} release)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../externals/pybind11" "pybind11")
 pybind11_add_module(${TARGET} ${SOURCES})
