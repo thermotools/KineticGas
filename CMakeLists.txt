@@ -20,11 +20,11 @@ set(SOURCES cpp/KineticGas.cpp cpp/KineticGas_mthr.cpp cpp/Spherical.cpp cpp/Mie
             cpp/Integration/Integration.cpp cpp/Factorial.cpp cpp/bindings.cpp)
 
 if (CMAKE_BUILD_TYPE MATCHES Release)
-    project(KineticGas_r)
-    set(TARGET KineticGas_r)
+    project(pykingas)
+    set(TARGET pykingas)
 else()
-    project(KineticGas_d)
-    set(TARGET KineticGas_d)
+    project(pykingas_d)
+    set(TARGET pykingas_d)
 endif()
 
 # Find the module development requirements (requires FindPython from 3.17 or
