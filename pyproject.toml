@@ -1,0 +1,39 @@
+[build-system]
+requires = ["scikit-build-core>=0.3.3", "pybind11"]
+build-backend = "scikit_build_core.build"
+
+
+[project]
+name = "pykingas"
+version = "2.0.0"
+description="Revised Enskog theory for Mie fluids, and other spherical potentials. Allows prediction of transport coefficients such as diffusion coefficients, viscosities, thermal diffusion coefficients and thermal conductivities. In dense, multicomponent gas mixtures and supercritical mixtures."
+readme = "README.md"
+authors = [
+  { name = "Vegard Gjeldvik Jervell", email = "vegard.g.j@icloud.com" },
+]
+requires-python = ">=3.7"
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+
+[tool.scikit-build]
+wheel.expand-macos-universal-tags = true
+
+
+[tool.cibuildwheel]
+test-command = "pytest {project}/tests"
+test-extras = ["test"]
+test-skip = ["*universal2:arm64"]
+build-verbosity = 1

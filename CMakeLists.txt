@@ -4,12 +4,6 @@ project(KineticGas LANGUAGES C CXX)
 
 SET(CMAKE_CXX_STANDARD 17)
 
-cmake_minimum_required(VERSION 3.12)
-set(PYBIND11_PYTHON_VERSION "3")
-string(ASCII 27 Esc)
-message("${Esc}[34mPYBIND11_PYTHON_VERSION is : ${PYBIND11_PYTHON_VERSION}")
-message("${Esc}[34mPYTHON_EXECUTABLE is : ${PYTHON_EXECUTABLE}")
-
 if(NOT MSVC)
   # set(CMAKE_CXX_COMPILER /usr/bin/g++) # Setting these can, on some systems, cause cmake to go into an infinite loop (see: build.sh to set the compiler)
   # set(CMAKE_C_COMPILER /usr/bin/gcc) # Setting these can, on some systems, cause cmake to go into an infinite loop (see: build.sh to set the compiler)
@@ -22,8 +16,8 @@ if(NOT MSVC)
   set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -DDEBUG -Wno-unused-parameter -Wno-unused-const-variable")
 endif(NOT MSVC)
 
-set(SOURCES KineticGas.cpp KineticGas_mthr.cpp Spherical.cpp MieKinGas.cpp
-            Integration/Integration.cpp Factorial.cpp bindings.cpp)
+set(SOURCES cpp/KineticGas.cpp cpp/KineticGas_mthr.cpp cpp/Spherical.cpp cpp/MieKinGas.cpp
+            cpp/Integration/Integration.cpp cpp/Factorial.cpp cpp/bindings.cpp)
 
 if (CMAKE_BUILD_TYPE MATCHES Release)
     project(KineticGas_r)
@@ -33,5 +27,12 @@ else()
     set(TARGET KineticGas_d)
 endif()
 
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../externals/pybind11" "pybind11")
-pybind11_add_module(${TARGET} ${SOURCES})
+# Find the module development requirements (requires FindPython from 3.17 or
+# scikit-build-core's built-in backport)
+find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
+find_package(pybind11 CONFIG REQUIRED)
+
+# Add a library using FindPython's tooling (pybind11 also provides a helper like
+# this)
+python_add_library(${TARGET} MODULE ${SOURCES} WITH_SOABI)
+target_link_libraries(${TARGET} PRIVATE pybind11::headers)
