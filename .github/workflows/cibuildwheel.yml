@@ -8,7 +8,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest,  macOS-latest] # windows-latest, 
+        os: [ubuntu-latest, windows-latest, macOS-latest] 
 
     steps:
       - uses: actions/checkout@v4
@@ -39,6 +39,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
+          name: binary-${{ matrix.os }}-${{ matrix.version }}
           path: |
             ./wheelhouse/*.whl
             ./wheelhouse/*.tar.gz
