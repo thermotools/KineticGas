@@ -36,3 +36,6 @@ find_package(pybind11 CONFIG REQUIRED)
 # this)
 python_add_library(${TARGET} MODULE ${SOURCES} WITH_SOABI)
 target_link_libraries(${TARGET} PRIVATE pybind11::headers)
+
+# The install directory is the output (wheel) directory
+install(TARGETS ${TARGET} DESTINATION pykingas)
