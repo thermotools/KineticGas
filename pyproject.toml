@@ -34,6 +34,7 @@ wheel.expand-macos-universal-tags = true
 
 [tool.cibuildwheel]
 test-command = "pytest {project}/tests"
+test-requires = ["pytest", "numpy"]
 test-extras = ["test"]
 test-skip = ["*universal2:arm64"]
 build-verbosity = 1
