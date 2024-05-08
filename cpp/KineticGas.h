@@ -114,6 +114,7 @@ class KineticGas{
     std::vector<double> m;
     std::vector<std::vector<double>> M, m0;
     std::map<OmegaPoint, double> omega_map;
+    std::map<int, double> collision_diameter_map;
 
 // ----------------------------------------------------------------------------------------------------------------------------------- //
 // --------------------------------------- Methods to facilitate multithreading ------------------------------------------------------ //

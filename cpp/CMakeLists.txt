@@ -17,12 +17,12 @@ if(NOT MSVC)
   else()
     set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-unknown-pragmas -Wno-sign-compare -std=c++17 -pthread")
   endif(APPLE)
-  set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wno-unused-parameter")
+  set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wno-unused-parameter -Wfatal-errors")
   set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -DDEBUG -Wno-unused-parameter -Wno-unused-const-variable")
 endif(NOT MSVC)
 
 set(SOURCES KineticGas.cpp KineticGas_mthr.cpp Spherical.cpp MieKinGas.cpp Sutherland.cpp QuantumMie.cpp
-            ModTangToennis.cpp
+            ModTangToennis.cpp collision_diameters.cpp
             Integration/Integration.cpp Factorial.cpp bindings.cpp)
 
 if (CMAKE_BUILD_TYPE MATCHES Release)

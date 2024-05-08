@@ -43,6 +43,7 @@ class Spherical : public KineticGas {
     vector2d get_collision_diameters(double rho, double T, const vector1d& x) override;
     vector2d get_collision_diameters_model0(double rho, double T, const vector1d& x);
     vector2d get_collision_diameters_model1(double rho, double T, const vector1d& x);
+    vector2d get_collision_diameters_model2(double T);
 
     // Different collision diameter models are
     // -1 : Default model
@@ -57,6 +58,36 @@ class Spherical : public KineticGas {
     int collision_diameter_model_id = 0;
     const int default_cd_model_id = 0; // Default collision diameter model
 
+    /*****************************************************************************/
+    /**********************         CD MODEL 1              **********************/
+    /*****************************************************************************/
+    double momentum_collision_diameter(double T);
+    double cd_inner(double T, double g, double I);
+    double cd_integrand(double T, double g, double b, double I, double bmax);
+    double momentum_transfer(double T, double g, double b);
+
+    double get_b_max_g(double g, double T); // Find b such that eps < chi(b) < 0, for small eps.
+    double get_bmid(double g, double T); // Solve chi = 0
+
+    double cd_weight_integrand(double T, double g, double b, double bmax);
+    double cd_weight_inner(double T, double g);
+    double get_cd_weight_normalizer(double T);
+    double get_cd_weight(double T, double g, double b, double I, double bmax);
+
+    /*****************************************************************************/
+    /**********************         CD MODEL 2              **********************/
+    /*****************************************************************************/
+    double ideal_rdf(double T, double r);
+    double momentum_transfer_R(double T, double g, double R);
+    double chi_R(double T, double g, double R);
+    double theta_R(double T, double g, double R);
+    double get_cd_weight_normalizer_2(double T);
+    double cd_weight_inner_2(double T, double g);
+    double get_R_min(double T, double g);
+    double get_cd_weight_2(double T, double g, double R, double I);
+    double cd_inner_2(double T, double g, double I);
+
+
     // ------------------------------------------------------------------------------------------------------------------- //
     // -------------------------- Spherical Internals are below here ----------------------------------------------------- //
     // ---------------------- End users should not need to care about anything below -------------------------------------- //
@@ -64,18 +95,6 @@ class Spherical : public KineticGas {
     double chi(int i, int j, double T, double g, double b);
     double get_R(int i, int j, double T, double g, double b);
     double get_R0(int i, int j, double T, double g); // Solve get_R when b = 0
-
-    double get_b_max_g(double g, double T);
-    double get_bmid(double g, double T);
-    double momentum_transfer(double T, double g, double b);
-
-    double cd_weight_inner(double T, double g);
-    double get_cd_weight_normalizer(double T);
-    double get_cd_weight(double T, double g, double b, double I);
-
-    double cd_integrand(double T, double g, double b, double I);
-    double cd_inner(double T, double g, double I);
-    double momentum_collision_diameter(double T);
 
     // In the general case, sigma is a scaling parameter
     // On the order of the molecular size. Its specific physical meaning
