@@ -58,11 +58,6 @@ class Sutherland : public Spherical{
      // To directly compute the RDF at different pertubation orders. Not used in property computations.
     virtual vector2d saft_rdf(double rho, double T, const std::vector<double>& x, int order=2, bool g2_correction=true);
 
-    vector2d get_collision_diameters(double rho, double T, const std::vector<double>& x) override {
-        if (collision_diameter_model_id == 3) return get_BH_diameters(T);
-        return Spherical::get_collision_diameters(rho, T, x);
-    }
-
     vector2d rdf_g0_func(double rho, double T, const vector1d& x);
     vector2d rdf_g1_func(double rho, double T, const vector1d& x);
     vector2d rdf_g2_func(double rho, double T, const vector1d& x, bool g2_correction=true);

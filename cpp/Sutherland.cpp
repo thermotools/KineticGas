@@ -11,7 +11,7 @@ double Sutherland::potential(int i, int j, double r){
 double Sutherland::potential_derivative_r(int i, int j, double r){
     double p{0.0};
     for (size_t k = 0; k < nterms; k++){
-        p -= C[k][i][j] * lambda[k][i][j] * pow(sigma[i][j], lambda[k][i][j]) / pow(r, lambda[k][i][j] + 1);
+        p -= C[k][i][j] * lambda[k][i][j] * pow(sigma[i][j] / r, lambda[k][i][j] + 1.) / sigma[i][j];
     }
     return eps[i][j] * p;
 }
@@ -19,7 +19,7 @@ double Sutherland::potential_derivative_r(int i, int j, double r){
 double Sutherland::potential_dblderivative_rr(int i, int j, double r){
     double p{0.0};
     for (size_t k = 0; k < nterms; k++){
-        p += C[k][i][j] * lambda[k][i][j] * (lambda[k][i][j] + 1.) * pow(sigma[i][j], lambda[k][i][j]) / pow(r, lambda[k][i][j] + 2);
+        p += C[k][i][j] * lambda[k][i][j] * (lambda[k][i][j] + 1.) * pow(sigma[i][j] / r, lambda[k][i][j] + 2) / pow(sigma[i][j], 2);
     }
     return eps[i][j] * p;
 }
