@@ -36,7 +36,7 @@ vector2d Spherical::get_collision_diameters_model0(double rho, double T, const s
     constexpr double gl_points[n_gl_points] = {-0.93246951, -0.66120939, -0.23861919, 0.23861919, 0.66120939, 0.93246951};
     constexpr double gl_weights[n_gl_points] = {0.17132449, 0.36076157, 0.46791393, 0.46791393, 0.36076157, 0.17132449};
 
-    const double g_avg = 2. * sqrt(2. / PI); // Average dimensionless relative speed of collision
+    const double g_avg = sqrt(4. / PI); // Average dimensionless relative speed of collision
     std::vector<std::vector<double>> avg_R(Ncomps, std::vector<double>(Ncomps, 0.));
     if (is_idealgas) {
         return avg_R;
@@ -122,10 +122,9 @@ double Spherical::momentum_collision_diameter(double T){
     const double g0 = 0.;
     const double g1 = 3.5;
     const double gmax = 5.;
-    const int Ng = 30;
     const auto integrand = [&](double g){return cd_inner(T, g, I);};
-    double cd = simpson(integrand, g0, g1, Ng);
-    cd += simpson(integrand, g1, gmax, 20);
+    double cd = simpson(integrand, g0, g1, 15);
+    cd += simpson(integrand, g1, gmax, 10);
     return cd;
 }
 
@@ -133,10 +132,9 @@ double Spherical::cd_inner(double T, double g, double I){
     const double bmax = get_b_max_g(g, T);
     const double bmid = get_bmid(g, T);
     const double b0 = 0.;
-    const int Nb = 50;
     const auto integrand = [&](double b){return cd_integrand(T, g, b, I, bmax);};
-    double val = simpson(integrand, b0, bmid, Nb);
-    val += simpson(integrand, bmid, bmax, Nb);
+    double val = simpson(integrand, b0, bmid, 15);
+    val += simpson(integrand, bmid, bmax, 20);
     return val;
 }
 
@@ -145,7 +143,7 @@ double Spherical::cd_weight_integrand(double T, double g, double b, double bmax)
         case 1:
             return momentum_transfer(T, g, b) * dimless_relative_vdf(g) * g * 2 * PI * b;
         case 2:
-            return momentum_transfer(T, g, b) * dimless_relative_vdf(g) * g * 4 * PI * pow(b, 2);
+            return momentum_transfer(T, g, b) * dimless_relative_vdf(g) * g * 2 * PI * b;
         case 3:
             return momentum_transfer(T, g, b) * dimless_relative_vdf(g) * g * 2 * PI * b;
         default:
@@ -161,10 +159,9 @@ double Spherical::get_cd_weight_normalizer(double T){
     double g0 = 0;
     double g1 = 3.5;
     double g_max = 5.;
-    int Ng = 30;
     const auto integrand = [&](double g){return cd_weight_inner(T, g);};
-    double I = simpson(integrand, g0, g1, Ng);
-    I += simpson(integrand, g1, g_max, 20);
+    double I = simpson(integrand, g0, g1, 15);
+    I += simpson(integrand, g1, g_max, 10);
     return I;
 }
 
@@ -172,8 +169,8 @@ double Spherical::cd_weight_inner(double T, double g){
     double bmax = get_b_max_g(g, T);
     double bmid = get_bmid(g, T);
     const auto integrand = [&](double b){return cd_weight_integrand(T, g, b, bmax);};
-    double val = simpson(integrand, 0., bmid, 20);
-    val += simpson(integrand, bmid, bmax, 50);
+    double val = simpson(integrand, 0., bmid, 15);
+    val += simpson(integrand, bmid, bmax, 20);
     return val;
 }
 
@@ -195,7 +192,7 @@ double Spherical::momentum_transfer(double T, double g, double b){
             dp = U * sqrt(2 * (1 - cos(chi_val))) * abs(sin(chi_val / 2.));
             break;
         case 3:
-            dp = U * sqrt(2 * (1 - cos(chi_val))) * abs(sin(chi_val / 2.));
+            dp = U * sqrt(2 * (1 - cos(chi_val))) * sin(chi_val / 2.);
             break;
         default:
             throw std::runtime_error("Invalid collision diameter model!");
