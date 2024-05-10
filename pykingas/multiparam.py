@@ -55,9 +55,6 @@ class ModTangToennis(py_KineticGas):
         alpha = self.vdw_alpha()
         mie_alpha = lambda lr: mie_C(la, lr) * ((1 / (la - 3)) - (1 / (lr - 3)))
         sol = root(lambda lr : mie_alpha(lr) - alpha, x0=np.array([15.0]))
-        print(sol)
-        lr = sol.x[0]
-        print('multi: ', lr, la, mie_C(la, lr), mie_alpha(lr))
         return sol.x[0]
 
 def mie_C(la, lr):

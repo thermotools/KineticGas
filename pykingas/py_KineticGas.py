@@ -699,26 +699,19 @@ class py_KineticGas:
         lambda_prime *= (5 * Boltzmann / 4)
 
         lambda_int = 0
-        from pyrefprop import RefProp
-        eos_lst = [RefProp(c) for c in self.comps]
-        if p is None:
-            p, = self.eos.pressure_tv(T, Vm, x)
-        if p < 0:
-            lambda_int = np.nan
-        else:
-            if include_internal is True:
-                f_int = 1.32e3
-                eta_0 = self.viscosity(T, Vm, x, N=N, idealgas=True)
-                Cp = 0
-                M = sum(self.mole_weights * x) * Avogadro * 1e3
-                for i in range(self.ncomps):
-                    Cpi_id = eos_lst[i].ideal_heat_capacity(T, p, [1])
-                    # _, Cpi_id = self.eos.idealenthalpysingle(T, 1, dhdt=True)
-                    # Mi = self.mole_weights[i] * Avogadro * 1e3  # Mole weight in g / mol
-                    Cp += x[i] * Cpi_id
+        if include_internal is True:
+            f_int = 1.32e3
+            eta_0 = self.viscosity(T, Vm, x, N=N, idealgas=True)
+            Cp = 0
+            M = sum(self.mole_weights * x) * Avogadro * 1e3
+            for i in range(self.ncomps):
+                _, Cpi_id = self.eos.idealenthalpysingle(T, 1 if self._is_singlecomp else i + 1, dhdt=True)
+                # _, Cpi_id = self.eos.idealenthalpysingle(T, 1, dhdt=True)
+                # Mi = self.mole_weights[i] * Avogadro * 1e3  # Mole weight in g / mol
+                Cp += x[i] * Cpi_id
 
-                Cp_factor = (Cp - 5 * gas_constant / 2) / M
-                lambda_int = f_int * eta_0 * Cp_factor
+            Cp_factor = (Cp - 5 * gas_constant / 2) / M
+            lambda_int = f_int * eta_0 * Cp_factor
 
         lambda_dblprime = 0
         if idealgas is False:  # lambda_dblprime is only nonzero when density corrections are present, and vanishes at infinite dilution
@@ -759,11 +752,8 @@ class py_KineticGas:
         if idealgas is None:
             idealgas = self.is_idealgas
         self.check_valid_composition(x)
-
         particle_density = Avogadro / Vm
         b = self.compute_visc_vector(T, particle_density, x, N=N)
-        cd = self.get_collision_diameters(particle_density, T, x)
-        rdf = self.get_rdf(particle_density, T, x)
         K_prime = self.cpp_kingas.get_K_prime_factors(particle_density, T, x)
 
         eta_prime = 0
@@ -773,6 +763,8 @@ class py_KineticGas:
 
         eta_dblprime = 0
         if idealgas is False: # eta_dblprime is only nonzero when density corrections are present, and vanish at infinite dilution
+            cd = self.get_collision_diameters(particle_density, T, x)
+            rdf = self.get_rdf(particle_density, T, x)
             for i in range(self.ncomps):
                 for j in range(self.ncomps):
                     eta_dblprime += np.sqrt(self.m[i] * self.m[j] / (self.m[i] + self.m[j])) * x[i] * x[j] * cd[i][j]**4 * rdf[i][j]
