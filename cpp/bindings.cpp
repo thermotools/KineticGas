@@ -140,6 +140,7 @@ PYBIND11_MODULE(KineticGas_r, handle){
         .def("get_BH_diameters", &MieKinGas::get_BH_diameters)
         .def("get_vdw_alpha", &MieKinGas::get_vdw_alpha)
         .def("saft_rdf", &MieKinGas::saft_rdf)
+        .def("set_cd_model", &MieKinGas::set_collision_diameter_model)
         .def("rdf_g0", py::overload_cast<double, double, const vector1d&>(&MieKinGas::rdf_HS))
         .def("rdf_g1", py::overload_cast<double, double, const vector1d&>(&MieKinGas::rdf_g1_func))
         .def("rdf_g2", py::overload_cast<double, double, const vector1d&, bool>(&MieKinGas::rdf_g2_func))

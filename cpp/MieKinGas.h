@@ -46,13 +46,13 @@ class MieKinGas : public Spherical {
         return C[i][j] * eps[i][j] * (pow(sigma[i][j] / r, lr[i][j]) - pow(sigma[i][j] / r, la[i][j]));
     }
     double potential_derivative_r(int i, int j, double r) override {
-        return C[i][j] * eps[i][j] * ((la[i][j] * pow(sigma[i][j], la[i][j]) / pow(r, la[i][j] + 1)) 
-                                        - (lr[i][j] * pow(sigma[i][j], lr[i][j]) / pow(r, lr[i][j] + 1)));
+        return C[i][j] * eps[i][j] * ((la[i][j] * pow(sigma[i][j] / r, la[i][j] + 1) / sigma[i][j])
+                                        - (lr[i][j] * pow(sigma[i][j] / r, lr[i][j] + 1) / sigma[i][j]));
     }
 
     double potential_dblderivative_rr(int i, int j, double r) override {
-        return C[i][j] * eps[i][j] * ((lr[i][j] * (lr[i][j] + 1) * pow(sigma[i][j], lr[i][j]) / pow(r, lr[i][j] + 2)) 
-                                    - (la[i][j] * (la[i][j] + 1) * pow(sigma[i][j], la[i][j]) / pow(r, la[i][j] + 2)));
+        return C[i][j] * eps[i][j] * ((lr[i][j] * (lr[i][j] + 1) * pow(sigma[i][j] / r, lr[i][j] + 2) / pow(sigma[i][j], 2))
+                                    - (la[i][j] * (la[i][j] + 1) * pow(sigma[i][j] / r, la[i][j] + 2) / pow(sigma[i][j], 2)));
     }
 
 
@@ -96,7 +96,6 @@ class MieKinGas : public Spherical {
     // bmax[i][j] is in units of sigma[i][j]
     // bmax = The maximum value of the impact parameter at which deflection angle (chi) is positive
     std::vector<std::vector<double>> get_b_max(double T);
-    std::vector<std::vector<double>> get_collision_diameters(double rho, double T, const std::vector<double>& x) override;
     virtual std::vector<std::vector<double>> get_BH_diameters(double T);
     std::vector<std::vector<double>> get_vdw_alpha(){return alpha;}
 

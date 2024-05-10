@@ -221,35 +221,6 @@ std::vector<std::vector<double>> MieKinGas::get_b_max(double T){
         return bmax;
     }
 
-std::vector<std::vector<double>> MieKinGas::get_collision_diameters(double rho, double T, const std::vector<double>& x){
-        // Evaluate the integral of Eq. (40) in RET for Mie fluids (doi: 10.1063/5.0149865)
-        // Note: For models with is_idealgas==true, zeros are returned, as there is no excluded volume at infinite dilution.
-        // Weights and nodes for 6-point Gauss-Legendre quadrature
-        constexpr int n_gl_points = 6;
-        constexpr double gl_points[n_gl_points] = {-0.93246951, -0.66120939, -0.23861919, 0.23861919, 0.66120939, 0.93246951};
-        constexpr double gl_weights[n_gl_points] = {0.17132449, 0.36076157, 0.46791393, 0.46791393, 0.36076157, 0.17132449};
-
-        const double g_avg = sqrt(1. / PI); // Average dimensionless relative speed of collision
-        std::vector<std::vector<double>> avg_R(Ncomps, std::vector<double>(Ncomps, 0.));
-        if (is_idealgas) {
-            return avg_R;
-        }
-        std::vector<std::vector<double>> bmax = get_b_max(T);
-        double point, weight;
-
-        for (int i = 0; i < Ncomps; i++){
-            for (int j = i; j < Ncomps; j++){
-                for (int p = 0; p < n_gl_points; p++){
-                    point = gl_points[p] * (bmax[i][j] / 2.) + bmax[i][j] / 2.;
-                    weight = gl_weights[p] * bmax[i][j] / 2.;
-                    avg_R[i][j] += get_R(i, j, T, g_avg, point * sigma[i][j]) * weight / bmax[i][j];
-                }
-                avg_R[j][i] = avg_R[i][j];
-            }
-        }
-        return avg_R;
-    }
-
 std::vector<std::vector<double>> MieKinGas::get_BH_diameters(double T){
     // 20-point Gauss-Legendre from 0.5 sigma to 1 sigma. Using constant value of 1 for integrand within (0, 0.5) sigma.
     std::vector<std::vector<double>> d_BH(Ncomps, std::vector<double>(Ncomps, 0.0));
