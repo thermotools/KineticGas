@@ -6,7 +6,7 @@ from pykingas.MieKinGas import MieKinGas
 from scipy.constants import Avogadro, Boltzmann
 import numpy as np
 import pytest
-from s_tools import equal
+from .s_tools import equal
 
 T_lst = [100, 500, 1000]
 p_lst = [1e2, 1e6, 5e7]
@@ -66,7 +66,7 @@ def test_omega(T, l, r, N, silent=False):
         expanded_C[i] = C[i]
         expanded_lamb[i] = lambdas[i]
 
-    smie_long = Sutherland(smie_short.mole_weights, smie_short.sigma, smie_short.eps_div_k, expanded_C, expanded_lamb)
+    smie_long = Sutherland(smie_short.mole_weights * Avogadro * 1e3, smie_short.sigma, smie_short.eps_div_k, expanded_C, expanded_lamb)
 
     for i in range(mie.ncomps):
         for j in range(mie.ncomps):
@@ -76,11 +76,17 @@ def test_omega(T, l, r, N, silent=False):
                 print(f'(i, j) = ({i}, {j})')
                 print(f'omega (Actual)     : {omega_short}')
                 print(f'omega (With zeros) : {omega_long}')
+                print(f'Sigma eff : {smie_short.mole_weights}, {smie_long.mole_weights}')
                 print(f'Diff : {(omega_short - omega_long) / omega_short}')
             assert equal(omega_short, omega_long, tol=1e-10)
     print('Test passed\n')
 
 if __name__ == '__main__':
+    for T_ in T_lst:
+        for p_ in p_lst:
+            for N_ in N_lst:
+                test_rdf(T_, p_, N_)
+
     for T_ in T_lst:
         for l_ in l_lst:
             for r_ in r_lst:

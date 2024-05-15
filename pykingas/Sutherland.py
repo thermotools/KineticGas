@@ -1,4 +1,4 @@
-from pykingas.py_KineticGas import py_KineticGas
+from pykingas.py_KineticGas import py_KineticGas, IdealGas
 from pykingas import cpp_Sutherland
 import numpy as np
 from scipy.constants import Boltzmann
@@ -33,10 +33,10 @@ class Sutherland(py_KineticGas):
         self.cpp_kingas = cpp_Sutherland(self.mole_weights, self.sigma, self.eps_div_k * Boltzmann, self.C, self.lambdas,
                                          is_idealgas)
         if use_eos is None:
-            self.eos = saftvrss(self.comps, init_from_db='SAFT-VR-MIE')
+            self.eos = saftvrss(','.join(self.comps), init_from_db='SAFT-VR-MIE')
             for i in range(self.ncomps):
                 for j in range(self.ncomps):
-                    self.eos.set_pair_potential_params(i, j, self.C[:, i, j], self.lambdas[:, i, j], self.sigma[i][j],
+                    self.eos.set_pair_potential_params(i + 1, j + 1, self.C[:, i, j], self.lambdas[:, i, j], self.sigma[i][j],
                                                        self.eps_div_k[i][j])
         else:
             self.eos = use_eos
@@ -198,7 +198,7 @@ class Sutherland(py_KineticGas):
         return array
 
     def get_sigma_eff(self, i=None, j=None):
-        """Potential
+        r"""Potential
         Get effective size parameter (root of potential). If only one index is supplied, that pure component value
         is returned. If no indexes are supplied, a 2d array of all component pairs is returned.
         &&
@@ -212,7 +212,7 @@ class Sutherland(py_KineticGas):
         return self.extract_components(self.cpp_kingas.get_sigma_eff(), i, j)
 
     def get_sigma_min(self, i=None, j=None):
-        """Potential
+        r"""Potential
         Get location of the potential minimum. If only one index is supplied, that pure component value
         is returned. If no indexes are supplied, a 2d array of all component pairs is returned.
         &&
@@ -226,7 +226,7 @@ class Sutherland(py_KineticGas):
         return self.extract_components(self.cpp_kingas.get_sigma_min(), i, j)
 
     def get_epsilon_eff(self, i=None, j=None):
-        """Potential
+        r"""Potential
         Get potential well depth. If only one index is supplied, that pure component value
         is returned. If no indexes are supplied, a 2d array of all component pairs is returned.
         &&
@@ -240,7 +240,7 @@ class Sutherland(py_KineticGas):
         return self.extract_components(self.cpp_kingas.get_epsilon_eff(), i, j)
 
     def get_vdw_alpha(self, i=None, j=None):
-        """Potential
+        r"""Potential
         Get the dimensionless van der Waals $\alpha$-parameter, defined as
 
         $$ \alpha = - \epsilon_{e}^{-1} \sigma_e^{-3} \int_{\sigma_e}^{\infty} \phi_{ij}(r) r^2 dr $$
@@ -257,7 +257,7 @@ class Sutherland(py_KineticGas):
         return self.extract_components(self.cpp_kingas.get_vdw_alpha(), i, j)
 
     def potential(self, i, j, r):
-        """Potential
+        r"""Potential
         Evaluate potential at the position r
         &&
         Args:
@@ -271,7 +271,7 @@ class Sutherland(py_KineticGas):
         return self.cpp_kingas.potential(i, j, r)
 
     def potential_r(self, i, j, r):
-        """Potential
+        r"""Potential
         Evaluate potential derivative at the position r
         &&
         Args:
@@ -285,7 +285,7 @@ class Sutherland(py_KineticGas):
         return self.cpp_kingas.potential_derivative_r(i, j, r)
 
     def potential_rr(self, i, j, r):
-        """Potential
+        r"""Potential
         Evaluate potential second derivative at the position r
         &&
         Args:
@@ -331,6 +331,8 @@ class S_MieKinGas(Sutherland):
                     eos.init(comps, parameter_reference=parameter_ref)
             else:
                 eos = use_eos
+        else:
+            eos = IdealGas(comps)
 
         self.lij = lij
         self.kij = kij

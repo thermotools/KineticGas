@@ -6,7 +6,7 @@ from pykingas.MieKinGas import MieKinGas
 from scipy.constants import Avogadro, Boltzmann
 import numpy as np
 import pytest
-from s_tools import equal
+from .s_tools import equal
 
 complist = ['H2', 'AR,C1', 'KR,CO2,O2']
 idx_list = [0, 1, 2, 3]
@@ -64,7 +64,8 @@ def test_mie_g1(comps, T, p, silent=False):
 @pytest.mark.parametrize('comps', complist)
 @pytest.mark.parametrize('T', T_lst)
 @pytest.mark.parametrize('p', p_lst)
-def test_mie_g2(comps, T, p, silent=False):
+@pytest.mark.parametrize('g2_correction', [True, False])
+def test_mie_g2(comps, T, p, g2_correction, silent=False):
     mie = MieKinGas(comps)
     smie = S_MieKinGas(comps)
 
@@ -73,8 +74,8 @@ def test_mie_g2(comps, T, p, silent=False):
     Vm, = mie.eos.specific_volume(T, p, z, mie.eos.VAPPH)
     rho = Avogadro / Vm
 
-    g2_mie = mie.cpp_kingas.rdf_g2(rho, T, z)
-    g2_suth = smie.cpp_kingas.rdf_g2(rho, T, z)
+    g2_mie = mie.cpp_kingas.rdf_g2(rho, T, z, g2_correction)
+    g2_suth = smie.cpp_kingas.rdf_g2(rho, T, z, g2_correction)
     for i in range(mie.ncomps):
         for j in range(mie.ncomps):
             if silent is False:
