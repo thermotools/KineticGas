@@ -176,6 +176,8 @@ class py_KineticGas:
     def check_valid_composition(self, x):
         """Utility
         Check that enough mole fractions are supplied for the initialised model. Also check that they sum to unity.
+        for single-component mixtures, returns [0.5, 0.5], such that [1] can be supplied, even though single-component
+        fluids are treated as binaries internally.
         &&
         Args:
             x (array_like) : Molar composition
@@ -183,13 +185,17 @@ class py_KineticGas:
         Raises
             IndexError : If wrong number of mole fractions is supplied.
             RuntimeWarning : If mole fractions do not sum to unity.
+
+        Returns:
+            x (1d array) : Sanitized composition
         """
         if abs(sum(x) - 1) > FLT_EPS:
             warnings.warn('Mole fractions do not sum to unity, sum(x) = '+str(sum(x)), RuntimeWarning, stacklevel=2)
+        elif self._is_singlecomp:
+            return np.array([0.5, 0.5])
         elif len(x) != self.ncomps:
-            raise IndexError(str(len(x)) +' mole fractions were supplied for a '+str(self.ncomps)+' component mixture!\n'
-                            'Note: Single-component mixtures are treated as binary! (use x = [0.5, 0.5])')
-
+            raise IndexError(f'{len(x)} mole fractions were supplied for a {self.ncomps} component mixture!')
+        return np.array(x)
 
     def get_Eij(self, Vm, T, x):
         r"""Utility
@@ -296,7 +302,7 @@ class py_KineticGas:
             dependent_idx = self.ncomps - 1
         while dependent_idx < 0:
             dependent_idx += self.ncomps
-
+        x = self.check_valid_composition(x)
         D = self.interdiffusion_general(T, Vm, x, N=N)
         # psi = Transformation matrix from 'centre of mass' to 'frame_of_reference'
         # get_com_2_for_matr() dispatches the call to specific functions for different frames of reference.
@@ -348,11 +354,10 @@ class py_KineticGas:
         Returns:
             (2D array) : Array of the (not independent) $D^{(K, m)}$ diffusion coefficients. Unit [m^2 / s]
         """
-        x = np.array(x)
         if N is None:
             N = self.default_N
 
-        self.check_valid_composition(x)
+        x = self.check_valid_composition(x)
         particle_density = Avogadro / Vm
         d = self.compute_diffusion_coeff_vector(particle_density, T, x, N=N)
         d = self.reshape_diffusion_coeff_vector(d)
@@ -408,7 +413,7 @@ class py_KineticGas:
         while dependent_idx < 0:
             dependent_idx += self.ncomps
 
-        self.check_valid_composition(x)
+        x =  self.check_valid_composition(x)
 
         if N < 2:
             warnings.warn('Thermal diffusion is a 2nd order phenomena, cannot be computed for N < 2 (got N = '
@@ -680,7 +685,7 @@ class py_KineticGas:
         if idealgas is None:
             idealgas = self.is_idealgas
 
-        self.check_valid_composition(x)
+        x = self.check_valid_composition(x)
         particle_density = Avogadro / Vm
         a = self.compute_cond_vector(particle_density, T, x, N=N)
         rdf = self.get_rdf(particle_density, T, x)
@@ -751,7 +756,7 @@ class py_KineticGas:
             N = self.default_N
         if idealgas is None:
             idealgas = self.is_idealgas
-        self.check_valid_composition(x)
+        x = self.check_valid_composition(x)
         particle_density = Avogadro / Vm
         b = self.compute_visc_vector(T, particle_density, x, N=N)
         K_prime = self.cpp_kingas.get_K_prime_factors(particle_density, T, x)
@@ -781,7 +786,7 @@ class py_KineticGas:
         """
         if N is None:
             N = self.default_N
-        self.check_valid_composition(x)
+        x = self.check_valid_composition(x)
         raise NotImplementedError("Bulk viscosity is not implemented yet. See 'Multicomp docs' for more info.")
 
     def conductivity_matrix(self, T, Vm, x, N=2, formulation='T-psi', frame_of_reference='CoM', use_thermal_conductivity=None):
@@ -938,11 +943,20 @@ class py_KineticGas:
         Vm, = self.eos.specific_volume(T, p, x, self.eos.VAPPH)  # Assuming vapour phase
         return self.thermal_diffusion_factor(T, Vm, x, N=N)
 
+    def thermal_conductivity_tp(self, T, p, x, N=None):
+        """Tp-property
+        Compute molar volume using the internal equation of state (`self.eos`), assuming vapour, and pass the call to
+        `self.thermal_conductivity`. See `self.thermal_conductivity` for documentation.
+        """
+        Vm, = self.eos.specific_volume(T, p, x, self.eos.VAPPH)  # Assuming vapour phase
+        return self.thermal_conductivity(T, Vm, x, N=N, p=p)
+
     def thermal_coductivity_tp(self, T, p, x, N=None):
         """Tp-property
         Compute molar volume using the internal equation of state (`self.eos`), assuming vapour, and pass the call to
         `self.thermal_conductivity`. See `self.thermal_conductivity` for documentation.
         """
+        warnings.warn("Deprecated due to typo in method name... will be removed.", DeprecationWarning)
         Vm, = self.eos.specific_volume(T, p, x, self.eos.VAPPH)  # Assuming vapour phase
         return self.thermal_conductivity(T, Vm, x, N=N, p=p)
 
@@ -1139,7 +1153,7 @@ class py_KineticGas:
         """
         if N is None:
             N = self.default_N
-        self.check_valid_composition(mole_fracs)
+        mole_fracs = self.check_valid_composition(mole_fracs)
         return self.cpp_kingas.get_conductivity_matrix(particle_density, T, mole_fracs, N)
 
     def get_conductivity_vector(self, particle_density, T, mole_fracs, N):
@@ -1160,7 +1174,7 @@ class py_KineticGas:
         """
         if N is None:
             N = self.default_N
-        self.check_valid_composition(mole_fracs)
+        mole_fracs = self.check_valid_composition(mole_fracs)
         return self.cpp_kingas.get_conductivity_vector(particle_density, T, mole_fracs, N)
 
     def get_diffusion_vector(self, particle_density, T, mole_fracs, N=None):
@@ -1181,7 +1195,7 @@ class py_KineticGas:
         """
         if N is None:
             N = self.default_N
-        self.check_valid_composition(mole_fracs)
+        mole_fracs = self.check_valid_composition(mole_fracs)
         return np.array(self.cpp_kingas.get_diffusion_vector(particle_density, T, mole_fracs, N))
 
     def get_collision_diameters(self, particle_density, T, x):
@@ -1252,7 +1266,7 @@ class py_KineticGas:
         """
         if N is None:
             N = self.default_N
-        self.check_valid_composition(mole_fracs)
+        mole_fracs = self.check_valid_composition(mole_fracs)
         if (T, particle_density, tuple(mole_fracs), N) in self.computed_d_points.keys():
             return np.array(self.computed_d_points[(T, particle_density, tuple(mole_fracs), N)])
 
@@ -1309,7 +1323,7 @@ class py_KineticGas:
         """
         if N is None:
             N = self.default_N
-        self.check_valid_composition(mole_fracs)
+        mole_fracs = self.check_valid_composition(mole_fracs)
         a = self.compute_cond_vector(particle_density, T, mole_fracs, N=N)[:self.ncomps]
         d = self.compute_diffusion_coeff_vector(particle_density, T, mole_fracs, N=N)
         d = self.reshape_diffusion_coeff_vector(d)
@@ -1357,7 +1371,7 @@ class py_KineticGas:
 
         if N is None:
             N = self.default_N
-        self.check_valid_composition(mole_fracs)
+        mole_fracs = self.check_valid_composition(mole_fracs)
         if (T, particle_density, tuple(mole_fracs), N) in self.computed_a_points.keys():
             return np.array(self.computed_a_points[(T, particle_density, tuple(mole_fracs), N)])
 
@@ -1402,7 +1416,7 @@ class py_KineticGas:
         """
         if N is None:
             N = self.default_N
-        self.check_valid_composition(mole_fracs)
+        mole_fracs = self.check_valid_composition(mole_fracs)
         if (T, particle_density, tuple(mole_fracs), N) in self.computed_b_points.keys():
             return self.computed_b_points[(T, particle_density, tuple(mole_fracs), N)]
 
