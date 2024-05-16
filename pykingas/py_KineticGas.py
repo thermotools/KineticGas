@@ -113,6 +113,12 @@ class IdealGas:
         """
         return gas_constant * T / Vm
 
+    def idealenthalpysingle(self, T, i, dhdt=None):
+        warnings.warn('Idealenthalpy gives dummy values for IdealGas!', RuntimeWarning)
+        if dhdt is None:
+            return 0,
+        return 0, (5 / 2) * gas_constant
+
 class py_KineticGas:
 
     def __init__(self, comps, mole_weights=None, N=3, is_idealgas=False):

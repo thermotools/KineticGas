@@ -83,9 +83,10 @@ def test_viscosity(model, N, silent=True):
         kin = model(comps.get_comps(i))
         visc_lst[i] = kin.viscosity(T, Vm, x, N=N)
 
-    assert check_eq_lst(visc_lst)
     if silent is False:
         report(check_eq_lst(visc_lst), [model, N, visc_lst])
+    assert check_eq_lst(visc_lst)
+
 
 @pytest.mark.parametrize('model', models)
 @pytest.mark.parametrize('N', [2, 3])
@@ -140,3 +141,6 @@ def _test_soret(model, N, silent=True):
     assert check_eq_lst(ST_lst)
     if silent is False:
         report(check_eq_lst(ST_lst), [model, N, ST_lst])
+
+if __name__ == '__main__':
+    test_viscosity(models[0], 2, silent=False)

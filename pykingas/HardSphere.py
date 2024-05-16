@@ -9,6 +9,7 @@ from scipy.constants import Avogadro, Boltzmann as kB
 from scipy.optimize import root
 from pykingas import cpp_HardSphere
 from pykingas.py_KineticGas import py_KineticGas, IdealGas
+import warnings
 
 class HardSphereEoS:
 
@@ -63,6 +64,12 @@ class HardSphereEoS:
                 dmudn[i] = (mu_p - mu_m) / (2 * dn)
             return_tuple += (dmudn, )
         return return_tuple
+
+    def idealenthalpysingle(self, T, i, dhdt=None):
+        warnings.warn('Idealenthalpy gives dummy values for HardSphere!', RuntimeWarning)
+        if dhdt is None:
+            return 0.,
+        return 0., 5 * 8.314 / 2
 
 def HS_pressure(rho, T, x, sigma, chi):
     p = rho * kB * T

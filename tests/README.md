@@ -14,6 +14,12 @@ To run a specific test function, use
 ```bash
 pytest <my_test_module.py>::<my_function>
 ```
+To exit on first failure, or after a specific number of failures,
+```bash
+pytest -x <my_test>
+pytest --maxfail=2 <my_test>
+```
+
 For more info on `pytest` see: https://docs.pytest.org/en/7.4.x/how-to/usage.html
 
 ## Adding new models
