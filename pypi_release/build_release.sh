@@ -3,7 +3,7 @@
 # Note: Uses $(which pythonX.Y) to get the path to various python interpreters
 set -e
 
-pykingas_version="2b1.dev0"
+pykingas_version="2b1.dev1"
 os_tag="macosx_11_0_arm64"
 py_versions=("3.8" "3.9" "3.10" "3.11") # Need to build different wheels for every python version, because pybind11.
 wheelhouse_dir="pypi_release/wheelhouse"
