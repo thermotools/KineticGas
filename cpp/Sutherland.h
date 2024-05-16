@@ -24,14 +24,14 @@ struct RDFConstants{
 
 class Sutherland : public Spherical{
     public:
-    Sutherland(vector1d mole_weights, vector2d sigma, vector2d eps, vector3d C, vector3d lambda, bool is_idealgas=false)
-        : Spherical(mole_weights, sigma, is_idealgas), eps{eps}, C{C}, lambda{lambda}, nterms{C.size()}, 
+    Sutherland(vector1d mole_weights, vector2d sigma, vector2d eps, vector3d C, vector3d lambda, bool is_idealgas=false, bool is_singlecomp=false)
+        : Spherical(mole_weights, sigma, is_idealgas, is_singlecomp), eps{eps}, C{C}, lambda{lambda}, nterms{C.size()},
         sigma_eff{sigma}, sigma_min{sigma}, eps_eff(Ncomps, vector1d(Ncomps, 0.)),
         vdw_alpha(Ncomps, vector1d(Ncomps, 0.))
         {compute_sigma_eff(); compute_epsilon_eff(); compute_vdw_alpha();}
 
-    Sutherland(vector1d mole_weights, vector2d sigma, vector2d eps, size_t nterms, bool is_idealgas=false)
-        : Spherical(mole_weights, sigma, is_idealgas), eps{eps}, nterms{nterms}, sigma_eff(Ncomps, vector1d(Ncomps, 0.)),
+    Sutherland(vector1d mole_weights, vector2d sigma, vector2d eps, size_t nterms, bool is_idealgas=false, bool is_singlecomp=false)
+        : Spherical(mole_weights, sigma, is_idealgas, is_singlecomp), eps{eps}, nterms{nterms}, sigma_eff(Ncomps, vector1d(Ncomps, 0.)),
         sigma_min(Ncomps, vector1d(Ncomps, 0.)), eps_eff(Ncomps, vector1d(Ncomps, 0.)), vdw_alpha(Ncomps, vector1d(Ncomps, 0.))
         {
         C = vector3d(nterms, vector2d(Ncomps, vector1d(Ncomps, 0.)));
@@ -186,7 +186,7 @@ class Sutherland : public Spherical{
                             0.08327674157670514, 0.06267204833410799,
                             0.040601429800386134, 0.017614007139152742
                             },
-                            { // C_coeff_matr (See: Eq. (A18) in svrm)
+                            { // C_coeff_matr (See: Eq. (A17-A18) in svrm). Parameters regressed by T. Maltby (2024, unpublished)
                                 {0.81096, 1.7888, -37.578, 92.284},
                                 {1.0205, -19.341, 151.26, -463.50},
                                 {-1.9057, 22.845, -228.14, 973.92},

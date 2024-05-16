@@ -25,10 +25,9 @@
 // --------------------------------------------------------------------------------------------------- //
 // -------------------------------Constructor and helper functions------------------------------------ //
 
-KineticGas::KineticGas(const std::vector<double> mole_weights, bool is_idealgas) 
+KineticGas::KineticGas(const std::vector<double> mole_weights, bool is_idealgas, bool is_singlecomp)
   : Ncomps{static_cast<unsigned long>(mole_weights.size())},
-    is_idealgas{is_idealgas},
-    m{mole_weights}
+    is_idealgas{is_idealgas}, is_singlecomp{is_singlecomp}, m{mole_weights}
     {
 
     m0 = std::vector<std::vector<double>>(Ncomps, std::vector<double>(Ncomps));

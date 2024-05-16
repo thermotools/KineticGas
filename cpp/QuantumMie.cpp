@@ -3,8 +3,9 @@
 #include <mutex>
 #include <thread>
 
-QuantumMie::QuantumMie(vector1d mole_weights, vector2d sigma, vector2d eps, vector2d la, vector2d lr, std::vector<int> FH_order, bool is_idealgas)
-        : Sutherland(mole_weights, sigma, eps, 6, is_idealgas), FH_order{FH_order}, Q_factors(4, vector2d(Ncomps, vector1d(Ncomps, 0.)))
+QuantumMie::QuantumMie(vector1d mole_weights, vector2d sigma, vector2d eps, vector2d la, vector2d lr, std::vector<int> FH_order,
+                        bool is_idealgas, bool is_singlecomp)
+        : Sutherland(mole_weights, sigma, eps, 6, is_idealgas, is_singlecomp), FH_order{FH_order}, Q_factors(4, vector2d(Ncomps, vector1d(Ncomps, 0.)))
     {
         for (size_t i = 0; i < Ncomps; i++){
             for (size_t j = i; j < Ncomps; j++){

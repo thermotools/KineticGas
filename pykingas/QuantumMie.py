@@ -39,7 +39,7 @@ class QuantumMie(MieType.MieType):
         fh_orders_db = np.array([self.fluids[i]['FH_order'] for i in range(self.ncomps)])
         self.__FH_orders = fh_orders_db
         self.cpp_kingas = cpp_QuantumMie(self.mole_weights, self.sigma_ij, self.epsilon_ij, self.la, self.lr, 
-                                            self.__FH_orders, is_idealgas)
+                                            self.__FH_orders, is_idealgas, self._is_singlecomp)
 
         if self.is_idealgas is False:
             if use_eos is None:

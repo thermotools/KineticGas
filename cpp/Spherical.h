@@ -26,7 +26,7 @@ class Spherical : public KineticGas {
 
     Spherical(std::vector<double> mole_weights, 
                 std::vector<std::vector<double>> sigmaij,
-                bool is_idealgas);
+                bool is_idealgas, bool is_singlecomp);
     virtual ~Spherical(){};
 
     // Potential models, these must be overridden in derived classes, in addition to model_rdf and get_contact_diameters.
@@ -49,30 +49,30 @@ class Spherical : public KineticGas {
     // -1 : Default model
     // 0 : Model presented in Refs. (I) and (II) (see top of file)
     // 1 : Unpublished model (2024)
-    // 2 : Constant (= sigma)
-    // 3 : BH-diameters
+    // 2 : Unpublished model (2024)
+    // 3 : Unpublished model (2024)
     void set_collision_diameter_model(int model_id){
         if (model_id == -1) collision_diameter_model_id = default_cd_model_id;
         collision_diameter_model_id = model_id;
     }
     int collision_diameter_model_id = 0;
-    const int default_cd_model_id = 0; // Default collision diameter model
+    const int default_cd_model_id = 2; // Default collision diameter model
 
     /*****************************************************************************/
     /**********************         CD MODEL 1              **********************/
     /*****************************************************************************/
-    double momentum_collision_diameter(double T);
-    double cd_inner(double T, double g, double I);
-    double cd_integrand(double T, double g, double b, double I, double bmax);
-    double momentum_transfer(double T, double g, double b);
+    double momentum_collision_diameter(int i, int j, double T);
+    double cd_inner(int i, int j, double T, double g, double I);
+    double cd_integrand(int i, int j, double T, double g, double b, double I, double bmax);
+    double momentum_transfer(int i, int j, double T, double g, double b);
 
-    double get_b_max_g(double g, double T); // Find b such that eps < chi(b) < 0, for small eps.
-    double get_bmid(double g, double T); // Solve chi = 0
+    double get_b_max_g(int i, int j, double g, double T); // Find b such that eps < chi(b) < 0, for small eps.
+    double get_bmid(int i, int j, double g, double T); // Solve chi = 0
 
-    double cd_weight_integrand(double T, double g, double b, double bmax);
-    double cd_weight_inner(double T, double g);
-    double get_cd_weight_normalizer(double T);
-    double get_cd_weight(double T, double g, double b, double I, double bmax);
+    double cd_weight_integrand(int i, int j, double T, double g, double b, double bmax);
+    double cd_weight_inner(int i, int j, double T, double g);
+    double get_cd_weight_normalizer(int i, int j, double T);
+    double get_cd_weight(int i, int j, double T, double g, double b, double I, double bmax);
 
     /*****************************************************************************/
     /**********************         CD MODEL 2              **********************/

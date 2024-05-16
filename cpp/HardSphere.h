@@ -14,8 +14,8 @@ class HardSphere : public KineticGas {
 
     HardSphere(std::vector<double> mole_weights,
         std::vector<std::vector<double>> sigmaij,
-        bool is_idealgas)
-        : KineticGas(mole_weights, is_idealgas), sigma{sigmaij}{
+        bool is_idealgas, bool is_singlecomp)
+        : KineticGas(mole_weights, is_idealgas, is_singlecomp), sigma{sigmaij}{
     }
     
     double omega(int i, int j, int l, int r, double T) override {

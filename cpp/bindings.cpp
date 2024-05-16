@@ -102,7 +102,7 @@ PYBIND11_MODULE(KineticGas_r, handle){
         });
 
     py::class_<Sutherland>(handle, "cpp_Sutherland")
-        .def(py::init<vector1d, vector2d, vector2d, vector3d, vector3d, bool>())
+        .def(py::init<vector1d, vector2d, vector2d, vector3d, vector3d, bool, bool>())
         KineticGas_bindings(Sutherland)
         Spherical_potential_bindings(Sutherland)
         Spherical_bindings(Sutherland)
@@ -131,6 +131,7 @@ PYBIND11_MODULE(KineticGas_r, handle){
                       vector2d,
                       vector2d,
                       vector2d,
+                      bool,
                       bool
                     >()
             )
@@ -180,7 +181,7 @@ PYBIND11_MODULE(KineticGas_r, handle){
         ;
 
    py::class_<QuantumMie>(handle, "cpp_QuantumMie")
-        .def(py::init<vector1d, vector2d, vector2d, vector2d, vector2d, std::vector<int>, bool>())
+        .def(py::init<vector1d, vector2d, vector2d, vector2d, vector2d, std::vector<int>, bool, bool>())
         KineticGas_bindings(QuantumMie)
         Spherical_bindings(QuantumMie)
         .def("chi", &QuantumMie::chi)
@@ -237,7 +238,7 @@ PYBIND11_MODULE(KineticGas_r, handle){
         .def(py::init<
                         vector1d,
                         vector2d,
-                        bool
+                        bool, bool
                     >()
             )
         KineticGas_bindings(HardSphere)
@@ -250,7 +251,7 @@ PYBIND11_MODULE(KineticGas_r, handle){
         .def(py::init<
                         vector1d,
                         vector2d,
-                        bool
+                        bool, bool
                     >()
             )
         KineticGas_bindings(PseudoHardSphere)

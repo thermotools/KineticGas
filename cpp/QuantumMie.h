@@ -22,7 +22,8 @@ class QuantumMie : public Sutherland{
     vector3d sigma_eff_cache;
     vector3d sigma_min_cache;
 
-    QuantumMie(vector1d mole_weights, vector2d sigma, vector2d eps, vector2d la, vector2d lr, std::vector<int> FH_order, bool is_idealgas);
+    QuantumMie(vector1d mole_weights, vector2d sigma, vector2d eps, vector2d la, vector2d lr, std::vector<int> FH_order,
+                bool is_idealgas, bool is_singlecomp);
 
     double omega(int i, int j, int l, int r, double T) override {
         set_temperature(T);

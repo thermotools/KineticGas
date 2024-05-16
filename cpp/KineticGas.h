@@ -65,7 +65,7 @@ struct OmegaPoint{
 class KineticGas{
     public:
 
-    KineticGas(std::vector<double> mole_weights, bool is_idealgas);
+    KineticGas(std::vector<double> mole_weights, bool is_idealgas, bool is_singlecomp);
     virtual ~KineticGas(){};
     // Collision integrals
     virtual double omega(int i, int j, int l, int r, double T) = 0;
@@ -111,10 +111,11 @@ class KineticGas{
     protected:
     const size_t Ncomps;
     const bool is_idealgas;
+    const bool is_singlecomp;
     std::vector<double> m;
     std::vector<std::vector<double>> M, m0;
     std::map<OmegaPoint, double> omega_map;
-    std::map<int, double> collision_diameter_map;
+    std::map<int, std::vector<std::vector<double>>> collision_diameter_map;
 
 // ----------------------------------------------------------------------------------------------------------------------------------- //
 // --------------------------------------- Methods to facilitate multithreading ------------------------------------------------------ //

@@ -134,7 +134,7 @@ class HardSphere(py_KineticGas):
         self.sigma = 0.5 * (np.vstack(tuple(sigma for _ in range(self.ncomps))) 
                                 + np.vstack(tuple(sigma for _ in range(self.ncomps))).transpose())
 
-        self.cpp_kingas = cpp_HardSphere(self.mole_weights, self.sigma, is_idealgas)
+        self.cpp_kingas = cpp_HardSphere(self.mole_weights, self.sigma, is_idealgas, self._is_singlecomp)
         if self.is_idealgas is True:
             self.eos = IdealGas(comps)
         else:

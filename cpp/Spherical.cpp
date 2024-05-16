@@ -4,8 +4,8 @@
 
 Spherical::Spherical(std::vector<double> mole_weights,
                     std::vector<std::vector<double>> sigmaij,
-                    bool is_idealgas) 
-                    : KineticGas(mole_weights, is_idealgas), sigma{sigmaij}{
+                    bool is_idealgas, bool is_singlecomp)
+                    : KineticGas(mole_weights, is_idealgas, is_singlecomp), sigma{sigmaij}{
 
 
     w_integrand_export = std::bind(&Spherical::w_integrand, this,
@@ -26,6 +26,14 @@ double Spherical::omega(int i, int j, int l, int r, double T){
         else val = 0.5 * pow(sigma[i][j], 2) * sqrt(2 * PI * BOLTZMANN * T / (m0[i][j] * M[i][j] * M[j][i])) * w;
         omega_map[point] = val;
         omega_map[sympoint] = val; // Collision integrals are symmetric wrt. particle indices.
+        if (is_singlecomp){
+            for (int ci = 0; ci < Ncomps; ci++){
+                for (int cj = 0; cj < Ncomps; cj++){
+                    OmegaPoint purepoint{ci, cj, l, r, T};
+                    omega_map[purepoint] = val;
+                }
+            }
+        }
         return val;
     }
     return pos->second;

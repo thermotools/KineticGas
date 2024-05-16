@@ -20,8 +20,8 @@ class MieKinGas : public Spherical {
         std::vector<std::vector<double>> eps,
         std::vector<std::vector<double>> la,
         std::vector<std::vector<double>> lr,
-        bool is_idealgas)
-        : Spherical(mole_weights, sigmaij, is_idealgas),
+        bool is_idealgas, bool is_singlecomp)
+        : Spherical(mole_weights, sigmaij, is_idealgas, is_singlecomp),
         eps{eps},
         la{la},
         lr{lr}
@@ -254,7 +254,7 @@ constexpr double gl_w[20] = {0.017614007139152742, 0.040601429800386134,
                             0.08327674157670514, 0.06267204833410799,
                             0.040601429800386134, 0.017614007139152742};
 
-constexpr double C_coeff_matr[4][4] // See Eq. A18 of J. Chem. Phys. 139, 154504 (2013); https://doi.org/10.1063/1.4819786
+constexpr double C_coeff_matr[4][4] // See Eq. A17-A18 of J. Chem. Phys. 139, 154504 (2013); https://doi.org/10.1063/1.4819786; Parameters regressed by T. Maltby (2024, unpublished)
     {
         {0.81096, 1.7888, -37.578, 92.284},
         {1.0205, -19.341, 151.26, -463.50},

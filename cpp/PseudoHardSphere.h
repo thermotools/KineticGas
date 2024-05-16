@@ -11,8 +11,8 @@ class PseudoHardSphere : public Spherical {
 
     PseudoHardSphere(std::vector<double> mole_weights,
         std::vector<std::vector<double>> sigmaij,
-        bool is_idealgas)
-        : Spherical(mole_weights, sigmaij, is_idealgas) {}
+        bool is_idealgas, bool is_singlecomp)
+        : Spherical(mole_weights, sigmaij, is_idealgas, is_singlecomp) {}
     
     double potential(int i, int j, double r) override {
         // To get this, start with a potential that has a second derivative f''(r) = (sigma / r)^22 + A

@@ -31,7 +31,7 @@ class Sutherland(py_KineticGas):
         self.eps_div_k = eps_div_k
 
         self.cpp_kingas = cpp_Sutherland(self.mole_weights, self.sigma, self.eps_div_k * Boltzmann, self.C, self.lambdas,
-                                         is_idealgas)
+                                         is_idealgas, self._is_singlecomp)
         if use_eos is None:
             self.eos = saftvrss(','.join(self.comps), init_from_db='SAFT-VR-MIE')
             for i in range(self.ncomps):

@@ -3,16 +3,16 @@
 
 vector2d Spherical::get_collision_diameters(double rho, double T, const std::vector<double>& x){
     int T_idx = static_cast<int>(T * 100 + 0.5); // Using T in centi kelvin for lookup.
-    const std::map<int, double>::iterator pos = collision_diameter_map.find(T_idx);
-    double cd{0.};
+    const std::map<int, vector2d>::iterator pos = collision_diameter_map.find(T_idx);
+    vector2d cd;
     if (pos == collision_diameter_map.end()){
         switch (collision_diameter_model_id) {
         case 0:
-            cd = get_collision_diameters_model0(rho, T, x)[0][0]; break;
+            cd = get_collision_diameters_model0(rho, T, x); break;
         case 1:
         case 2:
         case 3:
-            cd = get_collision_diameters_model1(rho, T, x)[0][0]; break;
+            cd = get_collision_diameters_model1(rho, T, x); break;
         default:
             throw std::runtime_error("Invalid collision diameter model id!"); // collision_diameter_model_id is private, so it shouldn't be possible to end up here.
         }
@@ -21,7 +21,7 @@ vector2d Spherical::get_collision_diameters(double rho, double T, const std::vec
     else{
         cd = pos->second;
     }
-    return vector2d(Ncomps, vector1d(Ncomps, cd));
+    return cd;
 }
 
 /**********************************************************************************************/
@@ -110,89 +110,96 @@ inline double dimless_relative_vdf(double g){
 }
 
 vector2d Spherical::get_collision_diameters_model1(double rho, double T, const std::vector<double>& x){
-    if (m[0] != m[1]){
-        throw std::runtime_error("Collision diameter model 1 only implemented for equal-mass particles!.");
+    if (is_singlecomp){
+        const double cd = momentum_collision_diameter(0, 0, T);
+        return vector2d(Ncomps, vector1d(Ncomps, cd));
     }
-    const double cd = momentum_collision_diameter(T);
-    return vector2d(Ncomps, vector1d(Ncomps, cd));
+    vector2d cd(Ncomps, vector1d(Ncomps, 0.));
+    for (int i = 0; i < Ncomps; i++){
+        for (int j = 0; j < Ncomps; j++){
+            cd[i][j] = momentum_collision_diameter(i, j, T);
+        }
+    }
+    return cd;
 }
 
-double Spherical::momentum_collision_diameter(double T){
-    const double I = get_cd_weight_normalizer(T);
+double Spherical::momentum_collision_diameter(int i, int j, double T){
+    const double I = get_cd_weight_normalizer(i, j, T);
     const double g0 = 0.;
     const double g1 = 3.5;
     const double gmax = 5.;
-    const auto integrand = [&](double g){return cd_inner(T, g, I);};
+    const auto integrand = [&](double g){return cd_inner(i, j, T, g, I);};
     double cd = simpson(integrand, g0, g1, 15);
     cd += simpson(integrand, g1, gmax, 10);
     return cd;
 }
 
-double Spherical::cd_inner(double T, double g, double I){
-    const double bmax = get_b_max_g(g, T);
-    const double bmid = get_bmid(g, T);
+double Spherical::cd_inner(int i, int j, double T, double g, double I){
+    const double bmax = get_b_max_g(i, j, g, T);
+    const double bmid = get_bmid(i, j, g, T);
     const double b0 = 0.;
-    const auto integrand = [&](double b){return cd_integrand(T, g, b, I, bmax);};
+    const auto integrand = [&](double b){return cd_integrand(i, j, T, g, b, I, bmax);};
     double val = simpson(integrand, b0, bmid, 15);
     val += simpson(integrand, bmid, bmax, 20);
     return val;
 }
 
-double Spherical::cd_weight_integrand(double T, double g, double b, double bmax){
+double Spherical::cd_weight_integrand(int i, int j, double T, double g, double b, double bmax){
     switch (collision_diameter_model_id) {
         case 1:
-            return momentum_transfer(T, g, b) * dimless_relative_vdf(g) * g * 2 * PI * b;
+            return momentum_transfer(i, j, T, g, b) * dimless_relative_vdf(g) * g * 2 * PI * b;
         case 2:
-            return momentum_transfer(T, g, b) * dimless_relative_vdf(g) * g * 2 * PI * b;
+            return momentum_transfer(i, j, T, g, b) * dimless_relative_vdf(g) * g * 2 * PI * b;
         case 3:
-            return momentum_transfer(T, g, b) * dimless_relative_vdf(g) * g * 2 * PI * b;
+            return momentum_transfer(i, j, T, g, b) * dimless_relative_vdf(g) * g * 2 * PI * b;
         default:
             throw std::runtime_error("Invalid collision diameter model id!");
     }
 }
 
-double Spherical::get_cd_weight(double T, double g, double b, double I, double bmax){
-    return cd_weight_integrand(T, g, b, bmax) / I;
+double Spherical::get_cd_weight(int i, int j, double T, double g, double b, double I, double bmax){
+    return cd_weight_integrand(i, j, T, g, b, bmax) / I;
 }
 
-double Spherical::get_cd_weight_normalizer(double T){
+double Spherical::get_cd_weight_normalizer(int i, int j, double T){
     double g0 = 0;
     double g1 = 3.5;
     double g_max = 5.;
-    const auto integrand = [&](double g){return cd_weight_inner(T, g);};
+    const auto integrand = [&](double g){return cd_weight_inner(i, j, T, g);};
     double I = simpson(integrand, g0, g1, 15);
     I += simpson(integrand, g1, g_max, 10);
     return I;
 }
 
-double Spherical::cd_weight_inner(double T, double g){
-    double bmax = get_b_max_g(g, T);
-    double bmid = get_bmid(g, T);
-    const auto integrand = [&](double b){return cd_weight_integrand(T, g, b, bmax);};
+double Spherical::cd_weight_inner(int i, int j, double T, double g){
+    double bmax = get_b_max_g(i, j, g, T);
+    double bmid = get_bmid(i, j, g, T);
+    const auto integrand = [&](double b){return cd_weight_integrand(i, j, T, g, b, bmax);};
     double val = simpson(integrand, 0., bmid, 15);
     val += simpson(integrand, bmid, bmax, 20);
     return val;
 }
 
-double Spherical::cd_integrand(double T, double g, double b, double I, double bmax){
-    const double wt = get_cd_weight(T, g, b, I, bmax);
-    const double R = get_R(0, 0, T, g, b * sigma[0][0]);
+double Spherical::cd_integrand(int i, int j, double T, double g, double b, double I, double bmax){
+    const double wt = get_cd_weight(i, j, T, g, b, I, bmax);
+    const double R = get_R(i, j, T, g, b * sigma[i][j]);
     return wt * R;
 }
 
-double Spherical::momentum_transfer(double T, double g, double b){
-    double chi_val = chi(0, 0, T, g, b * sigma[0][0]);
-    double U = sqrt(4 * BOLTZMANN * T / m[0]) * g;
+double Spherical::momentum_transfer(int i, int j, double T, double g, double b){
+    double chi_val = chi(i, j, T, g, b * sigma[i][j]);
+    double red_mass = m[i] * m[j] / (m[i] + m[j]);
+    double U = sqrt(2 * BOLTZMANN * T / red_mass) * g;
     double dp;
     switch (collision_diameter_model_id){
         case 1:
-            dp = U * sqrt(2 * (1 - cos(chi_val)));
+            dp = red_mass * U * sqrt(2 * (1 - cos(chi_val)));
             break;
         case 2:
-            dp = U * sqrt(2 * (1 - cos(chi_val))) * abs(sin(chi_val / 2.));
+            dp = red_mass * U * sqrt(2 * (1 - cos(chi_val))) * abs(sin(chi_val / 2.));
             break;
         case 3:
-            dp = U * sqrt(2 * (1 - cos(chi_val))) * sin(chi_val / 2.);
+            dp = red_mass * U * sqrt(2 * (1 - cos(chi_val))) * sin(chi_val / 2.);
             break;
         default:
             throw std::runtime_error("Invalid collision diameter model!");
@@ -200,12 +207,12 @@ double Spherical::momentum_transfer(double T, double g, double b){
     return dp;
 }
 
-double Spherical::get_b_max_g(double g, double T){
+double Spherical::get_b_max_g(int i, int j, double g, double T){
     double b, db, chi_val;
     if (g == 0) return 10.;
     b = 5.;
     db = -0.5;
-    chi_val = chi(0, 0, T, g, b * sigma[0][0]);
+    chi_val = chi(i, j, T, g, b * sigma[i][j]);
     while (abs(db) > 1e-3){
         double scale = g * sqrt(2 * (1 - cos(chi_val))) * abs(sin(chi_val / 2.));
         if (scale > 1e-3){
@@ -213,22 +220,22 @@ double Spherical::get_b_max_g(double g, double T){
             db *= 0.5;
         }
         b += db;
-        chi_val = chi(0, 0, T, g, b * sigma[0][0]);
+        chi_val = chi(i, j, T, g, b * sigma[i][j]);
     }
     return b;
 }
 
-double Spherical::get_bmid(double g, double T){
+double Spherical::get_bmid(int i, int j, double g, double T){
     if (g == 0) return 5.;
     double b = 0.5;
     double db = 0.1;
-    double chi_val = chi(0, 0, T, g, b * sigma[0][0]);
+    double chi_val = chi(i, j, T, g, b * sigma[i][j]);
     while (abs(db) > 1e-5){
         if ((chi_val < 0 && db > 0) || (chi_val > 0 && db < 0)){
             db *= -0.5;
         }
         b += db;
-        chi_val = chi(0, 0, T, g, b * sigma[0][0]);
+        chi_val = chi(i, j, T, g, b * sigma[i][j]);
         if (b > 10) {
             std::cout << "bmid did not converge!" << std::endl;
             throw std::runtime_error("Unable to converge bmid!");

@@ -33,7 +33,8 @@ class MieKinGas(MieType.MieType):
                     N=N, is_idealgas=is_idealgas,
                     parameter_ref=parameter_ref)
 
-        self.cpp_kingas = cpp_MieKinGas(self.mole_weights, self.sigma_ij, self.epsilon_ij, self.la, self.lr, self.is_idealgas)
+        self.cpp_kingas = cpp_MieKinGas(self.mole_weights, self.sigma_ij, self.epsilon_ij, self.la, self.lr,
+                                        self.is_idealgas, self._is_singlecomp)
         if self.is_idealgas is False:
             if use_eos is None:
                 self.eos = saftvrmie()

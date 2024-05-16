@@ -11,7 +11,7 @@ double partialfactorial(int start, int stop){
 }
 
 ModTangToennis::ModTangToennis(TangToennisParam param, vector1d mole_weights, vector2d sigma, bool is_idealgas)
-    : Spherical(mole_weights, sigma, is_idealgas), param{param}
+    : Spherical(mole_weights, sigma, is_idealgas, true), param{param}
 {
     if (!is_idealgas) throw std::runtime_error("Modified Tang-Toennis only implemented for ideal gas!");
 }
