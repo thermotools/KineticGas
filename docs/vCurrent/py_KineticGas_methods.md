@@ -6,7 +6,7 @@ permalink: /vcurrent/py_KineticGas_methods.html
 ---
 
 <!--- 
-Generated at: 2024-04-16T15:54:30.853573
+Generated at: 2024-05-23T10:13:41.622662
 This is an auto-generated file, generated using the script at KineticGas/pyUtils/markdown_from_docstrings.py
 The file is created by parsing the docstrings of the methods in the 
 py_KineticGas class. For instructions on how to use the parser routines, see the
@@ -24,14 +24,15 @@ The `py_KineticGas` class, found in `pykingas/py_KineticGas.py`, is the core of 
     * [interdiffusion_general](#interdiffusion_generalself-t-vm-x-nnone)
     * [resistivity_matrix](#resistivity_matrixself-t-vm-x-n2-formulationt-psi-frame_of_referencecom-use_thermal_conductivitynone)
     * [soret_coefficient](#soret_coefficientself-t-vm-x-nnone-use_zaratetrue-dependent_idx-1)
-    * [thermal_conductivity](#thermal_conductivityself-t-vm-x-nnone)
+    * [thermal_conductivity](#thermal_conductivityself-t-vm-x-nnone-idealgasnone-include_internaltrue-contributionsall-pnone)
     * [thermal_diffusion_coeff](#thermal_diffusion_coeffself-t-vm-x-nnone-use_independentfalse-dependent_idxnone-frame_of_referencecon-solvent_idxnone)
     * [thermal_diffusion_factor](#thermal_diffusion_factorself-t-vm-x-nnone)
     * [thermal_diffusion_ratio](#thermal_diffusion_ratioself-t-vm-x-nnone)
-    * [viscosity](#viscosityself-t-vm-x-nnone)
+    * [viscosity](#viscosityself-t-vm-x-nnone-idealgasnone)
   * [Tp-property interfaces](#tp-property-interfaces)
     * [interdiffusion_tp](#interdiffusion_tpself-t-p-x-nnone-use_independenttrue-dependent_idxnone-frame_of_referencecon-use_binarytrue-solvent_idxnone)
     * [thermal_coductivity_tp](#thermal_coductivity_tpself-t-p-x-nnone)
+    * [thermal_conductivity_tp](#thermal_conductivity_tpself-t-p-x-nnone)
     * [thermal_diffusion_coeff_tp](#thermal_diffusion_coeff_tpself-t-p-x-nnone-use_independentfalse-dependent_idxnone-frame_of_referencecon-solvent_idxnone)
     * [thermal_diffusion_factor_tp](#thermal_diffusion_factor_tpself-t-p-x-nnone)
     * [viscosity_tp](#viscosity_tpself-t-p-x-nnone)
@@ -97,11 +98,11 @@ Computing properties as a function of temperature and volume.
     * [interdiffusion_general](#interdiffusion_generalself-t-vm-x-nnone)
     * [resistivity_matrix](#resistivity_matrixself-t-vm-x-n2-formulationt-psi-frame_of_referencecom-use_thermal_conductivitynone)
     * [soret_coefficient](#soret_coefficientself-t-vm-x-nnone-use_zaratetrue-dependent_idx-1)
-    * [thermal_conductivity](#thermal_conductivityself-t-vm-x-nnone)
+    * [thermal_conductivity](#thermal_conductivityself-t-vm-x-nnone-idealgasnone-include_internaltrue-contributionsall-pnone)
     * [thermal_diffusion_coeff](#thermal_diffusion_coeffself-t-vm-x-nnone-use_independentfalse-dependent_idxnone-frame_of_referencecon-solvent_idxnone)
     * [thermal_diffusion_factor](#thermal_diffusion_factorself-t-vm-x-nnone)
     * [thermal_diffusion_ratio](#thermal_diffusion_ratioself-t-vm-x-nnone)
-    * [viscosity](#viscosityself-t-vm-x-nnone)
+    * [viscosity](#viscosityself-t-vm-x-nnone-idealgasnone)
 
 
 ### `bulk_viscosity(self, T, Vm, x, N=None)`
@@ -120,9 +121,9 @@ model is selected using the `formulation` kwarg. Currently implemented formulati
 
 ----------------------------------------------------
 
-$$ J_q = L_{qq} \nabla (1 / T) - \sum_{i=1}^{N_c-1}(1 / T) L_{qi} \nabla_T \Psi_i $$
+$$ J_q = L_{qq} \nabla (1 / T) - \sum_{i=1}^{N_c-1}(1 / T) L_{qi} \nabla_T \Psi_{i; p, x} $$
 
-$$ J_i = L_{iq} \nabla (1 / T) - \sum_{j=1}^{N_c-1}(1 / T) L_{ij} \nabla_T \Psi_j $$
+$$ J_i = L_{iq} \nabla (1 / T) - \sum_{j=1}^{N_c-1}(1 / T) L_{ij} \nabla_T \Psi_{j; p, x} $$
 
 Where
 
@@ -380,7 +381,7 @@ if species 2 is the dependent species.
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Only applicable when `use_zarate=True` (default behaviour). The index of the dependentspecies. Defaults to the last species.  
 
-### `thermal_conductivity(self, T, Vm, x, N=None)`
+### `thermal_conductivity(self, T, Vm, x, N=None, idealgas=None, include_internal=True, contributions='all', p=None)`
 Compute the thermal conductivity, $\lambda$. For models initialized with `is_idealgas=True`, the thermal
 conductivity is not a function of density (i.e. $d \lambda / d V_m = 0$).
 See Eq. (13) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
@@ -402,7 +403,19 @@ See Eq. (13) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
 
 &nbsp;&nbsp;&nbsp;&nbsp; **N (int, optional) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Enskog approximation order (>= 2) 
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Enskog approximation order (>= 2)
+
+&nbsp;&nbsp;&nbsp;&nbsp; **idealgas (bool, optional) :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Return infinite dilution value? Defaults to model default (set on init).
+
+&nbsp;&nbsp;&nbsp;&nbsp; **include_internal (bool, optional) :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Include contribution from internal degrees of freedom, computed usingEucken equation (doi.org/10.6028/NIST.IR.8209). Defaults to True. 
+
+&nbsp;&nbsp;&nbsp;&nbsp; **contributions (str, optional) :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Return only specific contributions, can be ('all', '(i)nternal','(t)ranslational', '(d)ensity', or several of the above, such as 'tid' or 'td'. If several contributions are selected, these are returned in an array of contributions in the same order as indicated in the supplied flag.  
 
 #### Returns:
 
@@ -548,7 +561,7 @@ See Eq. (26-27) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The thermal diffusion ratio of each component. Unit Dimensionless. 
 
-### `viscosity(self, T, Vm, x, N=None)`
+### `viscosity(self, T, Vm, x, N=None, idealgas=None)`
 Compute the shear viscosity, $\eta$. For models initialized with `is_idealgas=True`, the shear viscosity
 is not a function of density (i.e. $d \eta / d V_m = 0). See Eq. (12) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
  
@@ -569,7 +582,11 @@ is not a function of density (i.e. $d \eta / d V_m = 0). See Eq. (12) in RET for
 
 &nbsp;&nbsp;&nbsp;&nbsp; **N (int, optional) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Enskog approximation order 
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Enskog approximation order
+
+&nbsp;&nbsp;&nbsp;&nbsp; **idealgas (bool, optional) :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Use infinite dilution value? Defaults to model default value (set on init) 
 
 #### Returns:
 
@@ -585,6 +602,7 @@ Computing properties as a function of temperature and pressure. Simply forwards 
   * [Tp-property interfaces](#tp-property-interfaces)
     * [interdiffusion_tp](#interdiffusion_tpself-t-p-x-nnone-use_independenttrue-dependent_idxnone-frame_of_referencecon-use_binarytrue-solvent_idxnone)
     * [thermal_coductivity_tp](#thermal_coductivity_tpself-t-p-x-nnone)
+    * [thermal_conductivity_tp](#thermal_conductivity_tpself-t-p-x-nnone)
     * [thermal_diffusion_coeff_tp](#thermal_diffusion_coeff_tpself-t-p-x-nnone-use_independentfalse-dependent_idxnone-frame_of_referencecon-solvent_idxnone)
     * [thermal_diffusion_factor_tp](#thermal_diffusion_factor_tpself-t-p-x-nnone)
     * [viscosity_tp](#viscosity_tpself-t-p-x-nnone)
@@ -596,6 +614,11 @@ Compute molar volume using the internal equation of state (`self.eos`), assuming
  
 
 ### `thermal_coductivity_tp(self, T, p, x, N=None)`
+Compute molar volume using the internal equation of state (`self.eos`), assuming vapour, and pass the call to
+`self.thermal_conductivity`. See `self.thermal_conductivity` for documentation.
+ 
+
+### `thermal_conductivity_tp(self, T, p, x, N=None)`
 Compute molar volume using the internal equation of state (`self.eos`), assuming vapour, and pass the call to
 `self.thermal_conductivity`. See `self.thermal_conductivity` for documentation.
  
@@ -958,6 +981,8 @@ Methods for various helper computations
 
 ### `check_valid_composition(self, x)`
 Check that enough mole fractions are supplied for the initialised model. Also check that they sum to unity.
+for single-component mixtures, returns [0.5, 0.5], such that [1] can be supplied, even though single-component
+fluids are treated as binaries internally.
  
 
 #### Args:
@@ -973,6 +998,12 @@ Check that enough mole fractions are supplied for the initialised model. Also ch
 &nbsp;&nbsp;&nbsp;&nbsp; **RuntimeWarning :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  If mole fractions do not sum to unity. 
+
+#### Returns:
+
+&nbsp;&nbsp;&nbsp;&nbsp; **x (1d array) :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Sanitized composition 
 
 ### `compute_cond_vector(self, particle_density, T, mole_fracs, N=None)`
 Compute the thermal response function Sonine polynomial expansion coefficients by solving the set of equations

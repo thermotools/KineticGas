@@ -46,7 +46,15 @@ class MieKinGas(MieType.MieType):
                 self.eos = use_eos
 
     def get_vdw_alpha(self):
+        r"""Utility
+        Compute potential $\alpha_{vdw}$ parameter, defined as
+
+        $$ \alpha_{vdw} = 2 \pi \int_{\sigma}^{\infty} \phi(r) r^2 dr $$
+
+        &&
+        Returns:
+             float : $\alpha_{vdw}$ of first component.
+        """
         lr, la = self.lr[0][0], self.la[0][0]
         C = (lr / (lr - la)) * (lr / la) ** (la / (lr - la))
-        print('mie : ', lr, la, C)
         return C * ((1 / (la - 3)) - (1 / (lr - 3)))

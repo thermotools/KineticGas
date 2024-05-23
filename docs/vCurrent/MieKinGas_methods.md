@@ -6,7 +6,7 @@ permalink: /vcurrent/MieKinGas_methods.html
 ---
 
 <!--- 
-Generated at: 2023-11-06T12:02:00.296867
+Generated at: 2024-05-23T10:23:31.751964
 This is an auto-generated file, generated using the script at KineticGas/pyUtils/markdown_from_docstrings.py
 The file is created by parsing the docstrings of the methods in the 
 MieKinGas class. For instructions on how to use the parser routines, see the
@@ -18,6 +18,8 @@ RET-Mie Model. This class implements utility methods to access mixing parameters
 ## Table of contents
   * [Constructor](#constructor)
     * [\_\_init\_\_](#__init__self-comps-mole_weightsnone-sigmanone-eps_div_knone-lanone-lrnone-lij0-kij0-n4-is_idealgasfalse-use_eosnone-parameter_refdefault)
+  * [Utility methods](#utility-methods)
+    * [get_vdw_alpha](#get_vdw_alphaself)
 
 ## Constructor
 
@@ -67,4 +69,26 @@ value
 &nbsp;&nbsp;&nbsp;&nbsp; **use_eos :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  (thermopack eos object, optional) EoS to use (initialized), defaults to `saftvrmie` 
+
+## Utility methods
+
+Set- and get methods for interaction parameters, mixing parameters ...
+
+### Table of contents
+  * [Utility methods](#utility-methods)
+    * [get_vdw_alpha](#get_vdw_alphaself)
+
+
+### `get_vdw_alpha(self)`
+Compute potential $\alpha_{vdw}$ parameter, defined as
+
+$$ \alpha_{vdw} = 2 \pi \int_{\sigma}^{\infty} \phi(r) r^2 dr $$
+
+ 
+
+#### Returns:
+
+&nbsp;&nbsp;&nbsp;&nbsp; **float :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  $\alpha_{vdw}$ of first component. 
 

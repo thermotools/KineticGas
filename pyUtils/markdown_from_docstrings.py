@@ -181,7 +181,12 @@ def split_methods_by_section(sections, methods):
         # A method can be added to several sections, by giving it the header
         # def myfunc():
         #   """Section1 & Section2 & Section5 ... """
-        method_sections = [m.strip() for m in meth.__doc__.split('\n')[0].lower().split('&')] # extracting the section names as described above
+        try:
+            method_sections = [m.strip() for m in meth.__doc__.split('\n')[0].lower().split('&')] # extracting the section names as described above
+        except AttributeError:
+            if meth.__doc__ is None:
+                raise SyntaxError(f'Method {name} has no docstring!')
+            raise Exception(f"Unable to split docstring for method {name}")
         method_has_section = False
         for sec in sections:
             if sec.lower() in method_sections:
@@ -298,13 +303,16 @@ def basic_class_to_markdown(classname, eosname, methods, intro_text=None, inheri
     """
 
     sections = ['Constructor',
-                'Utility']
+                'Utility',
+                'cpp-interface']
 
     section_headers = {'Constructor': 'Constructor',
-                       'Utility': 'Utility methods'}
+                       'Utility': 'Utility methods',
+                       'cpp-interface' : 'Interfaces to C++ methods'}
 
     section_intro = {'Constructor': f'Methods to initialise {eosname} model.',
-                     'Utility': 'Set- and get methods for interaction parameters, mixing parameters ...'}
+                     'Utility': 'Set- and get methods for interaction parameters, mixing parameters ...',
+                     'cpp-interface': 'Lightweight wrappers for the most commonly used C++ side methods.'}
 
     method_dict = split_methods_by_section(sections, methods)
 
