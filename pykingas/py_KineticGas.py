@@ -1217,6 +1217,7 @@ class py_KineticGas:
         Returns:
             2d array : Collision diameters [m], indexed by component pair.
         """
+        x = self.check_valid_composition(x)
         key = tuple((particle_density, T))
         if key in self.computed_cd.keys():
             return self.computed_cd[key]
@@ -1237,11 +1238,12 @@ class py_KineticGas:
         Returns:
             2d array : RDF at contact, indexed by component pair.
         """
+        x = self.check_valid_composition(x)
         key = tuple((particle_density, T, tuple(x)))
         if key in self.computed_rdf.keys():
             return self.computed_rdf[key]
 
-        rdf = self.cpp_kingas.get_rdf(particle_density, T, x)
+        rdf = np.array(self.cpp_kingas.get_rdf(particle_density, T, x))
         self.computed_rdf[key] = rdf
         return rdf
 
