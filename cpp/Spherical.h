@@ -55,8 +55,8 @@ class Spherical : public KineticGas {
         if (model_id == -1) collision_diameter_model_id = default_cd_model_id;
         collision_diameter_model_id = model_id;
     }
-    int collision_diameter_model_id = 0;
     const int default_cd_model_id = 2; // Default collision diameter model
+    int collision_diameter_model_id = default_cd_model_id;
 
     /*****************************************************************************/
     /**********************         CD MODEL 1              **********************/
@@ -100,6 +100,7 @@ class Spherical : public KineticGas {
     // On the order of the molecular size. Its specific physical meaning
     // is different for different potential models. It may also be without physical meaning
     std::vector<std::vector<double>> sigma;
+    std::vector<std::vector<double>> eps;
 
     // This method is responsible for calling get_b_max(T, ierr), and handling eventual failures.
     // Most inheritance should only require overriding the failure handling, not the computation in get_b_max(T, ierr)

@@ -13,16 +13,15 @@ Contains: The MieKinGas class. This class is the model used to evaluate the Ensk
 
 class MieKinGas : public Spherical {
     public:
-    std::vector<std::vector<double>> eps, la, lr, C, alpha;
+    std::vector<std::vector<double>> la, lr, C, alpha;
 
     MieKinGas(std::vector<double> mole_weights,
         std::vector<std::vector<double>> sigmaij,
-        std::vector<std::vector<double>> eps,
+        std::vector<std::vector<double>> epsilon,
         std::vector<std::vector<double>> la,
         std::vector<std::vector<double>> lr,
         bool is_idealgas, bool is_singlecomp)
         : Spherical(mole_weights, sigmaij, is_idealgas, is_singlecomp),
-        eps{eps},
         la{la},
         lr{lr}
         {
@@ -30,7 +29,7 @@ class MieKinGas : public Spherical {
         #ifdef DEBUG
             std::printf("This is a Debug build!\nWith, %E, %E\n\n", mole_weights[0], mole_weights[1]);
         #endif
-
+        eps = epsilon;
         C = std::vector<std::vector<double>>(Ncomps, std::vector<double>(Ncomps, 0.));
         alpha = std::vector<std::vector<double>>(Ncomps, std::vector<double>(Ncomps, 0.));
         for (int i = 0; i < eps.size(); i ++){

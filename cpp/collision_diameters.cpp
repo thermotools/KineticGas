@@ -13,6 +13,33 @@ vector2d Spherical::get_collision_diameters(double rho, double T, const std::vec
         case 2:
         case 3:
             cd = get_collision_diameters_model1(rho, T, x); break;
+        case 4: {
+            double T_coeffs[4] = {0., 0., 0., 0.};
+            constexpr double rho_coeffs[4][5] = {{48.1090, -68.2761, 18.4683, 9.1140, 1.2057},
+                                                 {29.1735, -116.0489, 137.6770, -58.2916, 5.6222},
+                                                 {-6.6618, 13.0363, -8.0000, 1.4533, 0.5971},
+                                                 {-1.1381, 2.3210, -1.5264, 0.3194, 0.8324}
+                                                };
+            double rho_r;
+            double Tr;
+            cd = vector2d(Ncomps, vector1d(Ncomps, 0.));
+            for (int i = 0; i < Ncomps; i++){
+                for (int j = i; j < Ncomps; j++){
+                    rho_r = rho * pow(sigma[i][j], 3);
+                    Tr = T * BOLTZMANN / eps[i][j];
+                    for (int ti = 0; ti < 4; ti++){
+                        T_coeffs[ti] = 0.;
+                        for (int ri = 0; ri < 5; ri++){
+                            T_coeffs[ti] += rho_coeffs[ti][ri] * pow(rho_r, 4 - ri);
+                        }
+                    }
+                    cd[i][j] = ((0.1 * T_coeffs[0] * Tr / pow(Tr - 0.1 * T_coeffs[1], 2)) - 1e-2 * T_coeffs[2] * Tr + T_coeffs[3]) * sigma[i][j];
+                    cd[j][i] = cd[i][j];
+                }
+            }
+            return cd;
+            break;
+            }
         default:
             throw std::runtime_error("Invalid collision diameter model id!"); // collision_diameter_model_id is private, so it shouldn't be possible to end up here.
         }
@@ -193,13 +220,13 @@ double Spherical::momentum_transfer(int i, int j, double T, double g, double b){
     double dp;
     switch (collision_diameter_model_id){
         case 1:
-            dp = red_mass * U * sqrt(2 * (1 - cos(chi_val)));
+            dp = red_mass * U * sqrt(2 * (1 - cos(chi_val))) * sin(chi_val / 2.);
             break;
         case 2:
             dp = red_mass * U * sqrt(2 * (1 - cos(chi_val))) * abs(sin(chi_val / 2.));
             break;
         case 3:
-            dp = red_mass * U * sqrt(2 * (1 - cos(chi_val))) * sin(chi_val / 2.);
+            dp = red_mass * U * abs(cos(chi_val) - sin(chi_val) - 1);
             break;
         default:
             throw std::runtime_error("Invalid collision diameter model!");

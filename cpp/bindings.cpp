@@ -232,6 +232,7 @@ PYBIND11_MODULE(KineticGas_r, handle){
         .def("potential", &ModTangToennis::potential)
         .def("potential_r", &ModTangToennis::potential_derivative_r)
         .def("potential_rr", &ModTangToennis::potential_dblderivative_rr)
+        .def("set_cd_model", &ModTangToennis::set_collision_diameter_model)
         ;
 
     py::class_<HardSphere>(handle, "cpp_HardSphere")
