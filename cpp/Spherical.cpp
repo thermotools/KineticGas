@@ -96,6 +96,29 @@ double Spherical::theta(int i, int j, const double T, const double g, const doub
     return theta_integral(i, j, T, R, g, b) - theta_lim(i, j, T, g) + PI / 2;
 }
 
+double Spherical::theta_r(int i, int j, double R, double r, double T, double g, double b){
+    if (b / sigma[i][j] > 100) return PI / 2;
+    if (b / sigma[i][j] < 1e-3) return 0;
+    const double dh{7.5e-3};
+    const double tol{1e-6};
+
+    const auto integrand = [&](double r_prime){return theta_integrand(i, j, T, r_prime, g, b);};
+    const auto integrand1 = [&](double u){return (r / pow(u, 2)) * integrand(r / u);}; // Substitution u = r / r'
+    const double r_lim = (1 + 5e-2) * R + (1 / (5 * g + 1)) * R;
+
+    if (r < r_lim) {
+        const auto lim_integrand = [&](double u){return (r_lim / pow(u, 2)) * integrand(r_lim / u);};
+        const double correction = simpson(lim_integrand, 1e-12, 0.8, 100) + simpson(lim_integrand, 0.8, 1., 100);
+        const double cutoff_error = tanh_sinh(lim_integrand, dh, tol) - correction;
+        const double i1 = tanh_sinh(integrand1, dh, tol) - cutoff_error;
+        return i1;
+    }
+
+    const double i1 = simpson(integrand1, 1e-12, 0.8, 100);
+    const double i2 = simpson(integrand1, 0.8, 1., 100);
+    return i1 + i2;
+}
+
 double Spherical::theta_lim(int i, int j, const double T, const double g){
     double b = 100 * sigma[i][j];
     double R = get_R(i, j, T, g, b);
@@ -103,21 +126,24 @@ double Spherical::theta_lim(int i, int j, const double T, const double g){
 }
 
 double Spherical::theta_integral(int i, int j, double T, double R, double g, double b){
-    constexpr double h{7.5e-3};
-    double I{0.0};
-    int k{1};
-    double u = tanh(PI * sinh(k * h) / 2.);
-    double w = (PI / 2.) * h * cosh(k * h) / pow(cosh(PI * sinh(k * h) / 2.), 2);
-    double f = transformed_theta_integrand(i, j, T, u, R, g, b);
-    while (abs(f * w) > 1e-8){
-        I += w * f;
-        k+=1;
-        u = tanh(PI * sinh(k * h) / 2.);
-        w = (PI / 2) * h * cosh(k * h) / pow(cosh(PI * sinh(k * h) / 2.), 2);
-        f = transformed_theta_integrand(i, j, T, u, R, g, b);
-        if (isnan(f) || isnan(w) || isinf(f) || isinf(w)) break;
-    }
-    return I;
+    constexpr double dh{1.0e-3};
+    const auto integrand = [&](double u){return (R / pow(u, 2)) * theta_integrand(i, j, T, R / u, g, b);};
+    return tanh_sinh(integrand, dh);
+    // constexpr double h{7.5e-3};
+    // double I{0.0};
+    // int k{1};
+    // double u = tanh(PI * sinh(k * h) / 2.);
+    // double w = (PI / 2.) * h * cosh(k * h) / pow(cosh(PI * sinh(k * h) / 2.), 2);
+    // double f = transformed_theta_integrand(i, j, T, u, R, g, b);
+    // while (abs(f * w) > 1e-8){
+    //     I += w * f;
+    //     k+=1;
+    //     u = tanh(PI * sinh(k * h) / 2.);
+    //     w = (PI / 2) * h * cosh(k * h) / pow(cosh(PI * sinh(k * h) / 2.), 2);
+    //     f = transformed_theta_integrand(i, j, T, u, R, g, b);
+    //     if (isnan(f) || isnan(w) || isinf(f) || isinf(w)) break;
+    // }
+    // return I;
 }
 
 double Spherical::theta_integrand(int i, int j, double T, double r, double g, double b){

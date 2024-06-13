@@ -5,7 +5,7 @@ this_dir = Path(__file__).parent
 readme = (this_dir / 'pykingas/README.md').read_text()
 setup(
     name='pykingas',
-    version='2.b1.dev2',
+    version='2.1.b1',
     packages=['pykingas'],
     package_data={'pykingas': ['KineticGas*', 'fluids/*']},
     description='Revised Enskog theory for Mie fluids, and other spherical potentials. Allows prediction of transport '

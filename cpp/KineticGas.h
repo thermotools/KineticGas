@@ -72,6 +72,8 @@ class KineticGas{
 
     // The "distance between particles" at contact.
     // NOTE: Will Return [0, 0, ... 0] for models with is_idealgas=True.
+    // virtual std::vector<std::vector<double>> get_mtl(double rho, double T, const std::vector<double>& x) = 0;
+    // virtual std::vector<std::vector<double>> get_mtl(double rho, double T, const std::vector<double>& x) = 0;
     virtual std::vector<std::vector<double>> get_collision_diameters(double rho, double T, const std::vector<double>& x) = 0;
 
     // Radial distribution function "at contact". Inheriting classes must implement model_rdf.

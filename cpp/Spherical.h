@@ -74,19 +74,9 @@ class Spherical : public KineticGas {
     double get_cd_weight_normalizer(int i, int j, double T);
     double get_cd_weight(int i, int j, double T, double g, double b, double I, double bmax);
 
-    /*****************************************************************************/
-    /**********************         CD MODEL 2              **********************/
-    /*****************************************************************************/
-    double ideal_rdf(double T, double r);
-    double momentum_transfer_R(double T, double g, double R);
-    double chi_R(double T, double g, double R);
-    double theta_R(double T, double g, double R);
-    double get_cd_weight_normalizer_2(double T);
-    double cd_weight_inner_2(double T, double g);
-    double get_R_min(double T, double g);
-    double get_cd_weight_2(double T, double g, double R, double I);
-    double cd_inner_2(double T, double g, double I);
-
+    double momentum_transfer_length_weight(int i, int j, double r, double chi_val, double T, double g, double b);
+    double momentum_transfer_length(int i, int j, double T, double g, double b);
+    double dpdt(int i, int j, double theta_n, double chi_val, double T, double g);
 
     // ------------------------------------------------------------------------------------------------------------------- //
     // -------------------------- Spherical Internals are below here ----------------------------------------------------- //
@@ -108,13 +98,13 @@ class Spherical : public KineticGas {
     std::vector<std::vector<double>> get_b_max(double T, std::vector<std::vector<int>>& ierr);
 
     double theta(int i, int j, const double T, const double g, const double b);
+    double theta_r(int i, int j, double R, double r, double T, double g, double b);
+    double theta_integral(int i, int j, const double T, const double R, const double g, const double b);
 
-
-    private:
+    // private:
     // Helper functions for computing dimentionless collision integrals
 
     double theta_lim(int i, int j, const double T, const double g);
-    double theta_integral(int i, int j, const double T, const double R, const double g, const double b);
     double theta_integrand(int i, int j, double T, double r, double g, double b);
     double transformed_theta_integrand(int i, int j, double T, double u, double R, double g, double b);
     double theta_integrand_dblderivative(int i, int j, double T, double r, double g, double b);

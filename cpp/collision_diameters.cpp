@@ -192,9 +192,36 @@ double Spherical::get_cd_weight_normalizer(int i, int j, double T){
     double g0 = 0;
     double g1 = 3.5;
     double g_max = 5.;
-    const auto integrand = [&](double g){return cd_weight_inner(i, j, T, g);};
-    double I = simpson(integrand, g0, g1, 15);
-    I += simpson(integrand, g1, g_max, 10);
+    double I = 0.;
+    switch (collision_diameter_model_id){
+    case 1:
+        // {
+        // const auto integrand = [&](double g, double b){return cd_weight_integrand(i, j, T, g, b * sigma[i][j], 5.5 * sigma[i][j]);};
+        // Point origin{1e-7, 1e-7};
+        // Point end{5.5, 5.5};
+        // double dg{0.5}, db{0.03125};
+        // int refinement_levels_g{4};
+        // int refinement_levels_b{16};
+        // double subdomain_dblder_limit{1e-5};
+//
+        // I = integrate2d(origin, end,
+        //                     dg, db,
+        //                     refinement_levels_g, refinement_levels_b,
+        //                     subdomain_dblder_limit,
+        //                     integrand);
+        // return I * sigma[i][j];
+        // }
+    case 2:
+    case 3:
+        {
+        const auto integrand = [&](double g){return cd_weight_inner(i, j, T, g);};
+        I = simpson(integrand, g0, g1, 15);
+        I += simpson(integrand, g1, g_max, 10);
+        break;
+        }
+    default:
+        throw std::runtime_error("Invalid CD model!");
+    }
     return I;
 }
 
@@ -209,8 +236,23 @@ double Spherical::cd_weight_inner(int i, int j, double T, double g){
 
 double Spherical::cd_integrand(int i, int j, double T, double g, double b, double I, double bmax){
     const double wt = get_cd_weight(i, j, T, g, b, I, bmax);
-    const double R = get_R(i, j, T, g, b * sigma[i][j]);
-    return wt * R;
+    double r;
+    switch (collision_diameter_model_id){
+        case 1:
+            r = momentum_transfer_length(i, j, T, g, b * sigma[i][j]);
+            if (isnan(r)){
+                std::cout << "Model 1 gave NAN at " << T << ", " << g << ", " << b << std::endl;
+                r = get_R(i, j, T, g, b * sigma[i][j]);
+            }
+            break;
+        case 0:
+        case 2:
+        case 3:
+            r = get_R(i, j, T, g, b * sigma[i][j]); break;
+        default:
+            throw std::runtime_error("Invalid collision diameter model!");
+    }
+    return wt * r;
 }
 
 double Spherical::momentum_transfer(int i, int j, double T, double g, double b){
@@ -220,15 +262,14 @@ double Spherical::momentum_transfer(int i, int j, double T, double g, double b){
     double dp;
     switch (collision_diameter_model_id){
         case 1:
-            dp = red_mass * U * sqrt(2 * (1 - cos(chi_val))) * sin(chi_val / 2.);
-            break;
         case 2:
             dp = red_mass * U * sqrt(2 * (1 - cos(chi_val))) * abs(sin(chi_val / 2.));
             break;
         case 3:
-            dp = red_mass * U * abs(cos(chi_val) - sin(chi_val) - 1);
+        case 4:
+            dp = red_mass * U * abs(cos(chi_val) - sin(chi_val) - 1); // Energy transfer
             break;
-        default:
+       default:
             throw std::runtime_error("Invalid collision diameter model!");
     }
     return dp;
@@ -272,67 +313,46 @@ double Spherical::get_bmid(int i, int j, double g, double T){
     return b;
 }
 
-/**********************************************************************************************/
-/***********************                      MODEL 2                  ************************/
-/**********************************************************************************************/
-
-vector2d Spherical::get_collision_diameters_model2(double T){
-    const double I = get_cd_weight_normalizer_2(T);
-    const auto integrand = [&](double g){return cd_inner_2(T, g, I);};
-    double cd = simpson(integrand, 1e-6, 5., 30);
-    return vector2d(Ncomps, vector1d(Ncomps, cd));
-}
-
-double Spherical::cd_inner_2(double T, double g, double I){
-    const auto integrand = [&](double R){return get_cd_weight_2(T, g, R, I) * R;};
-    const double Rmin = get_R_min(T, g);
-    return simpson(integrand, Rmin, 5., 30);
-}
-
-double Spherical::get_cd_weight_2(double T, double g, double R, double I){
-    return momentum_transfer_R(T, g, R) * ideal_rdf(T, R * sigma[0][0]) * dimless_relative_vdf(g) / I;
-}
-
-double Spherical::get_R_min(double T, double g){
-    double r = sigma[0][0];
-    double dr = 0.01 * sigma[0][0];
-    while (potential(0, 0, r) < BOLTZMANN * T * pow(g, 2)){
-        r -= dr;
+double Spherical::momentum_transfer_length_weight(int i, int j, double r, double chi_val, double T, double g, double b){
+    const double R = get_R(i, j, T, g, b);
+    if (b == 0.){
+        return 0.;
     }
-    dr *= 0.5;
-    r += dr;
-    while (potential(0, 0, r) > BOLTZMANN * T * pow(g, 2)){
-        r += dr;
+    const double mu = m[i] * m[j] / (m[i] + m[j]);
+    const double u0 = sqrt(2 * BOLTZMANN * T / mu) * g;
+    const double ur = sqrt(pow(u0, 2) * (1. - pow(b / r, 2)) - 2. * potential(0, 0, r) / mu);
+
+    const double theta = theta_r(i, j, R, r, T, g, b);
+    // const double theta_p = PI - chi_val - theta_n;
+    const double F = - potential_derivative_r(i, j, r);
+    // const double dpdt = - 2 * mu * u0 * sin(2 * theta); //- (2. * u0 + (1. / u0)) * sin(theta) * abs(cos(theta));
+    // const double dtdr = theta_integrand(i, j, T, r, g, b);
+    // std::cout << "In weight(" << r / R << ", " << theta_n / PI << " / " << chi_val / PI << " / " << theta_p / PI << ") : "
+    //     << R / r << ", "
+    //     << dpdt << ", "
+    //     << dtdr * sigma[i][j] << ", "
+    //     << std::endl;
+    return abs(F / ur * (cos(theta) + cos(PI - chi_val - theta))); // dpdt * dtdr; //  dpdt * dtdr; //
+}
+
+double Spherical::dpdt(int i, int j, double theta_n, double chi_val, double T, double g){
+    const double mu = m[i] * m[j] / (m[i] + m[j]);
+    const double u0 = sqrt(2 * BOLTZMANN * T / mu) * g;
+    // const double theta_p = PI - chi_val - theta_n;
+    return - 2 * mu * u0 * sin(2 * theta_n);
+}
+
+double Spherical::momentum_transfer_length(int i, int j, double T, double g, double b){
+    const double R = get_R(i, j, T, g, b);
+    if ((b == 0.) || (g == 0.)){
+        return R;
     }
-    return r;
+    const double dh{2.5e-2}, tol{1e-6}; // dh{5e-4}, tol{1e-10};
+    const double chi_val = chi(i, j, T, g, b);
+    const auto w_integrand = [&](double h){return (R / pow(h, 2)) * momentum_transfer_length_weight(i, j, R / h, chi_val, T, g, b);};
+    const auto integrand = [&](double h){return (R / h) * w_integrand(h);};
+    const double I = tanh_sinh(w_integrand, dh, tol);
+    return tanh_sinh(integrand, dh, tol) / I;
+    // return tanh_sinh(integrand, 7.5e-3) / I;
 }
 
-double Spherical::cd_weight_inner_2(double T, double g){
-    const double R_min = get_R_min(T, g);
-    const auto integrand = [&](double R){return momentum_transfer_R(T, g, R) * ideal_rdf(T, R * sigma[0][0]) * dimless_relative_vdf(g);};
-    return simpson(integrand, R_min, 5., 30);
-}
-
-double Spherical::get_cd_weight_normalizer_2(double T){
-    const auto integrand = [&](double g){return cd_weight_inner_2(T, g);};
-    return simpson(integrand, 1e-6, 5., 30);
-}
-
-double Spherical::ideal_rdf(double T, double r){
-    return exp(- potential(0, 0, r) / (BOLTZMANN * T));
-}
-
-double Spherical::momentum_transfer_R(double T, double g, double R){
-    double chi_val = chi_R(T, g, R * sigma[0][0]);
-    double U = sqrt(4 * BOLTZMANN * T / m[0]) * g;
-    return U * sqrt(2 * (1 - cos(chi_val)));
-}
-
-double Spherical::chi_R(double T, double g, double R){
-    return PI - 2 * theta_R(T, g, R);
-}
-
-double Spherical::theta_R(double T, double g, double R){
-    double b = R * sqrt(1 - (potential(0, 0, R) / (BOLTZMANN * T * pow(g, 2))));
-    return theta_integral(0, 0, T, R, g, b) - theta_lim(0, 0, T, g) + PI / 2;
-}

@@ -664,7 +664,7 @@ class py_KineticGas:
         alpha = self.thermal_diffusion_factor(T, Vm, x, N=N)
         return alpha / T
 
-    def thermal_conductivity(self, T, Vm, x, N=None, idealgas=None, include_internal=True, contributions='all', p=None):
+    def thermal_conductivity(self, T, Vm, x, N=None, idealgas=None, include_internal=True, contributions='all'):
         r"""TV-Property
         Compute the thermal conductivity, $\lambda$. For models initialized with `is_idealgas=True`, the thermal
         conductivity is not a function of density (i.e. $d \lambda / d V_m = 0$).
@@ -692,6 +692,24 @@ class py_KineticGas:
             idealgas = self.is_idealgas
 
         x = self.check_valid_composition(x)
+        lambda_int = 0
+        if include_internal is True:
+            f_int = 1.32e3
+            eta_0 = self.viscosity(T, Vm, x, N=N, idealgas=True)
+            Cp = 0
+            M = sum(self.mole_weights * x) * Avogadro * 1e3
+            for i in range(self.ncomps):
+                _, Cpi_id = self.eos.idealenthalpysingle(T, 1 if self._is_singlecomp else i + 1, dhdt=True)
+                # _, Cpi_id = self.eos.idealenthalpysingle(T, 1, dhdt=True)
+                # Mi = self.mole_weights[i] * Avogadro * 1e3  # Mole weight in g / mol
+                Cp += x[i] * Cpi_id
+
+            Cp_factor = (Cp - 5 * gas_constant / 2) / M
+            lambda_int = f_int * eta_0 * Cp_factor
+
+        if contributions == 'i':
+            return lambda_int
+
         particle_density = Avogadro / Vm
         a = self.compute_cond_vector(particle_density, T, x, N=N)
         rdf = self.get_rdf(particle_density, T, x)
@@ -709,20 +727,7 @@ class py_KineticGas:
             lambda_prime += x[i] * K[i] * (a[self.ncomps + i] - tmp)
         lambda_prime *= (5 * Boltzmann / 4)
 
-        lambda_int = 0
-        if include_internal is True:
-            f_int = 1.32e3
-            eta_0 = self.viscosity(T, Vm, x, N=N, idealgas=True)
-            Cp = 0
-            M = sum(self.mole_weights * x) * Avogadro * 1e3
-            for i in range(self.ncomps):
-                _, Cpi_id = self.eos.idealenthalpysingle(T, 1 if self._is_singlecomp else i + 1, dhdt=True)
-                # _, Cpi_id = self.eos.idealenthalpysingle(T, 1, dhdt=True)
-                # Mi = self.mole_weights[i] * Avogadro * 1e3  # Mole weight in g / mol
-                Cp += x[i] * Cpi_id
 
-            Cp_factor = (Cp - 5 * gas_constant / 2) / M
-            lambda_int = f_int * eta_0 * Cp_factor
 
         lambda_dblprime = 0
         if idealgas is False:  # lambda_dblprime is only nonzero when density corrections are present, and vanishes at infinite dilution
@@ -955,7 +960,7 @@ class py_KineticGas:
         `self.thermal_conductivity`. See `self.thermal_conductivity` for documentation.
         """
         Vm, = self.eos.specific_volume(T, p, x, self.eos.VAPPH)  # Assuming vapour phase
-        return self.thermal_conductivity(T, Vm, x, N=N, p=p)
+        return self.thermal_conductivity(T, Vm, x, N=N)
 
     def thermal_coductivity_tp(self, T, p, x, N=None):
         """Tp-property
@@ -964,7 +969,7 @@ class py_KineticGas:
         """
         warnings.warn("Deprecated due to typo in method name... will be removed.", DeprecationWarning)
         Vm, = self.eos.specific_volume(T, p, x, self.eos.VAPPH)  # Assuming vapour phase
-        return self.thermal_conductivity(T, Vm, x, N=N, p=p)
+        return self.thermal_conductivity(T, Vm, x, N=N)
 
     def viscosity_tp(self, T, p, x, N=None):
         """Tp-property
@@ -1430,6 +1435,13 @@ class py_KineticGas:
 
         B = self.cpp_kingas.get_viscosity_matrix(particle_density, T, mole_fracs, N)
         beta = self.cpp_kingas.get_viscosity_vector(particle_density, T, mole_fracs, N)
+
+        K_prime = self.cpp_kingas.get_K_prime_factors(particle_density, T, mole_fracs)
+        cd = self.get_collision_diameters(particle_density, T, mole_fracs)[0][0]
+        rdf = self.get_rdf(particle_density, T, mole_fracs)[0][0]
+        # print(B)
+        # if not self.is_idealgas:
+        #     print(f'{particle_density * self.sigma[0][0]**3:.2f}, {T:.2f}', Boltzmann * T * np.array(beta) - 4 * np.pi * cd**3 * particle_density * rdf / 15)
 
         if any(np.isnan(np.array(B).flatten())):
             warnings.warn('Viscosity matrix contained NAN elements!')

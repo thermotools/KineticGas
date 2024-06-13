@@ -82,5 +82,43 @@ double integrate2d(const Point& origin, const Point& end,
                     const int& arg_i, const int& arg_j, const double& arg_T, const int& arg_l, const int& arg_r,
                     std::function<double(int, int, double, double, double, int, int)> func);
 
+double eval_function(std::shared_ptr<Point> p, int Nx, int Ny,
+                        std::function<double(double, double)> func,
+                        std::map<std::pair<int, int>, const double>& evaluated_points);
+
+double eval_function(Point p, int Nx, int Ny,
+                        std::function<double(double, double)> func,
+                        std::map<std::pair<int, int>, const double>& evaluated_points);
+
+void integration_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, std::shared_ptr<Point>& p3,
+                        int& Nx, int& Ny, double& integral,
+                        const double& dx, const double& dy,
+                        int& Nxsteps, const int& Nysteps,
+                        const double subdomain_dblder_limit,
+                        std::map<std::pair<int, int>, const double>& evaluated_points,
+                        std::function<double(double, double)> func);
+
+double integrate_adaptive(const Point& origin,
+                            const int& Nx_origin, const int& Ny_origin,
+                            const int& Nx_end, const int& Ny_end,
+                            const double& dx, const double& dy,
+                            int& Nxsteps, const int& Nysteps,
+                            const double& subdomain_dblder_limit,
+                            std::map<std::pair<int, int>, const double>& evaluated_points,
+                            std::function<double(double, double)> func);
+
+double integrate2d(const Point& origin, const Point& end,
+                    const double& dx, const double& dy,
+                    const int& refinement_levels_x, const int& refinement_levels_y,
+                    const double& subdomain_dblder_limit,
+                    std::function<double(double, double)> func);
+
 double simpson(std::function<double(double)> func, double x0, double xN, int N_intervals);
+
+/*
+    One-sided tanh-sinh integration scheme.
+    Integrates func(u) from 0 to 1, with step size dh in tanh-space,
+    giving arbitrarily high resolution near u = 1
+*/
+double tanh_sinh(std::function<double(double)> func, double dh, double tol=1e-5);
 

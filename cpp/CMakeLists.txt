@@ -23,7 +23,7 @@ endif(NOT MSVC)
 
 set(SOURCES KineticGas.cpp KineticGas_mthr.cpp Spherical.cpp MieKinGas.cpp Sutherland.cpp QuantumMie.cpp
             ModTangToennis.cpp collision_diameters.cpp
-            Integration/Integration.cpp Factorial.cpp bindings.cpp)
+            Integration/Integration.cpp Factorial.cpp Integration/Integration_new.cpp bindings.cpp)
 
 if (CMAKE_BUILD_TYPE MATCHES Release)
     project(KineticGas_r)

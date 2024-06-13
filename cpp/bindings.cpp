@@ -50,10 +50,18 @@ using vector2d = std::vector<vector1d>;
         .def("potential_dblderivative_rr", &Model::potential_dblderivative_rr) \
 
 #define Spherical_bindings(Model) \
-        .def("omega", &Model::omega)
+        .def("omega", &Model::omega) \
+        .def("chi", &Model::chi) \
+        .def("get_R", &Model::get_R) \
+        .def("theta", &Model::theta_r) \
+        .def("theta_integrand", &Model::theta_integrand) \
+        .def("transformed_theta_integrand", &Model::transformed_theta_integrand) \
+        .def("momentum_transfer_length", &Model::momentum_transfer_length) \
+        .def("momentum_transfer_length_weight", &Model::momentum_transfer_length_weight) \
+        .def("dpdt", &Model::dpdt) \
         /*
-            .def("chi", &Model::chi) \
-            .def("get_R", &Model::get_R) \
+             \
+             \
             \
             .def("get_R_rootfunc", &Model::get_R_rootfunc) \
             .def("get_R_rootfunc_derivative", &Model::get_R_rootfunc_derivative) \

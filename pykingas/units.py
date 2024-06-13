@@ -25,6 +25,9 @@ class Units:
         self.m = m_unit
         self.V = self.L ** 3
         self._time_unit = np.sqrt(self.m * self.L ** 2 / self.E)
+        self.t = self._time_unit
+        self.F = self.E / self.L
+        self.speed = self.L / self._time_unit
         self.rho = 1 / (Avogadro * self.V)
         self.D = L_unit ** 2 / self._time_unit
         self.p = self.E / self.V
