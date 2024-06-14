@@ -29,6 +29,7 @@ Contains: The abstract class 'KineticGas', which computes the A_pqrl factors and
 #include <functional>
 #include <thread>
 #include <math.h>
+#include <iostream>
 
 /*
    To avoid unneccesary evaluations of the collision integrals, this struct is used to represent a point in 
@@ -70,11 +71,9 @@ class KineticGas{
     // Collision integrals
     virtual double omega(int i, int j, int l, int r, double T) = 0;
 
-    // The "distance between particles" at contact.
-    // NOTE: Will Return [0, 0, ... 0] for models with is_idealgas=True.
-    // virtual std::vector<std::vector<double>> get_mtl(double rho, double T, const std::vector<double>& x) = 0;
-    // virtual std::vector<std::vector<double>> get_mtl(double rho, double T, const std::vector<double>& x) = 0;
-    virtual std::vector<std::vector<double>> get_collision_diameters(double rho, double T, const std::vector<double>& x) = 0;
+    // The transfer lengths related to momentum (MTL) and energy (ETL)
+    virtual std::vector<std::vector<double>> get_mtl(double rho, double T, const std::vector<double>& x) = 0;
+    virtual std::vector<std::vector<double>> get_etl(double rho, double T, const std::vector<double>& x) = 0;
 
     // Radial distribution function "at contact". Inheriting classes must implement model_rdf.
     std::vector<std::vector<double>> get_rdf(double rho, double T, const std::vector<double>& mole_fracs) {
@@ -117,35 +116,35 @@ class KineticGas{
     std::vector<double> m;
     std::vector<std::vector<double>> M, m0;
     std::map<OmegaPoint, double> omega_map;
-    std::map<int, std::vector<std::vector<double>>> collision_diameter_map;
+    std::map<int, std::vector<std::vector<double>>> mtl_map;
+    std::map<int, std::vector<std::vector<double>>> etl_map;
 
 // ----------------------------------------------------------------------------------------------------------------------------------- //
 // --------------------------------------- Methods to facilitate multithreading ------------------------------------------------------ //
     /*
-        Computing collision integrals is the most computationally intensive part of computing a transport property,
-        given that one does not use correlations for the computation. Therefore, computed collision integrals are stored
-        in this->omega_map. These methods are used to deduce which collision integrals are required to compute a given
-        property, and then split the computation of those integrals among several threads. When computation of the
-        property proceeds, the integrals are then retrieved from this->omega_map.
+        Computing collision integrals and transfer lengths is the most computationally intensive part of computing a transport property,
+        given that one does not use correlations for the computation. Therefore, computed collision integrals and transfer lengths are 
+        stored in this->omega_map, this->mtl_map, and this->etl_map. The following methods are used to deduce which collision integrals 
+        are required to compute a given property, and then split the computation of those integrals among several threads. When 
+        computation of the property proceeds, the integrals are then retrieved from the maps.
 
         To adjust the number of threads used to compute collision integrals, set the compile-time constant Ncores in
         KineticGas_mthr.cpp. In practice, very little is to be gained by increasing this beyond 10, unless you are
-        using high Enskog approximation orders (>4), or are working with a large number of components (because there
-        is no point in using more threads than required integrals).
+        using high Enskog approximation orders (>4), or are working with a large number of components, and have a lot of
+        cores available.
 
         These need to be protected instead of private, because QuantumMie needs to override them to prevent a race condition
         without locking everything with a mutex on every call to omega.
     */
-    virtual void precompute_conductivity_omega(int N, double T);
-    virtual void precompute_viscosity_omega(int N, double T);
+    virtual void precompute_conductivity(int N, double T, bool precompute_etl=true);
+    virtual void precompute_viscosity(int N, double T);
     virtual void precompute_omega(const std::vector<int>& i_vec, const std::vector<int>& j_vec,
                         const std::vector<int>& l_vec, const std::vector<int>& r_vec, double T);
 
     private:
-    void precompute_diffusion_omega(int N, double T); // Forwards call to precompute_conductivity_omega. Override that instead.
-    void precompute_th_diffusion_omega(int N, double T); // Forwards call to precompute_conductivity_omega. Override that instead.
+    void precompute_diffusion(int N, double T); // Forwards call to precompute_conductivity_omega. Override that instead.
+    void precompute_th_diffusion(int N, double T); // Forwards call to precompute_conductivity_omega. Override that instead.
 
-    private:
 // ------------------------------------------------------------------------------------------------------------------------ //
 // ---------------------------------------------- Square bracket integrals ------------------------------------------------ //
 

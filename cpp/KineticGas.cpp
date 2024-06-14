@@ -62,10 +62,10 @@ std::vector<double> KineticGas::get_K_factors(double rho, double T, const std::v
 
     std::vector<std::vector<double>> rdf = get_rdf(rho, T, mole_fracs);
     std::vector<double> K(Ncomps, 0.);
-    std::vector<std::vector<double>> cd = get_collision_diameters(rho, T, mole_fracs);
+    std::vector<std::vector<double>> etl = get_etl(rho, T, mole_fracs);
     for (int i = 0; i < Ncomps; i++){
         for (int j = 0; j < Ncomps; j++){
-            K[i] += mole_fracs[j] * pow(cd[i][j], 3) * M[i][j] * M[j][i] * rdf[i][j];
+            K[i] += mole_fracs[j] * pow(etl[i][j], 3) * M[i][j] * M[j][i] * rdf[i][j];
         }
         K[i] *= (24. * PI * rho / 15);
         K[i] += 1;
@@ -79,10 +79,10 @@ std::vector<double> KineticGas::get_K_prime_factors(double rho, double T, const 
 
     std::vector<std::vector<double>> rdf = get_rdf(rho, T, mole_fracs);
     std::vector<double> K_prime(Ncomps, 0.);
-    std::vector<std::vector<double>> cd = get_collision_diameters(rho, T, mole_fracs);
+    std::vector<std::vector<double>> mtl = get_mtl(rho, T, mole_fracs);
     for (int i = 0; i < Ncomps; i++){
         for (int j = 0; j < Ncomps; j++){
-            K_prime[i] += mole_fracs[j] * M[j][i] * pow(cd[i][j], 3.) * rdf[i][j];
+            K_prime[i] += mole_fracs[j] * M[j][i] * pow(mtl[i][j], 3.) * rdf[i][j];
         }
         K_prime[i] *= 8. * PI * rho / 15;
         K_prime[i] += 1.;
@@ -109,7 +109,7 @@ std::vector<std::vector<double>> KineticGas::get_conductivity_matrix(double rho,
     std::vector<std::vector<double>> matr(N * Ncomps, std::vector<double>(N * Ncomps, 0.));
     std::vector<double> wt_fracs = get_wt_fracs(x);
 
-    precompute_conductivity_omega(N, T); // Compute all the collision integrals required for this conductivity
+    precompute_conductivity(N, T); // Compute all the collision integrals and transfer lengths required for this conductivity
 
     // Build omega_k row of the matrix
     for (int i = 0; i < Ncomps; i++){
@@ -170,7 +170,7 @@ std::vector<std::vector<double>> KineticGas::get_diffusion_matrix(double rho, do
     std::vector<std::vector<double>> matr(N*pow(Ncomps, 2), std::vector<double>(N*pow(Ncomps, 2), 0.));
     std::vector<double> wt_fracs = get_wt_fracs(x);
 
-    precompute_diffusion_omega(N, T); // Compute all the collision integrals required for this diffusion matrix
+    precompute_diffusion(N, T); // Compute all the collision integrals required for this diffusion matrix
 
     for (int k = 0; k < Ncomps; k++){ // Build omega_k block of the matrix
         for (int i = 0; i < Ncomps; i++){
@@ -239,7 +239,7 @@ std::vector<std::vector<double>> KineticGas::get_viscosity_matrix(double rho, do
     std::vector<std::vector<double>> rdf = get_rdf(rho, T, x);
     std::vector<std::vector<double>> viscosity_mat(Ncomps * N, std::vector<double>(Ncomps * N, 0.));
 
-    precompute_viscosity_omega(N, T); // Compute all the collision integrals required for this viscosity
+    precompute_viscosity(N, T); // Compute all the collision integrals and transfer lengths required for this viscosity
 
     for (int p = 0; p < N; p++){
         for (int i = 0; i < Ncomps; i++){

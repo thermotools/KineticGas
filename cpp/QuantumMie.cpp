@@ -143,7 +143,12 @@ vector2d QuantumMie::get_BH_diameters(double T){
     return Sutherland::get_BH_diameters(T);
 }
 
-vector2d QuantumMie::get_collision_diameters(double rho, double T, const std::vector<double>& x){
+vector2d QuantumMie::get_mtl(double rho, double T, const std::vector<double>& x){
     set_temperature(T);
-    return Sutherland::get_collision_diameters(rho, T, x);
+    return Sutherland::get_mtl(rho, T, x);
+}
+
+vector2d QuantumMie::get_etl(double rho, double T, const std::vector<double>& x){
+    set_temperature(T);
+    return Sutherland::get_etl(rho, T, x);
 }

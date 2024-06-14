@@ -51,7 +51,9 @@ class QuantumMie : public Sutherland{
     inline vector2d get_vdw_alpha(double T){set_temperature(T); return vdw_alpha;}
 
     vector2d get_BH_diameters(double T) override;
-    vector2d get_collision_diameters(double rho, double T, const std::vector<double>& x) override;
+    vector2d get_etl(double rho, double T, const std::vector<double>& x) override;
+    vector2d get_mtl(double rho, double T, const std::vector<double>& x) override;
+
     vector2d model_rdf(double rho, double T, const std::vector<double>& x) override {
         set_temperature(T);
         return Sutherland::model_rdf(rho, T, x);
@@ -119,12 +121,12 @@ class QuantumMie : public Sutherland{
         }
      }
 
-    void precompute_conductivity_omega(int N, double T) override {
+    void precompute_conductivity(int N, double T, bool precompute_etl=true) override {
         set_temperature(T);
-        KineticGas::precompute_conductivity_omega(N, T);
+        KineticGas::precompute_conductivity(N, T, precompute_etl);
     }
-    void precompute_viscosity_omega(int N, double T) override {
+    void precompute_viscosity(int N, double T) override {
         set_temperature(T);
-        KineticGas::precompute_viscosity_omega(N, T);
+        KineticGas::precompute_viscosity(N, T);
     }
 };

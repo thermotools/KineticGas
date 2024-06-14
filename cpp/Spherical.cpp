@@ -2,8 +2,8 @@
 #include "KineticGas.h"
 #include "Integration/Integration.h"
 
-Spherical::Spherical(std::vector<double> mole_weights,
-                    std::vector<std::vector<double>> sigmaij,
+Spherical::Spherical(vector1d mole_weights,
+                    vector2d sigmaij,
                     bool is_idealgas, bool is_singlecomp)
                     : KineticGas(mole_weights, is_idealgas, is_singlecomp), sigma{sigmaij}{
 
@@ -94,6 +94,11 @@ double Spherical::theta(int i, int j, const double T, const double g, const doub
     if (b / sigma[i][j] < 1e-3) return 0;
     double R = get_R(i, j, T, g, b);
     return theta_integral(i, j, T, R, g, b) - theta_lim(i, j, T, g) + PI / 2;
+}
+
+double Spherical::theta_r(int i, int j, double r, double T, double g, double b){
+    double R = get_R(i, j, T, g, b);
+    return theta_r(i, j, R, r, T, g, b);
 }
 
 double Spherical::theta_r(int i, int j, double R, double r, double T, double g, double b){

@@ -62,7 +62,6 @@ class Sutherland : public Spherical{
     vector2d rdf_g1_func(double rho, double T, const vector1d& x);
     vector2d rdf_g2_func(double rho, double T, const vector1d& x, bool g2_correction=true);
     virtual vector2d get_BH_diameters(double T);
-    // vector2d get_collision_diameters(double rho, double T, const std::vector<double>& x); // Implemented in Spherical
 
     double LJ_rdf_correlation(double rho, double T);
     void set_active_LJ_rdf(bool use_LJ_corr){

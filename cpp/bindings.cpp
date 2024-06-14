@@ -22,26 +22,11 @@ using vector2d = std::vector<vector1d>;
         .def("get_conductivity_matrix", &Model::get_conductivity_matrix) \
         .def("get_viscosity_matrix", &Model::get_viscosity_matrix)\
         .def("get_viscosity_vector", &Model::get_viscosity_vector)\
-        .def("get_collision_diameters", &Model::get_collision_diameters) \
+        .def("get_mtl", &Model::get_mtl) \
+        .def("get_etl", &Model::get_etl) \
         .def("get_rdf", &Model::get_rdf) \
         .def("get_K_factors", &Model::get_K_factors) \
-        .def("get_K_prime_factors", &Model::get_K_prime_factors)
-        /*
-            .def_readwrite("omega_map", &Model::omega_map)
-            .def("A", &Model::A) \
-            .def("A_prime", &Model::A_prime) \
-            \
-            .def("H_ij", &Model::H_ij) \
-            .def("H_i", &Model::H_i) \
-            \
-            .def("B_prime", &Model::B_prime) \
-            .def("B_dblprime", &Model::B_dblprime) \
-            \
-            .def("L_ij", &Model::L_ij) \
-            .def("L_i", &Model::L_i) \
-            \
-
-        */
+        .def("get_K_prime_factors", &Model::get_K_prime_factors) \
 
 
 #define Spherical_potential_bindings(Model) \
@@ -53,28 +38,8 @@ using vector2d = std::vector<vector1d>;
         .def("omega", &Model::omega) \
         .def("chi", &Model::chi) \
         .def("get_R", &Model::get_R) \
-        .def("theta", &Model::theta_r) \
-        .def("theta_integrand", &Model::theta_integrand) \
-        .def("transformed_theta_integrand", &Model::transformed_theta_integrand) \
-        .def("momentum_transfer_length", &Model::momentum_transfer_length) \
-        .def("momentum_transfer_length_weight", &Model::momentum_transfer_length_weight) \
-        .def("dpdt", &Model::dpdt) \
-        /*
-             \
-             \
-            \
-            .def("get_R_rootfunc", &Model::get_R_rootfunc) \
-            .def("get_R_rootfunc_derivative", &Model::get_R_rootfunc_derivative) \
-            \
-            .def("theta", &Model::theta) \
-            .def("theta_lim", &Model::theta_lim) \
-            .def("theta_integral", &Model::theta_integral) \
-            .def("theta_integrand", &Model::theta_integrand) \
-            .def("theta_integrand_dblderivative", &Model::theta_integrand_dblderivative) \
-             \
-            .def("w_integrand", &Model::w_integrand) \
-            .def("w_integral", &Model::w_integral)
-        */
+        .def("theta_r", py::overload_cast<int, int, double, double, double, double>(&Model::theta_r)) \
+        .def("set_tl_model", &Sutherland::set_transfer_length_model)
 
 
 #ifndef DEBUG
@@ -114,7 +79,6 @@ PYBIND11_MODULE(KineticGas_r, handle){
         KineticGas_bindings(Sutherland)
         Spherical_potential_bindings(Sutherland)
         Spherical_bindings(Sutherland)
-        .def("set_cd_model", &Sutherland::set_collision_diameter_model)
         .def("set_active_LJ_rdf", &Sutherland::set_active_LJ_rdf)
         .def("get_sigma_eff", &Sutherland::get_sigma_eff)
         .def("get_sigma_min", &Sutherland::get_sigma_min)
@@ -149,7 +113,6 @@ PYBIND11_MODULE(KineticGas_r, handle){
         .def("get_BH_diameters", &MieKinGas::get_BH_diameters)
         .def("get_vdw_alpha", &MieKinGas::get_vdw_alpha)
         .def("saft_rdf", &MieKinGas::saft_rdf)
-        .def("set_cd_model", &MieKinGas::set_collision_diameter_model)
         .def("rdf_g0", py::overload_cast<double, double, const vector1d&>(&MieKinGas::rdf_HS))
         .def("rdf_g1", py::overload_cast<double, double, const vector1d&>(&MieKinGas::rdf_g1_func))
         .def("rdf_g2", py::overload_cast<double, double, const vector1d&, bool>(&MieKinGas::rdf_g2_func))
@@ -192,19 +155,6 @@ PYBIND11_MODULE(KineticGas_r, handle){
         .def(py::init<vector1d, vector2d, vector2d, vector2d, vector2d, std::vector<int>, bool, bool>())
         KineticGas_bindings(QuantumMie)
         Spherical_bindings(QuantumMie)
-        .def("chi", &QuantumMie::chi)
-        .def("get_R", &QuantumMie::get_R)
-        .def("get_b_max", &QuantumMie::get_b_max)
-        .def("get_b_max_g", &QuantumMie::get_b_max_g)
-        .def("get_bmid", &QuantumMie::get_bmid)
-        .def("set_cd_model", &QuantumMie::set_collision_diameter_model)
-        .def("get_cd0", &QuantumMie::get_collision_diameters_model0)
-        .def("get_cd1", &QuantumMie::get_collision_diameters_model1)
-        .def("get_cd_norm", &QuantumMie::get_cd_weight_normalizer)
-        .def("get_cd_weight", &QuantumMie::get_cd_weight)
-        .def("momentum_collision_diameter", &QuantumMie::momentum_collision_diameter)
-        .def("cd_integrand", &QuantumMie::cd_integrand)
-
         .def("omega_tester", &QuantumMie::omega_tester)
         .def("potential", py::overload_cast<int, int, double, double>(&QuantumMie::potential))
         .def("potential_derivative_r", py::overload_cast<int, int, double, double>(&QuantumMie::potential_derivative_r))
@@ -214,13 +164,6 @@ PYBIND11_MODULE(KineticGas_r, handle){
         .def("get_epsilon_eff", py::overload_cast<double>(&QuantumMie::get_epsilon_eff))
         .def("get_BH_diameters", &QuantumMie::get_BH_diameters)
         .def("saft_rdf", &QuantumMie::saft_rdf)
-        .def("a1", py::overload_cast<double, double, const vector1d&>(&QuantumMie::a1_func))
-        .def("a1s", py::overload_cast<double, double, const vector1d&, const vector2d&>(&QuantumMie::a_1s_func))
-        .def("B_func", py::overload_cast<double, double, const vector1d&, const vector2d&>(&QuantumMie::B_func))
-        .def("da1dr", py::overload_cast<double, double, const vector1d&>(&QuantumMie::da1_drho_func))
-        // .def("a2", py::overload_cast<double, double, const vector1d&>(&QuantumMie::a2ij_func))
-        .def("a2_div_chi", &QuantumMie::a2ij_div_chi_func)
-        .def("da2_div_chi_drho", py::overload_cast<double, double, const vector1d&>(&QuantumMie::da2ij_div_chi_drho_func))
         ;
 
     py::class_<TangToennisParam>(handle, "cpp_TangToennisParam")
@@ -240,7 +183,7 @@ PYBIND11_MODULE(KineticGas_r, handle){
         .def("potential", &ModTangToennis::potential)
         .def("potential_r", &ModTangToennis::potential_derivative_r)
         .def("potential_rr", &ModTangToennis::potential_dblderivative_rr)
-        .def("set_cd_model", &ModTangToennis::set_collision_diameter_model)
+        .def("set_tl_model", &ModTangToennis::set_transfer_length_model)
         ;
 
     py::class_<HardSphere>(handle, "cpp_HardSphere")
@@ -251,7 +194,6 @@ PYBIND11_MODULE(KineticGas_r, handle){
                     >()
             )
         KineticGas_bindings(HardSphere)
-
         .def("chi", &HardSphere::chi)
         .def("omega", &HardSphere::omega)
         .def("w_integral", &HardSphere::w_integral);

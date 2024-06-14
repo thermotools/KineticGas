@@ -419,7 +419,7 @@ class py_KineticGas:
         while dependent_idx < 0:
             dependent_idx += self.ncomps
 
-        x =  self.check_valid_composition(x)
+        x = self.check_valid_composition(x)
 
         if N < 2:
             warnings.warn('Thermal diffusion is a 2nd order phenomena, cannot be computed for N < 2 (got N = '
@@ -438,7 +438,7 @@ class py_KineticGas:
         a = self.compute_cond_vector(particle_density, T, x, N=N)
         P = self.get_P_factors(Vm, T, x)
         rdf = self.get_rdf(particle_density, T, x)
-        cd = self.get_collision_diameters(particle_density, T, x)
+        etl = self.get_etl(particle_density, T, x)
 
         b = np.empty((self.ncomps, self.ncomps)) # Precomputing some factors that are used many places later
         if self.is_idealgas is True:
@@ -446,7 +446,7 @@ class py_KineticGas:
         else:
             for j in range(self.ncomps):
                 for k in range(self.ncomps):
-                    b[j, k] = k_delta(j, k) + (4 * np.pi / 3) * particle_density * x[k] * cd[j][k] ** 3 * self.M[j, k] \
+                    b[j, k] = k_delta(j, k) + (4 * np.pi / 3) * particle_density * x[k] * etl[j][k] ** 3 * self.M[j, k] \
                               * rdf[j][k]
 
         DT = np.zeros(self.ncomps)
@@ -544,7 +544,7 @@ class py_KineticGas:
         Dij = self.interdiffusion(T, Vm, x, N=N, frame_of_reference='CoM',
                                   use_binary=False, use_independent=True, dependent_idx=self.ncomps - 1)
         rdf = self.get_rdf(particle_density, T, x)
-        cd = self.get_collision_diameters(particle_density, T, x)
+        etl = self.get_etl(particle_density, T, x)
         P = self.get_P_factors(Vm, T, x)
         A = np.zeros((self.ncomps, self.ncomps))
 
@@ -562,7 +562,7 @@ class py_KineticGas:
             DT[-1] = 0
             for i in range(self.ncomps):
                 for j in range(self.ncomps):
-                    DT[-1] += x[i] * (k_delta(i, j) + (4 * np.pi / 3) * particle_density * x[j] * cd[i][j]**3 * self.M[i, j] * rdf[i][j])
+                    DT[-1] += x[i] * (k_delta(i, j) + (4 * np.pi / 3) * particle_density * x[j] * etl[i][j]**3 * self.M[i, j] * rdf[i][j])
 
         kT = np.linalg.solve(A, DT)
 
@@ -695,7 +695,7 @@ class py_KineticGas:
         lambda_int = 0
         if include_internal is True:
             f_int = 1.32e3
-            eta_0 = self.viscosity(T, Vm, x, N=N, idealgas=True)
+            eta_0 = self.viscosity(T, 1e10, x, N=N, idealgas=True)
             Cp = 0
             M = sum(self.mole_weights * x) * Avogadro * 1e3
             for i in range(self.ncomps):
@@ -714,7 +714,7 @@ class py_KineticGas:
         a = self.compute_cond_vector(particle_density, T, x, N=N)
         rdf = self.get_rdf(particle_density, T, x)
         K = self.cpp_kingas.get_K_factors(particle_density, T, x)
-        cd = self.get_collision_diameters(particle_density, T, x)
+        etl = self.get_etl(particle_density, T, x)
         d = self.compute_diffusion_coeff_vector(particle_density, T, x, N=N)
         d = self.reshape_diffusion_coeff_vector(d)
 
@@ -735,7 +735,7 @@ class py_KineticGas:
                 for j in range(self.ncomps):
                     lambda_dblprime += particle_density ** 2 * np.sqrt(
                         2 * pi * self.m[i] * self.m[j] * Boltzmann * T / (self.m[i] + self.m[j])) \
-                                       * (x[i] * x[j]) / (self.m[i] + self.m[j]) * (cd[i][j] ** 4) * rdf[i][j]
+                                       * (x[i] * x[j]) / (self.m[i] + self.m[j]) * (etl[i][j] ** 4) * rdf[i][j]
             lambda_dblprime *= (4 * Boltzmann / 3)
 
         cond = lambda_prime + lambda_int + lambda_dblprime
@@ -770,7 +770,7 @@ class py_KineticGas:
         x = self.check_valid_composition(x)
         particle_density = Avogadro / Vm
         b = self.compute_visc_vector(T, particle_density, x, N=N)
-        K_prime = self.cpp_kingas.get_K_prime_factors(particle_density, T, x)
+        K_prime = self.cpp_kingas.get_K_prime_factors(particle_density, T, x) if (idealgas is False) else np.ones(self.ncomps)
 
         eta_prime = 0
         for i in range(self.ncomps):
@@ -779,11 +779,11 @@ class py_KineticGas:
 
         eta_dblprime = 0
         if idealgas is False: # eta_dblprime is only nonzero when density corrections are present, and vanish at infinite dilution
-            cd = self.get_collision_diameters(particle_density, T, x)
+            mtl = self.get_mtl(particle_density, T, x)
             rdf = self.get_rdf(particle_density, T, x)
             for i in range(self.ncomps):
                 for j in range(self.ncomps):
-                    eta_dblprime += np.sqrt(self.m[i] * self.m[j] / (self.m[i] + self.m[j])) * x[i] * x[j] * cd[i][j]**4 * rdf[i][j]
+                    eta_dblprime += np.sqrt(self.m[i] * self.m[j] / (self.m[i] + self.m[j])) * x[i] * x[j] * mtl[i][j]**4 * rdf[i][j]
             eta_dblprime *= 4 * particle_density**2 * np.sqrt(2 * np.pi * Boltzmann * T) / 15
 
         return eta_prime + eta_dblprime
@@ -1209,10 +1209,9 @@ class py_KineticGas:
         mole_fracs = self.check_valid_composition(mole_fracs)
         return np.array(self.cpp_kingas.get_diffusion_vector(particle_density, T, mole_fracs, N))
 
-    def get_collision_diameters(self, particle_density, T, x):
+    def get_etl(self, particle_density, T, x):
         """cpp-interface
-        Compute collision diameters given by Eq. (40) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
-        *Note* Returns zeros for models initialised with is_idealgas=True.
+        Compute energy transfer lengths
         &&
         Args:
             particle_density (float) : Particle density (not molar!) [1 / m3]
@@ -1223,13 +1222,22 @@ class py_KineticGas:
             2d array : Collision diameters [m], indexed by component pair.
         """
         x = self.check_valid_composition(x)
-        key = tuple((particle_density, T))
-        if key in self.computed_cd.keys():
-            return self.computed_cd[key]
+        return self.cpp_kingas.get_etl(particle_density, T, x)
 
-        cd = self.cpp_kingas.get_collision_diameters(particle_density, T, x)
-        self.computed_cd[key] = cd
-        return cd
+    def get_mtl(self, particle_density, T, x):
+        """cpp-interface
+        Compute energy transfer lengths
+        &&
+        Args:
+            particle_density (float) : Particle density (not molar!) [1 / m3]
+            T (float) : Temperature [K]
+            x (list[float]) : Molar composition [-]
+
+        Returns:
+            2d array : Collision diameters [m], indexed by component pair.
+        """
+        x = self.check_valid_composition(x)
+        return self.cpp_kingas.get_mtl(particle_density, T, x)
 
     def get_rdf(self, particle_density, T, x):
         """cpp-interface
@@ -1435,13 +1443,6 @@ class py_KineticGas:
 
         B = self.cpp_kingas.get_viscosity_matrix(particle_density, T, mole_fracs, N)
         beta = self.cpp_kingas.get_viscosity_vector(particle_density, T, mole_fracs, N)
-
-        K_prime = self.cpp_kingas.get_K_prime_factors(particle_density, T, mole_fracs)
-        cd = self.get_collision_diameters(particle_density, T, mole_fracs)[0][0]
-        rdf = self.get_rdf(particle_density, T, mole_fracs)[0][0]
-        # print(B)
-        # if not self.is_idealgas:
-        #     print(f'{particle_density * self.sigma[0][0]**3:.2f}, {T:.2f}', Boltzmann * T * np.array(beta) - 4 * np.pi * cd**3 * particle_density * rdf / 15)
 
         if any(np.isnan(np.array(B).flatten())):
             warnings.warn('Viscosity matrix contained NAN elements!')

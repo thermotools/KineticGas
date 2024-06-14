@@ -16,17 +16,14 @@ References:
 #include "Integration/Integration.h"
 #include "global_params.h"
 
-using vector1d = std::vector<double>;
-using vector2d = std::vector<vector1d>;
-
 class IntegrationParam;
 
 class Spherical : public KineticGas {
     public:
-
-    Spherical(std::vector<double> mole_weights, 
-                std::vector<std::vector<double>> sigmaij,
+    Spherical(vector1d mole_weights,
+                vector2d sigmaij,
                 bool is_idealgas, bool is_singlecomp);
+
     virtual ~Spherical(){};
 
     // Potential models, these must be overridden in derived classes, in addition to model_rdf and get_contact_diameters.
@@ -35,70 +32,69 @@ class Spherical : public KineticGas {
     virtual double potential_dblderivative_rr(int i, int j, double r) = 0;
 
     double omega(int i, int j, int l, int r, double T) override;
-    double omega_tester(int i, int j, int l, int r, double T, IntegrationParam& param);
-    double w_integral_tester(int i, int j, double T, int l, int r, IntegrationParam& param);
 
-    std::vector<std::vector<double>> model_rdf(double rho, double T, const std::vector<double>& mole_fracs) override = 0;
-
-    vector2d get_collision_diameters(double rho, double T, const vector1d& x) override;
-    vector2d get_collision_diameters_model0(double rho, double T, const vector1d& x);
-    vector2d get_collision_diameters_model1(double rho, double T, const vector1d& x);
-    vector2d get_collision_diameters_model2(double T);
+    vector2d model_rdf(double rho, double T, const vector1d& mole_fracs) override = 0;
+    vector2d get_mtl(double rho, double T, const vector1d& x) override; // Momentum transfer length
+    vector2d get_etl(double rho, double T, const vector1d& x) override; // Energy transfer length
 
     // Different collision diameter models are
     // -1 : Default model
     // 0 : Model presented in Refs. (I) and (II) (see top of file)
-    // 1 : Unpublished model (2024)
-    // 2 : Unpublished model (2024)
-    // 3 : Unpublished model (2024)
-    void set_collision_diameter_model(int model_id){
-        if (model_id == -1) collision_diameter_model_id = default_cd_model_id;
-        collision_diameter_model_id = model_id;
+    // 1 : Unpublished model for momentum- and energy transfer lengths (MTL and ETL) (2024)
+    void set_transfer_length_model(int model_id){
+        if (model_id == -1) transfer_length_model_id = default_tl_model_id;
+        transfer_length_model_id = model_id;
     }
-    const int default_cd_model_id = 2; // Default collision diameter model
-    int collision_diameter_model_id = default_cd_model_id;
+    const int default_tl_model_id = 1; // Default transfer length model
+    int transfer_length_model_id = default_tl_model_id;
+
+    double theta(int i, int j, const double T, const double g, const double b); // Angular coordinate at distance of closest approach.
+    double chi(int i, int j, double T, double g, double b); // Deflection angle at given temperature, dimensionless velocity and impact parameter
+    double get_R(int i, int j, double T, double g, double b); // Distance of closest approach at given temperature, dimensionless velocity and impact parameter
+    // Angular position at given particle separation (r). A plot of r * sin(theta_r) vs. r * cos(theta_r) will show the particle trajectory for a collision with given T, g, b.
+    double theta_r(int i, int j, double r, double T, double g, double b);
+
+    double omega_tester(int i, int j, int l, int r, double T, IntegrationParam& param);
+    double w_integral_tester(int i, int j, double T, int l, int r, IntegrationParam& param);
+
+    protected:
+    // In the general case, sigma is a scaling parameter
+    // On the order of the molecular size. Its specific physical meaning
+    // is different for different potential models. It may also be without physical meaning
+    vector2d sigma;
+    vector2d eps;
+
+    vector2d get_transfer_length(double rho, double T, const vector1d& x, int property);
+    vector2d get_collision_diameters(double rho, double T, const vector1d& x); // Obsolete "collision diameter" model
 
     /*****************************************************************************/
-    /**********************         CD MODEL 1              **********************/
+    /**********************         TL MODEL 1              **********************/
     /*****************************************************************************/
-    double momentum_collision_diameter(int i, int j, double T);
-    double cd_inner(int i, int j, double T, double g, double I);
-    double cd_integrand(int i, int j, double T, double g, double b, double I, double bmax);
+    double tl_inner(int i, int j, double T, double g, double I, int property);
+    double tl_integrand(int i, int j, double T, double g, double b, double I, double bmax, int property);
     double momentum_transfer(int i, int j, double T, double g, double b);
+    double energy_transfer(int i, int j, double T, double g, double b);
 
     double get_b_max_g(int i, int j, double g, double T); // Find b such that eps < chi(b) < 0, for small eps.
     double get_bmid(int i, int j, double g, double T); // Solve chi = 0
 
-    double cd_weight_integrand(int i, int j, double T, double g, double b, double bmax);
-    double cd_weight_inner(int i, int j, double T, double g);
-    double get_cd_weight_normalizer(int i, int j, double T);
-    double get_cd_weight(int i, int j, double T, double g, double b, double I, double bmax);
-
-    double momentum_transfer_length_weight(int i, int j, double r, double chi_val, double T, double g, double b);
-    double momentum_transfer_length(int i, int j, double T, double g, double b);
-    double dpdt(int i, int j, double theta_n, double chi_val, double T, double g);
+    double tl_weight_integrand(int i, int j, double T, double g, double b, double bmax, int property);
+    double tl_weight_inner(int i, int j, double T, double g, int property);
+    double get_tl_weight_normalizer(int i, int j, double T, int property);
+    double get_tl_weight(int i, int j, double T, double g, double b, double I, double bmax, int property);
 
     // ------------------------------------------------------------------------------------------------------------------- //
     // -------------------------- Spherical Internals are below here ----------------------------------------------------- //
     // ---------------------- End users should not need to care about anything below -------------------------------------- //
     // ------------------------------------------------------------------------------------------------------------------- //
-    double chi(int i, int j, double T, double g, double b);
-    double get_R(int i, int j, double T, double g, double b);
     double get_R0(int i, int j, double T, double g); // Solve get_R when b = 0
-
-    // In the general case, sigma is a scaling parameter
-    // On the order of the molecular size. Its specific physical meaning
-    // is different for different potential models. It may also be without physical meaning
-    std::vector<std::vector<double>> sigma;
-    std::vector<std::vector<double>> eps;
 
     // This method is responsible for calling get_b_max(T, ierr), and handling eventual failures.
     // Most inheritance should only require overriding the failure handling, not the computation in get_b_max(T, ierr)
-    virtual std::vector<std::vector<double>> get_b_max(double T);
-    std::vector<std::vector<double>> get_b_max(double T, std::vector<std::vector<int>>& ierr);
+    virtual vector2d get_b_max(double T);
+    vector2d get_b_max(double T, std::vector<std::vector<int>>& ierr);
 
-    double theta(int i, int j, const double T, const double g, const double b);
-    double theta_r(int i, int j, double R, double r, double T, double g, double b);
+    double theta_r(int i, int j, double R, double r, double T, double g, double b); 
     double theta_integral(int i, int j, const double T, const double R, const double g, const double b);
 
     // private:
