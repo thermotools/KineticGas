@@ -26,9 +26,6 @@ class MieKinGas : public Spherical {
         lr{lr}
         {
 
-        #ifdef DEBUG
-            std::printf("This is a Debug build!\nWith, %E, %E\n\n", mole_weights[0], mole_weights[1]);
-        #endif
         eps = epsilon;
         C = std::vector<std::vector<double>>(Ncomps, std::vector<double>(Ncomps, 0.));
         alpha = std::vector<std::vector<double>>(Ncomps, std::vector<double>(Ncomps, 0.));

@@ -66,18 +66,18 @@ struct OmegaPoint{
 class KineticGas{
     public:
 
-    KineticGas(std::vector<double> mole_weights, bool is_idealgas, bool is_singlecomp);
+    KineticGas(vector1d mole_weights, bool is_idealgas, bool is_singlecomp);
     virtual ~KineticGas(){};
     // Collision integrals
     virtual double omega(int i, int j, int l, int r, double T) = 0;
 
     // The transfer lengths related to momentum (MTL) and energy (ETL)
-    virtual std::vector<std::vector<double>> get_mtl(double rho, double T, const std::vector<double>& x) = 0;
-    virtual std::vector<std::vector<double>> get_etl(double rho, double T, const std::vector<double>& x) = 0;
+    virtual vector2d get_mtl(double rho, double T, const vector1d& x) = 0;
+    virtual vector2d get_etl(double rho, double T, const vector1d& x) = 0;
 
     // Radial distribution function "at contact". Inheriting classes must implement model_rdf.
-    std::vector<std::vector<double>> get_rdf(double rho, double T, const std::vector<double>& mole_fracs) {
-        if (is_idealgas) return std::vector<std::vector<double>>(Ncomps, std::vector<double>(Ncomps, 1.));
+    vector2d get_rdf(double rho, double T, const vector1d& mole_fracs) {
+        if (is_idealgas) return vector2d(Ncomps, vector1d(Ncomps, 1.));
         return model_rdf(rho, T, mole_fracs);
     }
     /*
@@ -85,25 +85,25 @@ class KineticGas{
        is initialized with is_idealgas=true. If a potential model is implemented only for the ideal gas state, its
        implementation of model_rdf should throw an std::invalid_argument error.
     */
-    virtual std::vector<std::vector<double>> model_rdf(double rho, double T, const std::vector<double>& mole_fracs) = 0;
+    virtual vector2d model_rdf(double rho, double T, const vector1d& mole_fracs) = 0;
 
-    std::vector<double> get_wt_fracs(const std::vector<double> mole_fracs); // Compute weight fractions from mole fractions
+    vector1d get_wt_fracs(const vector1d mole_fracs); // Compute weight fractions from mole fractions
 
     // ------------------------------------------------------------------------------------------------------------------------- //
     // ----- Matrices and vectors for the sets of equations (6-10) in Revised Enskog Theory for Mie fluids  -------------------- //
     // ----- doi : 10.1063/5.0149865, which are solved to obtain the Sonine polynomial expansion coefficients ------------------ //
     // ----- for the velocity distribution functions. -------------------------------------------------------------------------- //
 
-    std::vector<std::vector<double>> get_conductivity_matrix(double rho, double T, const std::vector<double>& x, int N);
-    std::vector<double> get_diffusion_vector(double rho, double T, const std::vector<double>& x, int N);
-    double get_Lambda_ijpq(int i, int j, int p, int q, double rho, double T, const std::vector<double>& x);
-    std::vector<std::vector<double>> get_diffusion_matrix(double rho, double T, const std::vector<double>& x, int N);
-    std::vector<double> get_conductivity_vector(double rho, double T, const std::vector<double>& x, int N);
-    std::vector<std::vector<double>> get_viscosity_matrix(double rho, double T, const std::vector<double>&x, int N);
-    std::vector<double> get_viscosity_vector(double rho, double T, const std::vector<double>& x, int N);
+    vector2d get_conductivity_matrix(double rho, double T, const vector1d& x, int N);
+    vector1d get_diffusion_vector(double rho, double T, const vector1d& x, int N);
+    double get_Lambda_ijpq(int i, int j, int p, int q, double rho, double T, const vector1d& x);
+    vector2d get_diffusion_matrix(double rho, double T, const vector1d& x, int N);
+    vector1d get_conductivity_vector(double rho, double T, const vector1d& x, int N);
+    vector2d get_viscosity_matrix(double rho, double T, const vector1d&x, int N);
+    vector1d get_viscosity_vector(double rho, double T, const vector1d& x, int N);
 
-    std::vector<double> get_K_factors(double rho, double T, const std::vector<double>& mole_fracs); // Eq. (1.2) of 'multicomponent docs'
-    std::vector<double> get_K_prime_factors(double rho, double T, const std::vector<double>& mole_fracs); // Eq. (5.4) of 'multicomponent docs'
+    vector1d get_K_factors(double rho, double T, const vector1d& mole_fracs); // Eq. (1.2) of 'multicomponent docs'
+    vector1d get_K_prime_factors(double rho, double T, const vector1d& mole_fracs); // Eq. (5.4) of 'multicomponent docs'
 
 // ------------------------------------------------------------------------------------------------------------------------ //
 // --------------------------------------- KineticGas internals are below here -------------------------------------------- //
@@ -113,11 +113,11 @@ class KineticGas{
     const size_t Ncomps;
     const bool is_idealgas;
     const bool is_singlecomp;
-    std::vector<double> m;
-    std::vector<std::vector<double>> M, m0;
+    vector1d m;
+    vector2d M, m0;
     std::map<OmegaPoint, double> omega_map;
-    std::map<int, std::vector<std::vector<double>>> mtl_map;
-    std::map<int, std::vector<std::vector<double>>> etl_map;
+    std::map<int, vector2d> mtl_map;
+    std::map<int, vector2d> etl_map;
 
 // ----------------------------------------------------------------------------------------------------------------------------------- //
 // --------------------------------------- Methods to facilitate multithreading ------------------------------------------------------ //

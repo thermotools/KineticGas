@@ -25,13 +25,13 @@
 // --------------------------------------------------------------------------------------------------- //
 // -------------------------------Constructor and helper functions------------------------------------ //
 
-KineticGas::KineticGas(const std::vector<double> mole_weights, bool is_idealgas, bool is_singlecomp)
+KineticGas::KineticGas(const vector1d mole_weights, bool is_idealgas, bool is_singlecomp)
   : Ncomps{static_cast<unsigned long>(mole_weights.size())},
     is_idealgas{is_idealgas}, is_singlecomp{is_singlecomp}, m{mole_weights}
     {
 
-    m0 = std::vector<std::vector<double>>(Ncomps, std::vector<double>(Ncomps));
-    M = std::vector<std::vector<double>>(Ncomps, std::vector<double>(Ncomps));
+    m0 = vector2d(Ncomps, vector1d(Ncomps));
+    M = vector2d(Ncomps, vector1d(Ncomps));
     for (int i = 0; i < Ncomps; i++){
         for (int j = 0; j < Ncomps; j++){
             M[i][j] = (m[i] / (m[i] + m[j]));
@@ -40,8 +40,8 @@ KineticGas::KineticGas(const std::vector<double> mole_weights, bool is_idealgas,
     }
 }
 
-std::vector<double> KineticGas::get_wt_fracs(const std::vector<double> mole_fracs){
-    std::vector<double> wt_fracs(Ncomps, 0.);
+vector1d KineticGas::get_wt_fracs(const vector1d mole_fracs){
+    vector1d wt_fracs(Ncomps, 0.);
     double tmp{0.};
     for (int i = 0; i < Ncomps; i++){
         tmp += mole_fracs[i] * m[i];
@@ -56,13 +56,13 @@ std::vector<double> KineticGas::get_wt_fracs(const std::vector<double> mole_frac
 //             K-factors, neccesary for computations above infinite dilution                           //
 // --------------------------------------------------------------------------------------------------- //
 
-std::vector<double> KineticGas::get_K_factors(double rho, double T, const std::vector<double>& mole_fracs){
+vector1d KineticGas::get_K_factors(double rho, double T, const vector1d& mole_fracs){
 
-    if (is_idealgas) return std::vector<double>(Ncomps, 1.);
+    if (is_idealgas) return vector1d(Ncomps, 1.);
 
-    std::vector<std::vector<double>> rdf = get_rdf(rho, T, mole_fracs);
-    std::vector<double> K(Ncomps, 0.);
-    std::vector<std::vector<double>> etl = get_etl(rho, T, mole_fracs);
+    vector2d rdf = get_rdf(rho, T, mole_fracs);
+    vector1d K(Ncomps, 0.);
+    vector2d etl = get_etl(rho, T, mole_fracs);
     for (int i = 0; i < Ncomps; i++){
         for (int j = 0; j < Ncomps; j++){
             K[i] += mole_fracs[j] * pow(etl[i][j], 3) * M[i][j] * M[j][i] * rdf[i][j];
@@ -73,13 +73,13 @@ std::vector<double> KineticGas::get_K_factors(double rho, double T, const std::v
     return K;
 }
 
-std::vector<double> KineticGas::get_K_prime_factors(double rho, double T, const std::vector<double>& mole_fracs){
+vector1d KineticGas::get_K_prime_factors(double rho, double T, const vector1d& mole_fracs){
 
-    if (is_idealgas) return std::vector<double>(Ncomps, 1.);
+    if (is_idealgas) return vector1d(Ncomps, 1.);
 
-    std::vector<std::vector<double>> rdf = get_rdf(rho, T, mole_fracs);
-    std::vector<double> K_prime(Ncomps, 0.);
-    std::vector<std::vector<double>> mtl = get_mtl(rho, T, mole_fracs);
+    vector2d rdf = get_rdf(rho, T, mole_fracs);
+    vector1d K_prime(Ncomps, 0.);
+    vector2d mtl = get_mtl(rho, T, mole_fracs);
     for (int i = 0; i < Ncomps; i++){
         for (int j = 0; j < Ncomps; j++){
             K_prime[i] += mole_fracs[j] * M[j][i] * pow(mtl[i][j], 3.) * rdf[i][j];
@@ -104,10 +104,10 @@ std::vector<double> KineticGas::get_K_prime_factors(double rho, double T, const 
         As of the current implementation, the matrix equations are solved on the python-side of the package.
     */
 
-std::vector<std::vector<double>> KineticGas::get_conductivity_matrix(double rho, double T, const std::vector<double>& x, int N){
-    std::vector<std::vector<double>> rdf = get_rdf(rho, T, x);
-    std::vector<std::vector<double>> matr(N * Ncomps, std::vector<double>(N * Ncomps, 0.));
-    std::vector<double> wt_fracs = get_wt_fracs(x);
+vector2d KineticGas::get_conductivity_matrix(double rho, double T, const vector1d& x, int N){
+    vector2d rdf = get_rdf(rho, T, x);
+    vector2d matr(N * Ncomps, vector1d(N * Ncomps, 0.));
+    vector1d wt_fracs = get_wt_fracs(x);
 
     precompute_conductivity(N, T); // Compute all the collision integrals and transfer lengths required for this conductivity
 
@@ -154,9 +154,9 @@ std::vector<std::vector<double>> KineticGas::get_conductivity_matrix(double rho,
     return matr;
 }
 
-std::vector<double> KineticGas::get_conductivity_vector(double rho, double T, const std::vector<double>& x, int N){
-    std::vector<double> K = get_K_factors(rho, T, x);
-    std::vector<double> l(Ncomps * N, 0.);
+vector1d KineticGas::get_conductivity_vector(double rho, double T, const vector1d& x, int N){
+    vector1d K = get_K_factors(rho, T, x);
+    vector1d l(Ncomps * N, 0.);
     l[1] = x[0] * K[0] * 4. / (5. * BOLTZMANN); // Lambda_1^{(p > 0} block
     for (int i = 1; i < Ncomps; i++){
         l[N + (Ncomps - 1) + (i - 1)] = x[i] * K[i] * 4. / (5. * BOLTZMANN); // Lambda_{i > 1} block
@@ -165,10 +165,10 @@ std::vector<double> KineticGas::get_conductivity_vector(double rho, double T, co
 }
 
 
-std::vector<std::vector<double>> KineticGas::get_diffusion_matrix(double rho, double T, const std::vector<double>& x, int N){
-    std::vector<std::vector<double>> rdf = get_rdf(rho, T, x);
-    std::vector<std::vector<double>> matr(N*pow(Ncomps, 2), std::vector<double>(N*pow(Ncomps, 2), 0.));
-    std::vector<double> wt_fracs = get_wt_fracs(x);
+vector2d KineticGas::get_diffusion_matrix(double rho, double T, const vector1d& x, int N){
+    vector2d rdf = get_rdf(rho, T, x);
+    vector2d matr(N*pow(Ncomps, 2), vector1d(N*pow(Ncomps, 2), 0.));
+    vector1d wt_fracs = get_wt_fracs(x);
 
     precompute_diffusion(N, T); // Compute all the collision integrals required for this diffusion matrix
 
@@ -219,9 +219,9 @@ std::vector<std::vector<double>> KineticGas::get_diffusion_matrix(double rho, do
     return matr;
 }
 
-std::vector<double> KineticGas::get_diffusion_vector(double rho, double T, const std::vector<double>& x, int N){
-    std::vector<double> delta_vector(N * Ncomps * Ncomps, 0.);
-    std::vector<double> wt_fracs = get_wt_fracs(x);
+vector1d KineticGas::get_diffusion_vector(double rho, double T, const vector1d& x, int N){
+    vector1d delta_vector(N * Ncomps * Ncomps, 0.);
+    vector1d wt_fracs = get_wt_fracs(x);
 
     for (int k = 0; k < Ncomps; k++){
         for (int i = 1; i < Ncomps; i++){
@@ -235,9 +235,9 @@ std::vector<double> KineticGas::get_diffusion_vector(double rho, double T, const
     return delta_vector;
 }
 
-std::vector<std::vector<double>> KineticGas::get_viscosity_matrix(double rho, double T, const std::vector<double>&x, int N){
-    std::vector<std::vector<double>> rdf = get_rdf(rho, T, x);
-    std::vector<std::vector<double>> viscosity_mat(Ncomps * N, std::vector<double>(Ncomps * N, 0.));
+vector2d KineticGas::get_viscosity_matrix(double rho, double T, const vector1d&x, int N){
+    vector2d rdf = get_rdf(rho, T, x);
+    vector2d viscosity_mat(Ncomps * N, vector1d(Ncomps * N, 0.));
 
     precompute_viscosity(N, T); // Compute all the collision integrals and transfer lengths required for this viscosity
 
@@ -258,9 +258,9 @@ std::vector<std::vector<double>> KineticGas::get_viscosity_matrix(double rho, do
     }
     return viscosity_mat;
 }
-std::vector<double> KineticGas::get_viscosity_vector(double rho, double T, const std::vector<double>& x, int N){
-    std::vector<double> K_prime = get_K_prime_factors(rho, T, x);
-    std::vector<double> viscosity_vec(N * Ncomps, 0.);
+vector1d KineticGas::get_viscosity_vector(double rho, double T, const vector1d& x, int N){
+    vector1d K_prime = get_K_prime_factors(rho, T, x);
+    vector1d viscosity_vec(N * Ncomps, 0.);
     // Elements with p != 0 are 0, therefore only iterate over i.
     for (int i = 0; i < Ncomps; i++){
         viscosity_vec[i] = 2. * x[i] * K_prime[i] / (BOLTZMANN * T);
