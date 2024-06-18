@@ -41,6 +41,10 @@ KineticGas::KineticGas(const std::vector<double> mole_weights, bool is_idealgas)
     }
 }
 
+KineticGas::KineticGas(std::string comps, bool is_idealgas) 
+    : Ncomps{static_cast<size_t>(std::count_if(comps.begin(), comps.end(), [](char c) {return c == ',';})) + 1}, is_idealgas{is_idealgas}
+    {}
+
 std::vector<double> KineticGas::get_wt_fracs(const std::vector<double> mole_fracs){
     std::vector<double> wt_fracs(Ncomps, 0.);
     double tmp{0.};

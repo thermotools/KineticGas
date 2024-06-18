@@ -8,6 +8,16 @@ See : J. Chem. Phys. 139, 154504 (2013); https://doi.org/10.1063/1.4819786
 
 using namespace mie_rdf_constants;
 
+#ifdef NOPYTHON
+#include <json.hpp>
+MieKinGas::MieKinGas(std::string comps, bool is_idealgas) 
+    : KineticGas(comps, is_idealgas)
+{
+    std::vector<json> fluids = get_fluid_data(comps);
+    std::vector<double> sigma_pure(Ncomps), eps_pure(Ncomps), la_pure(Ncomps), lr_pure(Ncomps);
+}
+#endif
+
 double MieKinGas::omega(int i, int j, int l, int r, double T){
     if ((l <= 2) && (r >= l) && (r <= 3) && (abs(la[i][j] - 6.) < 1e-10)){ // Use Correlation by Fokin, Popov and Kalashnikov, High Temperature, Vol. 37, No. 1 (1999)
         // NOTE: There is a typo in Eq. (4b) in the article, ln(1/m) should be ln(m).

@@ -30,6 +30,10 @@ Contains: The abstract class 'KineticGas', which computes the A_pqrl factors and
 #include <thread>
 #include <math.h>
 
+#ifdef NOPYTHON
+    #include <Eigen/Dense>
+#endif
+
 /*
    To avoid unneccesary evaluations of the collision integrals, this struct is used to represent a point in 
    The five-dimensional (i, j, l, r, T)-space where the collision integral has been evaluated.
@@ -62,10 +66,20 @@ struct OmegaPoint{
 
 };
 
+#ifdef NOPYTHON
+enum FrameOfReference{
+        CoM,
+        CoN,
+        CoV,
+        solvent
+    };
+#endif
+
 class KineticGas{
     public:
 
     KineticGas(std::vector<double> mole_weights, bool is_idealgas);
+    KineticGas(std::string comps, bool is_idealgas);
     virtual ~KineticGas(){};
     // Collision integrals
     virtual double omega(int i, int j, int l, int r, double T) = 0;
@@ -86,7 +100,16 @@ class KineticGas{
     */
     virtual std::vector<std::vector<double>> model_rdf(double rho, double T, const std::vector<double>& mole_fracs) = 0;
 
-    std::vector<double> get_wt_fracs(const std::vector<double> mole_fracs); // Compute weight fractions from mole fractions
+// ---------------------------------------------------------------------------------------------------------------------------------------------- //
+// --------------------------------------------- Interfaces to compute transport coefficients --------------------------------------------------- //
+
+    std::vector<std::vector<double>> interdiffusion(double T, double Vm, std::vector<double>& x, int N=2, int frame_of_reference=FrameofReference::CoN, int dependent_idx=-1, int solvent_idx=-1);
+    double thermal_conductivity(double T, double Vm, std::vector<double>& x, int N=2);
+    double viscosity(double T, double Vm, std::vector<double>& x, int N=2);
+    std::vector<double> thermal_diffusion_coeff(double T, double Vm, std::vector<double>& x, int N=2, int frame_of_reference=FrameofReference::CoN, int dependent_idx=-1, int solvent_idx=-1);
+    std::vector<double> thermal_diffusion_ratio(double T, double Vm, std::vector<double>& x, int N=2);
+    std::vector<std::vector<double>> thermal_diffusion_factor(double T, double Vm, std::vector<double>& x, int N=2);
+    std::vector<std::vector<double>> interdiffusion_dependent_CoM(double T, double Vm, std::vector<double>& x, int N=2);
 
     // ------------------------------------------------------------------------------------------------------------------------- //
     // ----- Matrices and vectors for the sets of equations (6-10) in Revised Enskog Theory for Mie fluids  -------------------- //
@@ -103,6 +126,28 @@ class KineticGas{
 
     std::vector<double> get_K_factors(double rho, double T, const std::vector<double>& mole_fracs); // Eq. (1.2) of 'multicomponent docs'
     std::vector<double> get_K_prime_factors(double rho, double T, const std::vector<double>& mole_fracs); // Eq. (5.4) of 'multicomponent docs'
+
+// ----------------------------------------------------------------------------------------------------------------------------------- //
+// -------------------------------------------------- Utility methods ---------------------------------------------------------------- //
+    /*
+        The CoM_to_FoR method is a dispatcher (switchboard) to the other CoM_to_* methods.
+        The CoM_to_* methods return the transformation matrix (psi) used to transform diffusion coefficients from the 
+        centre of mass (CoM) frame of reference (FoR) to the centre of moles (CoN), centre of volume (CoV) or solvent FoR
+    */
+
+    std::vector<double> get_wt_fracs(const std::vector<double> mole_fracs); // Compute weight fractions from mole fractions
+    #ifdef NOPYTHON
+        Eigen::MatrixXd CoM_to_FoR_matr(double T, double Vm, const std::vector<double>& x, int frame_of_reference, int solvent_idx);
+        Eigen::MatrixXd CoM_to_CoN_matr(double T, double Vm, const std::vector<double>& x);
+        Eigen::MatrixXd CoM_to_solvent_matr(double T, double Vm, const std::vector<double>& x, int solvent_idx);
+        Eigen::MatrixXd CoM_to_CoV_matr(double T, double Vm, const std::vector<double>& x);
+
+        std::vector<std::vector<double>> get_chemical_potential_factors(double T, double Vm, const std::vector<double>& x);
+        std::vector<double> get_ksi_factors(double T, double Vm, const std::vector<double>& x);
+
+        std::vector<std::vector<std::vector<double>>> reshape_diffusive_expansion_vector(const Eigen::VectorXd& d_ijq);
+        Eigen::VectorXd compute_dth_vector(const std::vector<std::vector<std::vector<double>>>& d_ijq, const Eigen::VectorXd& l);
+    #endif
 
 // ------------------------------------------------------------------------------------------------------------------------ //
 // --------------------------------------- KineticGas internals are below here -------------------------------------------- //

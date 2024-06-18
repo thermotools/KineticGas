@@ -42,6 +42,10 @@ class MieKinGas : public Spherical {
         }   
     }
 
+    #ifdef NOPYTHON
+    MieKinGas(std::string comps, bool is_idealgas=false);
+    #endif
+
     double potential(int i, int j, double r) override {
         return C[i][j] * eps[i][j] * (pow(sigma[i][j] / r, lr[i][j]) - pow(sigma[i][j] / r, la[i][j]));
     }

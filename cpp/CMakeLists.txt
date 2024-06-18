@@ -8,10 +8,9 @@ message("${Esc}[34mPYBIND11_PYTHON_VERSION is : ${PYBIND11_PYTHON_VERSION}")
 message("${Esc}[34mPYTHON_EXECUTABLE is : ${PYTHON_EXECUTABLE}")
 
 set(PYBIND11_ROOT "/usr/local/include/pybind11") # This path must contain the pybind11 root dir.
+set(JSON_INCLUDE_DIR "/usr/local/include/json/")
 
 if(NOT MSVC)
-  # set(CMAKE_CXX_COMPILER /usr/bin/g++) # Setting these can, on some systems, cause cmake to go into an infinite loop (see: build.sh to set the compiler)
-  # set(CMAKE_C_COMPILER /usr/bin/gcc) # Setting these can, on some systems, cause cmake to go into an infinite loop (see: build.sh to set the compiler)
   if(APPLE)
     set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-unknown-pragmas -Wno-sign-compare -std=c++17 -pthread -arch arm64")
   else()
@@ -22,15 +21,19 @@ if(NOT MSVC)
 endif(NOT MSVC)
 
 set(SOURCES KineticGas.cpp KineticGas_mthr.cpp Spherical.cpp MieKinGas.cpp
-            Integration/Integration.cpp Factorial.cpp bindings.cpp)
+            Integration/Integration.cpp Factorial.cpp)
 
-if (CMAKE_BUILD_TYPE MATCHES Release)
-    project(KineticGas_r)
-    set(TARGET KineticGas_r)
-else()
-    project(KineticGas_d)
-    set(TARGET KineticGas_d)
-endif()
-
+set(pyTARGET pykingas)
 add_subdirectory(${PYBIND11_ROOT} release)
-pybind11_add_module(${TARGET} ${SOURCES})
+pybind11_add_module(${pyTARGET} ${SOURCES} bindings.cpp)
+
+find_package(Eigen3)
+if (Eigen3_FOUND)
+  set(libTARGET kineticgas)
+  add_library(${libTARGET} ${SOURCES} KineticGas_properties.h)
+  target_include_directories(${libTARGET} ${JSON_INCLUDE_DIR})
+  target_compile_definitions(${libTARGET} PUBLIC "-DNOPYTHON")
+  target_link_libraries(${libTARGET} Eigen3::Eigen)
+else()
+  message("${Esc}[34mEigen library not found! Not creating target libkineticgas")
+endif()
