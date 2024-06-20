@@ -9,14 +9,65 @@ See : J. Chem. Phys. 139, 154504 (2013); https://doi.org/10.1063/1.4819786
 using namespace mie_rdf_constants;
 
 #ifdef NOPYTHON
-#include <json.hpp>
+#include <json/json.hpp>
+#include <cppThermopack/saftvrmie.h>
 MieKinGas::MieKinGas(std::string comps, bool is_idealgas) 
-    : KineticGas(comps, is_idealgas)
+    : Spherical(comps, is_idealgas)
 {
-    std::vector<json> fluids = get_fluid_data(comps);
-    std::vector<double> sigma_pure(Ncomps), eps_pure(Ncomps), la_pure(Ncomps), lr_pure(Ncomps);
+    sigma = vector2d(Ncomps, vector1d(Ncomps, 0.));
+    eps = vector2d(Ncomps, vector1d(Ncomps, 0.));
+    la = vector2d(Ncomps, vector1d(Ncomps, 0.));
+    lr = vector2d(Ncomps, vector1d(Ncomps, 0.));
+    for (size_t i = 0; i < Ncomps; i++){
+        sigma[i][i] = compdata[i]["Mie"]["default"]["sigma"];
+        eps[i][i] = static_cast<double>(compdata[i]["Mie"]["default"]["eps_div_k"]) * BOLTZMANN;
+        la[i][i] = compdata[i]["Mie"]["default"]["lambda_a"];
+        lr[i][i] = compdata[i]["Mie"]["default"]["lambda_r"];
+    }
+    mix_sigma();
+    mix_epsilon();
+    mix_exponents(la);
+    mix_exponents(lr);
+    set_C_alpha();
+    eos = std::make_unique<Saftvrmie>(comps);
 }
 #endif
+
+void MieKinGas::set_C_alpha(){
+    C = std::vector<std::vector<double>>(Ncomps, std::vector<double>(Ncomps, 0.));
+    alpha = std::vector<std::vector<double>>(Ncomps, std::vector<double>(Ncomps, 0.));
+    for (int i = 0; i < eps.size(); i ++){
+        for (int j = 0; j < eps.size(); j++){
+            C[i][j] = (lr[i][j] / (lr[i][j] - la[i][j])) 
+                            * pow(lr[i][j] / la[i][j], (la[i][j] / (lr[i][j] - la[i][j])));
+            alpha[i][j] = C[i][j] * ((1.0 / (la[i][j] - 3.0)) - (1.0 / (lr[i][j] - 3.0)));
+        }
+    }   
+}
+
+void MieKinGas::mix_sigma(){
+    for (size_t i = 0; i < Ncomps; i++){
+        for (size_t j = i; j < Ncomps; j++){
+            sigma[i][j] = sigma[j][i] = 0.5 * (sigma[i][i] + sigma[j][j]);
+        }
+    }
+}
+
+void MieKinGas::mix_epsilon(){
+    for (size_t i = 0; i < Ncomps; i++){
+        for (size_t j = i; j < Ncomps; j++){
+            eps[i][j] = eps[j][i] = sqrt(eps[i][i] * eps[j][j]);
+        }
+    }
+}
+
+void MieKinGas::mix_exponents(std::vector<std::vector<double>>& expo){
+    for (size_t i = 0; i < Ncomps; i++){
+        for (size_t j = i; j < Ncomps; j++){
+            expo[i][j] = expo[j][i] = 3. + sqrt((expo[i][i] - 3.) * (expo[j][j] - 3.));
+        }
+    }
+}
 
 double MieKinGas::omega(int i, int j, int l, int r, double T){
     if ((l <= 2) && (r >= l) && (r <= 3) && (abs(la[i][j] - 6.) < 1e-10)){ // Use Correlation by Fokin, Popov and Kalashnikov, High Temperature, Vol. 37, No. 1 (1999)

@@ -10,7 +10,7 @@ Usage: Set the constexpr int Ncores to the desired number of threads to split th
 
 #include "KineticGas.h"
 
-constexpr int Ncores{8}; // Number of cores to use for multithreading
+constexpr int Ncores{1}; // Number of cores to use for multithreading
 
 // Function to distribute the nvals values of vec as evenly as possible among Ncores different vectors
 inline std::vector<std::vector<int>> slice_by_ncores(const std::vector<int>& vec, int n_vals){

@@ -1,33 +1,7 @@
 #include "KineticGas.h"
 #include <Eigen/Dense>
-#include <json.hpp>
-#include <fstream>
-
-std::vector<json> get_fluid_data(std::string comps, bool is_idealgas) {
-    std::vector<std::string> fluid_files;
-    std::string comp = "";
-    size_t ncomps = 0;
-    for (char c : comps){
-        if ((comp.size() > 0) && (c == ',')){
-            complst.push_back("./fluids/" + comp + ".json");
-            comp = "";
-            ncomps++;
-        }
-        comp = comp + c;
-    }
-    complst.push_back("./fluids/" + comp + ".json");
-    ncomps++;
-    std::vector<json> fluids(ncomps);
-
-    size_t fluid_idx = 0;
-    for (std::string filename : fluid_files){
-        std::ifstream file(filename);
-        if (!file.is_open()) throw std::runtime_error("Failed to open fluid file: " + filename);
-        file >> fluids[fluid_idx];
-        file.close();
-    }
-    return fluids;
-}
+#include <json/json.hpp>
+#include <iostream>
 
 Eigen::MatrixXd stdvector_to_EigenMatrix(const std::vector<std::vector<double>>& in_matr){
     Eigen::MatrixXd out_matr(in_matr.size(), in_matr[0].size());
@@ -116,7 +90,16 @@ Eigen::MatrixXd KineticGas::CoM_to_solvent_matr(double T, double Vm, const std::
     return matr;
 }
 Eigen::MatrixXd KineticGas::CoM_to_CoV_matr(double T, double Vm, const std::vector<double>& x){
-    throw std::runtime_error("NotImplementedError : CoV frame of reference is not implemented!");
+    double p = eos->pressure_tv(T, Vm, x);
+    std::vector<double> dvdn = eos->specific_volume(T, p, x, eos->VAPPH, false, false, true).dn();
+    Eigen::MatrixXd psi = Eigen::MatrixXd::Identity(Ncomps, Ncomps);
+    std::vector<double> wt_frac = get_wt_fracs(x);
+    for (size_t i = 0; i < Ncomps; i++){
+        for (size_t j = 0; j < Ncomps; j++){
+            psi(i, j) += x[i] * ((wt_frac[j] / x[j]) - (dvdn[j] / Vm));
+        }
+    }
+    return psi;
 }
 
 std::vector<std::vector<std::vector<double>>> KineticGas::reshape_diffusive_expansion_vector(const Eigen::VectorXd& d_ijq){

@@ -32,6 +32,10 @@ Contains: The abstract class 'KineticGas', which computes the A_pqrl factors and
 
 #ifdef NOPYTHON
     #include <Eigen/Dense>
+    #include <json/json.hpp>
+    #include <cppThermopack/thermo.h>
+    #include <memory>
+    using json = nlohmann::json;
 #endif
 
 /*
@@ -66,21 +70,22 @@ struct OmegaPoint{
 
 };
 
-#ifdef NOPYTHON
 enum FrameOfReference{
         CoM,
         CoN,
         CoV,
         solvent
     };
-#endif
 
 class KineticGas{
     public:
 
     KineticGas(std::vector<double> mole_weights, bool is_idealgas);
-    KineticGas(std::string comps, bool is_idealgas);
+    #ifdef NOPYTHON
+        KineticGas(std::string comps, bool is_idealgas);
+    #endif
     virtual ~KineticGas(){};
+
     // Collision integrals
     virtual double omega(int i, int j, int l, int r, double T) = 0;
 
@@ -102,11 +107,12 @@ class KineticGas{
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------- //
 // --------------------------------------------- Interfaces to compute transport coefficients --------------------------------------------------- //
+// ------------------------ NOTE: Implementation is only compiled if compilation flag -DNOPYTHON is used ---------------------------------------- //
 
-    std::vector<std::vector<double>> interdiffusion(double T, double Vm, std::vector<double>& x, int N=2, int frame_of_reference=FrameofReference::CoN, int dependent_idx=-1, int solvent_idx=-1);
+    std::vector<std::vector<double>> interdiffusion(double T, double Vm, std::vector<double>& x, int N=2, int frame_of_reference=FrameOfReference::CoN, int dependent_idx=-1, int solvent_idx=-1);
     double thermal_conductivity(double T, double Vm, std::vector<double>& x, int N=2);
     double viscosity(double T, double Vm, std::vector<double>& x, int N=2);
-    std::vector<double> thermal_diffusion_coeff(double T, double Vm, std::vector<double>& x, int N=2, int frame_of_reference=FrameofReference::CoN, int dependent_idx=-1, int solvent_idx=-1);
+    std::vector<double> thermal_diffusion_coeff(double T, double Vm, std::vector<double>& x, int N=2, int frame_of_reference=FrameOfReference::CoN, int dependent_idx=-1, int solvent_idx=-1);
     std::vector<double> thermal_diffusion_ratio(double T, double Vm, std::vector<double>& x, int N=2);
     std::vector<std::vector<double>> thermal_diffusion_factor(double T, double Vm, std::vector<double>& x, int N=2);
     std::vector<std::vector<double>> interdiffusion_dependent_CoM(double T, double Vm, std::vector<double>& x, int N=2);
@@ -153,12 +159,18 @@ class KineticGas{
 // --------------------------------------- KineticGas internals are below here -------------------------------------------- //
 // -------------------------------- End users should not need to care about any of this ----------------------------------- //
 
-    protected:
     const size_t Ncomps;
     const bool is_idealgas;
+
+    protected:
     std::vector<double> m;
     std::vector<std::vector<double>> M, m0;
     std::map<OmegaPoint, double> omega_map;
+
+    #ifdef NOPYTHON
+        const std::vector<json> compdata;
+        std::unique_ptr<Thermo> eos;
+    #endif
 
 // ----------------------------------------------------------------------------------------------------------------------------------- //
 // --------------------------------------- Methods to facilitate multithreading ------------------------------------------------------ //
@@ -183,10 +195,10 @@ class KineticGas{
                         const std::vector<int>& l_vec, const std::vector<int>& r_vec, double T);
 
     private:
+    void set_masses();
     void precompute_diffusion_omega(int N, double T); // Forwards call to precompute_conductivity_omega. Override that instead.
     void precompute_th_diffusion_omega(int N, double T); // Forwards call to precompute_conductivity_omega. Override that instead.
 
-    private:
 // ------------------------------------------------------------------------------------------------------------------------ //
 // ---------------------------------------------- Square bracket integrals ------------------------------------------------ //
 

@@ -25,26 +25,16 @@ class MieKinGas : public Spherical {
         eps{eps},
         la{la},
         lr{lr}
-        {
-
-        #ifdef DEBUG
-            std::printf("This is a Debug build!\nWith, %E, %E\n\n", mole_weights[0], mole_weights[1]);
-        #endif
-
-        C = std::vector<std::vector<double>>(Ncomps, std::vector<double>(Ncomps, 0.));
-        alpha = std::vector<std::vector<double>>(Ncomps, std::vector<double>(Ncomps, 0.));
-        for (int i = 0; i < eps.size(); i ++){
-            for (int j = 0; j < eps.size(); j++){
-                C[i][j] = (lr[i][j] / (lr[i][j] - la[i][j])) 
-                                * pow(lr[i][j] / la[i][j], (la[i][j] / (lr[i][j] - la[i][j])));
-                alpha[i][j] = C[i][j] * ((1.0 / (la[i][j] - 3.0)) - (1.0 / (lr[i][j] - 3.0)));
-            }
-        }   
-    }
+        {set_C_alpha(); }
 
     #ifdef NOPYTHON
-    MieKinGas(std::string comps, bool is_idealgas=false);
+        MieKinGas(std::string comps, bool is_idealgas=false);
     #endif
+
+    void set_C_alpha();
+    void mix_sigma();
+    void mix_epsilon();
+    void mix_exponents(std::vector<std::vector<double>>& expo);
 
     double potential(int i, int j, double r) override {
         return C[i][j] * eps[i][j] * (pow(sigma[i][j] / r, lr[i][j]) - pow(sigma[i][j] / r, la[i][j]));

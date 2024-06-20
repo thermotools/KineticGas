@@ -15,22 +15,14 @@
 #include <functional>
 #include <math.h>
 #include <iostream>
-#include "pybind11/pybind11.h"
+#include <fstream>
 #include <chrono>
 
-#ifdef DEBUG
-#define _LIBCPP_DEBUG 1
-#endif
 
 // --------------------------------------------------------------------------------------------------- //
 // -------------------------------Constructor and helper functions------------------------------------ //
 
-KineticGas::KineticGas(const std::vector<double> mole_weights, bool is_idealgas) 
-  : Ncomps{static_cast<unsigned long>(mole_weights.size())},
-    is_idealgas{is_idealgas},
-    m{mole_weights}
-    {
-
+void KineticGas::set_masses(){
     m0 = std::vector<std::vector<double>>(Ncomps, std::vector<double>(Ncomps));
     M = std::vector<std::vector<double>>(Ncomps, std::vector<double>(Ncomps));
     for (int i = 0; i < Ncomps; i++){
@@ -41,9 +33,55 @@ KineticGas::KineticGas(const std::vector<double> mole_weights, bool is_idealgas)
     }
 }
 
+KineticGas::KineticGas(const std::vector<double> mole_weights, bool is_idealgas) 
+  : Ncomps{static_cast<unsigned long>(mole_weights.size())},
+    is_idealgas{is_idealgas},
+    m{mole_weights}
+    {set_masses();}
+
+#ifdef NOPYTHON
+// #ifdef FLUID_DIR
+//     #define __MACRO_STRING__(s) #s
+//     std::string fluid_dir = __MACRO_STRING__(FLUID_DIR);
+// #else
+    std::string fluid_dir = "./fluids";
+// #endif
+std::vector<json> get_fluid_data(std::string comps){
+    std::vector<std::string> fluid_files;
+    std::string comp = "";
+    for (char c : comps){
+        if ((comp.size() > 0) && (c == ',')){
+            fluid_files.push_back(comp);
+            comp = "";
+            continue;
+        }
+        comp = comp + c;
+    }
+    fluid_files.push_back(comp);
+    if (fluid_files.size() == 1) fluid_files.push_back(fluid_files[0]);
+
+    std::vector<json> fluids;
+    for (const std::string& filename : fluid_files){
+        std::ifstream file(fluid_dir + "/" + filename + ".json");
+        if (!file.is_open()) throw std::runtime_error("Failed to open fluid file: " + fluid_dir + "/" + filename + ".json");
+        fluids.push_back(json::parse(file));
+        file.close();
+    }
+    return fluids;
+}
+
 KineticGas::KineticGas(std::string comps, bool is_idealgas) 
-    : Ncomps{static_cast<size_t>(std::count_if(comps.begin(), comps.end(), [](char c) {return c == ',';})) + 1}, is_idealgas{is_idealgas}
-    {}
+    : Ncomps{static_cast<size_t>(std::max(static_cast<int>(std::count_if(comps.begin(), comps.end(), [](char c) {return c == ',';})) + 1, 2))}, 
+    is_idealgas{is_idealgas},
+    compdata(get_fluid_data(comps))
+    {
+        m = std::vector<double>(Ncomps, 0.);
+        for (size_t i = 0; i < Ncomps; i++){
+            m[i] = static_cast<double>(compdata[i]["mol_weight"]) * 1e-3 / AVOGADRO;
+        }
+        set_masses();
+    }
+#endif
 
 std::vector<double> KineticGas::get_wt_fracs(const std::vector<double> mole_fracs){
     std::vector<double> wt_fracs(Ncomps, 0.);
