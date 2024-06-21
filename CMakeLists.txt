@@ -4,8 +4,19 @@ project(KineticGas LANGUAGES C CXX)
 
 SET(CMAKE_CXX_STANDARD 17)
 
+# Find the module development requirements (requires FindPython from 3.17 or scikit-build-core's built-in backport)
+set(Python_FIND_VIRTUALENV ONLY) 
+find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
+message("Python is : ${Python_EXECUTABLE}")
+find_package(pybind11 CONFIG)
+if (pybind11::FOUND)
+  set(pybind11_HEADERS ${pybind11::headers})
+else()
+  set(pybind11_HEADERS "/usr/local/include/pybind11/include")
+endif()
+
 if(NOT MSVC)
-  set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-unknown-pragmas -Wno-sign-compare -pthread")
+  set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-unknown-pragmas -Wno-unused-parameter -Wno-sign-compare -pthread")
   set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wno-unused-parameter")
   set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -DDEBUG -Wno-unused-parameter -Wno-unused-const-variable")
 endif(NOT MSVC)
@@ -13,23 +24,13 @@ endif(NOT MSVC)
 set(SOURCES cpp/KineticGas.cpp cpp/KineticGas_mthr.cpp cpp/Spherical.cpp cpp/MieKinGas.cpp
             cpp/Integration/Integration.cpp cpp/Factorial.cpp cpp/bindings.cpp)
 
-if (CMAKE_BUILD_TYPE MATCHES Release)
-    project(pykingas)
-    set(TARGET pykingas)
-else()
-    project(pykingas_d)
-    set(TARGET pykingas_d)
-endif()
 
-# Find the module development requirements (requires FindPython from 3.17 or
-# scikit-build-core's built-in backport)
-find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
-find_package(pybind11 CONFIG REQUIRED)
+project(pykingas)
+set(TARGET libpykingas)
 
-# Add a library using FindPython's tooling (pybind11 also provides a helper like
-# this)
+# Add a library using FindPython's tooling (pybind11 also provides a helper like this)
 python_add_library(${TARGET} MODULE ${SOURCES} WITH_SOABI)
-target_link_libraries(${TARGET} PRIVATE pybind11::headers)
+target_include_directories(${TARGET} PRIVATE ${pybind11_HEADERS})
 
 # The install directory is the output (wheel) directory
-install(TARGETS ${TARGET} DESTINATION pykingas)
+install(TARGETS ${TARGET} DESTINATION ${CMAKE_SOURCE_DIR}/pykingas)
