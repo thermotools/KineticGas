@@ -67,9 +67,9 @@ using vector2d = std::vector<vector1d>;
 
 
 #ifndef DEBUG
-PYBIND11_MODULE(KineticGas_r, handle){
+PYBIND11_MODULE(pykingas, handle){
 #else
-PYBIND11_MODULE(KineticGas_d, handle){
+PYBIND11_MODULE(pykingas_d, handle){
 #endif
     handle.doc() = "Is this documentation? This is documentation.";
     handle.def("ipow", &ipow);
