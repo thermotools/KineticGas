@@ -36,16 +36,11 @@ void KineticGas::set_masses(){
 KineticGas::KineticGas(const std::vector<double> mole_weights, bool is_idealgas) 
   : Ncomps{static_cast<unsigned long>(mole_weights.size())},
     is_idealgas{is_idealgas},
+    is_singlecomp{mole_weights[0] == mole_weights[1]},
     m{mole_weights}
     {set_masses();}
 
 #ifdef NOPYTHON
-// #ifdef FLUID_DIR
-//     #define __MACRO_STRING__(s) #s
-//     std::string fluid_dir = __MACRO_STRING__(FLUID_DIR);
-// #else
-    std::string fluid_dir = "./fluids";
-// #endif
 std::vector<json> get_fluid_data(std::string comps){
     std::vector<std::string> fluid_files;
     std::string comp = "";
@@ -73,6 +68,7 @@ std::vector<json> get_fluid_data(std::string comps){
 KineticGas::KineticGas(std::string comps, bool is_idealgas) 
     : Ncomps{static_cast<size_t>(std::max(static_cast<int>(std::count_if(comps.begin(), comps.end(), [](char c) {return c == ',';})) + 1, 2))}, 
     is_idealgas{is_idealgas},
+    is_singlecomp{std::count_if(comps.begin(), comps.end(), [](char c) {return c == ',';}) == 0},
     compdata(get_fluid_data(comps))
     {
         m = std::vector<double>(Ncomps, 0.);

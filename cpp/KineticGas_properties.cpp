@@ -3,6 +3,10 @@
 #include <json/json.hpp>
 #include <iostream>
 
+using vector1d = std::vector<double>;
+using vector2d = std::vector<vector1d>;
+using vector3d = std::vector<vector2d>;
+
 Eigen::MatrixXd stdvector_to_EigenMatrix(const std::vector<std::vector<double>>& in_matr){
     Eigen::MatrixXd out_matr(in_matr.size(), in_matr[0].size());
     for (int i = 0; i < in_matr.size(); i++){
@@ -21,7 +25,7 @@ Eigen::VectorXd stdvector_to_EigenVector(const std::vector<double>& in_vec){
     return out_vec;
 }
 
-double KineticGas::viscosity(double T, double Vm, std::vector<double>& x, int N){
+double KineticGas::viscosity(double T, double Vm, const std::vector<double>& x, int N){
     double rho{AVOGADRO / Vm};
 
     Eigen::MatrixXd visc_matr{stdvector_to_EigenMatrix(get_viscosity_matrix(rho, T, x, N))};
@@ -51,6 +55,62 @@ double KineticGas::viscosity(double T, double Vm, std::vector<double>& x, int N)
 
     return eta_prime + eta_dblprime;
 
+}
+
+double KineticGas::thermal_conductivity(double T, double Vm, const vector1d& x, int N){
+        double rho = AVOGADRO / Vm;
+        
+        Eigen::MatrixXd cond_matr{stdvector_to_EigenMatrix(get_conductivity_matrix(rho, T, x, N))};
+        Eigen::VectorXd cond_vec{stdvector_to_EigenVector(get_conductivity_vector(rho, T, x, N))};
+        Eigen::VectorXd th_expansion_coeff{cond_matr.partialPivLu().solve(cond_vec)};
+
+        vector2d rdf = get_rdf(rho, T, x);
+        vector1d K = get_K_factors(rho, T, x);
+        vector2d cd = get_collision_diameters(rho, T, x);
+
+        vector3d diff_expansion_coeff = reshape_diffusive_expansion_vector(compute_diffusive_expansion_coeff(rho, T, x, N));
+
+        double lambda_dblprime = 0.;
+        if (is_idealgas){ // lambda_dblprime is only nonzero when density corrections are present, and vanishes at infinite dilution
+            for (size_t i = 0; i < Ncomps; i++){
+                for (size_t j = 0; j < Ncomps; j++){
+                    lambda_dblprime += pow(rho, 2) * sqrt(2 * PI * m[i] * m[j] * BOLTZMANN * T / (m[i] + m[j])) 
+                                        * (x[i] * x[j]) / (m[i] + m[j]) * pow(cd[i][j], 4) * rdf[i][j];
+                }
+            }
+            lambda_dblprime *= (4. * BOLTZMANN / 3.);
+        }
+
+        double lambda_prime = 0.;
+        Eigen::VectorXd dth{compute_dth_vector(diff_expansion_coeff, th_expansion_coeff)};
+        for (size_t i = 0; i < Ncomps; i++){
+            double tmp = 0.;
+            for (size_t k = 0; k < Ncomps; k++){
+                tmp += diff_expansion_coeff[1][i][k] * dth(k);
+            }
+            lambda_prime += x[i] * K[i] * (th_expansion_coeff(Ncomps + i) - tmp);
+        }
+        lambda_prime *= (5. * BOLTZMANN / 4.);
+
+        double lamba_internal = 0.;
+        double lamb_int_f = 1.32e3;
+        double eta0 = viscosity(T, 1e6, x, N);
+        double avg_mol_weight = 0.;
+        for (size_t i = 0; i < Ncomps; i++) avg_mol_weight += x[i] * m[i];
+        avg_mol_weight *= AVOGADRO * 1e3;
+        double Cp_id = (is_singlecomp) ? eos->idealenthalpysingle(T, 1, true).dt() : 0.;
+        if (!is_singlecomp){
+            for (size_t i = 0; i < Ncomps; i++){
+                Cp_id += x[i] * eos->idealenthalpysingle(T, i + 1, true).dt();
+                std::cout << "Cp(" << i << ") : " <<  eos->idealenthalpysingle(T, i + 1, true) << std::endl;
+            }
+        }
+        double Cp_factor = (Cp_id - 5. * GAS_CONSTANT / 2.) / avg_mol_weight;
+        std::cout << "Cp_factor : " << Cp_factor << std::endl;
+        lamba_internal = lamb_int_f * eta0 * Cp_factor;
+
+        const double cond = lambda_prime + lambda_dblprime + lamba_internal;
+        return cond;
 }
 
 Eigen::MatrixXd KineticGas::CoM_to_FoR_matr(double T, double Vm, const std::vector<double>& x, int frame_of_reference, int solvent_idx=-1){
@@ -102,29 +162,65 @@ Eigen::MatrixXd KineticGas::CoM_to_CoV_matr(double T, double Vm, const std::vect
     return psi;
 }
 
-std::vector<std::vector<std::vector<double>>> KineticGas::reshape_diffusive_expansion_vector(const Eigen::VectorXd& d_ijq){
+Eigen::VectorXd KineticGas::compute_diffusive_expansion_coeff(double rho, double T, const vector1d& x, int N){
+    Eigen::MatrixXd diff_matr{stdvector_to_EigenMatrix(get_diffusion_matrix(rho, T, x, N))};
+    Eigen::VectorXd diff_vec{stdvector_to_EigenVector(get_diffusion_vector(rho, T, x, N))};
+    return diff_matr.partialPivLu().solve(diff_vec);
+}
+
+vector3d KineticGas::reshape_diffusive_expansion_vector(const Eigen::VectorXd& d_ijq){
     unsigned long N{d_ijq.size() / (Ncomps * Ncomps)};
-    std::vector<std::vector<std::vector<double>>> d_ijq_matr(Ncomps, std::vector<std::vector<double>>(Ncomps, std::vector<double>(N, 0.)));
+    vector3d d_qij_matr(N, vector2d(Ncomps, vector1d(Ncomps, 0.)));
     for (int i = 0; i < Ncomps; i++){
         for (int j = 0; j < Ncomps; j++){
-            for (int q = 0; q < Ncomps; q++){
-                d_ijq_matr[i][j][q] = d_ijq(N * Ncomps * j + Ncomps * q + i);
+            for (int q = 0; q < N; q++){
+                d_qij_matr[q][i][j] = d_ijq(N * Ncomps * j + Ncomps * q + i);
             }
         }
     }
-    return d_ijq_matr;
+    return d_qij_matr;
 }
 
-Eigen::VectorXd KineticGas::compute_dth_vector(const std::vector<std::vector<std::vector<double>>>& d_ijq, const Eigen::VectorXd& l){
+Eigen::VectorXd KineticGas::compute_dth_vector(const vector3d& d_qij, const Eigen::VectorXd& l){
     Eigen::MatrixXd d_ij(Ncomps, Ncomps);
     Eigen::VectorXd l_i(Ncomps);
 
     for (int i = 0; i < Ncomps; i++){
         for (int j = 0; j < Ncomps; j++){
-            d_ij(i, j) = d_ijq[i][j][0];
+            d_ij(i, j) = d_qij[0][i][j];
         }
         l_i(i) = l(i);
     }
 
     return d_ij.partialPivLu().solve(l_i);
+}
+
+vector2d KineticGas::get_chemical_potential_factors(double T, double Vm, const std::vector<double>& x){
+    vector2d dmudrho(Ncomps, vector1d(Ncomps, 0));
+    if (is_singlecomp){
+        const vector2d dmudn_pure = eos->chemical_potential_tv(T, Vm, {1.}, false, false, true).dn();
+        const double RT = GAS_CONSTANT * T;
+        const double dmudrho_pure = Vm * dmudn_pure[0][0];
+        const double rho = 1 / Vm;
+        dmudrho[0][0] = (dmudrho_pure + RT * x[1] / (rho * x[0])) / AVOGADRO;
+        dmudrho[0][1] = dmudrho[1][0] = (dmudrho_pure - RT / rho) / AVOGADRO;
+        dmudrho[1][1] = (dmudrho_pure + RT * x[0] / (rho * x[1])) / AVOGADRO;
+    }
+    else{
+        const vector2d dmudn = eos->chemical_potential_tv(T, Vm, x, false, false, true).dn();
+        for (size_t i = 0; i < Ncomps; i++){
+            for (size_t j = 0; j < Ncomps; j++){
+                dmudrho[i][j] = Vm * dmudn[i][j] / AVOGADRO;
+            }
+        }
+    }
+
+    vector2d Eij(Ncomps, vector1d(Ncomps, 0));
+    for (size_t i = 0; i < Ncomps; i++){
+        double ni = x[i] / Vm;
+        for (size_t j = 0; j < Ncomps; j++){
+            Eij[i][j] = (ni / (BOLTZMANN * T)) * dmudrho[i][j];
+        }
+    }
+    return Eij;
 }

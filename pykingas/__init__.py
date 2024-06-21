@@ -22,13 +22,5 @@ class bcolors: # For fancy (readable) printing during tests
     UNDERLINE = '\033[4m'
 
 args = sys.argv
+from . import libpykingas
 
-if '-debug' in args or 'debug' in args or '-d' in args:
-    from . import KineticGas_d as __cpp_Module__
-else:
-    from . import KineticGas_r as __cpp_Module__
-
-# Expose everything in the __cpp_Module__ through the pykingas module
-for _attr in dir(__cpp_Module__):
-    if _attr[:2] != '__': #Exclude macros
-        setattr(sys.modules[__name__], _attr, getattr(__cpp_Module__, _attr))

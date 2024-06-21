@@ -5,9 +5,9 @@ this_dir = Path(__file__).parent
 readme = (this_dir / 'pykingas/README.md').read_text()
 setup(
     name='pykingas',
-    version='2.0.0',
+    version='2.0.1',
     packages=['pykingas'],
-    package_data={'pykingas': ['KineticGas*', 'fluids/*']},
+    package_data={'pykingas': ['libpykingas*'], '' : ['fluids/*']},
     description='Revised Enskog theory for Mie fluids, and other spherical potentials. Allows prediction of transport '
                 'coefficients such as diffusion coefficients, viscosities, thermal diffusion coefficients'
                 ' and thermal conductivities. In dense, multicomponent gas mixtures and supercritical mixtures.',

@@ -19,13 +19,16 @@ class Spherical : public KineticGas {
     Spherical(std::vector<double> mole_weights, 
                 std::vector<std::vector<double>> sigmaij,
                 bool is_idealgas);
-    Spherical(std::string comps, bool is_idealgas) : KineticGas(comps, is_idealgas) {
-        w_integrand_export = std::bind(&Spherical::w_integrand, this,
-                                        std::placeholders::_1, std::placeholders::_2,
-                                        std::placeholders::_3, std::placeholders::_4,
-                                        std::placeholders::_5, std::placeholders::_6,
-                                        std::placeholders::_7);
-    }
+    
+    #ifdef NOPYTHON
+        Spherical(std::string comps, bool is_idealgas) : KineticGas(comps, is_idealgas) {
+            w_integrand_export = std::bind(&Spherical::w_integrand, this,
+                                            std::placeholders::_1, std::placeholders::_2,
+                                            std::placeholders::_3, std::placeholders::_4,
+                                            std::placeholders::_5, std::placeholders::_6,
+                                            std::placeholders::_7);
+        }
+    #endif
     
     virtual ~Spherical(){};
 

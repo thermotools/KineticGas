@@ -79,7 +79,6 @@ enum FrameOfReference{
 
 class KineticGas{
     public:
-
     KineticGas(std::vector<double> mole_weights, bool is_idealgas);
     #ifdef NOPYTHON
         KineticGas(std::string comps, bool is_idealgas);
@@ -110,17 +109,25 @@ class KineticGas{
 // ------------------------ NOTE: Implementation is only compiled if compilation flag -DNOPYTHON is used ---------------------------------------- //
 
     std::vector<std::vector<double>> interdiffusion(double T, double Vm, std::vector<double>& x, int N=2, int frame_of_reference=FrameOfReference::CoN, int dependent_idx=-1, int solvent_idx=-1);
-    double thermal_conductivity(double T, double Vm, std::vector<double>& x, int N=2);
-    double viscosity(double T, double Vm, std::vector<double>& x, int N=2);
-    std::vector<double> thermal_diffusion_coeff(double T, double Vm, std::vector<double>& x, int N=2, int frame_of_reference=FrameOfReference::CoN, int dependent_idx=-1, int solvent_idx=-1);
-    std::vector<double> thermal_diffusion_ratio(double T, double Vm, std::vector<double>& x, int N=2);
-    std::vector<std::vector<double>> thermal_diffusion_factor(double T, double Vm, std::vector<double>& x, int N=2);
-    std::vector<std::vector<double>> interdiffusion_dependent_CoM(double T, double Vm, std::vector<double>& x, int N=2);
+    double thermal_conductivity(double T, double Vm, const std::vector<double>& x, int N=2);
+    double viscosity(double T, double Vm, const std::vector<double>& x, int N=2);
+    std::vector<double> thermal_diffusion_coeff(double T, double Vm, const std::vector<double>& x, int N=2, int frame_of_reference=FrameOfReference::CoN, int dependent_idx=-1, int solvent_idx=-1);
+    std::vector<double> thermal_diffusion_ratio(double T, double Vm, const std::vector<double>& x, int N=2);
+    std::vector<std::vector<double>> thermal_diffusion_factor(double T, double Vm, const std::vector<double>& x, int N=2);
+    std::vector<std::vector<double>> interdiffusion_dependent_CoM(double T, double Vm, const std::vector<double>& x, int N=2);
 
-    // ------------------------------------------------------------------------------------------------------------------------- //
-    // ----- Matrices and vectors for the sets of equations (6-10) in Revised Enskog Theory for Mie fluids  -------------------- //
-    // ----- doi : 10.1063/5.0149865, which are solved to obtain the Sonine polynomial expansion coefficients ------------------ //
-    // ----- for the velocity distribution functions. -------------------------------------------------------------------------- //
+// ------------------------------------------------------------------------------------------------------------------------------------- //
+// ----------------- Matrices and vectors for the sets of equations (6-10) in Revised Enskog Theory for Mie fluids  -------------------- //
+// ----------------- doi : 10.1063/5.0149865, which are solved to obtain the Sonine polynomial expansion coefficients ------------------ //
+// ----------------- for the velocity distribution functions. -------------------------------------------------------------------------- //
+// ----------------- The methods compute_* solve the appropriate equations and return the expansion coefficients ----------------------- //
+    #ifdef NOPYTHON
+        Eigen::VectorXd compute_viscous_expansion_coeff(double rho, double T, const vector1d& x, int N);
+        Eigen::VectorXd compute_thermal_expansion_coeff(double rho, double T, const vector1d& x, int N);
+        Eigen::VectorXd compute_diffusive_expansion_coeff(double rho, double T, const vector1d& x, int N);
+        std::vector<std::vector<std::vector<double>>> reshape_diffusive_expansion_vector(const Eigen::VectorXd& d_ijq);
+        Eigen::VectorXd compute_dth_vector(const std::vector<std::vector<std::vector<double>>>& d_ijq, const Eigen::VectorXd& l);
+    #endif
 
     std::vector<std::vector<double>> get_conductivity_matrix(double rho, double T, const std::vector<double>& x, int N);
     std::vector<double> get_diffusion_vector(double rho, double T, const std::vector<double>& x, int N);
@@ -149,10 +156,7 @@ class KineticGas{
         Eigen::MatrixXd CoM_to_CoV_matr(double T, double Vm, const std::vector<double>& x);
 
         std::vector<std::vector<double>> get_chemical_potential_factors(double T, double Vm, const std::vector<double>& x);
-        std::vector<double> get_ksi_factors(double T, double Vm, const std::vector<double>& x);
-
-        std::vector<std::vector<std::vector<double>>> reshape_diffusive_expansion_vector(const Eigen::VectorXd& d_ijq);
-        Eigen::VectorXd compute_dth_vector(const std::vector<std::vector<std::vector<double>>>& d_ijq, const Eigen::VectorXd& l);
+        std::vector<double> get_ksi_factors(double T, double Vm, const std::vector<double>& x);  
     #endif
 
 // ------------------------------------------------------------------------------------------------------------------------ //
@@ -161,6 +165,7 @@ class KineticGas{
 
     const size_t Ncomps;
     const bool is_idealgas;
+    const bool is_singlecomp;
 
     protected:
     std::vector<double> m;
