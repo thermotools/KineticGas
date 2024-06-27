@@ -7,7 +7,6 @@ SET(CMAKE_CXX_STANDARD 17)
 # Find the module development requirements (requires FindPython from 3.17 or scikit-build-core's built-in backport)
 set(Python_FIND_VIRTUALENV ONLY) 
 find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
-message("Python is : ${Python_EXECUTABLE}")
 find_package(pybind11 CONFIG)
 if (pybind11::FOUND)
   set(pybind11_HEADERS ${pybind11::headers})
@@ -21,16 +20,15 @@ if(NOT MSVC)
   set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -DDEBUG -Wno-unused-parameter -Wno-unused-const-variable")
 endif(NOT MSVC)
 
-set(SOURCES cpp/KineticGas.cpp cpp/KineticGas_mthr.cpp cpp/Spherical.cpp cpp/MieKinGas.cpp
-            cpp/Integration/Integration.cpp cpp/Factorial.cpp cpp/bindings.cpp)
+file(GLOB SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cpp/*.cpp)
 
 
 project(pykingas)
-set(TARGET libpykingas)
+set(TARGET KineticGas_r)
 
 # Add a library using FindPython's tooling (pybind11 also provides a helper like this)
-python_add_library(${TARGET} MODULE ${SOURCES} WITH_SOABI)
-target_include_directories(${TARGET} PRIVATE ${pybind11_HEADERS})
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/cpp/external/pybind11")
+pybind11_add_module(${TARGET} ${SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/cpp/Integration/Integration.cpp)
 
 # The install directory is the output (wheel) directory
 install(TARGETS ${TARGET} DESTINATION ${CMAKE_SOURCE_DIR}/pykingas)
