@@ -23,4 +23,4 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/cpp/external/pybind11")
 pybind11_add_module(${TARGET} ${SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/cpp/Integration/Integration.cpp")
 
 # The install directory is the output (wheel) directory
-install(TARGETS ${TARGET} DESTINATION ${CMAKE_SOURCE_DIR}/pykingas)
+install(TARGETS ${TARGET} DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/pykingas)
