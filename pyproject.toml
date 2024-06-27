@@ -1,5 +1,5 @@
 [build-system]
-requires = ["scikit-build-core>=0.9.3"]
+requires = ["scikit-build-core>=0.9.3", "setuptools"]
 build-backend = "scikit_build_core.build"
 
 
@@ -23,6 +23,9 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
 ]
+
+[tool.setuptools.package-data]
+pykingas = ["libkineticgas.*"]
 
 [project.optional-dependencies]
 test = ["pytest"]
