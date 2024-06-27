@@ -15,13 +15,12 @@ endif(NOT MSVC)
 
 file(GLOB SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cpp/*.cpp)
 
-
 project(pykingas)
-set(TARGET KineticGas_r)
+set(TARGET libpykingas)
 
 # Add a library using FindPython's tooling (pybind11 also provides a helper like this)
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/cpp/external/pybind11")
-pybind11_add_module(${TARGET} ${SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/cpp/Integration/Integration.cpp)
+pybind11_add_module(${TARGET} ${SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/cpp/Integration/Integration.cpp")
 
 # The install directory is the output (wheel) directory
 install(TARGETS ${TARGET} DESTINATION ${CMAKE_SOURCE_DIR}/pykingas)
