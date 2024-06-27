@@ -1,5 +1,5 @@
 [build-system]
-requires = ["scikit-build-core>=0.9.3", "pybind11"]
+requires = ["scikit-build-core>=0.9.3"]
 build-backend = "scikit_build_core.build"
 
 
@@ -28,8 +28,8 @@ classifiers = [
 test = ["pytest"]
 
 
-[tool.scikit-build]
-wheel.expand-macos-universal-tags = true
+# [tool.scikit-build]
+# wheel.expand-macos-universal-tags = true
 
 
 [tool.cibuildwheel]
