@@ -9,7 +9,6 @@ venv/
 venv*/
 pypi_release/wheelhouse/*.whl
 *__pycache__/
-pykingas/__pycache__/
 
 build/
 pykingas.egg-info/

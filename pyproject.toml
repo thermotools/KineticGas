@@ -32,8 +32,6 @@ classifiers = [
 test = ["pytest"]
 
 [tool.cibuildwheel]
-#test-command = "pytest {project}/tests"
-#test-requires = ["pytest", "numpy~=1.22", "scipy~=1.7", "thermopack~=2.2"]
-#test-extras = ["test"]
-#test-skip = ["*universal2:arm64"]
+test-command = "pytest {project}/tests"
+test-requires = ["pytest", "numpy~=1.22", "scipy~=1.7", "thermopack~=2.2"]
 build-verbosity = 2
