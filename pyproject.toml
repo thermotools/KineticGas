@@ -33,5 +33,5 @@ test = ["pytest"]
 
 [tool.cibuildwheel]
 test-command = "pytest {project}/tests"
-test-requires = ["pytest", "numpy~=1.22", "scipy~=1.7", "thermopack~=2.2"]
+test-requires = ["pytest", "numpy~=1.22", "scipy~=1.7", "thermopack~=2.1"]
 build-verbosity = 2
