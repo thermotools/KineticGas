@@ -53,3 +53,33 @@ print('Generalized multicomponent diffusion coefficients of Ar/Ne/H2 mixture')
 print('with mole fractions', x)
 print('At T =', T, 'K', 'Vm =', Vm, 'm3 / mol')
 print('are', D, 'in the centre of moles frame of reference')
+
+try:
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import Normalize
+    from matplotlib import colormaps
+    import numpy as np
+    import os
+except ImportError:
+    print('You need pandas and matplotlib if you want to see the figure examples.')
+    exit(0)
+
+data = pd.read_csv(f'{os.path.dirname(__file__)}/data/hydrogen_selfdiffusion.csv')
+
+mie = MieKinGas('H2')
+isotherms = sorted(set(data['T']))
+norm = Normalize(min(isotherms), max(isotherms))
+cmap = colormaps['cool']
+for T in isotherms:
+    isodata = data[data['T'] == T].sort_values('P')
+    D_ret = np.array([mie.interdiffusion_tp(T, p, [0.5, 0.5], N=1) for p in isodata['P']])
+
+    plt.plot(isodata['P'] / 1e6, np.array(D_ret), color=cmap(norm(T)), label=T)
+    plt.scatter(isodata['P'] / 1e6, isodata['D'], color=cmap(norm(T)))
+
+plt.legend(title=r'$T$ (K)', ncols=2)
+plt.title('Self diffusion coefficient of Hydrogen\ncompared to experimental data')
+plt.xlabel(r'$p$ (MPa)')
+plt.ylabel(r'$D$ (m$^2$s$^{-1}$)')
+plt.show()

@@ -3,16 +3,8 @@
 Spherical::Spherical(std::vector<double> mole_weights,
                     std::vector<std::vector<double>> sigmaij,
                     bool is_idealgas) 
-                    : KineticGas(mole_weights, is_idealgas), sigma{sigmaij}{
-
-
-    w_integrand_export = std::bind(&Spherical::w_integrand, this,
-                                        std::placeholders::_1, std::placeholders::_2,
-                                        std::placeholders::_3, std::placeholders::_4,
-                                        std::placeholders::_5, std::placeholders::_6,
-                                        std::placeholders::_7);
-
-}
+                    : KineticGas(mole_weights, is_idealgas), sigma{sigmaij}
+                    {}
 
 double Spherical::omega(int i, int j, int l, int r, double T){
     OmegaPoint point{i, j, l, r, T}, sympoint{j, i, l, r, T};
@@ -36,11 +28,11 @@ double Spherical::omega_tester(int i, int j, int l, int r, double T, Integration
 }
 
 double Spherical::w_integral_tester(int i, int j, double T, int l, int r, IntegrationParam& param){
+    const auto w_integrand_export = [&](double g, double b){return w_integrand(i, j, T, g, b, l, r);};
     double I = integrate2d(param.origin, param.end,
                         param.dg, param.db,
                         param.refinement_levels_g, param.refinement_levels_b,
                         param.subdomain_dblder_limit,
-                        i, j, T, l, r,
                         w_integrand_export);
 
     return I;
@@ -61,11 +53,11 @@ double Spherical::w_integral(int i, int j, double T, int l, int r){
     int refinement_levels_b{16};
     double subdomain_dblder_limit{1e-5};
 
+    const auto w_integrand_export = [&](double g, double b){return w_integrand(i, j, T, g, b, l, r);};
     double I = integrate2d(origin, end,
                         dg, db,
                         refinement_levels_g, refinement_levels_b,
                         subdomain_dblder_limit,
-                        i, j, T, l, r,
                         w_integrand_export);
     
     return I;
