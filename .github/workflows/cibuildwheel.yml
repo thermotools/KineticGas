@@ -40,7 +40,8 @@ jobs:
           output-dir: "./wheelhouse"
           config-file: "{package}/pyproject.toml"
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload Wheels
+        uses: actions/upload-artifact@v4
         with:
           name: wheels-${{ matrix.os }}
           path: ./wheelhouse/*.whl
@@ -68,7 +69,7 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         path: release_files/
-        merge_multiple: true
+        merge-multiple: true
         pattern: wheels-*
     
     - name: Display directory status
