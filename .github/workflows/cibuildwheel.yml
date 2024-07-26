@@ -70,7 +70,7 @@ jobs:
       with:
         pattern: wheels-*
     
-    - name: Display directory status
+    - name: Display full directory status
       run: ls -R .
     
     - name: zip wheels
@@ -79,8 +79,8 @@ jobs:
         zip -r "${dir}.zip" ${dir}
         done
     
-    - name: Display release directory status
-      run: ls -R release_files    
+    - name: Display current directory status
+      run: ls
     
     - uses: ncipollo/release-action@v1
       with:
