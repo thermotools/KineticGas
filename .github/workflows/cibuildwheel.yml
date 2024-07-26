@@ -76,7 +76,7 @@ jobs:
     
     - name: zip wheels
       run: |
-        for dir in "$release_files/"wheels-*; do
+        for dir in "release_files/"wheels-*; do
         zip -r "${dir}.zip" ${dir}
         done
     
