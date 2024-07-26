@@ -73,7 +73,16 @@ jobs:
     
     - name: Display directory status
       run: ls -R .
-        
+    
+    - name: zip wheels
+      run: |
+        for dir in "$release_files/"wheels-*; do
+        zip -r "${dir}.zip" ${dir}
+        done
+    
+    - name: Display release directory status
+      run: ls -R release_files    
+    
     - uses: ncipollo/release-action@v1
       with:
         allowUpdates: true
@@ -85,6 +94,6 @@ jobs:
         commit: main
         makeLatest: true
         bodyFile: "release_bodyFile.md"
-        artifacts: "release_files/wheels-*"
+        artifacts: "release_files/*.zip"
 
     
