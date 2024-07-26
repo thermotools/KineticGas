@@ -216,7 +216,7 @@ void integration_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, st
     else{
         p1 = std::move(p2);
         p2 = std::move(p3);
-        p3 = std::shared_ptr<Point>{new Point(*p2 + ystep)};
+        p3 = std::make_shared<Point>(*p2 + ystep);
         Ny += Nysteps;
         eval_function(p3, Nx, Ny, func, evaluated_points);
 
@@ -224,7 +224,7 @@ void integration_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, st
 
         p1 = std::move(p2);
         p2 = std::move(p3);
-        p3 = std::shared_ptr<Point>{new Point(*p2 + xstep)};
+        p3 = std::make_shared<Point>(*p2 + xstep);
         Nx += Nxsteps;
         Ny -= Nysteps;
         eval_function(p3, Nx, Ny, func, evaluated_points);
