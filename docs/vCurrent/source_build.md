@@ -7,9 +7,9 @@ permalink: /vcurrent/source_build.html
 
 KineticGas is available on PyPi as the [`pykingas`](https://pypi.org/project/pykingas/) package, for python versions 3.8-3.11, compiled for MacOS running on Apple Silicon, Linux and Windows.
 
-For MacOS running on Intel, or other operating systems, KineticGas must currently be built from source.
+In addition, wheels versions of `KineticGas > 2.0.0` for macOS, Linux and Windows can be downloaded [here](https://github.com/thermotools/KineticGas/releases). Instructions for installing with `pip` directly from a downloaded wheel are provided at the linked page.
 
-In addition, the pre-built wheels for the most recent version of KineticGas on `main` can be downloaded [here]().
+For MacOS running on Intel, or other operating systems, KineticGas must currently be built from source or installed from one of the distributed wheels linked above.
 
 ## Dependencies
 
@@ -22,7 +22,7 @@ A standalone C++ module, that works without the python wrapper is currently unde
 
 ## Building from source
 
-Python wheels for the latest version of KineticGas on `main` are built for macOS and Windows using `cibuildwheels`, and distributed [here]().
+Python wheels for the latest version of KineticGas on `main` are built for macOS and Windows using `cibuildwheels`, and distributed [here](https://github.com/thermotools/KineticGas/releases).
 
 A build system using `cmake` and `make` is set up to support Mac, Linux and Windows.
 

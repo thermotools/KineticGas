@@ -1,5 +1,3 @@
-# KineticGas Latest (beta)
-
 This release is automatically updated whenever a pull request is merged to `main`, and is built from the branch that was merged to `main` (not `main` itself).
 
 For stable releases of `KineticGas`, see releases named `vX.Y.Z`.

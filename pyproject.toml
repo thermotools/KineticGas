@@ -9,7 +9,7 @@ wheel.expand-macos-universal-tags = true
 
 [project]
 name = "pykingas"
-version = "2.0.0"
+version = "2.1b0"
 description = "Revised Enskog theory for Mie fluids, and other spherical potentials. Allows prediction of transport coefficients such as diffusion coefficients, viscosities, thermal diffusion coefficients and thermal conductivities in dense, multicomponent gas mixtures and supercritical mixtures."
 readme = "README.md"
 authors = [
