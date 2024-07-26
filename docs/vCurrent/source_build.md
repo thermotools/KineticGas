@@ -9,6 +9,8 @@ KineticGas is available on PyPi as the [`pykingas`](https://pypi.org/project/pyk
 
 For MacOS running on Intel, or other operating systems, KineticGas must currently be built from source.
 
+In addition, the pre-built wheels for the most recent version of KineticGas on `main` can be downloaded [here]().
+
 ## Dependencies
 
 The Python package dependencies are listed in the `pyproject.toml` file in the root directory of the package.
@@ -19,6 +21,8 @@ A standalone C++ module, that works without the python wrapper is currently unde
 
 
 ## Building from source
+
+Python wheels for the latest version of KineticGas on `main` are built for macOS and Windows using `cibuildwheels`, and distributed [here]().
 
 A build system using `cmake` and `make` is set up to support Mac, Linux and Windows.
 

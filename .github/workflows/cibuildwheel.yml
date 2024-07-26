@@ -1,6 +1,6 @@
 name: cibuildwheel
 
-on: [push, pull_request]
+on: [pull_request]
 
 jobs:
   build_wheels:
@@ -42,11 +42,15 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: binary-${{ matrix.os }}-${{ matrix.version }}
-          path: |
-            ./wheelhouse/*.whl
-            ./wheelhouse/*.tar.gz
-  merge:
+          name: wheels-${{ matrix.os }}
+          path: ./wheelhouse/*.whl
+            
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tar-${{ matrix.os }}
+          path: ./wheelhouse/*.tar.gz
+  
+  merge_wheels:
    runs-on: ubuntu-latest
    needs: build_wheels
    steps:
@@ -55,3 +59,33 @@ jobs:
        with:
          name: artifact
          pattern: binary-*
+  
+  release_wheels:
+    # if: ${{ github.event.pull_request.merged }}
+    needs: build_wheels
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Download created wheels
+      uses: actions/download-artifact@v4
+      with:
+        path: release_files/
+        merge_multiple: true
+        pattern: wheel-*,tar-*
+    
+    - name: Display directory status
+      run: ls -R .
+        
+    - uses: ncipollo/release-action@v1
+      with:
+        allowUpdates: true
+        draft: true
+        updateOnlyUnreleased: true
+        name: "Latest (beta)"
+        bodyFile: "release_bodyFile.md"
+        artifacts: "*.tar.gz,*.whl"
+
+    
