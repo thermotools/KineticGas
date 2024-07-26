@@ -18,8 +18,7 @@ void mesh_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, std::shar
                         int& Nxsteps, const int& Nysteps,
                         const double subdomain_dblder_limit,
                         std::map<std::pair<int, int>, const double>& evaluated_points,
-                        const int& arg_i, const int& arg_j, const double& arg_T, const int& arg_l, const int& arg_r,
-                        std::function<double(int, int, double, double, double, int, int)> func, std::vector<Point>& points);
+                        std::function<double(double, double)> func, std::vector<Point>& points);
 
 void mesh_adaptive(const Point& origin,
                     const int& Nx_origin, const int& Ny_origin,
@@ -28,15 +27,13 @@ void mesh_adaptive(const Point& origin,
                     int& Nxsteps, const int& Nysteps,
                     const double& subdomain_dblder_limit,
                     std::map<std::pair<int, int>, const double>& evaluated_points,
-                    const int& arg_i, const int& arg_j, const double& arg_T, const int& arg_l, const int& arg_r,
-                    std::function<double(int, int, double, double, double, int, int)> func, std::vector<Point>& points);
+                    std::function<double(double, double)> func, std::vector<Point>& points);
 
 std::vector<std::vector<double>> mesh2d(const Point& origin, const Point& end,
                                         const double& dx, const double& dy,
                                         const int& refinement_levels,
                                         const double& subdomain_dblder_limit,
-                                        const int& arg_i, const int& arg_j, const double& arg_T, const int& arg_l, const int& arg_r,
-                                        std::function<double(int, int, double, double, double, int, int)> func);
+                                       std::function<double(double, double)> func);
 
 /* trisurf_step :
     Mirror function for integration_step. See : trisurf_adaptive.
@@ -47,8 +44,7 @@ void trisurf_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, std::s
                         int& Nxsteps, const int& Nysteps,
                         const double subdomain_dblder_limit,
                         std::map<std::pair<int, int>, const double>& evaluated_points,
-                        const int& arg_i, const int& arg_j, const double& arg_T, const int& arg_l, const int& arg_r,
-                        std::function<double(int, int, double, double, double, int, int)> func);
+                        std::function<double(double, double,)> func);
 
 /*  trisurf_adaptive :
     Follows the exact same algorithm as integrate_adaptive, but instead of integrating three points at a time, appends them
@@ -63,8 +59,7 @@ void trisurf_adaptive(const Point& origin,
                         int& Nxsteps, const int& Nysteps,
                         const double& subdomain_dblder_limit,
                         std::map<std::pair<int, int>, const double>& evaluated_points,
-                        const int& arg_i, const int& arg_j, const double& arg_T, const int& arg_l, const int& arg_r,
-                        std::function<double(int, int, double, double, double, int, int)> func,
+                        std::function<double(double, double)> func,
                         std::vector<std::vector<Point>>& surf);
 
 /* trisurf :
@@ -76,8 +71,7 @@ std::vector<std::vector<std::vector<double>>> trisurf(const Point& origin, const
                                                         const double& dx, const double& dy,
                                                         const int& refinement_levels_x, const int& refinement_levels_y,
                                                         const double& subdomain_dblder_limit,
-                                                        const int& arg_i, const int& arg_j, const double& arg_T, const int& arg_l, const int& arg_r,
-                                                        std::function<double(int, int, double, double, double, int, int)> func);
+                                                        std::function<double(double, double)> func);
 
 
 double testfun(int i, int j, double T, double x, double y, int r, int l);
