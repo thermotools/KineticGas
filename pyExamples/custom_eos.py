@@ -21,23 +21,29 @@ comps = 'CO2,H2O'
 eos = pcsaft(comps) # CO2/Hydrogen mixture
 mie = MieKinGas(comps, use_eos=eos) # Will use PC-SAFT instead of SAFT-VR Mie
 
+comps = 'H2'
+eos = saftvrmie(comps, parameter_reference='HYVA-FH0')
+mie = MieKinGas(comps, use_eos=eos) # EoS now uses parameter set HYVA-FH0 from ThermoPack, rather than the default
+
 """
-Note that as a default, parameters specified for MieKinGas will not be forwarded to the EoS, so we can use
-different parameter sets for the EoS and RET models if we wish.
+Note: If we specify parameters for MieKinGas, these are forwarded to the EoS, this is nice when we 
+for example wish to model a "pure" Mie fluid
+"""
+
+comps = 'LJF'
+mie = MieKinGas(comps, lr=[16, 16]) # exponent lr=16 will be forwarded to saftvrmie
+
+"""
+However, we may not always want this behaviour, so we can use the `use_default_eos_param` kwarg
 """
 
 comps = 'H2'
 eos = saftvrmie(comps, parameter_reference='HYVA-FH0')
-mie = MieKinGas(comps, use_eos=eos)
+mie1 = MieKinGas(comps, lr=[10, 10], sigma=[3e-10, 3e-10], use_eos=eos)
+# mie1.eos uses the specified parameters, rather than the HYVA-FH0 values
 
-"""
-This comes with the caveat that if we wish to specify parameters for MieKinGas, and want these parameters
-to be used also for the EoS (for example if we are comparing to simulations, rather than trying to predict
-the behaviour of real fluids) we need to specify this.
-"""
-
-comps = 'LJF'
-mie = MieKinGas(comps, lr=[16, 16], use_default_eos_param=False) # exponent lr=16 will be forwarded to saftvrmie
+mie2 = MieKinGas(comps, lr=[10, 10], sigma=[3e-10, 3e-10], use_eos=eos, use_default_eos_param=True) 
+# mie2.eos uses parameter set HYVA-FH0 from ThermoPack, rather than the specified parameters
 
 """
 Writing your own EoS class is relatively simple, it must simply contain methods with signatures equivalent

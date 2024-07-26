@@ -12,7 +12,7 @@ class MieKinGas(MieType.MieType):
                  mole_weights=None, sigma=None, eps_div_k=None,
                  la=None, lr=None, lij=0, kij=0,
                  N=4, is_idealgas=False, use_eos=None,
-                 parameter_ref='default', use_default_eos_param=True):
+                 parameter_ref='default', use_default_eos_param=None):
         """Constructor
         If parameters are explicitly supplied through optional arguments, these will be used instead of those in the database.
         To supply specific parameters for only some components, give `None` for the components that should use the database
@@ -27,8 +27,14 @@ class MieKinGas(MieType.MieType):
             lij (float) : Mixing parameter for sigma (lij > 0 => smaller sigma_12, lij < 0 => larger sigma_12)
             kij (float) : Mixing parameter for epsilon (kij > 0 => favours mixing, kij < 0 => favours separation)
             use_eos (thermopack eos object, optional) : EoS to use (initialized), defaults to `saftvrmie`
-            use_default_eos_param (bool) : If `False`, ensure that the EoS and RET-model use the same parameters
-                                            (if applicable). If `True` (default), specified parameters are forwarded to the EoS.
+            use_default_eos_param (bool or None) : If `False`, ensure that the EoS and RET-model use the same parameters
+                                            (if applicable). If `True`, the EoS will use its default parameters regardless of 
+                                            specified parameters. As default behaviour, this parameter is set to `True` if 
+                                            no parameters are supplied, and `False` if any parameters are supplied. That is,
+                                            if any parameters are supplied, the EoS will by default use the same parameters
+                                            as the MieKinGas object. Otherwise, the EoS will use its own default parameters,
+                                            and the MieKinGas object will use its own default parameters. Specifying this kwarg
+                                            will override this behaviour.
         """
         super().__init__(comps, 'Mie',
                     mole_weights=mole_weights, sigma=sigma,
@@ -37,6 +43,14 @@ class MieKinGas(MieType.MieType):
                     parameter_ref=parameter_ref)
 
         self.__update_cpp_kingas_param__()
+        if use_default_eos_param is None:
+            for param in (mole_weights, sigma, eps_div_k, la, lr):
+                if param is not None:
+                    use_default_eos_param = False
+                    break
+            else:
+                use_default_eos_param = True
+
         if self.is_idealgas is False:
             if use_eos is None:
                 self.eos = saftvrmie()
