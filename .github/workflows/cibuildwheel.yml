@@ -79,10 +79,11 @@ jobs:
         allowUpdates: true
         prerelease: true
         updateOnlyUnreleased: true
+        removeArtifacts: true
         name: "Latest (beta)"
-        tag: Latest (beta)
+        tag: Latest-beta
         commit: main
-        latest: true
+        makeLatest: true
         bodyFile: "release_bodyFile.md"
         artifacts: "release_files/wheels-*"
 
