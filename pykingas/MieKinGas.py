@@ -12,7 +12,7 @@ class MieKinGas(MieType.MieType):
                  mole_weights=None, sigma=None, eps_div_k=None,
                  la=None, lr=None, lij=0, kij=0,
                  N=4, is_idealgas=False, use_eos=None,
-                 parameter_ref='default', use_default_eos_param=False):
+                 parameter_ref='default', use_default_eos_param=True):
         """Constructor
         If parameters are explicitly supplied through optional arguments, these will be used instead of those in the database.
         To supply specific parameters for only some components, give `None` for the components that should use the database
@@ -27,8 +27,8 @@ class MieKinGas(MieType.MieType):
             lij (float) : Mixing parameter for sigma (lij > 0 => smaller sigma_12, lij < 0 => larger sigma_12)
             kij (float) : Mixing parameter for epsilon (kij > 0 => favours mixing, kij < 0 => favours separation)
             use_eos (thermopack eos object, optional) : EoS to use (initialized), defaults to `saftvrmie`
-            use_default_eos_param (bool) : If `False` (default), ensure that the EoS and RET-model use the same parameters
-                                            (if applicable). If `False`, do not forward specified parameters to the EoS.
+            use_default_eos_param (bool) : If `False`, ensure that the EoS and RET-model use the same parameters
+                                            (if applicable). If `True` (default), specified parameters are forwarded to the EoS.
         """
         super().__init__(comps, 'Mie',
                     mole_weights=mole_weights, sigma=sigma,
