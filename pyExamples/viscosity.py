@@ -16,7 +16,7 @@ print(f'Shear Viscosity at T = {T} K, p = {p / 1e5:.1f} bar is : {visc * 1e6:.2f
 vm, = mie.eos.specific_volume(T, p, x, mie.eos.VAPPH)
 print(f'Molar density at T = {T} K, p = {p / 1e5:.1f} bar is : {vm} m3 / mol')
 # And feeds the call to
-visc = mie.viscosity(T, vm, x, N=2) 
+visc = mie.viscosity(T, vm, x, N=2) # Computing viscosity as a function of temperature and volume
 
 print(f'Shear Viscosity at T = {T} K, Vm = {vm:.1f} m3 / mol is : {visc * 1e6:.2f} micro Pa s')
 
