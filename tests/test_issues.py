@@ -1,7 +1,7 @@
 from pykingas.MieKinGas import MieKinGas
 from scipy.constants import Avogadro, Boltzmann
 import numpy as np
-from tools import check_eq, check_eq_lst, check_eq_arr
+from tools import check_eq, check_eq_lst, check_eq_arr, check_eq_rel
 import pytest
 
 @pytest.mark.parametrize('lr', [20, 30, 40, 50])
@@ -62,23 +62,23 @@ def test_singlecomp_binary(m, sigma, eps_div_k, la, lr):
     for x1 in (0.2, 0.6, 0.9999):
         D1 = kin1.interdiffusion(T, Vm, [x1, 1 - x1], N=2)
         D2 = kin2.interdiffusion(T, Vm, [x1, 1 - x1], N=2)
-        assert check_eq(D1, D2)
+        assert check_eq_rel(D1, D2)
 
         l1 = kin1.viscosity(T, Vm, [x1, 1 - x1], N=2)
         l2 = kin2.viscosity(T, Vm, [x1, 1 - x1], N=2)
-        assert check_eq(l1, l2)
+        assert check_eq_rel(l1, l2)
 
         l1 = kin1.viscosity_tp(T, p, [x1, 1 - x1], N=2)
         l2 = kin2.viscosity_tp(T, p, [x1, 1 - x1], N=2)
-        assert check_eq(l1, l2)
+        assert check_eq_rel(l1, l2)
 
         k1 = kin1.thermal_conductivity(T, Vm, [x1, 1 - x1], N=2)
         k2 = kin2.thermal_conductivity(T, Vm, [x1, 1 - x1], N=2)
-        assert check_eq(k1, k2)
+        assert check_eq_rel(k1, k2)
 
         k1 = kin1.thermal_conductivity_tp(T, p, [x1, 1 - x1], N=2)
         k2 = kin2.thermal_conductivity_tp(T, p, [x1, 1 - x1], N=2)
-        assert check_eq(k1, k2)
+        assert check_eq_rel(k1, k2)
 
         a1 = kin1.thermal_diffusion_factor(T, Vm, [x1, 1 - x1], N=2)
         a2 = kin2.thermal_diffusion_factor(T, Vm, [x1, 1 - x1], N=2)

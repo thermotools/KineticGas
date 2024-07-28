@@ -2,7 +2,8 @@
 Author: Vegard Gjeldvik Jervell
 Purpose: Wrapper for the MieKinGas class. Calls the MieType initializer with the appropriate parameter set identifier.
 '''
-from pykingas import cpp_MieKinGas, MieType
+from . import MieType
+from .libpykingas import cpp_MieKinGas
 from thermopack.saftvrmie import saftvrmie
 from thermopack.saft import saft
 

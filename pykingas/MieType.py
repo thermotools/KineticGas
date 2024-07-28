@@ -1,13 +1,9 @@
 '''
 Author : Vegard Gjeldvik Jervell
-Contains : Parent class for all 'Mie-Type' potentials, including MieKinGas, QuantumMie and LJSpline
-            Implements mixing rules and initializer common for all
-Usage : Accepts a list of parameter dicts as the second argument to the initializer, as well as parameters
-        See sub-classes for examples.
+Contains : Parent class for all 'Mie-Type' potentials, including MieKinGas ...
 '''
 import numpy as np
-from scipy.constants import Boltzmann, Avogadro
-from scipy.integrate import quad
+from scipy.constants import Boltzmann
 from pykingas.py_KineticGas import py_KineticGas
 from warnings import warn
 from thermopack.saft import saft

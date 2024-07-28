@@ -3,7 +3,7 @@ Author: Vegard Gjeldvik Jervell
 Purpose: Wrapper for the PseudoHardSphere class.
 '''
 
-from pykingas import cpp_PseudoHardSphere
+from .libpykingas import cpp_PseudoHardSphere
 from pykingas.py_KineticGas import py_KineticGas
 import numpy as np
 from scipy.constants import Boltzmann as kB, pi, Avogadro

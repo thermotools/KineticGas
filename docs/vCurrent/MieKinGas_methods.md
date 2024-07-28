@@ -6,7 +6,7 @@ permalink: /vcurrent/MieKinGas_methods.html
 ---
 
 <!--- 
-Generated at: 2024-04-18T17:40:59.602391
+Generated at: 2024-07-27T01:07:10.512275
 This is an auto-generated file, generated using the script at KineticGas/pyUtils/markdown_from_docstrings.py
 The file is created by parsing the docstrings of the methods in the 
 MieKinGas class. For instructions on how to use the parser routines, see the
@@ -17,7 +17,7 @@ RET-Mie Model. This class implements utility methods to access mixing parameters
 
 ## Table of contents
   * [Constructor](#constructor)
-    * [\_\_init\_\_](#__init__self-comps-mole_weightsnone-sigmanone-eps_div_knone-lanone-lrnone-lij0-kij0-n4-is_idealgasfalse-use_eosnone-parameter_refdefault-use_default_eos_paramfalse)
+    * [\_\_init\_\_](#__init__self-comps-mole_weightsnone-sigmanone-eps_div_knone-lanone-lrnone-lij0-kij0-n4-is_idealgasfalse-use_eosnone-parameter_refdefault-use_default_eos_paramnone)
   * [Utility methods](#utility-methods)
     * [set_eps_div_k](#set_eps_div_kself-eps_div_k-update_eostrue)
     * [set_la](#set_laself-la-update_eostrue)
@@ -32,10 +32,10 @@ Methods to initialise RET-Mie model.
 
 ### Table of contents
   * [Constructor](#constructor)
-    * [\_\_init\_\_](#__init__self-comps-mole_weightsnone-sigmanone-eps_div_knone-lanone-lrnone-lij0-kij0-n4-is_idealgasfalse-use_eosnone-parameter_refdefault-use_default_eos_paramfalse)
+    * [\_\_init\_\_](#__init__self-comps-mole_weightsnone-sigmanone-eps_div_knone-lanone-lrnone-lij0-kij0-n4-is_idealgasfalse-use_eosnone-parameter_refdefault-use_default_eos_paramnone)
 
 
-### `__init__(self, comps, mole_weights=None, sigma=None, eps_div_k=None, la=None, lr=None, lij=0, kij=0, N=4, is_idealgas=False, use_eos=None, parameter_ref='default', use_default_eos_param=False)`
+### `__init__(self, comps, mole_weights=None, sigma=None, eps_div_k=None, la=None, lr=None, lij=0, kij=0, N=4, is_idealgas=False, use_eos=None, parameter_ref='default', use_default_eos_param=None)`
 If parameters are explicitly supplied through optional arguments, these will be used instead of those in the database.
 To supply specific parameters for only some components, give `None` for the components that should use the database
 value
@@ -75,9 +75,9 @@ value
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  EoS to use (initialized), defaults to `saftvrmie`
 
-&nbsp;&nbsp;&nbsp;&nbsp; **use_default_eos_param (bool) :** 
+&nbsp;&nbsp;&nbsp;&nbsp; **use_default_eos_param (bool or None) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  If `False` (default), ensure that the EoS and RET-model use the same parameters(if applicable). If `False`, do not forward specified parameters to the EoS.  
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  If `False`, ensure that the EoS and RET-model use the same parameters(if applicable). If `True`, the EoS will use its default parameters regardless of specified parameters. As default behaviour, this parameter is set to `True` if no parameters are supplied, and `False` if any parameters are supplied. That is, if any parameters are supplied, the EoS will by default use the same parameters as the MieKinGas object. Otherwise, the EoS will use its own default parameters, and the MieKinGas object will use its own default parameters. Specifying this kwarg will override this behaviour.  
 
 ## Utility methods
 
