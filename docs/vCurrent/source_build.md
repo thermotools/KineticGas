@@ -11,6 +11,20 @@ In addition, wheels versions of `KineticGas > 2.0.0` for macOS, Linux and Window
 
 For MacOS running on Intel, or other operating systems, KineticGas must currently be built from source or installed from one of the distributed wheels linked above.
 
+A KineticGas C++ library is available, and can be built using `cmake` and `make`.
+
+- [Python - `pykingas`](#python---pykingas)
+  - [Dependencies](#dependencies)
+  - [Building from source](#building-from-source)
+    - [First Try](#first-try)
+      - [Short explanation](#short-explanation)
+    - [When something goes wrong](#when-something-goes-wrong)
+- [C++](#c)
+  - [Building and installiing](#building-and-installiing)
+  - [Specifying the fluid files](#specifying-the-fluid-files)
+
+# Python - `pykingas`
+
 ## Dependencies
 
 The Python package dependencies are listed in the `pyproject.toml` file in the root directory of the package.
@@ -80,3 +94,31 @@ export CXX=/opt/homebrew/bin/g++-13
   * **NOTE**: You may need to delete the file `cpp/release/CMakeCache.txt` for changes to take effect.
   * See also: [This stackoverflow question](https://stackoverflow.com/questions/73758291/is-there-a-way-to-specify-the-c-standard-of-clangd-without-recompiling-it) for info
 * If none of the above works, please feel free to leave an issue.
+
+
+# C++
+
+The KineticGas C++ library is built using `cmake` and `make`. All dependencies are included as git submodules under `cpp/external`, and should be properly retrieved when you clone the `KineticGas` repository. *Note*: `KineticGas` depends on [`ThermoPack`](https://thermotools.github.io/thermopack/), and will compile `ThermoPack` as part of the build process. If you already have an installation of `ThermoPack`, setting the environment variable `THERMOPACK_DIR` to the root directory of `ThermoPack` (where `thermopack-config.cmake` is found), that installation of `ThermoPack` will be used istead of re-compiling.
+
+## Building and installiing
+
+If all goes well, you should be able to build the `KineticGas` C++ library by running
+
+```bash
+git clone https://github.com/thermotools/KineticGas.git
+cd KineticGas
+mkdir build
+cd build
+cmake -Dpurecpp=ON -Dpylib=OFF ..
+make install
+```
+
+This will provide you with the `lib/libkineticgas.[so/dylib/dll]` dynamic library, and the minimal example program `build/run_kineticgas`, which is built from the source file at `cpp/run_kineticgas.cpp`.
+
+## Specifying the fluid files
+
+By default, `KineticGas` will search for fluid files at the absolute path `/.../KineticGas/fluids`, which is determined by `cmake`. This default search path can be changed by building with 
+```bash
+cmake -DFLUID_DIR=<path/to/fluids> ..
+```
+

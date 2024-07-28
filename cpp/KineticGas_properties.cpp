@@ -1,6 +1,6 @@
 #include "KineticGas.h"
 #include <Eigen/Dense>
-#include <json/json.hpp>
+#include <nlohmann/json.hpp>
 #include <iostream>
 
 using vector1d = std::vector<double>;
@@ -102,11 +102,9 @@ double KineticGas::thermal_conductivity(double T, double Vm, const vector1d& x, 
         if (!is_singlecomp){
             for (size_t i = 0; i < Ncomps; i++){
                 Cp_id += x[i] * eos->idealenthalpysingle(T, i + 1, true).dt();
-                std::cout << "Cp(" << i << ") : " <<  eos->idealenthalpysingle(T, i + 1, true) << std::endl;
             }
         }
         double Cp_factor = (Cp_id - 5. * GAS_CONSTANT / 2.) / avg_mol_weight;
-        std::cout << "Cp_factor : " << Cp_factor << std::endl;
         lamba_internal = lamb_int_f * eta0 * Cp_factor;
 
         const double cond = lambda_prime + lambda_dblprime + lamba_internal;

@@ -7,4 +7,6 @@ permalink: /vcurrent/getting_started_cpp.html
 
 ## Getting started: In C++
 
-A standalone C++ library, that does not depend upon the Python wrapper, is currently under development. See branches under `pure_cpp/` for the most up to date information on that.
+For instructions on building the `KineticGas` C++ library, see the [installation guide](installation#c).
+
+A basic example showing initialization of a model is found in [`cppExamples/basic.cpp`](), the `cppExamples` directory also contains a `CMakeLists.txt` showing how to obtain the required headers for the `KineticGas` library, as well as link the library to your program.

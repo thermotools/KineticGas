@@ -9,7 +9,7 @@ See : J. Chem. Phys. 139, 154504 (2013); https://doi.org/10.1063/1.4819786
 using namespace mie_rdf_constants;
 
 #ifdef NOPYTHON
-#include <json/json.hpp>
+#include <nlohmann/json.hpp>
 #include <cppThermopack/saftvrmie.h>
 MieKinGas::MieKinGas(std::string comps, bool is_idealgas) 
     : Spherical(comps, is_idealgas)

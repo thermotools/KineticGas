@@ -32,7 +32,7 @@ Contains: The abstract class 'KineticGas', which computes the A_pqrl factors and
 
 #ifdef NOPYTHON
     #include <Eigen/Dense>
-    #include <json/json.hpp>
+    #include <nlohmann/json.hpp>
     #include <cppThermopack/thermo.h>
     #include <memory>
     using json = nlohmann::json;
