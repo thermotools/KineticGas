@@ -12,6 +12,11 @@ def check_eq(a, b, eps=FLTEPS):
         return False
     return True
 
+def check_eq_rel(a, b, eps=FLTEPS):
+    if abs(a - b) / np.mean((a, b)) > eps:
+        return False
+    return True
+
 def check_eq_arr(a, b):
     if any(abs(a.flatten() - b.flatten()) > FLTEPS):
         return False

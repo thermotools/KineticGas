@@ -74,8 +74,6 @@ class Spherical : public KineticGas {
 
     double w_integral(int i, int j, double T, int l, int r); // Dimentionless collision integral for spherical potentials
     double w_integrand(int i, int j, double T, double g, double b, int l, int r);
-    std::function<double(int, int, double, double, double, int, int)> w_integrand_export; // Will bind w_integrand to this function such that it can be passed to the external integration module
-
 };
 
 class IntegrationParam{

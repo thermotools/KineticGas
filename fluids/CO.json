@@ -1,0 +1,35 @@
+{
+    "ident": "CO",
+    "formula": "CO",
+    "cas_number": "124-38-9",
+    "name": "CARBON MONOXIDE",
+    "aliases": [
+          "CarbonMonoxide"
+    ],
+    "mol_weight": 28.0101,
+    "Mie": {
+          "default": {
+                "sigma": 3.6902e-10,
+                "eps_div_k": 132.62,
+                "lambda_a": 6.0,
+                "lambda_r": 21.385,
+                "bib_reference": "I. Polishuk et al., Ind. Eng. Chem. Research (2023), doi: 10.1021/acs.iecr.3c01348, Comparison of CP-PC-SAFT and CS-SAFT-VR-Mie in Predicting Fluid Phase Behavior in Systems of Phenolic Compounds, Aromatic Amines, Acetophenone, and Benzaldehyde"
+          }
+    },
+    "HardSphere": {
+          "default": {
+                "sigma": 3.6902e-10,
+                "bib_reference": "I. Polishuk et al., Ind. Eng. Chem. Research (2023), doi: 10.1021/acs.iecr.3c01348, Comparison of CP-PC-SAFT and CS-SAFT-VR-Mie in Predicting Fluid Phase Behavior in Systems of Phenolic Compounds, Aromatic Amines, Acetophenone, and Benzaldehyde"
+          }
+    },
+    "q-Mie": {
+          "default": {
+            "sigma": 3.6902e-10,
+            "eps_div_k": 132.62,
+            "lambda_a": 6.0,
+            "lambda_r": 21.385,
+            "FH_order" : 0,
+            "bib_reference": "I. Polishuk et al., Ind. Eng. Chem. Research (2023), doi: 10.1021/acs.iecr.3c01348, Comparison of CP-PC-SAFT and CS-SAFT-VR-Mie in Predicting Fluid Phase Behavior in Systems of Phenolic Compounds, Aromatic Amines, Acetophenone, and Benzaldehyde"
+      }
+    }
+}

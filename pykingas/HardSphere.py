@@ -7,7 +7,7 @@ import numpy as np
 from numpy import pi
 from scipy.constants import Avogadro, Boltzmann as kB
 from scipy.optimize import root
-from pykingas import cpp_HardSphere
+from .libpykingas import cpp_HardSphere
 from pykingas.py_KineticGas import py_KineticGas, IdealGas
 
 class HardSphereEoS:
