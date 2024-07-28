@@ -60,9 +60,7 @@ double KineticGas::viscosity(double T, double Vm, const std::vector<double>& x, 
 double KineticGas::thermal_conductivity(double T, double Vm, const vector1d& x, int N){
         double rho = AVOGADRO / Vm;
         
-        Eigen::MatrixXd cond_matr{stdvector_to_EigenMatrix(get_conductivity_matrix(rho, T, x, N))};
-        Eigen::VectorXd cond_vec{stdvector_to_EigenVector(get_conductivity_vector(rho, T, x, N))};
-        Eigen::VectorXd th_expansion_coeff{cond_matr.partialPivLu().solve(cond_vec)};
+        Eigen::VectorXd th_expansion_coeff{compute_thermal_expansion_coeff(rho, T, x, N)};
 
         vector2d rdf = get_rdf(rho, T, x);
         vector1d K = get_K_factors(rho, T, x);
@@ -128,8 +126,8 @@ Eigen::MatrixXd compress_diffusion_matrix(const Eigen::MatrixXd& D_in, int depen
     return D_out;
 }
 
-Eigen::MatrixXd KineticGas::interdiffusion(double T, double Vm, vector1d& x, int N, int frame_of_reference, 
-                                    int dependent_idx, int solvent_idx){
+Eigen::MatrixXd KineticGas::interdiffusion(double T, double Vm, const vector1d& x, int N, int frame_of_reference, 
+                                    int dependent_idx, int solvent_idx, bool do_compress){
     if (dependent_idx < 0 && frame_of_reference == FrameOfReference::solvent) dependent_idx = solvent_idx;
     while (dependent_idx < 0) dependent_idx += Ncomps;
     
@@ -153,20 +151,129 @@ Eigen::MatrixXd KineticGas::interdiffusion(double T, double Vm, vector1d& x, int
     D_dep = psi * D_dep;
     
     Eigen::MatrixXd D{D_dep};
-    vector2d E = get_chemical_potential_factors(T, Vm, x);
-    vector1d ksi(Ncomps, 0.);
-    for (size_t i = 0; i < Ncomps; i++){
-        for (size_t j = 0; j < Ncomps; j++){
-            ksi[i] += E[j][i];
-        }
-    }
+    vector1d ksi = get_ksi_factors(T, Vm, x);
     for (size_t i = 0; i < Ncomps; i++){
         for (size_t j = 0; j < Ncomps; j++){
             D(i, j) -= (ksi[j] / ksi[dependent_idx]) * D_dep(i, dependent_idx);
         }
     }
+    return (do_compress) ? compress_diffusion_matrix(D, dependent_idx) : D;
+}
 
-    return compress_diffusion_matrix(D, dependent_idx);
+Eigen::VectorXd KineticGas::thermal_diffusion_coeff(double T, double Vm, const vector1d& x, int N, 
+                                                int frame_of_reference, int dependent_idx, int solvent_idx){
+    if (dependent_idx < 0 && frame_of_reference == FrameOfReference::solvent) dependent_idx = solvent_idx;
+    while (dependent_idx < 0) dependent_idx += Ncomps;
+    
+    double rho = AVOGADRO / Vm;
+    vector3d d = reshape_diffusive_expansion_vector(compute_diffusive_expansion_coeff(rho, T, x, N));
+    Eigen::VectorXd l = compute_thermal_expansion_coeff(rho, T, x, N);
+    vector1d ksi = get_ksi_factors(T, Vm, x);
+    vector2d rdf = get_rdf(rho, T, x);
+    vector2d cd = get_collision_diameters(rho, T, x);
+
+    Eigen::MatrixXd b = Eigen::MatrixXd::Identity(Ncomps, Ncomps);
+    if (!is_idealgas){
+        for (size_t j = 0; j < Ncomps; j++){
+            for (size_t k = 0; k < Ncomps; k++){
+                b(j, k) += (4. * PI / 3) * rho * x[k] * pow(cd[j][k], 3) * M[j][k] * rdf[j][k]; 
+            }
+        }
+    }
+    Eigen::VectorXd DT(Ncomps);
+    for (size_t i = 0; i < Ncomps; i++){
+        double outer_sum = 0.;
+        for (size_t j = 0; j < Ncomps; j++){
+            double inner_sum = 0.;
+            for (size_t k = 0; k < Ncomps; k++){
+                inner_sum += b(j, k);
+            }
+            outer_sum += d[0][i][j] * x[j] * inner_sum;
+        }
+        DT(i) = (x[i] / 2.) * (l[i] - outer_sum);
+    }
+
+    bool use_zarate{false};
+    if (frame_of_reference == FrameOfReference::zarate){
+        frame_of_reference = FrameOfReference::CoN;
+        use_zarate = true;
+    }
+
+    Eigen::MatrixXd psi = CoM_to_FoR_matr(T, Vm, x, frame_of_reference, solvent_idx);
+    DT = psi * DT;
+    Eigen::MatrixXd Dij = psi * interdiffusion_dependent_CoM(T, Vm, x, N);
+
+    for (size_t i = 0; i < Ncomps; i++){
+        double tmp = 0.;
+        for (size_t k = 0; k < Ncomps; k++){
+            for (size_t m = 0; m < Ncomps; m++){
+                tmp += rho * x[m] * b(m, k);
+            }
+        }
+        DT(i) += (Dij(i, dependent_idx) / ksi[dependent_idx]) * tmp;
+    }
+    DT /= AVOGADRO;
+
+    if (use_zarate){
+        Eigen::VectorXd DT_indep(Ncomps - 1);
+        Eigen::MatrixXd D_indep = interdiffusion(T, Vm, x, N, frame_of_reference, dependent_idx, solvent_idx);
+
+        size_t DT_idx = 0;
+        Eigen::VectorXd x_factor(Ncomps - 1);
+        for (size_t i = 0; i < Ncomps; i++){
+            if (i == dependent_idx) continue;
+            x_factor[DT_idx] = x[i];
+            DT_indep[DT_idx] = DT[i];
+            DT_idx += 1;
+        }
+        Eigen::MatrixXd X = get_zarate_X_matr(x, dependent_idx);
+        double c = 1. / Vm;
+        DT = (- c * X).partialPivLu().solve((DT_indep + c * D_indep * x_factor) / T);
+    }
+    return DT;
+}
+
+Eigen::VectorXd KineticGas::thermal_diffusion_ratio(double T, double Vm, const vector1d& x, int N){
+    double rho = AVOGADRO / Vm;
+    Eigen::VectorXd DT = thermal_diffusion_coeff(T, Vm, x, N, FrameOfReference::CoM, -1);
+    Eigen::MatrixXd Dij = interdiffusion(T, Vm, x, N, FrameOfReference::CoM, -1, -1, false);
+    vector2d rdf = get_rdf(rho, T, x);
+    vector2d cd = get_collision_diameters(rho, T, x);
+    vector1d ksi = get_ksi_factors(T, Vm, x);
+    Eigen::MatrixXd A(Ncomps, Ncomps);
+
+    for (size_t i = 0; i < Ncomps - 1; i++){
+        for (size_t j = 0; j < Ncomps; j++){
+            A(i, j) = - Dij(i, j) * x[j] * (1 / Vm);
+        }
+        A(Ncomps - 1, i) = x[i] * ksi[i];
+    }
+    A(Ncomps - 1, Ncomps - 1) = x[Ncomps - 1] * ksi[Ncomps - 1];
+
+    if (is_idealgas){
+        DT(Ncomps - 1) = 1;
+    }
+    else{
+        DT(Ncomps - 1) = 0.;
+        for (size_t i = 0; i < Ncomps; i++){
+            for (size_t j = 0; j < Ncomps; j++){
+                int k_delta = (i == j) ? 1 : 0;
+                DT(Ncomps - 1) += x[i] * (k_delta + (4. * PI / 3.) * rho * x[j] * pow(cd[i][j], 3) * M[i][j] * rdf[i][j]);
+            }
+        }
+    }
+    return A.partialPivLu().solve(DT);
+}
+
+Eigen::MatrixXd KineticGas::thermal_diffusion_factor(double T, double Vm, const vector1d& x, int N){
+    Eigen::VectorXd kT = thermal_diffusion_ratio(T, Vm, x, N);
+    Eigen::MatrixXd alpha(Ncomps, Ncomps);
+    for (size_t i = 0; i < Ncomps; i++){
+        for (size_t j = 0; j < Ncomps; j++){
+            alpha(i, j) = kT(i) - kT(j);
+        }
+    }
+    return alpha;
 }
 
 Eigen::MatrixXd KineticGas::interdiffusion_dependent_CoM(double T, double Vm, const std::vector<double>& x, int N){
@@ -188,7 +295,7 @@ Eigen::MatrixXd KineticGas::interdiffusion_dependent_CoM(double T, double Vm, co
 Eigen::MatrixXd KineticGas::CoM_to_FoR_matr(double T, double Vm, const vector1d& x, int frame_of_reference, int solvent_idx=-1){
     switch (frame_of_reference) {
     case FrameOfReference::CoM:
-        return Eigen::MatrixXd::Identity(Ncomps, Ncomps);;
+        return Eigen::MatrixXd::Identity(Ncomps, Ncomps);
     case FrameOfReference::CoN:
         return CoM_to_CoN_matr(T, Vm, x);
     case FrameOfReference::CoV:
@@ -199,7 +306,6 @@ Eigen::MatrixXd KineticGas::CoM_to_FoR_matr(double T, double Vm, const vector1d&
         throw std::runtime_error("Unknown (not-implemented) Frame of Reference.");
     }
 }
-
 Eigen::MatrixXd KineticGas::CoM_to_CoN_matr(double T, double Vm, const vector1d& x){
     Eigen::MatrixXd matr = Eigen::MatrixXd::Identity(Ncomps, Ncomps);
     std::vector<double> wt_fracs = get_wt_fracs(x);
@@ -210,7 +316,6 @@ Eigen::MatrixXd KineticGas::CoM_to_CoN_matr(double T, double Vm, const vector1d&
     }
     return matr;
 }
-
 Eigen::MatrixXd KineticGas::CoM_to_solvent_matr(double T, double Vm, const vector1d& x, int solvent_idx){
     Eigen::MatrixXd matr = Eigen::MatrixXd::Identity(Ncomps, Ncomps);
     std::vector<double> wt_fracs = get_wt_fracs(x);
@@ -233,7 +338,6 @@ Eigen::MatrixXd KineticGas::CoM_to_CoV_matr(double T, double Vm, const vector1d&
     }
     return psi;
 }
-
 Eigen::MatrixXd KineticGas::get_zarate_X_matr(const vector1d& x, int dependent_idx){
     while (dependent_idx < 0) dependent_idx += Ncomps;
     Eigen::MatrixXd X(Ncomps - 1, Ncomps - 1);
@@ -261,7 +365,6 @@ Eigen::VectorXd KineticGas::compute_diffusive_expansion_coeff(double rho, double
     Eigen::VectorXd diff_vec{stdvector_to_EigenVector(get_diffusion_vector(rho, T, x, N))};
     return diff_matr.partialPivLu().solve(diff_vec);
 }
-
 vector3d KineticGas::reshape_diffusive_expansion_vector(const Eigen::VectorXd& d_ijq){
     unsigned long N{d_ijq.size() / (Ncomps * Ncomps)};
     vector3d d_qij_matr(N, vector2d(Ncomps, vector1d(Ncomps, 0.)));
@@ -274,7 +377,6 @@ vector3d KineticGas::reshape_diffusive_expansion_vector(const Eigen::VectorXd& d
     }
     return d_qij_matr;
 }
-
 Eigen::VectorXd KineticGas::compute_dth_vector(const vector3d& d_qij, const Eigen::VectorXd& l){
     Eigen::MatrixXd d_ij(Ncomps, Ncomps);
     Eigen::VectorXd l_i(Ncomps);
@@ -288,7 +390,11 @@ Eigen::VectorXd KineticGas::compute_dth_vector(const vector3d& d_qij, const Eige
 
     return d_ij.partialPivLu().solve(l_i);
 }
-
+Eigen::VectorXd KineticGas::compute_thermal_expansion_coeff(double rho, double T, const vector1d& x, int N){
+    Eigen::MatrixXd cond_matr{stdvector_to_EigenMatrix(get_conductivity_matrix(rho, T, x, N))};
+    Eigen::VectorXd cond_vec{stdvector_to_EigenVector(get_conductivity_vector(rho, T, x, N))};
+    return cond_matr.partialPivLu().solve(cond_vec);
+}
 vector2d KineticGas::get_chemical_potential_factors(double T, double Vm, const std::vector<double>& x){
     vector2d dmudrho(Ncomps, vector1d(Ncomps, 0));
     if (is_singlecomp){
@@ -317,4 +423,14 @@ vector2d KineticGas::get_chemical_potential_factors(double T, double Vm, const s
         }
     }
     return Eij;
+}
+vector1d KineticGas::get_ksi_factors(double T, double Vm, const vector1d& x){
+    vector2d E = get_chemical_potential_factors(T, Vm, x);
+    vector1d ksi(Ncomps, 0.);
+    for (size_t i = 0; i < Ncomps; i++){
+        for (size_t j = 0; j < Ncomps; j++){
+            ksi[i] += E[j][i];
+        }
+    }
+    return ksi;
 }

@@ -28,10 +28,11 @@ if(NOT TARGET kineticgas)
 
     set(JSON_INCLUDE ${CMAKE_CURRENT_LIST_DIR}/cpp/external/json/include/) # The directory json/include/nlohmann/ is here (https://github.com/nlohmann/json)
     set(EIGEN_INCLUDE ${CMAKE_CURRENT_LIST_DIR}/cpp/external/eigen/)
+    set(AUTODIFF_INCLUDE ${CMAKE_CURRENT_LIST_DIR}/cpp/external/autodiff)
 
     add_library(kineticgas SHARED IMPORTED)
 
-    set(ALL_KINETICGAS_INCLUDE_DIRS ${KINETICGAS_INCLUDE_ONLY} ${THERMOPACK_INCLUDE} ${JSON_INCLUDE} ${EIGEN_INCLUDE})
+    set(ALL_KINETICGAS_INCLUDE_DIRS ${KINETICGAS_INCLUDE_ONLY} ${THERMOPACK_INCLUDE} ${JSON_INCLUDE} ${EIGEN_INCLUDE} ${AUTODIFF_INCLUDE})
     list(JOIN ALL_KINETICGAS_INCLUDE_DIRS ";" KINETICGAS_INCLUDE)
 
     set_target_properties(kineticgas PROPERTIES 

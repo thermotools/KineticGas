@@ -1,6 +1,7 @@
 #include "MieKinGas.h"
 #include "HardSphere.h"
 #include <vector>
+#include <Eigen/Dense>
 
 int main(){
     MieKinGas mie("AR,KR,NE"); // MieKinGas for argon/krypton/neon mixture
@@ -17,5 +18,10 @@ int main(){
     std::cout << "With last component (Ne) as dependent : \n" << mie.interdiffusion(T, Vm, x) << "\n\n";
     std::cout << "With second component (Kr) as dependent : \n" << mie.interdiffusion(T, Vm, x, 2, FrameOfReference::CoN, 1) << "\n\n";
     std::cout << "With first component (Ar) as dependent : \n" << mie.interdiffusion(T, Vm, x, 2, FrameOfReference::CoN, 0) << "\n\n";
+    
+    std::cout << "\nThermal diffusion is measured many ways ...\n";
+    std::cout << "Thermal diffusion coefficients : \n" << mie.thermal_diffusion_coeff(T, Vm, x) << "\n\n";
+    std::cout << "Thermal diffusion ratios : \n" << mie.thermal_diffusion_ratio(T, Vm, x) << "\n\n";
+    std::cout << "Thermal diffusion factors : \n" << mie.thermal_diffusion_factor(T, Vm, x) << "\n";
     return 0;
 }
