@@ -10,3 +10,6 @@
 [submodule "cpp/external/autodiff"]
 	path = cpp/external/autodiff
 	url = https://github.com/autodiff/autodiff.git
+[submodule "cpp/external/thermopack"]
+	path = cpp/external/thermopack
+	url = https://github.com/thermotools/thermopack.git
