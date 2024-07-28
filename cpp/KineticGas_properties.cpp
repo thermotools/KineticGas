@@ -111,7 +111,81 @@ double KineticGas::thermal_conductivity(double T, double Vm, const vector1d& x, 
         return cond;
 }
 
-Eigen::MatrixXd KineticGas::CoM_to_FoR_matr(double T, double Vm, const std::vector<double>& x, int frame_of_reference, int solvent_idx=-1){
+Eigen::MatrixXd compress_diffusion_matrix(const Eigen::MatrixXd& D_in, int dependent_idx){
+    size_t N = D_in.cols();
+    Eigen::MatrixXd D_out(N - 1, N - 1);
+    size_t Mi = 0;
+    for (size_t i = 0; i < N; i++){
+        if (i == dependent_idx) continue;
+        size_t Mj = 0;
+        for (size_t j = 0; j < N; j++){
+            if (j == dependent_idx) continue;
+            D_out(Mi, Mj) = D_in(i, j);
+            Mj++;
+        }
+        Mi++;
+    }
+    return D_out;
+}
+
+Eigen::MatrixXd KineticGas::interdiffusion(double T, double Vm, vector1d& x, int N, int frame_of_reference, 
+                                    int dependent_idx, int solvent_idx){
+    if (dependent_idx < 0 && frame_of_reference == FrameOfReference::solvent) dependent_idx = solvent_idx;
+    while (dependent_idx < 0) dependent_idx += Ncomps;
+    
+    if (frame_of_reference == FrameOfReference::zarate_x){
+        Eigen::MatrixXd D = interdiffusion(T, Vm, x, N, FrameOfReference::CoN, dependent_idx);
+        return compress_diffusion_matrix(D, dependent_idx);
+    }
+    else if (frame_of_reference == FrameOfReference::zarate){
+        Eigen::MatrixXd X = get_zarate_X_matr(x, dependent_idx);
+        Eigen::MatrixXd Dx = interdiffusion(T, Vm, x, N, FrameOfReference::zarate_x, dependent_idx);
+        return X * Dx * X.inverse();
+    }
+    else if (frame_of_reference == FrameOfReference::zarate_w){
+        Eigen::MatrixXd W = get_zarate_W_matr(x, dependent_idx);
+        Eigen::MatrixXd Dz = interdiffusion(T, Vm, x, N, FrameOfReference::zarate, dependent_idx);
+        return W * Dz * W.inverse();
+    }
+
+    Eigen::MatrixXd psi = CoM_to_FoR_matr(T, Vm, x, frame_of_reference, solvent_idx);
+    Eigen::MatrixXd D_dep = interdiffusion_dependent_CoM(T, Vm, x, N);
+    D_dep = psi * D_dep;
+    
+    Eigen::MatrixXd D{D_dep};
+    vector2d E = get_chemical_potential_factors(T, Vm, x);
+    vector1d ksi(Ncomps, 0.);
+    for (size_t i = 0; i < Ncomps; i++){
+        for (size_t j = 0; j < Ncomps; j++){
+            ksi[i] += E[j][i];
+        }
+    }
+    for (size_t i = 0; i < Ncomps; i++){
+        for (size_t j = 0; j < Ncomps; j++){
+            D(i, j) -= (ksi[j] / ksi[dependent_idx]) * D_dep(i, dependent_idx);
+        }
+    }
+
+    return compress_diffusion_matrix(D, dependent_idx);
+}
+
+Eigen::MatrixXd KineticGas::interdiffusion_dependent_CoM(double T, double Vm, const std::vector<double>& x, int N){
+    double rho = AVOGADRO / Vm;
+    vector3d d = reshape_diffusive_expansion_vector(compute_diffusive_expansion_coeff(rho, T, x, N));
+    vector2d E = get_chemical_potential_factors(T, Vm, x);
+    Eigen::MatrixXd Dij(Ncomps, Ncomps);
+    for (size_t i = 0; i < Ncomps; i++){
+        for (size_t j = 0; j < Ncomps; j++){
+            for (size_t k = 0; k < Ncomps; k++){
+                Dij(i, j) += d[0][i][k] * E[k][j];
+            }
+            Dij(i, j) *= x[i] / (2 * rho);
+        }
+    }
+    return Dij;
+}
+
+Eigen::MatrixXd KineticGas::CoM_to_FoR_matr(double T, double Vm, const vector1d& x, int frame_of_reference, int solvent_idx=-1){
     switch (frame_of_reference) {
     case FrameOfReference::CoM:
         return Eigen::MatrixXd::Identity(Ncomps, Ncomps);;
@@ -126,7 +200,7 @@ Eigen::MatrixXd KineticGas::CoM_to_FoR_matr(double T, double Vm, const std::vect
     }
 }
 
-Eigen::MatrixXd KineticGas::CoM_to_CoN_matr(double T, double Vm, const std::vector<double>& x){
+Eigen::MatrixXd KineticGas::CoM_to_CoN_matr(double T, double Vm, const vector1d& x){
     Eigen::MatrixXd matr = Eigen::MatrixXd::Identity(Ncomps, Ncomps);
     std::vector<double> wt_fracs = get_wt_fracs(x);
     for (int i = 0; i < Ncomps; i++){
@@ -137,7 +211,7 @@ Eigen::MatrixXd KineticGas::CoM_to_CoN_matr(double T, double Vm, const std::vect
     return matr;
 }
 
-Eigen::MatrixXd KineticGas::CoM_to_solvent_matr(double T, double Vm, const std::vector<double>& x, int solvent_idx){
+Eigen::MatrixXd KineticGas::CoM_to_solvent_matr(double T, double Vm, const vector1d& x, int solvent_idx){
     Eigen::MatrixXd matr = Eigen::MatrixXd::Identity(Ncomps, Ncomps);
     std::vector<double> wt_fracs = get_wt_fracs(x);
     for (int i = 0; i < Ncomps; i++){
@@ -147,7 +221,7 @@ Eigen::MatrixXd KineticGas::CoM_to_solvent_matr(double T, double Vm, const std::
     }
     return matr;
 }
-Eigen::MatrixXd KineticGas::CoM_to_CoV_matr(double T, double Vm, const std::vector<double>& x){
+Eigen::MatrixXd KineticGas::CoM_to_CoV_matr(double T, double Vm, const vector1d& x){
     double p = eos->pressure_tv(T, Vm, x);
     std::vector<double> dvdn = eos->specific_volume(T, p, x, eos->VAPPH, false, false, true).dn();
     Eigen::MatrixXd psi = Eigen::MatrixXd::Identity(Ncomps, Ncomps);
@@ -160,6 +234,28 @@ Eigen::MatrixXd KineticGas::CoM_to_CoV_matr(double T, double Vm, const std::vect
     return psi;
 }
 
+Eigen::MatrixXd KineticGas::get_zarate_X_matr(const vector1d& x, int dependent_idx){
+    while (dependent_idx < 0) dependent_idx += Ncomps;
+    Eigen::MatrixXd X(Ncomps - 1, Ncomps - 1);
+    size_t Mi = 0;
+    for (size_t i = 0; i < Ncomps; i++){
+        if (i == dependent_idx) continue;
+        X(Mi, Mi) = x[i];
+        size_t Mj = 0;
+        for (size_t j = 0; j < Ncomps; j++){
+            if (j == dependent_idx) continue;
+            X(Mi, Mj) -= x[i] * x[j];
+            Mj++;
+        }
+        Mi++;
+    }
+    return X;
+}
+Eigen::MatrixXd KineticGas::get_zarate_W_matr(const vector1d& x, int dependent_idx){
+    vector1d wt_fracs = get_wt_fracs(x);
+    return get_zarate_X_matr(wt_fracs, dependent_idx);
+}
+        
 Eigen::VectorXd KineticGas::compute_diffusive_expansion_coeff(double rho, double T, const vector1d& x, int N){
     Eigen::MatrixXd diff_matr{stdvector_to_EigenMatrix(get_diffusion_matrix(rho, T, x, N))};
     Eigen::VectorXd diff_vec{stdvector_to_EigenVector(get_diffusion_vector(rho, T, x, N))};

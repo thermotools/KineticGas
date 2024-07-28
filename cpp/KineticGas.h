@@ -74,7 +74,10 @@ enum FrameOfReference{
         CoM,
         CoN,
         CoV,
-        solvent
+        solvent,
+        zarate,
+        zarate_x,
+        zarate_w
     };
 
 class KineticGas{
@@ -104,30 +107,31 @@ class KineticGas{
     */
     virtual std::vector<std::vector<double>> model_rdf(double rho, double T, const std::vector<double>& mole_fracs) = 0;
 
+#ifdef NOPYTHON
 // ---------------------------------------------------------------------------------------------------------------------------------------------- //
 // --------------------------------------------- Interfaces to compute transport coefficients --------------------------------------------------- //
-// ------------------------ NOTE: Implementation is only compiled if compilation flag -DNOPYTHON is used ---------------------------------------- //
+// ------------------------ NOTE: Only compiled if compilation flag -DNOPYTHON is used ---------------------------------------- //
 
-    std::vector<std::vector<double>> interdiffusion(double T, double Vm, std::vector<double>& x, int N=2, int frame_of_reference=FrameOfReference::CoN, int dependent_idx=-1, int solvent_idx=-1);
+    Eigen::MatrixXd interdiffusion(double T, double Vm, std::vector<double>& x, int N=2, int frame_of_reference=FrameOfReference::CoN, int dependent_idx=-1, int solvent_idx=-1);
     double thermal_conductivity(double T, double Vm, const std::vector<double>& x, int N=2);
     double viscosity(double T, double Vm, const std::vector<double>& x, int N=2);
     std::vector<double> thermal_diffusion_coeff(double T, double Vm, const std::vector<double>& x, int N=2, int frame_of_reference=FrameOfReference::CoN, int dependent_idx=-1, int solvent_idx=-1);
     std::vector<double> thermal_diffusion_ratio(double T, double Vm, const std::vector<double>& x, int N=2);
     std::vector<std::vector<double>> thermal_diffusion_factor(double T, double Vm, const std::vector<double>& x, int N=2);
-    std::vector<std::vector<double>> interdiffusion_dependent_CoM(double T, double Vm, const std::vector<double>& x, int N=2);
+    Eigen::MatrixXd interdiffusion_dependent_CoM(double T, double Vm, const std::vector<double>& x, int N=2);
 
 // ------------------------------------------------------------------------------------------------------------------------------------- //
 // ----------------- Matrices and vectors for the sets of equations (6-10) in Revised Enskog Theory for Mie fluids  -------------------- //
 // ----------------- doi : 10.1063/5.0149865, which are solved to obtain the Sonine polynomial expansion coefficients ------------------ //
 // ----------------- for the velocity distribution functions. -------------------------------------------------------------------------- //
 // ----------------- The methods compute_* solve the appropriate equations and return the expansion coefficients ----------------------- //
-    #ifdef NOPYTHON
+    
         Eigen::VectorXd compute_viscous_expansion_coeff(double rho, double T, const vector1d& x, int N);
         Eigen::VectorXd compute_thermal_expansion_coeff(double rho, double T, const vector1d& x, int N);
         Eigen::VectorXd compute_diffusive_expansion_coeff(double rho, double T, const vector1d& x, int N);
         std::vector<std::vector<std::vector<double>>> reshape_diffusive_expansion_vector(const Eigen::VectorXd& d_ijq);
         Eigen::VectorXd compute_dth_vector(const std::vector<std::vector<std::vector<double>>>& d_ijq, const Eigen::VectorXd& l);
-    #endif
+#endif
 
     std::vector<std::vector<double>> get_conductivity_matrix(double rho, double T, const std::vector<double>& x, int N);
     std::vector<double> get_diffusion_vector(double rho, double T, const std::vector<double>& x, int N);
@@ -154,9 +158,10 @@ class KineticGas{
         Eigen::MatrixXd CoM_to_CoN_matr(double T, double Vm, const std::vector<double>& x);
         Eigen::MatrixXd CoM_to_solvent_matr(double T, double Vm, const std::vector<double>& x, int solvent_idx);
         Eigen::MatrixXd CoM_to_CoV_matr(double T, double Vm, const std::vector<double>& x);
-
+        Eigen::MatrixXd get_zarate_X_matr(const std::vector<double>& x, int dependent_idx);
+        Eigen::MatrixXd get_zarate_W_matr(const std::vector<double>& x, int dependent_idx);
+        
         std::vector<std::vector<double>> get_chemical_potential_factors(double T, double Vm, const std::vector<double>& x);
-        std::vector<double> get_ksi_factors(double T, double Vm, const std::vector<double>& x);  
     #endif
 
 // ------------------------------------------------------------------------------------------------------------------------ //

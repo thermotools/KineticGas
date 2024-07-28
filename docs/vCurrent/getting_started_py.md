@@ -19,7 +19,7 @@ mie = MieKinGas('CO2,C1') # RET-Mie for CO2/CH4 mixture
 hs = HardSphere('AR,KR,XE') # RET-HS for Ar/Kr/He mixture
 ```
 
-The component identifiers are equivalent to the file names in the `pykingas/fluids` directory, and are consistent with the identifiers used by `ThermoPack`. A list of all available fluids and their identifiers can be found in the [Fluid identifiers](#fluid-identifiers) section.
+The component identifiers are equivalent to the file names in the `pykingas/fluids` directory, and are consistent with the identifiers used by `ThermoPack`. A list of all available fluids and their identifiers can be found in the [Fluid identifiers](fluid_identifiers.html) section.
 
 ### Note on pure components
 

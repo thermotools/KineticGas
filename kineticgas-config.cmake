@@ -1,3 +1,12 @@
+# Checks whether KineticGas has been built and installed.
+# Result variables:
+#   KINETICGAS_FOUND : TRUE
+#   KINETICGAS_INSTALLED : Whether the dynamic library is found where expected (TRUE/FALSE).
+#   KINETICGAS_LIB : Path to the dynamic library
+#   KINETICGAS_INCLUDE : List of include paths to KineticGas headers and all dependencies
+#   KINETICGAS_INCLUDE_ONLY : Include path to KineticGas headers
+
+
 set(KINETICGAS_LIB ${CMAKE_CURRENT_LIST_DIR}/lib/libkineticgas${CMAKE_SHARED_LIBRARY_SUFFIX})
 
 if(NOT EXISTS ${KINETICGAS_LIB})
@@ -24,6 +33,7 @@ if(NOT TARGET kineticgas)
 
     set(ALL_KINETICGAS_INCLUDE_DIRS ${KINETICGAS_INCLUDE_ONLY} ${THERMOPACK_INCLUDE} ${JSON_INCLUDE} ${EIGEN_INCLUDE})
     list(JOIN ALL_KINETICGAS_INCLUDE_DIRS ";" KINETICGAS_INCLUDE)
+
     set_target_properties(kineticgas PROPERTIES 
                             IMPORTED_LOCATION ${KINETICGAS_LIB}
                             INTERFACE_INCLUDE_DIRECTORIES "${KINETICGAS_INCLUDE}")
