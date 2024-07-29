@@ -24,7 +24,6 @@ Contains: The abstract class 'KineticGas', which computes the A_pqrl factors and
 #pragma once
 #include "Factorial.h"
 #include "global_params.h"
-#include "eos_interface.h"
 #include <vector>
 #include <map>
 #include <functional>
@@ -32,6 +31,7 @@ Contains: The abstract class 'KineticGas', which computes the A_pqrl factors and
 #include <math.h>
 
 #ifdef NOPYTHON
+    #include "eos_interface.h"
     #include <Eigen/Dense>
     #include <nlohmann/json.hpp>
     #include <cppThermopack/thermo.h>
