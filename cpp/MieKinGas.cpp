@@ -29,7 +29,7 @@ MieKinGas::MieKinGas(std::string comps, bool is_idealgas)
     mix_exponents(la);
     mix_exponents(lr);
     set_C_alpha();
-    eos = std::make_unique<Saftvrmie>(comps);
+    eos = std::make_unique<GenericEoS>(ThermoWrapper(Saftvrmie(comps)));
 }
 #endif
 

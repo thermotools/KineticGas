@@ -96,10 +96,10 @@ double KineticGas::thermal_conductivity(double T, double Vm, const vector1d& x, 
         double avg_mol_weight = 0.;
         for (size_t i = 0; i < Ncomps; i++) avg_mol_weight += x[i] * m[i];
         avg_mol_weight *= AVOGADRO * 1e3;
-        double Cp_id = (is_singlecomp) ? eos->idealenthalpysingle(T, 1, true).dt() : 0.;
+        double Cp_id = (is_singlecomp) ? eos->Cp_ideal(T, 1) : 0.;
         if (!is_singlecomp){
             for (size_t i = 0; i < Ncomps; i++){
-                Cp_id += x[i] * eos->idealenthalpysingle(T, i + 1, true).dt();
+                Cp_id += x[i] * eos->Cp_ideal(T, i + 1);
             }
         }
         double Cp_factor = (Cp_id - 5. * GAS_CONSTANT / 2.) / avg_mol_weight;
@@ -328,7 +328,7 @@ Eigen::MatrixXd KineticGas::CoM_to_solvent_matr(double T, double Vm, const vecto
 }
 Eigen::MatrixXd KineticGas::CoM_to_CoV_matr(double T, double Vm, const vector1d& x){
     double p = eos->pressure_tv(T, Vm, x);
-    std::vector<double> dvdn = eos->specific_volume(T, p, x, eos->VAPPH, false, false, true).dn();
+    std::vector<double> dvdn = eos->dvdn(T, p, x, eos->VAPPH);
     Eigen::MatrixXd psi = Eigen::MatrixXd::Identity(Ncomps, Ncomps);
     std::vector<double> wt_frac = get_wt_fracs(x);
     for (size_t i = 0; i < Ncomps; i++){
@@ -398,7 +398,7 @@ Eigen::VectorXd KineticGas::compute_thermal_expansion_coeff(double rho, double T
 vector2d KineticGas::get_chemical_potential_factors(double T, double Vm, const std::vector<double>& x){
     vector2d dmudrho(Ncomps, vector1d(Ncomps, 0));
     if (is_singlecomp){
-        const vector2d dmudn_pure = eos->chemical_potential_tv(T, Vm, {1.}, false, false, true).dn();
+        const vector2d dmudn_pure = eos->dmudn(T, Vm, {1.});
         const double RT = GAS_CONSTANT * T;
         const double dmudrho_pure = Vm * dmudn_pure[0][0];
         const double rho = 1 / Vm;
@@ -407,7 +407,7 @@ vector2d KineticGas::get_chemical_potential_factors(double T, double Vm, const s
         dmudrho[1][1] = (dmudrho_pure + RT * x[0] / (rho * x[1])) / AVOGADRO;
     }
     else{
-        const vector2d dmudn = eos->chemical_potential_tv(T, Vm, x, false, false, true).dn();
+        const vector2d dmudn = eos->dmudn(T, Vm, x);
         for (size_t i = 0; i < Ncomps; i++){
             for (size_t j = 0; j < Ncomps; j++){
                 dmudrho[i][j] = Vm * dmudn[i][j] / AVOGADRO;

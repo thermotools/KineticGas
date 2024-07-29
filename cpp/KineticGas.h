@@ -24,6 +24,7 @@ Contains: The abstract class 'KineticGas', which computes the A_pqrl factors and
 #pragma once
 #include "Factorial.h"
 #include "global_params.h"
+#include "eos_interface.h"
 #include <vector>
 #include <map>
 #include <functional>
@@ -180,7 +181,7 @@ class KineticGas{
 
     #ifdef NOPYTHON
         const std::vector<json> compdata;
-        std::unique_ptr<Thermo> eos;
+        std::unique_ptr<GenericEoS> eos;
     #endif
 
 // ----------------------------------------------------------------------------------------------------------------------------------- //
