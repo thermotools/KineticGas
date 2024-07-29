@@ -3,7 +3,7 @@ requires = ["scikit-build-core"]
 build-backend = "scikit_build_core.build"
 
 [tool.scikit-build]
-sdist.include = ["libpykingas*"]
+sdist.include = ["libpykingas*", "fluids"]
 sdist.exclude = ["tests/"]
 wheel.expand-macos-universal-tags = true
 
