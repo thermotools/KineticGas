@@ -2,10 +2,9 @@
 #include "KineticGas.h"
 #include "Spherical.h"
 #include "global_params.h"
+#include <autodiff/forward/dual.hpp>
 
-using vector1d = std::vector<double>;
-using vector2d = std::vector<vector1d>;
-using vector3d = std::vector<vector2d>;
+using namespace autodiff;
 
 struct TangToennisParam{
     double A, b, A_tilde, a_tilde, eps_div_k, Re, sigma;
@@ -34,5 +33,9 @@ class ModTangToennis : public Spherical {
     vector2d model_rdf(double rho, double T, const vector1d& x){
         throw std::runtime_error("Modified Tang-Toennis only implemented for ideal gas!");
     }
+
+    private:
+    dual potential(int i, int j, dual r);
+    dual potential_r (int i, int j, dual r);
 
 };

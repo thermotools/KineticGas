@@ -1,5 +1,5 @@
 from pykingas.py_KineticGas import py_KineticGas
-from pykingas import cpp_ModTangToennis, cpp_TangToennisParam
+from .libpykingas import cpp_ModTangToennis, cpp_TangToennisParam
 from scipy.constants import Boltzmann, Avogadro
 import numpy as np
 from scipy.integrate import quad
