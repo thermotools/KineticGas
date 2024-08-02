@@ -30,7 +30,7 @@ using vector2d = std::vector<vector1d>;
 
 
 #define Spherical_potential_bindings(Model) \
-        .def("potential", &Model::potential) \
+        .def("potential", py::overload_cast<int, int, double>(&Model::potential)) \
         .def("potential_derivative_r", &Model::potential_derivative_r) \
         .def("potential_dblderivative_rr", &Model::potential_dblderivative_rr) \
 
@@ -176,7 +176,7 @@ PYBIND11_MODULE(libpykingas, handle){
                         bool>()
              )
         KineticGas_bindings(ModTangToennis)
-        .def("potential", &ModTangToennis::potential)
+        .def("potential", py::overload_cast<int, int, double>(&ModTangToennis::potential))
         .def("potential_r", &ModTangToennis::potential_derivative_r)
         .def("potential_rr", &ModTangToennis::potential_dblderivative_rr)
         .def("set_tl_model", &ModTangToennis::set_transfer_length_model)

@@ -64,7 +64,8 @@ if (pylib)
   set(pyTARGET libpykingas)
   add_subdirectory(${PYBIND11_ROOT})
   pybind11_add_module(${pyTARGET} ${COMMON_SRC} ${SRC_DIR}/bindings.cpp)
-  
+  target_include_directories(${pyTARGET} PUBLIC ${AUTODIFF_INCLUDE})
+
   # The install directory is the output (wheel) directory
   install(TARGETS ${pyTARGET} DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/pykingas)
   file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/fluids DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/pykingas/)
