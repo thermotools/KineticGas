@@ -6,7 +6,7 @@ permalink: /vcurrent/MieType_methods.html
 ---
 
 <!--- 
-Generated at: 2024-05-23T10:28:16.920865
+Generated at: 2024-04-18T17:31:55.382397
 This is an auto-generated file, generated using the script at KineticGas/pyUtils/markdown_from_docstrings.py
 The file is created by parsing the docstrings of the methods in the 
 MieType class. For instructions on how to use the parser routines, see the
@@ -23,11 +23,13 @@ Mie-Type Model. This class implements utility methods to access mixing parameter
     * [get_epsilon_matrix](#get_epsilon_matrixself-eps_div_k-kij)
     * [get_lambda_matrix](#get_lambda_matrixself-lambdas-lij)
     * [get_sigma_matrix](#get_sigma_matrixself-sigma)
-    * [potential](#potentialself-i-j-r)
-    * [potential_r](#potential_rself-i-j-r)
-    * [potential_rr](#potential_rrself-i-j-r)
-  * [Interfaces to C++ methods](#interfaces-to-c++-methods)
-    * [saft_rdf](#saft_rdfself-t-vm-x-order2-g2_correctiontrue)
+    * [set_eps_div_k](#set_eps_div_kself-eps_div_k-update_eostrue)
+    * [set_la](#set_laself-la-update_eostrue)
+    * [set_lr](#set_lrself-lr-update_eostrue)
+    * [set_sigma](#set_sigmaself-sigma-update_eostrue)
+  * [Internal methods](#internal-methods)
+    * [\_\_update_cpp_kingas_param\_\_](#__update_cpp_kingas_param__self)
+    * [\_\_update_eos_param\_\_](#__update_eos_param__self)
 
 ## Constructor
 
@@ -83,9 +85,10 @@ Set- and get methods for interaction parameters, mixing parameters ...
     * [get_epsilon_matrix](#get_epsilon_matrixself-eps_div_k-kij)
     * [get_lambda_matrix](#get_lambda_matrixself-lambdas-lij)
     * [get_sigma_matrix](#get_sigma_matrixself-sigma)
-    * [potential](#potentialself-i-j-r)
-    * [potential_r](#potential_rself-i-j-r)
-    * [potential_rr](#potential_rrself-i-j-r)
+    * [set_eps_div_k](#set_eps_div_kself-eps_div_k-update_eostrue)
+    * [set_la](#set_laself-la-update_eostrue)
+    * [set_lr](#set_lrself-lr-update_eostrue)
+    * [set_sigma](#set_sigmaself-sigma-update_eostrue)
 
 
 ### `get_BH_diameters(self, T)`
@@ -140,7 +143,7 @@ Compute pair-interaction $\lambda_r$ parameters, apply mixing parameter.
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Repulsive exponent for each pair-interaction. 
 
 ### `get_sigma_matrix(self, sigma)`
-Compute interaction parameter $sigma$ for each particle pair, applying mixing parameters given by `self.lij`.
+Compute interaction parameter $\sigma$ for each particle pair, applying mixing parameters given by `self.lij`.
 Warning: Use of mixing parameters is not thouroughly tested.
  
 
@@ -162,74 +165,62 @@ Warning: Use of mixing parameters is not thouroughly tested.
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Use of mixing parameters is not thouroughly tested.  
 
-### `potential(self, i, j, r)`
-Evaluate the interaction potential between types i and j at distance r
+### `set_eps_div_k(self, eps_div_k, update_eos=True)`
+Set the well depth parameter. Note: Running with `update_eos=False` will result in a model using
+different parameters for collision integrals and the RDF than for the equation of state.
 
 Args:
-i, j (int) : Component indices
-r (float) : Distance [m]
-Returns:
-float : Interaction potential [J]
+eps_div_k (list[float or None]) : Well depth parameter for each pure component. Use `None` for default values. Unit (K).
+update_eos (bool) : If True (default) also update the eos.
  
 
-### `potential_r(self, i, j, r)`
-Evaluate the derivative of the interaction potential between types i and j at distance r
+### `set_la(self, la, update_eos=True)`
+Set the attractive exponent. Note: Running with `update_eos=False` will result in a model using
+different parameters for collision integrals and the RDF than for the equation of state.
 
 Args:
-i, j (int) : Component indices
-r (float) : Distance [m]
-Returns:
-float : First derivative of interaction potential [N]
+la (list[float or None]) : Attractive exponent for each pure component. Use `None` for default values.
+update_eos (bool) : If True (default) also update the eos.
  
 
-### `potential_rr(self, i, j, r)`
-Evaluate the second derivative of the interaction potential between types i and j at distance r
+### `set_lr(self, lr, update_eos=True)`
+Set the repulsive exponent. Note: Running with `update_eos=False` will result in a model using
+different parameters for collision integrals and the RDF than for the equation of state.
 
 Args:
-i, j (int) : Component indices
-r (float) : Distance [m]
-Returns:
-float : Second derivative of interaction potential [N / m]
+lr (list[float or None]) : Repulsive exponent for each pure component. Use `None` for default values.
+update_eos (bool) : If True (default) also update the eos.
  
 
-## Interfaces to C++ methods
+### `set_sigma(self, sigma, update_eos=True)`
+Set the size parameter. Note: Running with `update_eos=False` will result in a model using
+different parameters for collision integrals and the RDF than for the equation of state.
 
-Lightweight wrappers for the most commonly used C++ side methods.
+Args:
+sigma (list[float or None]) : Size parameter for each pure component. Use `None` for default values. Unit (m).
+update_eos (bool) : If True (default) also update the eos.
+ 
+
+## Internal methods
+
+Internal methods are not intended for use by end-users.
 
 ### Table of contents
-  * [Interfaces to C++ methods](#interfaces-to-c++-methods)
-    * [saft_rdf](#saft_rdfself-t-vm-x-order2-g2_correctiontrue)
+  * [Internal methods](#internal-methods)
+    * [\_\_update_cpp_kingas_param\_\_](#__update_cpp_kingas_param__self)
+    * [\_\_update_eos_param\_\_](#__update_eos_param__self)
 
 
-### `saft_rdf(self, T, Vm, x, order=2, g2_correction=True)`
-Compute the radial distribution function at contact
+### `__update_cpp_kingas_param__(self)`
+Re-Initialize the C++ module with the current parameters in this model. Inheriting classes are responsible
+for initializing the correct model.
  
 
-#### Args:
+### `__update_eos_param__(self)`
+Update the EoS model to use the same parameters as this model is currently set with.
 
-&nbsp;&nbsp;&nbsp;&nbsp; **T (float) :** 
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Temperature [K]
-
-&nbsp;&nbsp;&nbsp;&nbsp; **Vm (float) :** 
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Molar volume [m3/mol]
-
-&nbsp;&nbsp;&nbsp;&nbsp; **x (list[float]) :** 
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Molar composition [-]
-
-&nbsp;&nbsp;&nbsp;&nbsp; **order (int) :** 
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Pertubation order
-
-&nbsp;&nbsp;&nbsp;&nbsp; **g2_correction (bool) :** 
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Use correction factor for g2? 
-
-#### Returns:
-
-&nbsp;&nbsp;&nbsp;&nbsp; **2d array :** 
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  RDF at contact, indexed by component pair. 
+Raises:
+AttributeError : If the EoS object does not support setting parameters
+Warning : If the EoS object is using segment numbers different from 1.
+ 
 

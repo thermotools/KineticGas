@@ -1,5 +1,9 @@
 """
 Test module that checks that the output from the Sutherland model does not change if you add terms with C = 0.
+
+NOTE: The tests make comparrisons to the MieKinGas (legacy) implementation. If the tests fail, it may be due to 
+        The Sutherland class and MieKinGas class using different regressed parameter sets for some correlated
+        factor on the C++ side.
 """
 from pykingas.Sutherland import S_MieKinGas, Sutherland
 from pykingas.MieKinGas import MieKinGas

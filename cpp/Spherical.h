@@ -23,7 +23,19 @@ class Spherical : public KineticGas {
     Spherical(vector1d mole_weights,
                 vector2d sigmaij,
                 bool is_idealgas, bool is_singlecomp);
+    
+    Spherical(vector1d mole_weights,
+                vector2d sigmaij, vector2d eps,
+                bool is_idealgas, bool is_singlecomp);
 
+    Spherical(std::vector<double> mole_weights, 
+                std::vector<std::vector<double>> sigmaij,
+                bool is_idealgas);
+    
+    #ifdef NOPYTHON
+        Spherical(std::string comps, bool is_idealgas) : KineticGas(comps, is_idealgas) {}
+    #endif
+    
     virtual ~Spherical(){};
 
     // Potential models, these must be overridden in derived classes, in addition to model_rdf and get_contact_diameters.
@@ -58,9 +70,9 @@ class Spherical : public KineticGas {
     double w_integral_tester(int i, int j, double T, int l, int r, IntegrationParam& param);
 
     protected:
-    // In the general case, sigma is a scaling parameter
-    // On the order of the molecular size. Its specific physical meaning
-    // is different for different potential models. It may also be without physical meaning
+    // In the general case, sigma is a scaling parameter on the order of the molecular size (m). Its specific physical meaning
+    // may be different for different potential models. Likewise, 'eps' is a scaling parameter describing the molecular
+    // interaction potential (J).
     vector2d sigma;
     vector2d eps;
 
@@ -109,8 +121,6 @@ class Spherical : public KineticGas {
 
     double w_integral(int i, int j, double T, int l, int r); // Dimentionless collision integral for spherical potentials
     double w_integrand(int i, int j, double T, double g, double b, int l, int r);
-    std::function<double(int, int, double, double, double, int, int)> w_integrand_export; // Will bind w_integrand to this function such that it can be passed to the external integration module
-
 };
 
 class IntegrationParam{

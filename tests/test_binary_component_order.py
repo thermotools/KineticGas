@@ -143,4 +143,4 @@ def _test_soret(model, N, silent=True):
         report(check_eq_lst(ST_lst), [model, N, ST_lst])
 
 if __name__ == '__main__':
-    test_viscosity(models[0], 2, silent=False)
+    test_diffusion(models[0], 2, 'CoN', silent=False)

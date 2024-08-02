@@ -1,3 +1,11 @@
+"""
+Tests the difference in output between the classical Mie model (FH0) and the FH-Mie models.
+
+NOTE: The tests make a comparrison between the MieKinGas (legacy) class, and the QuantumMie class.
+        Only the latter inherits from Sutherland. This means that the classes can potentially be
+        using different values for some correlated factors on the C++ side. If the tests fail, 
+        that may be the cause.
+"""
 import matplotlib.pyplot as plt
 import numpy as np
 from plottools.cyclers import NormedCmap
@@ -31,7 +39,6 @@ def test_singlecomp_rdf(fh_order):
                 # plt.plot(rho_lst * s**3, qmie_rdf, color=cmap(T))
                 # plt.plot(rho_lst * s**3, mie_rdf, linestyle='', color=cmap(T), marker='|')
 
-                # print(T, max_err)
                 assert max_err < tolerances[fh_order]
     # plt.show()
 

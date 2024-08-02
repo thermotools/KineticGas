@@ -31,6 +31,15 @@ Contains: The abstract class 'KineticGas', which computes the A_pqrl factors and
 #include <math.h>
 #include <iostream>
 
+#ifdef NOPYTHON
+    #include "eos_interface.h"
+    #include <Eigen/Dense>
+    #include <nlohmann/json.hpp>
+    #include <cppThermopack/thermo.h>
+    #include <memory>
+    using json = nlohmann::json;
+#endif
+
 /*
    To avoid unneccesary evaluations of the collision integrals, this struct is used to represent a point in 
    The five-dimensional (i, j, l, r, T)-space where the collision integral has been evaluated.
@@ -63,11 +72,24 @@ struct OmegaPoint{
 
 };
 
+enum FrameOfReference{
+        CoM,
+        CoN,
+        CoV,
+        solvent,
+        zarate,
+        zarate_x,
+        zarate_w
+    };
+
 class KineticGas{
     public:
-
-    KineticGas(vector1d mole_weights, bool is_idealgas, bool is_singlecomp);
+    KineticGas(std::vector<double> mole_weights, bool is_idealgas, bool is_singlecomp);
+    #ifdef NOPYTHON
+        KineticGas(std::string comps, bool is_idealgas);
+    #endif
     virtual ~KineticGas(){};
+
     // Collision integrals
     virtual double omega(int i, int j, int l, int r, double T) = 0;
 
@@ -87,37 +109,83 @@ class KineticGas{
     */
     virtual vector2d model_rdf(double rho, double T, const vector1d& mole_fracs) = 0;
 
-    vector1d get_wt_fracs(const vector1d mole_fracs); // Compute weight fractions from mole fractions
+    #ifdef NOPYTHON
+// ---------------------------------------------------------------------------------------------------------------------------------------------- //
+// --------------------------------------------- Interfaces to compute transport coefficients --------------------------------------------------- //
+// ------------------------ NOTE: Only compiled if compilation flag -DNOPYTHON is used ---------------------------------------- //
 
-    // ------------------------------------------------------------------------------------------------------------------------- //
-    // ----- Matrices and vectors for the sets of equations (6-10) in Revised Enskog Theory for Mie fluids  -------------------- //
-    // ----- doi : 10.1063/5.0149865, which are solved to obtain the Sonine polynomial expansion coefficients ------------------ //
-    // ----- for the velocity distribution functions. -------------------------------------------------------------------------- //
+        Eigen::MatrixXd interdiffusion(double T, double Vm, const std::vector<double>& x, int N=2, int frame_of_reference=FrameOfReference::CoN, int dependent_idx=-1, int solvent_idx=-1, bool do_compress=true);
+        double thermal_conductivity(double T, double Vm, const std::vector<double>& x, int N=2);
+        double viscosity(double T, double Vm, const std::vector<double>& x, int N=2);
+        Eigen::VectorXd thermal_diffusion_coeff(double T, double Vm, const std::vector<double>& x, int N=2, int frame_of_reference=FrameOfReference::CoN, int dependent_idx=-1, int solvent_idx=-1);
+        Eigen::VectorXd thermal_diffusion_ratio(double T, double Vm, const std::vector<double>& x, int N=2);
+        Eigen::MatrixXd thermal_diffusion_factor(double T, double Vm, const std::vector<double>& x, int N=2);
+        Eigen::MatrixXd interdiffusion_dependent_CoM(double T, double Vm, const std::vector<double>& x, int N=2);
 
-    vector2d get_conductivity_matrix(double rho, double T, const vector1d& x, int N);
-    vector1d get_diffusion_vector(double rho, double T, const vector1d& x, int N);
-    double get_Lambda_ijpq(int i, int j, int p, int q, double rho, double T, const vector1d& x);
-    vector2d get_diffusion_matrix(double rho, double T, const vector1d& x, int N);
-    vector1d get_conductivity_vector(double rho, double T, const vector1d& x, int N);
-    vector2d get_viscosity_matrix(double rho, double T, const vector1d&x, int N);
-    vector1d get_viscosity_vector(double rho, double T, const vector1d& x, int N);
+// ------------------------------------------------------------------------------------------------------------------------------------- //
+// ----------------- Matrices and vectors for the sets of equations (6-10) in Revised Enskog Theory for Mie fluids  -------------------- //
+// ----------------- doi : 10.1063/5.0149865, which are solved to obtain the Sonine polynomial expansion coefficients ------------------ //
+// ----------------- for the velocity distribution functions. -------------------------------------------------------------------------- //
+// ----------------- The methods compute_* solve the appropriate equations and return the expansion coefficients ----------------------- //
+    
+        Eigen::VectorXd compute_viscous_expansion_coeff(double rho, double T, const vector1d& x, int N);
+        Eigen::VectorXd compute_thermal_expansion_coeff(double rho, double T, const vector1d& x, int N);
+        Eigen::VectorXd compute_diffusive_expansion_coeff(double rho, double T, const vector1d& x, int N);
+        std::vector<std::vector<std::vector<double>>> reshape_diffusive_expansion_vector(const Eigen::VectorXd& d_ijq);
+        Eigen::VectorXd compute_dth_vector(const std::vector<std::vector<std::vector<double>>>& d_ijq, const Eigen::VectorXd& l);
+    #endif
+
+    std::vector<std::vector<double>> get_conductivity_matrix(double rho, double T, const std::vector<double>& x, int N);
+    std::vector<double> get_diffusion_vector(double rho, double T, const std::vector<double>& x, int N);
+    double get_Lambda_ijpq(int i, int j, int p, int q, double rho, double T, const std::vector<double>& x);
+    std::vector<std::vector<double>> get_diffusion_matrix(double rho, double T, const std::vector<double>& x, int N);
+    std::vector<double> get_conductivity_vector(double rho, double T, const std::vector<double>& x, int N);
+    std::vector<std::vector<double>> get_viscosity_matrix(double rho, double T, const std::vector<double>&x, int N);
+    std::vector<double> get_viscosity_vector(double rho, double T, const std::vector<double>& x, int N);
 
     vector1d get_K_factors(double rho, double T, const vector1d& mole_fracs); // Eq. (1.2) of 'multicomponent docs'
     vector1d get_K_prime_factors(double rho, double T, const vector1d& mole_fracs); // Eq. (5.4) of 'multicomponent docs'
+
+// ----------------------------------------------------------------------------------------------------------------------------------- //
+// -------------------------------------------------- Utility methods ---------------------------------------------------------------- //
+    /*
+        The CoM_to_FoR method is a dispatcher (switchboard) to the other CoM_to_* methods.
+        The CoM_to_* methods return the transformation matrix (psi) used to transform diffusion coefficients from the 
+        centre of mass (CoM) frame of reference (FoR) to the centre of moles (CoN), centre of volume (CoV) or solvent FoR
+    */
+
+    std::vector<double> get_wt_fracs(const std::vector<double> mole_fracs); // Compute weight fractions from mole fractions
+    #ifdef NOPYTHON
+        Eigen::MatrixXd CoM_to_FoR_matr(double T, double Vm, const std::vector<double>& x, int frame_of_reference, int solvent_idx);
+        Eigen::MatrixXd CoM_to_CoN_matr(double T, double Vm, const std::vector<double>& x);
+        Eigen::MatrixXd CoM_to_solvent_matr(double T, double Vm, const std::vector<double>& x, int solvent_idx);
+        Eigen::MatrixXd CoM_to_CoV_matr(double T, double Vm, const std::vector<double>& x);
+        Eigen::MatrixXd get_zarate_X_matr(const std::vector<double>& x, int dependent_idx);
+        Eigen::MatrixXd get_zarate_W_matr(const std::vector<double>& x, int dependent_idx);
+        
+        std::vector<std::vector<double>> get_chemical_potential_factors(double T, double Vm, const std::vector<double>& x);
+        std::vector<double> get_ksi_factors(double T, double Vm, const std::vector<double>& x);
+    #endif
 
 // ------------------------------------------------------------------------------------------------------------------------ //
 // --------------------------------------- KineticGas internals are below here -------------------------------------------- //
 // -------------------------------- End users should not need to care about any of this ----------------------------------- //
 
-    protected:
     const size_t Ncomps;
     const bool is_idealgas;
     const bool is_singlecomp;
-    vector1d m;
-    vector2d M, m0;
+
+    protected:
+    std::vector<double> m;
+    std::vector<std::vector<double>> M, m0;
     std::map<OmegaPoint, double> omega_map;
     std::map<int, vector2d> mtl_map;
     std::map<int, vector2d> etl_map;
+
+    #ifdef NOPYTHON
+        const std::vector<json> compdata;
+        std::unique_ptr<GenericEoS> eos;
+    #endif
 
 // ----------------------------------------------------------------------------------------------------------------------------------- //
 // --------------------------------------- Methods to facilitate multithreading ------------------------------------------------------ //
@@ -142,6 +210,7 @@ class KineticGas{
                         const std::vector<int>& l_vec, const std::vector<int>& r_vec, double T);
 
     private:
+    void set_masses();
     void precompute_diffusion(int N, double T); // Forwards call to precompute_conductivity_omega. Override that instead.
     void precompute_th_diffusion(int N, double T); // Forwards call to precompute_conductivity_omega. Override that instead.
 

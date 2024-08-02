@@ -1,5 +1,5 @@
 <!--- 
-Generated at: 2024-02-20T16:59:51.385193
+Generated at: 2024-07-27T01:07:15.692788
 This is an auto-generated file, generated using the script at KineticGas/docs/join_docs.py
 The file is created by joining the contents of the files
     KineticGas/docs/markdown/
@@ -18,7 +18,10 @@ The package is implemented mostly in C++ to handle the numerical computations in
 
 KineticGas can be used to predict diffusion coefficients, thermal diffusion coefficients, viscosities and thermal conductivities in gas mixtures, and is reliable over a large range of temperatures and pressures. The package also contains an extensive database of fluid parameters collected from the open literature.
 
-For the full documentation, check out the [KineticGas homepage.](https://thermotools.github.io/KineticGas)
+# [KineticGas homepage](https://thermotools.github.io/KineticGas)
+The full documentation, with installation- and getting started-guides can be found on the [KineticGas homepage](https://thermotools.github.io/KineticGas).
+This readme is only intended to provide a minimal introduction, and may be out-of-sync with the `pykingas` version currently
+on `PyPI`.
 
 ![](https://thermotools.github.io/KineticGas/v2.0.0/graphics/all.gif?raw=true)
 
@@ -32,17 +35,15 @@ For the full documentation, check out the [KineticGas homepage.](https://thermot
    * [Structure](#Structure)
    * [Fluid indentifiers](#fluid-identifiers)
 
----
-layout: default
-version: 
-title: Please Cite
-permalink: /please_cite.html
----
+# Please Cite
 
-KineticGas has been developed throughout a series of two works. If you are referencing the package, please cite the works
+KineticGas has been developed throughout several works. If you are referencing the package, please cite the works
 
+* General usage
    * [Revised Enskog theory for Mie fluids: Prediction of diffusion coefficients, thermal diffusion coefficients, viscosities and thermal conductivities](https://doi.org/10.1063/5.0149865) (Vegard G. Jervell and Øivind Wilhelmsen, 2023)
    * [The Kinetic Gas theory of Mie fluids](https://ntnuopen.ntnu.no/ntnu-xmlui/handle/11250/3029213) (Vegard G. Jervell, 2022)
+* Connection to Non-Equilibrium thermodynamics (Onsager coefficients)
+   * [The influence of thermal diffusion on water migration through a porous insulation material](10.1016/j.ijheatmasstransfer.2024.125576) (V. G. Jervell, M. Aa. Gjennestad, T. T. Trinh, Ø. Wilhelmsen, 2024)
 
 ## Acknowledgments and sources
 This implementation of the Revised Enskog solutions is build upon the work presented by M. López de Haro, E. D. G. Cohen, and J. Kincaid in the series of papers *The Enskog Theory for multicomponent mixtures I - IV*, J. Chem. Phys. (1983 - 1987) ([I](https://doi.org/10.1063/1.444985), [II](https://doi.org/10.1063/1.446388), [III](https://doi.org/10.1063/1.446463), [IV](https://doi.org/10.1063/1.452243)).
@@ -57,12 +58,7 @@ The KineticGas package is distributed as free software under the MIT licence.
 
 
 
----
-layout: default
-version: 
-title: Getting started - In Python
-permalink: /vcurrent/getting_started_py.html
----
+# Getting started - In Python
 
 In addition to this explanation, some examples may be found in the [pyExamples directory](https://github.com/thermotools/KineticGas_private/tree/main/pyExamples).
 

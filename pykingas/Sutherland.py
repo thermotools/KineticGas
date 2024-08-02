@@ -1,5 +1,5 @@
 from pykingas.py_KineticGas import py_KineticGas, IdealGas
-from pykingas import cpp_Sutherland
+from .libpykingas import cpp_Sutherland
 import numpy as np
 from scipy.constants import Boltzmann
 from warnings import warn
@@ -255,6 +255,9 @@ class Sutherland(py_KineticGas):
             float : Dimensionless van der Waals $\alpha$-parameter
         """
         return self.extract_components(self.cpp_kingas.get_vdw_alpha(), i, j)
+
+    def get_BH_diameters(self, T):
+        return self.cpp_kingas.get_BH_diameters(T)
 
     def potential(self, i, j, r):
         r"""Potential

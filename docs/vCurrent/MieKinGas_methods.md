@@ -6,7 +6,7 @@ permalink: /vcurrent/MieKinGas_methods.html
 ---
 
 <!--- 
-Generated at: 2024-05-23T10:23:31.751964
+Generated at: 2024-07-27T01:07:10.512275
 This is an auto-generated file, generated using the script at KineticGas/pyUtils/markdown_from_docstrings.py
 The file is created by parsing the docstrings of the methods in the 
 MieKinGas class. For instructions on how to use the parser routines, see the
@@ -17,9 +17,14 @@ RET-Mie Model. This class implements utility methods to access mixing parameters
 
 ## Table of contents
   * [Constructor](#constructor)
-    * [\_\_init\_\_](#__init__self-comps-mole_weightsnone-sigmanone-eps_div_knone-lanone-lrnone-lij0-kij0-n4-is_idealgasfalse-use_eosnone-parameter_refdefault)
+    * [\_\_init\_\_](#__init__self-comps-mole_weightsnone-sigmanone-eps_div_knone-lanone-lrnone-lij0-kij0-n4-is_idealgasfalse-use_eosnone-parameter_refdefault-use_default_eos_paramnone)
   * [Utility methods](#utility-methods)
-    * [get_vdw_alpha](#get_vdw_alphaself)
+    * [set_eps_div_k](#set_eps_div_kself-eps_div_k-update_eostrue)
+    * [set_la](#set_laself-la-update_eostrue)
+    * [set_lr](#set_lrself-lr-update_eostrue)
+    * [set_sigma](#set_sigmaself-sigma-update_eostrue)
+  * [Internal methods](#internal-methods)
+    * [\_\_update_cpp_kingas_param\_\_](#__update_cpp_kingas_param__self)
 
 ## Constructor
 
@@ -27,10 +32,10 @@ Methods to initialise RET-Mie model.
 
 ### Table of contents
   * [Constructor](#constructor)
-    * [\_\_init\_\_](#__init__self-comps-mole_weightsnone-sigmanone-eps_div_knone-lanone-lrnone-lij0-kij0-n4-is_idealgasfalse-use_eosnone-parameter_refdefault)
+    * [\_\_init\_\_](#__init__self-comps-mole_weightsnone-sigmanone-eps_div_knone-lanone-lrnone-lij0-kij0-n4-is_idealgasfalse-use_eosnone-parameter_refdefault-use_default_eos_paramnone)
 
 
-### `__init__(self, comps, mole_weights=None, sigma=None, eps_div_k=None, la=None, lr=None, lij=0, kij=0, N=4, is_idealgas=False, use_eos=None, parameter_ref='default')`
+### `__init__(self, comps, mole_weights=None, sigma=None, eps_div_k=None, la=None, lr=None, lij=0, kij=0, N=4, is_idealgas=False, use_eos=None, parameter_ref='default', use_default_eos_param=None)`
 If parameters are explicitly supplied through optional arguments, these will be used instead of those in the database.
 To supply specific parameters for only some components, give `None` for the components that should use the database
 value
@@ -66,9 +71,13 @@ value
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Mixing parameter for epsilon (kij > 0 => favours mixing, kij < 0 => favours separation)
 
-&nbsp;&nbsp;&nbsp;&nbsp; **use_eos :** 
+&nbsp;&nbsp;&nbsp;&nbsp; **use_eos (thermopack eos object, optional) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  (thermopack eos object, optional) EoS to use (initialized), defaults to `saftvrmie` 
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  EoS to use (initialized), defaults to `saftvrmie`
+
+&nbsp;&nbsp;&nbsp;&nbsp; **use_default_eos_param (bool or None) :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  If `False`, ensure that the EoS and RET-model use the same parameters(if applicable). If `True`, the EoS will use its default parameters regardless of specified parameters. As default behaviour, this parameter is set to `True` if no parameters are supplied, and `False` if any parameters are supplied. That is, if any parameters are supplied, the EoS will by default use the same parameters as the MieKinGas object. Otherwise, the EoS will use its own default parameters, and the MieKinGas object will use its own default parameters. Specifying this kwarg will override this behaviour.  
 
 ## Utility methods
 
@@ -76,19 +85,38 @@ Set- and get methods for interaction parameters, mixing parameters ...
 
 ### Table of contents
   * [Utility methods](#utility-methods)
-    * [get_vdw_alpha](#get_vdw_alphaself)
+    * [set_eps_div_k](#set_eps_div_kself-eps_div_k-update_eostrue)
+    * [set_la](#set_laself-la-update_eostrue)
+    * [set_lr](#set_lrself-lr-update_eostrue)
+    * [set_sigma](#set_sigmaself-sigma-update_eostrue)
 
 
-### `get_vdw_alpha(self)`
-Compute potential $\alpha_{vdw}$ parameter, defined as
-
-$$ \alpha_{vdw} = 2 \pi \int_{\sigma}^{\infty} \phi(r) r^2 dr $$
-
+### `set_eps_div_k(self, eps_div_k, update_eos=True)`
+See MieType
  
 
-#### Returns:
+### `set_la(self, la, update_eos=True)`
+See MieType
+ 
 
-&nbsp;&nbsp;&nbsp;&nbsp; **float :** 
+### `set_lr(self, lr, update_eos=True)`
+See MieType
+ 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  $\alpha_{vdw}$ of first component. 
+### `set_sigma(self, sigma, update_eos=True)`
+See MieType
+ 
+
+## Internal methods
+
+Internal methods are not intended for use by end-users.
+
+### Table of contents
+  * [Internal methods](#internal-methods)
+    * [\_\_update_cpp_kingas_param\_\_](#__update_cpp_kingas_param__self)
+
+
+### `__update_cpp_kingas_param__(self)`
+See MieType
+ 
 

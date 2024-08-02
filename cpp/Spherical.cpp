@@ -2,19 +2,18 @@
 #include "KineticGas.h"
 #include "Integration/Integration.h"
 
-Spherical::Spherical(vector1d mole_weights,
-                    vector2d sigmaij,
-                    bool is_idealgas, bool is_singlecomp)
-                    : KineticGas(mole_weights, is_idealgas, is_singlecomp), sigma{sigmaij}{
+Spherical::Spherical(std::vector<double> mole_weights,
+                    std::vector<std::vector<double>> sigmaij,
+                    bool is_idealgas, bool is_singlecomp) 
+                    : KineticGas(mole_weights, is_idealgas, is_singlecomp), sigma{sigmaij}
+                    {}
 
-
-    w_integrand_export = std::bind(&Spherical::w_integrand, this,
-                                        std::placeholders::_1, std::placeholders::_2,
-                                        std::placeholders::_3, std::placeholders::_4,
-                                        std::placeholders::_5, std::placeholders::_6,
-                                        std::placeholders::_7);
-
-}
+Spherical::Spherical(std::vector<double> mole_weights,
+                    std::vector<std::vector<double>> sigmaij,
+                    std::vector<std::vector<double>> eps,
+                    bool is_idealgas, bool is_singlecomp) 
+                    : KineticGas(mole_weights, is_idealgas, is_singlecomp), sigma{sigmaij}, eps{eps}
+                    {}
 
 double Spherical::omega(int i, int j, int l, int r, double T){
     OmegaPoint point{i, j, l, r, T}, sympoint{j, i, l, r, T};
@@ -39,6 +38,23 @@ double Spherical::omega(int i, int j, int l, int r, double T){
     return pos->second;
 }
 
+double Spherical::omega_tester(int i, int j, int l, int r, double T, IntegrationParam& param){
+    double w = w_integral_tester(i, j, T, l, r, param);
+    if (i == j) return pow(sigma[i][j], 2) * sqrt((PI * BOLTZMANN * T) / m[i]) * w;
+    return 0.5 * pow(sigma[i][j], 2) * sqrt(2 * PI * BOLTZMANN * T / (m0[i][j] * M[i][j] * M[j][i])) * w;
+}
+
+double Spherical::w_integral_tester(int i, int j, double T, int l, int r, IntegrationParam& param){
+    const auto w_integrand_export = [&](double g, double b){return w_integrand(i, j, T, g, b, l, r);};
+    double I = integrate2d(param.origin, param.end,
+                        param.dg, param.db,
+                        param.refinement_levels_g, param.refinement_levels_b,
+                        param.subdomain_dblder_limit,
+                        w_integrand_export);
+
+    return I;
+}
+
 double Spherical::w_integral(int i, int j, double T, int l, int r){
     /*
     Evaulate the dimensionless collision integral
@@ -54,11 +70,11 @@ double Spherical::w_integral(int i, int j, double T, int l, int r){
     int refinement_levels_b{16};
     double subdomain_dblder_limit{1e-5};
 
+    const auto w_integrand_export = [&](double g, double b){return w_integrand(i, j, T, g, b, l, r);};
     double I = integrate2d(origin, end,
                         dg, db,
                         refinement_levels_g, refinement_levels_b,
                         subdomain_dblder_limit,
-                        i, j, T, l, r,
                         w_integrand_export);
     
     return I;
@@ -134,21 +150,6 @@ double Spherical::theta_integral(int i, int j, double T, double R, double g, dou
     constexpr double dh{1.0e-3};
     const auto integrand = [&](double u){return (R / pow(u, 2)) * theta_integrand(i, j, T, R / u, g, b);};
     return tanh_sinh(integrand, dh);
-    // constexpr double h{7.5e-3};
-    // double I{0.0};
-    // int k{1};
-    // double u = tanh(PI * sinh(k * h) / 2.);
-    // double w = (PI / 2.) * h * cosh(k * h) / pow(cosh(PI * sinh(k * h) / 2.), 2);
-    // double f = transformed_theta_integrand(i, j, T, u, R, g, b);
-    // while (abs(f * w) > 1e-8){
-    //     I += w * f;
-    //     k+=1;
-    //     u = tanh(PI * sinh(k * h) / 2.);
-    //     w = (PI / 2) * h * cosh(k * h) / pow(cosh(PI * sinh(k * h) / 2.), 2);
-    //     f = transformed_theta_integrand(i, j, T, u, R, g, b);
-    //     if (isnan(f) || isnan(w) || isinf(f) || isinf(w)) break;
-    // }
-    // return I;
 }
 
 double Spherical::theta_integrand(int i, int j, double T, double r, double g, double b){
@@ -232,21 +233,4 @@ double Spherical::chi(int i, int j, double T, double g, double b){
     if (b / sigma[i][j] > 100) return 0;
     double t = theta(i, j, T, g, b);
     return PI - 2.0 * t;
-}
-
-double Spherical::omega_tester(int i, int j, int l, int r, double T, IntegrationParam& param){
-    double w = w_integral_tester(i, j, T, l, r, param);
-    if (i == j) return pow(sigma[i][j], 2) * sqrt((PI * BOLTZMANN * T) / m[i]) * w;
-    return 0.5 * pow(sigma[i][j], 2) * sqrt(2 * PI * BOLTZMANN * T / (m0[i][j] * M[i][j] * M[j][i])) * w;
-}
-
-double Spherical::w_integral_tester(int i, int j, double T, int l, int r, IntegrationParam& param){
-    double I = integrate2d(param.origin, param.end,
-                        param.dg, param.db,
-                        param.refinement_levels_g, param.refinement_levels_b,
-                        param.subdomain_dblder_limit,
-                        i, j, T, l, r,
-                        w_integrand_export);
-
-    return I;
 }

@@ -2,7 +2,6 @@ import pytest
 from scipy.constants import Avogadro, gas_constant
 from pykingas.HardSphere import HardSphere
 from pykingas.MieKinGas import MieKinGas
-import pytest
 import numpy as np
 from tools import models, check_eq
 

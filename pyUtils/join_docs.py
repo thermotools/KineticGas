@@ -11,6 +11,7 @@ Usage: To add new documentation, create a new markdown file in thermopoack/doc/m
 """
 import os
 from datetime import datetime
+import re, warnings
 from tools import write_file
 
 MARKDOWN_DIR = os.path.dirname(__file__) + '/../docs/'
@@ -28,13 +29,64 @@ def print_finished_report(header, out_file_path):
     print('-' * printcolwidth)
     print()
 
+def repair_links(filestr):
+    """
+    Because the markdown files used to generate the GH pages use relative paths, we need to prepend the appropriate
+    url when making the Readme.
+    """
+    pattern = r"\]\((.*?)\.html\)"
+    replacement = r"](https://thermotools.github.io/KineticGas/vcurrent/\1.html)"
+    return re.sub(pattern, replacement, filestr)
+
+def format_no_html(file):
+    """
+    Markdown files that are intended to be compiled to html may contain some syntax that is unfriendly to e.g.
+    pages intended to render GitHub flavoured markdown. Specifially, the title is in the page metadata, not as a
+    header. This function reads the file, and returns a string formatted to be friendly for "pure" markdown pages
+    without html-templates.
+
+    Args:
+        file (file handle) : The file to read
+    Returns
+        str : The contents of the file, formatted to be nice.
+    """
+    line = file.readline()
+    if '---' not in line:
+        return line + file.read()
+    metadata = line + '\n'
+    line = file.readline()
+    title = ''
+    description = ''
+
+    while '---' not in line:
+        if 'title' in line:
+            title = line.split(':')[-1].strip()
+        elif 'description' in line:
+            description = line.split(':')[-1].strip()
+
+        metadata += line
+        line = file.readline()
+
+    line = file.readline() # Move past the '---' at the end of the header section.
+
+    if title:
+        main_header = title
+    elif description:
+        main_header = description
+    else:
+        main_header = ''
+        warnings.warn(f'File with metadata : {metadata} \nDid not contain a title or description.', SyntaxWarning, stacklevel=2)
+
+    outstr = f'# {main_header}\n'
+    return outstr + line + repair_links(file.read())
+
 def gen_file_str(files):
     out_file_str = ''
     for file in files:
         file_path = MARKDOWN_DIR + file + '.md'
 
         with open(file_path, 'r') as in_file:
-            out_file_str += in_file.read() + '\n\n'
+            out_file_str += format_no_html(in_file) + '\n\n'
 
     return out_file_str
 

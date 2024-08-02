@@ -42,11 +42,7 @@ using vector2d = std::vector<vector1d>;
         .def("set_tl_model", &Sutherland::set_transfer_length_model)
 
 
-#ifndef DEBUG
-PYBIND11_MODULE(KineticGas_r, handle){
-#else
-PYBIND11_MODULE(KineticGas_r, handle){
-#endif
+PYBIND11_MODULE(libpykingas, handle){
     handle.doc() = "Is this documentation? This is documentation.";
     handle.def("ipow", &ipow);
     handle.def("factorial_tests", &factorial_tests);

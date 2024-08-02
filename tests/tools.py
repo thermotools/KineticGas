@@ -9,8 +9,13 @@ FLTEPS = 1e-10
 
 models = [MieKinGas, HardSphere, S_MieKinGas, QuantumMie]
 
-def check_eq(a, b, eps=FLTEPS):
-    if abs(a - b) > eps:
+def check_eq(a, b, tol=FLTEPS):
+    if abs(a - b) > tol:
+        return False
+    return True
+
+def check_eq_rel(a, b, tol=FLTEPS):
+    if abs(a - b) / np.mean((a, b)) > tol:
         return False
     return True
 

@@ -2,7 +2,7 @@
 Author: Vegard Gjeldvik Jervell
 Contains: The MieKinGas class. This class is the model used to evaluate the Enskog solutions for a Mie potential.
             MieKinGas overrides the potential and potential derivative functions in Spherical.
-            MieKinGas is inherited by QuantumMie.
+
             Also contains functions required to compute the radial distribution function at contact for a Mie-fluid
             and related constant factors that have been previously regressed (namespace mie_rdf_constants).
             See : J. Chem. Phys. 139, 154504 (2013); https://doi.org/10.1063/1.4819786
@@ -21,34 +21,31 @@ class MieKinGas : public Spherical {
         std::vector<std::vector<double>> la,
         std::vector<std::vector<double>> lr,
         bool is_idealgas, bool is_singlecomp)
-        : Spherical(mole_weights, sigmaij, is_idealgas, is_singlecomp),
+        : Spherical(mole_weights, sigmaij, epsilon, is_idealgas, is_singlecomp),
         la{la},
         lr{lr}
-        {
+        {eps = epsilon; set_C_alpha();}
 
-        eps = epsilon;
-        C = std::vector<std::vector<double>>(Ncomps, std::vector<double>(Ncomps, 0.));
-        alpha = std::vector<std::vector<double>>(Ncomps, std::vector<double>(Ncomps, 0.));
-        for (int i = 0; i < eps.size(); i ++){
-            for (int j = 0; j < eps.size(); j++){
-                C[i][j] = (lr[i][j] / (lr[i][j] - la[i][j])) 
-                                * pow(lr[i][j] / la[i][j], (la[i][j] / (lr[i][j] - la[i][j])));
-                alpha[i][j] = C[i][j] * ((1.0 / (la[i][j] - 3.0)) - (1.0 / (lr[i][j] - 3.0)));
-            }
-        }   
-    }
+    #ifdef NOPYTHON
+        MieKinGas(std::string comps, bool is_idealgas=false);
+    #endif
+
+    void set_C_alpha();
+    void mix_sigma();
+    void mix_epsilon();
+    void mix_exponents(std::vector<std::vector<double>>& expo);
 
     double potential(int i, int j, double r) override {
         return C[i][j] * eps[i][j] * (pow(sigma[i][j] / r, lr[i][j]) - pow(sigma[i][j] / r, la[i][j]));
     }
     double potential_derivative_r(int i, int j, double r) override {
-        return C[i][j] * eps[i][j] * ((la[i][j] * pow(sigma[i][j] / r, la[i][j] + 1) / sigma[i][j])
-                                        - (lr[i][j] * pow(sigma[i][j] / r, lr[i][j] + 1) / sigma[i][j]));
+        return C[i][j] * eps[i][j] * ((la[i][j] * pow(sigma[i][j] / r, la[i][j]) / r)
+                                        - (lr[i][j] * pow(sigma[i][j] / r, lr[i][j]) / r));
     }
 
     double potential_dblderivative_rr(int i, int j, double r) override {
-        return C[i][j] * eps[i][j] * ((lr[i][j] * (lr[i][j] + 1) * pow(sigma[i][j] / r, lr[i][j] + 2) / pow(sigma[i][j], 2))
-                                    - (la[i][j] * (la[i][j] + 1) * pow(sigma[i][j] / r, la[i][j] + 2) / pow(sigma[i][j], 2)));
+        return C[i][j] * eps[i][j] * ((lr[i][j] * (lr[i][j] + 1) * pow(sigma[i][j] / r, lr[i][j]) / pow(r, 2))
+                                    - (la[i][j] * (la[i][j] + 1) * pow(sigma[i][j] / r, la[i][j]) / pow(r, 2)));
     }
 
 
@@ -250,12 +247,25 @@ constexpr double gl_w[20] = {0.017614007139152742, 0.040601429800386134,
                             0.08327674157670514, 0.06267204833410799,
                             0.040601429800386134, 0.017614007139152742};
 
-constexpr double C_coeff_matr[4][4] // See Eq. A17-A18 of J. Chem. Phys. 139, 154504 (2013); https://doi.org/10.1063/1.4819786; Parameters regressed by T. Maltby (2024, unpublished)
+constexpr double C_coeff_matr[4][4] // See Eq. A17-A18 of J. Chem. Phys. 139, 154504 (2013); https://doi.org/10.1063/1.4819786;
     {
-        {0.81096, 1.7888, -37.578, 92.284},
-        {1.0205, -19.341, 151.26, -463.50},
-        {-1.9057, 22.845, -228.14, 973.92},
-        {1.0885, -6.1962, 106.98, -677.64}
+        // Parameters regressed by T. Maltby, without LRC (2024, unpublished)
+        {0.6382, 0.9540, -31.9965, 83.7914},
+        {2.8596, -18.8315, 150.6853, -468.9992},
+        {-7.0331, 21.9390, -229.9483, 970.6560},
+        {5.5441, -4.0284, 106.4364, -679.1889}
+
+        // Parameters from Lafitte et al. (Table II in svrm)
+        // {0.81096, 1.7888, -37.578, 92.284},
+        // {1.0205, -19.341, 151.26, -463.50},
+        // {-1.9057, 22.845, -228.14, 973.92},
+        // {1.0885, -6.1962, 106.98, -677.64}
+
+        // Parameters from T. Maltby, with LRC (2024, unpublished)
+        // {0.9745, -0.1438, -5.2072, -105.4317},
+        // {-1.0980, -10.9314, 252.9727, -274.7130},
+        // {7.3301, -69.6106, -386.7004, 1045.6686},
+        // {-9.7649, 140.1891, -15.4988, -652.1140}
     };
 
 constexpr double phi[7][3] // J. Chem. Phys. 139, 154504 (2013); https://doi.org/10.1063/1.4819786, Table II

@@ -49,3 +49,4 @@ Current test modules are:
 * `test_summation_consistency.py` - Checks that various things that should sum to 1 or 0 do that.
 * `test_binary_limits.py` - Checks that ternary coefficients reduce to the appropriate binary coefficients in the binary limit.
 * `test_flux_transforms.py` - Checks that the frame of reference transformations give fluxes that appropriately sum to zero.
+* `test_issues` - New test added anytime an issue is resolved, to ensure the issue remains resolved.

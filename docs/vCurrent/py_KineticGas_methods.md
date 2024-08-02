@@ -6,7 +6,7 @@ permalink: /vcurrent/py_KineticGas_methods.html
 ---
 
 <!--- 
-Generated at: 2024-05-23T10:13:41.622662
+Generated at: 2024-04-18T17:57:40.002828
 This is an auto-generated file, generated using the script at KineticGas/pyUtils/markdown_from_docstrings.py
 The file is created by parsing the docstrings of the methods in the 
 py_KineticGas class. For instructions on how to use the parser routines, see the
@@ -31,7 +31,6 @@ The `py_KineticGas` class, found in `pykingas/py_KineticGas.py`, is the core of 
     * [viscosity](#viscosityself-t-vm-x-nnone-idealgasnone)
   * [Tp-property interfaces](#tp-property-interfaces)
     * [interdiffusion_tp](#interdiffusion_tpself-t-p-x-nnone-use_independenttrue-dependent_idxnone-frame_of_referencecon-use_binarytrue-solvent_idxnone)
-    * [thermal_coductivity_tp](#thermal_coductivity_tpself-t-p-x-nnone)
     * [thermal_conductivity_tp](#thermal_conductivity_tpself-t-p-x-nnone)
     * [thermal_diffusion_coeff_tp](#thermal_diffusion_coeff_tpself-t-p-x-nnone-use_independentfalse-dependent_idxnone-frame_of_referencecon-solvent_idxnone)
     * [thermal_diffusion_factor_tp](#thermal_diffusion_factor_tpself-t-p-x-nnone)
@@ -59,6 +58,8 @@ The `py_KineticGas` class, found in `pykingas/py_KineticGas.py`, is the core of 
     * [get_Eij](#get_eijself-vm-t-x)
     * [get_P_factors](#get_p_factorsself-vm-t-x)
     * [reshape_diffusion_coeff_vector](#reshape_diffusion_coeff_vectorself-d)
+  * [Deprecated methods](#deprecated-methods)
+    * [thermal_coductivity_tp](#thermal_coductivity_tpself-t-p-x-nnone)
 
 ## The constructor
 
@@ -601,7 +602,6 @@ Computing properties as a function of temperature and pressure. Simply forwards 
 ### Table of contents
   * [Tp-property interfaces](#tp-property-interfaces)
     * [interdiffusion_tp](#interdiffusion_tpself-t-p-x-nnone-use_independenttrue-dependent_idxnone-frame_of_referencecon-use_binarytrue-solvent_idxnone)
-    * [thermal_coductivity_tp](#thermal_coductivity_tpself-t-p-x-nnone)
     * [thermal_conductivity_tp](#thermal_conductivity_tpself-t-p-x-nnone)
     * [thermal_diffusion_coeff_tp](#thermal_diffusion_coeff_tpself-t-p-x-nnone-use_independentfalse-dependent_idxnone-frame_of_referencecon-solvent_idxnone)
     * [thermal_diffusion_factor_tp](#thermal_diffusion_factor_tpself-t-p-x-nnone)
@@ -613,7 +613,7 @@ Compute molar volume using the internal equation of state (`self.eos`), assuming
 `self.interdiffusion`. See `self.interdiffusion` for documentation.
  
 
-### `thermal_coductivity_tp(self, T, p, x, N=None)`
+### `thermal_conductivity_tp(self, T, p, x, N=None)`
 Compute molar volume using the internal equation of state (`self.eos`), assuming vapour, and pass the call to
 `self.thermal_conductivity`. See `self.thermal_conductivity` for documentation.
  
@@ -1225,4 +1225,17 @@ as `d[i][q][j]` where i and j are component indices, and q refferes to the appro
 &nbsp;&nbsp;&nbsp;&nbsp; **3D array :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The matrix of $d_{i, j}^{(q)}$ coefficients ordered as `d[i][q][j]` 
+
+## Deprecated methods
+
+Deprecated methods are not maintained, and may be removed in the future.
+
+### Table of contents
+  * [Deprecated methods](#deprecated-methods)
+    * [thermal_coductivity_tp](#thermal_coductivity_tpself-t-p-x-nnone)
+
+
+### `thermal_coductivity_tp(self, T, p, x, N=None)`
+Slightly embarrasing typo in method name... Keeping alive for a while because some code out there uses this one.
+ 
 

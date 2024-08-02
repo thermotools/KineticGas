@@ -1,4 +1,6 @@
 #pragma once
+#include <string>
+
 #include <vector>
 
 constexpr double BOLTZMANN = 1.38064852e-23;
@@ -8,6 +10,9 @@ constexpr double PI = 3.14159265359;
 constexpr double PLANCK = 6.62607015e-34;
 constexpr double HBAR = PLANCK / (2.0 * PI);
 constexpr double FLTEPS = 1e-10;
+
+extern std::string fluid_dir;
+void set_fluid_dir(const std::string& path);
 
 using vector1d = std::vector<double>;
 using vector2d = std::vector<vector1d>;

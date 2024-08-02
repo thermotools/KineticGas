@@ -175,6 +175,7 @@ def split_methods_by_section(sections, methods):
 
     if 'deprecated' not in [s.lower() for s in sections]:
         sections.append('Deprecated')
+        sections.append('Internal')
 
     method_dict = {}
     for name, meth in methods:
@@ -228,6 +229,14 @@ def get_automatic_sections(sections, section_headers, section_intro, method_dict
             section_headers['Deprecated'] = 'Deprecated methods'
         if 'Deprecated' not in section_intro.keys():
             section_intro['Deprecated'] = 'Deprecated methods are not maintained, and may be removed in the future.'
+
+    if 'Internal' in method_dict.keys():
+        if 'Internal' not in sections:
+            sections.append('Internal')
+        if 'Internal' not in section_headers.keys():
+            section_headers['Internal'] = 'Internal methods'
+        if 'Internal' not in section_intro.keys():
+            section_intro['Internal'] = 'Internal methods are not intended for use by end-users.'
 
     return sections, section_headers, section_intro
 
@@ -395,7 +404,6 @@ def miekingas_to_markdown():
     class_methods = inspect.getmembers(MieKinGas, predicate=inspect.isfunction)
     parent_methods = inspect.getmembers(MieType, predicate=inspect.isfunction)
     specific_methods = sorted(list(set(class_methods) - set(parent_methods)))
-
     basic_class_to_markdown(classname, eosname, specific_methods, inherits='MieType')
 
 def hardsphere_to_markdown():

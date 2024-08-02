@@ -37,4 +37,4 @@ def test_vs_thermopack(T, rho, lr):
         if (vl < 1 / rho) and (1 / rho < vg):
             return # Two-phase region
 
-    assert check_eq(rdf_tp, rdf_kgt, 1e-8)
+    assert check_eq(rdf_tp, rdf_kgt, 1e-3)

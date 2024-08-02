@@ -27,7 +27,7 @@ done
 exit 0
 
 # Code to upload to PyPi :
-twine upload pypi_release/dist/*
+# twine upload pypi_release/dist/*
 
 exit 0
 

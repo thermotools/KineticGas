@@ -1,4 +1,5 @@
-from pykingas import MieType, cpp_QuantumMie
+from .libpykingas import cpp_QuantumMie
+from pykingas import MieType
 from pykingas.MieKinGas import MieKinGas
 from thermopack.saftvrqmie import saftvrqmie
 import numpy as np
@@ -164,7 +165,7 @@ class QuantumMie(MieType.MieType):
             lambda_a = [6 for _ in range(self.ncomps)]
 
         lambda_r = - (d * sigma / eps) * (sigma / r_min) ** lambda_a
-        comps = ','.join(self.comps)
+        comps = self.comps[0] if (self._is_singlecomp) else ','.join(self.comps)
         mw = self.mole_weights * Avogadro * 1e3
         mie = MieKinGas(comps, mole_weights=mw, sigma=sigma, eps_div_k=eps / Boltzmann,
                         la=lambda_a, lr=lambda_r, use_eos=self.eos)

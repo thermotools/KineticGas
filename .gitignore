@@ -9,8 +9,10 @@ venv/
 venv*/
 pypi_release/wheelhouse/*.whl
 *__pycache__/
+pypi_release/dist/
 
 build/
+pykingas/fluids/
 pykingas.egg-info/
 venv*
 rebuild.sh
@@ -20,3 +22,4 @@ rebuild.sh
 sandbox/*
 sandbox/archive/*
 *.so
+*.dylib
