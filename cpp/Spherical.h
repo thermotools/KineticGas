@@ -15,6 +15,10 @@ References:
 #include "KineticGas.h"
 #include "Integration/Integration.h"
 #include "global_params.h"
+#include <autodiff/forward/dual.hpp>
+
+using dual = autodiff::dual;
+using dual2 = autodiff::dual2nd;
 
 class IntegrationParam;
 
@@ -38,10 +42,25 @@ class Spherical : public KineticGas {
     
     virtual ~Spherical(){};
 
-    // Potential models, these must be overridden in derived classes, in addition to model_rdf and get_contact_diameters.
-    virtual double potential(int i, int j, double r) = 0;
-    virtual double potential_derivative_r(int i, int j, double r) = 0;
-    virtual double potential_dblderivative_rr(int i, int j, double r) = 0;
+    // Potential model, the dual case must be overridden. Overriding the other cases can give improved 
+    // efficiency of the code.
+    virtual dual2 potential(int i, int j, dual2 r) = 0;
+
+    virtual double potential(int i, int j, double r){
+        return potential(i, j, static_cast<dual>(r)).val.val;
+    };
+    virtual double potential_derivative_r(int i, int j, double r){
+        dual2 rd = r;
+        const auto func = [&](dual2 r_){return potential(i, j, r_);};
+        auto [u0, ur, urr] = autodiff::derivatives(func, autodiff::wrt(rd), autodiff::at(rd));
+        return ur;
+    }
+    virtual double potential_dblderivative_rr(int i, int j, double r){
+        dual2 rd = r;
+        const auto func = [&](dual2 r_){return potential(i, j, r_);};
+        auto [u0, ur, urr] = autodiff::derivatives(func, autodiff::wrt(rd, rd), autodiff::at(rd));
+        return urr;
+    }
 
     double omega(int i, int j, int l, int r, double T) override;
 

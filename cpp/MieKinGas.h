@@ -35,9 +35,14 @@ class MieKinGas : public Spherical {
     void mix_epsilon();
     void mix_exponents(std::vector<std::vector<double>>& expo);
 
+    dual2 potential(int i, int j, dual2 r) override {
+        return C[i][j] * eps[i][j] * (pow(sigma[i][j] / r, lr[i][j]) - pow(sigma[i][j] / r, la[i][j]));
+    }
+
     double potential(int i, int j, double r) override {
         return C[i][j] * eps[i][j] * (pow(sigma[i][j] / r, lr[i][j]) - pow(sigma[i][j] / r, la[i][j]));
     }
+    
     double potential_derivative_r(int i, int j, double r) override {
         return C[i][j] * eps[i][j] * ((la[i][j] * pow(sigma[i][j] / r, la[i][j]) / r)
                                         - (lr[i][j] * pow(sigma[i][j] / r, lr[i][j]) / r));

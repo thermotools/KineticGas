@@ -1,5 +1,13 @@
 #include "Sutherland.h"
 
+dual2 Sutherland::potential(int i, int j, dual2 r){
+    dual2 p{0.0};
+    for (size_t k = 0; k < nterms; k++){
+        p += C[k][i][j] * pow(sigma[i][j] / r, lambda[k][i][j]);
+    }
+    return eps[i][j] * p;
+}
+
 double Sutherland::potential(int i, int j, double r){
     double p{0.0};
     for (size_t k = 0; k < nterms; k++){

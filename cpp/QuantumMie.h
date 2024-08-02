@@ -14,7 +14,7 @@ Note : This class also overrides the methods of Spherical that call the potentia
 #include "global_params.h"
 #include <mutex>
 
-class QuantumMie : public Sutherland{
+class QuantumMie : public Sutherland {
     public:
     const std::vector<int> FH_order; // Feynman-Hibbs correction order
     vector3d Q_factors;

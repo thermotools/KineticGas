@@ -1,3 +1,18 @@
+/*
+Author: Vegard Gjeldvik Jervell
+Contains: Transfer length models (see: <unpublished> 2024). 
+        Primary control flow is as follows: 
+            - Use get_mtl and get_etl to compute the transfer lengths you need.
+            
+            - These forward the call to get_transfer_length, which handles dispatch to the appropriate 
+              transfer length model: collision diameters, (old) or transfer lengths (new)
+                - Use set_transfer_length_model to select the model beforehand.
+
+            - In the case of the (new) models, all methods used in the computation are the same, except for the
+              function computing the weight, so the parameter "property", which should be one of the values in the 
+              enum "transfer_lengths", is passed through the call chain until the weight is computed, and used in
+              tl_weight_integrand to select the correct weight function.
+*/
 #include "Spherical.h"
 #include "Integration/Integration.h"
 

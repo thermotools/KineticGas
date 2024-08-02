@@ -38,6 +38,7 @@ class Sutherland : public Spherical{
         lambda = vector3d(nterms, vector2d(Ncomps, vector1d(Ncomps, 0.)));
         }
 
+    dual2 potential(int i, int j, dual2 r) override;
     double potential(int i, int j, double r) override;
     double potential_derivative_r(int i, int j, double r) override;
     double potential_dblderivative_rr(int i, int j, double r) override;

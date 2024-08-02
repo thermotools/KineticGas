@@ -16,20 +16,15 @@ ModTangToennis::ModTangToennis(TangToennisParam param, vector1d mole_weights, ve
     if (!is_idealgas) throw std::runtime_error("Modified Tang-Toennis only implemented for ideal gas!");
 }
 
-double ModTangToennis::potential(int i, int j, double r){
-    dual rd = r;
-    return potential(i, j, rd).val;
-}
-
-dual ModTangToennis::potential(int i, int j, dual r){
+dual2 ModTangToennis::potential(int i, int j, dual2 r){
     r *= 1e9; // Using nm internally
     if (r < 0.4 * param.Re){
         return (param.A_tilde / r) * exp(- param.a_tilde * r) * BOLTZMANN;
     }
-    dual u = param.A * exp(param.a1 * r + param.a2 * pow(r, 2) + param.am1 * pow(r, -1) + param.am2 * pow(r, -2));
-    dual exp_prefactor = exp(- param.b * r);
+    dual2 u = param.A * exp(param.a1 * r + param.a2 * pow(r, 2) + param.am1 * pow(r, -1) + param.am2 * pow(r, -2));
+    dual2 exp_prefactor = exp(- param.b * r);
     for (int n = 3; n <= 8; n++){
-        dual tmp = 0.;
+        dual2 tmp = 0.;
         int k = 0;
         for (; k <= std::min(2 * n, 10); k++){
             tmp += pow(param.b * r, k) / partialfactorial(1, k);
@@ -40,20 +35,4 @@ dual ModTangToennis::potential(int i, int j, dual r){
         u -= (param.C[n - 3] / pow(r, 2 * n)) * (1 - exp_prefactor * tmp);
     }
     return u * BOLTZMANN;
-}
-
-double ModTangToennis::potential_derivative_r(int i, int j, double r){
-    dual rd = r;
-    return potential_r(i, j, rd).val;
-}
-
-dual ModTangToennis::potential_r(int i, int j, dual rd){
-    const auto func = [&](dual r_){return potential(i, j, r_);};
-    return autodiff::derivative(func, autodiff::wrt(rd), autodiff::at(rd));
-}
-
-double ModTangToennis::potential_dblderivative_rr(int i, int j, double r){
-    dual rd = r;
-    const auto func = [&](dual r_){return potential_r(i, j, r_);};
-    return autodiff::derivative(func, autodiff::wrt(rd), autodiff::at(rd));
 }

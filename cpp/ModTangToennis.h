@@ -26,16 +26,10 @@ class ModTangToennis : public Spherical {
     TangToennisParam param;
     ModTangToennis(TangToennisParam param, vector1d mole_weights, vector2d sigma, bool is_idealgas);
 
-    double potential(int i, int j, double r) override;
-    double potential_derivative_r(int i, int j, double r) override;
-    double potential_dblderivative_rr(int i, int j, double r) override;
+    dual2 potential(int i, int j, dual2 r) override;
 
     vector2d model_rdf(double rho, double T, const vector1d& x){
         throw std::runtime_error("Modified Tang-Toennis only implemented for ideal gas!");
     }
-
-    private:
-    dual potential(int i, int j, dual r);
-    dual potential_r (int i, int j, dual r);
 
 };
