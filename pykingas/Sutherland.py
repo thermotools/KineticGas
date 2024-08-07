@@ -258,6 +258,9 @@ class Sutherland(py_KineticGas):
 
     def get_BH_diameters(self, T):
         return self.cpp_kingas.get_BH_diameters(T)
+    
+    def get_rdf_terms(self, rho, T, x):
+        return self.cpp_kingas.get_rdf_terms(rho, T, x)
 
     def potential(self, i, j, r):
         r"""Potential

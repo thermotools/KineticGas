@@ -97,6 +97,9 @@ class QuantumMie(MieType.MieType):
         """
         return self.cpp_kingas.C
 
+    def get_rdf_terms(self, rho, T, x):
+        return self.cpp_kingas.get_rdf_terms(rho, T, x)
+
     def potential(self, i, j, r, T):
         """Utility
         Evaluate the interaction potential between types i and j at distance r

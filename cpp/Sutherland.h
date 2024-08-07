@@ -69,6 +69,8 @@ class Sutherland : public Spherical{
         using_LJ_rdf_correlation = use_LJ_corr;
     }
 
+    vector3d get_rdf_terms(double rho, double T, const vector1d& x); // Return g0, g1, g2 (no correction), g2 (with correction)
+
     // ------------------------------------------------------------------------------------------------------------------- //
     // -------------------------- Sutherland Internals are below here ---------------------------------------------------- //
     // ---------------------- End users should not need to care about anything below -------------------------------------- //

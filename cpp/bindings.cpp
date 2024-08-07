@@ -5,6 +5,7 @@
 #include "HardSphere.h"
 #include "PseudoHardSphere.h"
 #include "Sutherland.h"
+#include "ExtendedSutherland.h"
 #include "ModTangToennis.h"
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
@@ -85,13 +86,17 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("rdf_g1", py::overload_cast<double, double, const vector1d&>(&Sutherland::rdf_g1_func))
         .def("rdf_g2", py::overload_cast<double, double, const vector1d&, bool>(&Sutherland::rdf_g2_func))
         ;
-        // Functions below this comment are only exposed for testing purposes
-        // .def("da1_drho", &Sutherland::da1_drho_func)
-        // .def("da1s_drho", &Sutherland::da1s_drho_func)
-        // .def("dzeta_eff_drho", py::overload_cast<double, const vector1d&, const vector2d&, double>(&Sutherland::dzeta_eff_drho_func))
-        // .def("zeta_x", &Sutherland::zeta_x_func)
-        // .def("a1s", py::overload_cast<double, double, const vector1d&, const vector2d&>(&Sutherland::a_1s_func))
-        // .def("B_func", py::overload_cast<double, const vector1d&, const vector2d&, const vector2d&>(&Sutherland::B_func))
+    
+    py::class_<ExtSutherland>(handle, "cpp_ExtSutherland")
+        .def(py::init<vector1d, vector2d, vector2d, 
+                        vector3d, vector3d, vector3d, vector3d,
+                        bool, bool>())
+        KineticGas_bindings(ExtSutherland)
+        // Spherical_potential_bindings(ExtSutherland)
+        Spherical_bindings(ExtSutherland)
+    //     .def("saft_rdf", &ExtSutherland::saft_rdf)
+    //     .def("get_rdf_terms", &ExtSutherland::get_rdf_terms)
+        ;
 
     py::class_<MieKinGas>(handle, "cpp_MieKinGas")
         .def(py::init<vector1d,
@@ -160,6 +165,7 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("get_epsilon_eff", py::overload_cast<double>(&QuantumMie::get_epsilon_eff))
         .def("get_BH_diameters", &QuantumMie::get_BH_diameters)
         .def("saft_rdf", &QuantumMie::saft_rdf)
+        .def("get_rdf_terms", &QuantumMie::get_rdf_terms)
         ;
 
     py::class_<TangToennisParam>(handle, "cpp_TangToennisParam")

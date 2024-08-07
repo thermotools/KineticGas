@@ -103,7 +103,7 @@ double Sutherland::LJ_rdf_correlation(double rho, double T){
     return rdf;
 }
 
-vector2d Sutherland::saft_rdf(double rho, double T, const std::vector<double>& x, int order, bool g2_correction){
+vector2d Sutherland::saft_rdf(double rho, double T, const vector1d& x, int order, bool g2_correction){
     double beta = (1. / (BOLTZMANN * T));
     vector2d d_BH = get_BH_diameters(T);
     vector2d x_eff = get_xeff(d_BH);
@@ -118,6 +118,15 @@ vector2d Sutherland::saft_rdf(double rho, double T, const std::vector<double>& x
         }
     }
     return g;
+}
+
+vector3d Sutherland::get_rdf_terms(double rho, double T, const vector1d& x){
+    vector3d terms;
+    terms.push_back(saft_rdf(rho, T, x, 0));
+    terms.push_back(saft_rdf(rho, T, x, 1));
+    terms.push_back(saft_rdf(rho, T, x, 2, false));
+    terms.push_back(saft_rdf(rho, T, x, 2, true));
+    return terms;
 }
 
 vector2d Sutherland::rdf_g0_func(double rho, const vector1d& x, const vector2d& d_BH){
