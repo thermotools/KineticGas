@@ -21,24 +21,25 @@ enum transfer_lengths{
     ETL
 };
 
-vector2d Spherical::get_mtl(double rho, double T, const vector1d& x){
-    int T_idx = static_cast<int>(T * 100 + 0.5);
-    const std::map<int, vector2d>::iterator pos = mtl_map.find(T_idx);
+vector2d Spherical::model_mtl(double rho, double T, const vector1d& x){
+    StatePoint point = get_transfer_length_point(rho, T, x);
+    const auto pos = mtl_map.find(point);
 
     if (pos != mtl_map.end()) return pos->second;
 
     vector2d mtl = get_transfer_length(rho, T, x, transfer_lengths::MTL);
-    mtl_map[T_idx] = mtl;
+    mtl_map[point] = mtl;
     return mtl;
 }
-vector2d Spherical::get_etl(double rho, double T, const vector1d& x){
-    int T_idx = static_cast<int>(T * 100 + 0.5);
-    const std::map<int, vector2d>::iterator pos = etl_map.find(T_idx);
+
+vector2d Spherical::model_etl(double rho, double T, const vector1d& x){
+    StatePoint point = get_transfer_length_point(rho, T, x);
+    const auto pos = etl_map.find(point);
 
     if (pos != etl_map.end()) return pos->second;
 
     vector2d etl = get_transfer_length(rho, T, x, transfer_lengths::ETL);
-    etl_map[T_idx] = etl;
+    etl_map[point] = etl;
     return etl;
 }
 

@@ -36,11 +36,7 @@ using vector2d = std::vector<vector1d>;
         .def("potential_dblderivative_rr", &Model::potential_dblderivative_rr) \
 
 #define Spherical_bindings(Model) \
-        .def("omega", &Model::omega) \
-        .def("chi", &Model::chi) \
-        .def("get_R", &Model::get_R) \
-        .def("theta_r", py::overload_cast<int, int, double, double, double, double>(&Model::theta_r)) \
-        .def("set_tl_model", &Sutherland::set_transfer_length_model)
+       .def("set_tl_model", &Sutherland::set_transfer_length_model)
 
 
 PYBIND11_MODULE(libpykingas, handle){
@@ -156,14 +152,13 @@ PYBIND11_MODULE(libpykingas, handle){
         .def(py::init<vector1d, vector2d, vector2d, vector2d, vector2d, std::vector<int>, bool, bool>())
         KineticGas_bindings(QuantumMie)
         Spherical_bindings(QuantumMie)
-        .def("omega_tester", &QuantumMie::omega_tester)
-        .def("potential", py::overload_cast<int, int, double, double>(&QuantumMie::potential))
-        .def("potential_derivative_r", py::overload_cast<int, int, double, double>(&QuantumMie::potential_derivative_r))
-        .def("potential_dblderivative_rr", py::overload_cast<int, int, double, double>(&QuantumMie::potential_dblderivative_rr))
-        .def("get_sigma_eff", py::overload_cast<double>(&QuantumMie::get_sigma_eff))
-        .def("get_sigma_min", py::overload_cast<double>(&QuantumMie::get_sigma_min))
-        .def("get_epsilon_eff", py::overload_cast<double>(&QuantumMie::get_epsilon_eff))
-        .def("get_BH_diameters", &QuantumMie::get_BH_diameters)
+        // .def("potential", py::overload_cast<int, int, double, double>(&QuantumMie::potential))
+        // .def("potential_derivative_r", py::overload_cast<int, int, double, double>(&QuantumMie::potential_derivative_r))
+        // .def("potential_dblderivative_rr", py::overload_cast<int, int, double, double>(&QuantumMie::potential_dblderivative_rr))
+        // .def("get_sigma_eff", py::overload_cast<double>(&QuantumMie::get_sigma_eff))
+        // .def("get_sigma_min", py::overload_cast<double>(&QuantumMie::get_sigma_min))
+        // .def("get_epsilon_eff", py::overload_cast<double>(&QuantumMie::get_epsilon_eff))
+        // .def("get_BH_diameters", &QuantumMie::get_BH_diameters)
         .def("saft_rdf", &QuantumMie::saft_rdf)
         .def("get_rdf_terms", &QuantumMie::get_rdf_terms)
         ;

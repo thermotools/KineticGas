@@ -57,46 +57,54 @@ def gen_rdf_binary():
     
     pd.DataFrame(out).to_csv(f'{os.path.dirname(__file__)}/../data/rdf_binary.csv')
 
+def check_rel_error(a, b, tol=1e-4):
+    if abs((a - b) / b) > tol:
+        return False
+    return True
+
 @pytest.mark.parametrize('rho_r', rdf_rholst)
-def test_rdf_single(rho_r):
+@pytest.mark.parametrize('order', [0, 1, 2, 3])
+def test_rdf_single(rho_r, order):
     kin = QuantumMie('H2', FH_orders=2)
     unt = kin.get_reducing_units()
     
     for Tr in sorted(set(singledata['T'])):
         data = singledata[(abs(singledata['T'] - Tr) < 1e-2) & (abs(singledata['rho'] - rho_r) < 1e-3)]
         g0, g1, g2, g2c = kin.get_rdf_terms(rho_r * unt.rho * Avogadro, Tr * unt.T, [0.3, 0.7])
-        assert abs(g0[0][0] - data['g0'].iloc[0]) < 1e-10
-        assert abs(g1[0][0] - data['g1'].iloc[0]) < 1e-10
-        assert abs(g2[0][0] - data['g2'].iloc[0]) < 1e-10
-        assert abs(g2c[0][0] - data['g2c'].iloc[0]) < 1e-10
+        if (order == 0) : assert check_rel_error(g0[0][0], data['g0'].iloc[0])
+        if (order == 1) : assert check_rel_error(g1[0][0], data['g1'].iloc[0])
+        if (order == 2) : assert check_rel_error(g2[0][0], data['g2'].iloc[0])
+        if (order == 3) : assert check_rel_error(g2c[0][0], data['g2c'].iloc[0])
 
 @pytest.mark.parametrize('rho_r', rdf_rholst)
-def test_rdf_binary(rho_r):
+@pytest.mark.parametrize('order', [0, 1, 2, 3])
+def test_rdf_binary(rho_r, order):
     kin = QuantumMie('H2,NE', FH_orders=2)
     unt = kin.get_reducing_units()
     
     for Tr in sorted(set(binarydata['T'])):
         data = binarydata[(abs(binarydata['T'] - Tr) < 1e-2) & (abs(binarydata['rho'] - rho_r) < 1e-3)]
         g0, g1, g2, g2c = kin.get_rdf_terms(rho_r * unt.rho * Avogadro, Tr * unt.T, [0.3, 0.7])
-        assert abs(g0[0][0] - data['g0_11'].iloc[0]) < 1e-10
-        assert abs(g1[0][0] - data['g1_11'].iloc[0]) < 1e-10
-        assert abs(g2[0][0] - data['g2_11'].iloc[0]) < 1e-10
-        assert abs(g2c[0][0] - data['g2c_11'].iloc[0]) < 1e-10
-        assert abs(g0[0][1] - data['g0_12'].iloc[0]) < 1e-10
-        assert abs(g1[0][1] - data['g1_12'].iloc[0]) < 1e-10
-        assert abs(g2[0][1] - data['g2_12'].iloc[0]) < 1e-10
-        assert abs(g2c[0][1] - data['g2c_12'].iloc[0]) < 1e-10
-        assert abs(g0[1][1] - data['g0_22'].iloc[0]) < 1e-10
-        assert abs(g1[1][1] - data['g1_22'].iloc[0]) < 1e-10
-        assert abs(g2[1][1] - data['g2_22'].iloc[0]) < 1e-10
-        assert abs(g2c[1][1] - data['g2c_22'].iloc[0]) < 1e-10
-        assert g0[0][1] == g0[1][0]
-        assert g1[0][1] == g1[1][0]
-        assert g2[0][1] == g2[1][0]
-        assert g2c[0][1] == g2c[1][0]
+        if (order == 0) : assert check_rel_error(g0[0][0], data['g0_11'].iloc[0])
+        if (order == 1) : assert check_rel_error(g1[0][0], data['g1_11'].iloc[0])
+        if (order == 2) : assert check_rel_error(g2[0][0], data['g2_11'].iloc[0])
+        if (order == 3) : assert check_rel_error(g2c[0][0], data['g2c_11'].iloc[0])
+        if (order == 0) : assert check_rel_error(g0[0][1], data['g0_12'].iloc[0])
+        if (order == 1) : assert check_rel_error(g1[0][1], data['g1_12'].iloc[0])
+        if (order == 2) : assert check_rel_error(g2[0][1], data['g2_12'].iloc[0])
+        if (order == 3) : assert check_rel_error(g2c[0][1], data['g2c_12'].iloc[0])
+        if (order == 0) : assert check_rel_error(g0[1][1], data['g0_22'].iloc[0])
+        if (order == 1) : assert check_rel_error(g1[1][1], data['g1_22'].iloc[0])
+        if (order == 2) : assert check_rel_error(g2[1][1], data['g2_22'].iloc[0])
+        if (order == 3) : assert check_rel_error(g2c[1][1], data['g2c_22'].iloc[0])
+        if (order == 0) : assert g0[0][1] == g0[1][0]
+        if (order == 1) : assert g1[0][1] == g1[1][0]
+        if (order == 2) : assert g2[0][1] == g2[1][0]
+        if (order == 3) : assert g2c[0][1] == g2c[1][0]
 
-# gen_rdf_single()
-# gen_rdf_binary()
-for rho_r in rdf_rholst:    
-    test_rdf_binary(rho_r)
-    test_rdf_single(rho_r)
+if __name__ == '__main__':
+    # gen_rdf_single()
+    # gen_rdf_binary()
+    for rho_r in rdf_rholst:    
+        test_rdf_binary(rho_r)
+        test_rdf_single(rho_r)

@@ -16,7 +16,8 @@ Spherical::Spherical(std::vector<double> mole_weights,
                     {}
 
 double Spherical::omega(int i, int j, int l, int r, double T){
-    OmegaPoint point{i, j, l, r, T}, sympoint{j, i, l, r, T};
+    OmegaPoint point = get_omega_point(i, j, l, r, T);
+    OmegaPoint sympoint = get_omega_point(j, i, l, r, T);
     const std::map<OmegaPoint, double>::iterator pos = omega_map.find(point);
     if (pos == omega_map.end()){
         double w = w_integral(i, j, T, l, r);

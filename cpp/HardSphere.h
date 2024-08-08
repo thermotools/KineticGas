@@ -59,7 +59,7 @@ class HardSphere : public KineticGas {
         return rdf;
     }
 
-    std::vector<std::vector<double>> get_mtl(double rho, double T, const std::vector<double>& x) override {return sigma;}
-    std::vector<std::vector<double>> get_etl(double rho, double T, const std::vector<double>& x) override {return sigma;}
+    std::vector<std::vector<double>> model_mtl(double rho, double T, const std::vector<double>& x) override {return sigma;}
+    std::vector<std::vector<double>> model_etl(double rho, double T, const std::vector<double>& x) override {return sigma;}
 
 };

@@ -30,138 +30,145 @@ inline void throw_notimplemented(){
     throw std::runtime_error("This method is not implemented for class ExtSutherland!");
 }
 
+vector2d dual_to_double(const vector2d2& vin);
+
 class ExtSutherland : public Spherical{
-    public:
+public:
     ExtSutherland(vector1d mole_weights, vector2d sigma, vector2d eps, 
                 vector3d C, vector3d lambda, vector3d beta_exp, vector3d rho_exp, 
                 bool is_idealgas=false, bool is_singlecomp=false)
         : Spherical(mole_weights, sigma, eps, is_idealgas, is_singlecomp), C{C}, 
-        lambda{lambda}, beta_exp(beta_exp), rho_exp{rho_exp}, nterms{C.size()}
+        lambda{lambda}, beta_exp(beta_exp), rho_exp{rho_exp}, nterms{C.size()},
+        sigma_eff(Ncomps, vector1d2(Ncomps)), r_min(Ncomps, vector1d2(Ncomps)), 
+        eps_eff(Ncomps, vector1d2(Ncomps)), vdw_alpha(Ncomps, vector1d2(Ncomps)),
+        C_eff(C.size(), vector2d2(Ncomps, vector1d2(Ncomps)))
         {}
-
-    // ExtSutherland(vector1d mole_weights, vector2d sigma, vector2d eps, size_t nterms, bool is_idealgas=false, bool is_singlecomp=false)
-    //     : Spherical(mole_weights, sigma, eps, is_idealgas, is_singlecomp), nterms{nterms}
-    //     {
-    //     C = vector3d(nterms, vector2d(Ncomps, vector1d(Ncomps, 0.)));
-    //     lambda = vector3d(nterms, vector2d(Ncomps, vector1d(Ncomps, 0.)));
-    //     beta_exp = vector3d(nterms, vector2d(Ncomps, vector1d(Ncomps, 0.)));
-    //     rho_exp = vector3d(nterms, vector2d(Ncomps, vector1d(Ncomps, 0.)));
-    //     }
+    
+    ExtSutherland(vector1d mole_weights, vector2d sigma, vector2d eps, size_t nterms, bool is_idealgas=false, bool is_singlecomp=false)
+        : Spherical(mole_weights, sigma, eps, is_idealgas, is_singlecomp), 
+        C(nterms, vector2d(Ncomps, vector1d(Ncomps))), lambda(nterms, vector2d(Ncomps, vector1d(Ncomps, 0.))), 
+        beta_exp(nterms, vector2d(Ncomps, vector1d(Ncomps, 0.))), rho_exp(nterms, vector2d(Ncomps, vector1d(Ncomps, 0.))), nterms{nterms},
+        sigma_eff(Ncomps, vector1d2(Ncomps)), r_min(Ncomps, vector1d2(Ncomps)), 
+        eps_eff(Ncomps, vector1d2(Ncomps)), vdw_alpha(Ncomps, vector1d2(Ncomps)),
+        C_eff(nterms, vector2d2(Ncomps, vector1d2(Ncomps)))
+        {
+            for (size_t i = 0; i < Ncomps; i++){
+                for (size_t j = 0; j < Ncomps; j++){
+                    sigma_eff[i][j] = sigma_eff[j][i] = r_min[i][j] = r_min[j][i] = sigma[i][j];
+                    eps_eff[i][j] = eps_eff[j][i] = eps[i][j];
+                }
+            }
+        }
 
     dual2 potential(int i, int j, dual2 r, dual2 T, dual2 rho);
     dual2 potential_r(int i, int j, dual2 r, dual2 T, dual2 rho);
     dual2 potential_rr(int i, int j, dual2 r, dual2 T, dual2 rho);
     double potential(int i, int j, double r, double T, double rho);
 
-    inline vector2d model_rdf(double rho, double T, const std::vector<double>& x) override {
-        return saft_rdf(rho, T, x, 2);
-    }
-     // To directly compute the RDF at different pertubation orders. Not used in property computations.
+     // To directly compute the RDF at different pertubation orders.
     vector2d saft_rdf(double rho, double T, const std::vector<double>& x, int order=2, bool g2_correction=true);
-
-    vector2d2 rdf_g0_func(dual2 rho, const vector1d& x, const vector2d2& d_BH, const vector2d2& sigma_eff);
-    vector2d1 rdf_g1_func(dual2 rho, const vector1d& x, const vector2d2& d_BH, const vector2d2& x_eff);
-    vector2d1 rdf_g2_func(dual2 rho, dual2 T, const vector1d& x, const vector2d2& d_BH, const vector2d2& x_eff, const vector2d2& sigma_eff, bool g2_correction);
+    vector3d get_rdf_terms(double rho, double T, const vector1d& x); // Return g0, g1, g2 (no correction), g2 (with correction)
     virtual vector2d2 get_BH_diameters(dual2 rho, dual2 T);
 
-    vector3d get_rdf_terms(double rho, double T, const vector1d& x); // Return g0, g1, g2 (no correction), g2 (with correction)
+    vector2d get_sigma_eff(double rho, double T){
+        set_sigma_eff(rho, T);
+        return dual_to_double(sigma_eff);
+    }
+
+    vector2d get_sigma_min(double rho, double T){
+        set_epsilon_eff(rho, T);
+        return dual_to_double(r_min);
+    }
+
+    vector2d get_epsilon_eff(double rho, double T){
+        set_epsilon_eff(rho, T);
+        return dual_to_double(eps_eff);
+    }
 
     // ------------------------------------------------------------------------------------------------------------------- //
     // -------------------------- Sutherland Internals are below here ---------------------------------------------------- //
-    // ---------------------- End users should not need to care about anything below -------------------------------------- //
+    // ---------------------- End users should not need to care about anything below ------------------------------------- //
     // ------------------------------------------------------------------------------------------------------------------- //
-    vector2d get_b_max(double rho, double T);
-    vector2d get_b_max(double T){throw_notimplemented(); return vector2d();}
 
-    protected:
+protected:
     vector3d C;
     vector3d lambda;
     vector3d beta_exp;
     vector3d rho_exp;
     size_t nterms;
 
-    dual2 potential(int i, int j, dual2 r) override {
-        throw_notimplemented(); return 0.;
+    void set_effective_params(dual2 rho, dual2 T);
+    void set_internals(double rho, double T, const vector1d& x) override {set_effective_params(rho, T);}
+    double current_T{-1.}, current_rho{-1.};
+    bool C_set{false}, sigma_set{false}, eps_set{false}, alpha_set{false};
+    vector2d2 sigma_eff;
+    vector2d2 r_min;
+    vector2d2 eps_eff;
+    vector2d2 vdw_alpha;
+    vector3d2 C_eff;
+
+    OmegaPoint get_omega_point(int i, int j, int l, int r, double T) override {
+        if (T != current_T){
+            throw std::runtime_error("Something is very wrong ...");
+        }
+        return OmegaPoint(i, j, l, r, T, current_rho);
     }
+
+    StatePoint get_transfer_length_point(double rho, double T, const vector1d& x) override {
+        if (T != current_T){
+            throw std::runtime_error("Something is even more wrong ...");
+        }
+        return StatePoint(rho, T);
+    }
+
+    inline vector2d model_rdf(double rho, double T, const std::vector<double>& x) override {
+        return saft_rdf(rho, T, x, 2, true);
+    }
+
+    dual2 potential(int i, int j, dual2 r);
+    dual2 potential_r(int i, int j, dual2 r);
+    dual2 potential_rr(int i, int j, dual2 r);
+    double potential(int i, int j, double r) override;
     using Spherical::potential_derivative_r;
     using Spherical::potential_dblderivative_rr;
 
-    vector2d2 compute_sigma_eff(dual2 rho, dual2 T);
-    vector2d2 compute_epsilon_eff(dual2 rho, dual2 T);
-    vector2d2 compute_vdw_alpha(dual2 rho, dual2 T);
+    void set_C_eff(dual2 rho, dual2 T);
+    void set_sigma_eff(dual2 rho, dual2 T);
+    void set_epsilon_eff(dual2 rho, dual2 T);
+    void set_vdw_alpha(dual2 rho, dual2 T);
 
-    vector2d rdf_g0_func(double rho, const vector1d& x, const vector2d& d_BH);
-    vector2d rdf_g1_func(double rho, const vector1d& x, const vector2d& d_BH);
-    vector2d rdf_g2_func(double rho, double T, const vector1d& x, const vector2d& d_BH, const vector2d& x_eff, bool g2_correction=true);
+    vector2d get_b_max(double T) override;
+    vector2d get_BH_diameters(double T);
 
+    vector2d2 rdf_g0_func(dual2 rho, const vector1d& x, const vector2d2& d_BH, const vector2d2& x_eff);
+    vector2d1 rdf_g1_func(dual2 rho, dual2 T, const vector1d& x, const vector2d2& d_BH, const vector2d2& x_eff);
+    vector2d1 rdf_g2_func(dual2 rho, dual2 T, const vector1d& x, const vector2d2& d_BH, const vector2d2& x_eff, bool g2_correction);
+    
     vector2d get_lambda_kl(size_t k, size_t l); // lambda_kl[i, j] = lambda_k[i, j] + lambda_l[i, j]
     vector2d2 get_x0(const vector2d2& d_BH); // x0 = sigma / d_BH
-    vector2d2 get_xeff(const vector2d2& d_BH, const vector2d2& sigma_eff); // x_eff = sigma_eff / d_BH
+    vector2d2 get_xeff(const vector2d2& d_BH); // x_eff = sigma_eff / d_BH
 
-    vector2d2 gamma_corr(dual2 zeta_x, dual2 T, const vector2d2& eps_eff, const vector2d2& vdw_alpha); // Eq. (A37) in svrm (https://doi.org/10.1063/1.4819786)
+    vector2d2 gamma_corr(dual2 zeta_x, dual2 T); // Eq. (A37) in svrm (https://doi.org/10.1063/1.4819786)
     dual2 zeta_x_func(dual2 rho, const vector1d& x, const vector2d2& d_BH); // Eq. (A13) in svrm
-    // double dzetax_drho_func(const vector1d& x, const vector2d& d_BH); // Derivative of zeta_x wrt. density
     dual2 zeta_eff_func(dual2 rho, const vector1d& x, dual2 zeta_x, double lambdaijk); // Eq. (A17) in svrm
-    // double dzeta_eff_drho_func(double rho, const std::vector<double>& x, const vector2d& d_BH, double lambdakij);
-
-    dual2 a1_func(int i, int j, dual2 rho, const vector1d& x, const vector2d2& d_BH, const vector2d2& sigma_eff);
-    // virtual vector2d2 a1_func(dual2 rho, dual2 T, const vector1d& x);
-    // vector2d2 a1_func(dual2 rho, const vector1d& x, const vector2d2& d_BH);
-    // virtual vector2d2 da1_drho_func(dual2 rho, dual2 T, const vector1d& x){
-    //     const vector2d2 d_BH = get_BH_diameters(T, rho);
-    //     return da1_drho_func(rho, x, d_BH);
-    // }
-    // vector2d da1_drho_func(double rho, const vector1d& x, const vector2d& d_BH); // Derivative of a1 wrt. density
-    // virtual vector2d2 a2ij_div_chi_func(dual2 rho, dual2 T, const vector1d& x){
-    //     const vector2d2 d_BH = get_BH_diameters(T, rho);
-    //     const vector2d2 sigma_eff = compute_sigma_eff(T, rho);
-    //     const vector2d2 x_eff = get_xeff(d_BH, sigma_eff);
-    //     const vector2d2 rdf_chi_HS = rdf_chi_func(rho, x);
-    //     const dual2 zeta_x = zeta_x_func(rho, x, d_BH);
-    //     const dual2 K_HS = K_HS_func(zeta_x);
-    //     const vector2d2 a2ij = a2ij_func(rho, x, K_HS, rdf_chi_HS, d_BH, x_eff);
-    //     vector2d2 a2ij_div_chi(Ncomps, vector1d2(Ncomps, 0.0));
-    //     for (size_t i = 0; i < Ncomps; i++){
-    //         for (size_t j = i; j < Ncomps; j++){
-    //             a2ij_div_chi[i][j] = a2ij[i][j] / (1 + rdf_chi_HS[i][j]);
-    //             a2ij_div_chi[j][i] = a2ij_div_chi[i][j];
-    //         }
-    //     }
-    //     return a2ij_div_chi;
-    // }
+    
+    dual2 a1_func(int i, int j, dual2 rho, dual2 T, const vector1d& x);
+    dual2 a1_func(int i, int j, dual2 rho, const vector1d& x, const vector2d2& d_BH);
+    dual2 a2_div_chi_func(int i, int j, dual2 rho, dual2 T, const vector1d& x);
     dual2 a2_div_chi_func(int i, int j, dual2 rho, const vector1d& x, dual2 K_HS, const vector2d2& d_BH, const vector2d2& x_eff); // Eq. (A20) in svrm
-    // vector2d da2ij_div_chi_drho_func(double rho, const vector1d& x, double K_HS, const vector2d& d_BH, const vector2d& x_eff); // Derivative of (a_2 / (1 + chi)) wrt. density
-    // virtual vector2d2 da2ij_div_chi_drho_func(dual2 rho, dual2 T, const vector1d& x){
-    //     const vector2d2 d_BH = get_BH_diameters(T, rho);
-    //     const vector2d2 sigma_eff = compute_sigma_eff(T, rho);
-    //     const vector2d2 x_eff = get_xeff(d_BH, sigma_eff);
-    //     const dual2 zeta_x = zeta_x_func(rho, x, d_BH);
-    //     const dual2 K_HS = K_HS_func(zeta_x);
-    //     return da2ij_div_chi_drho_func(rho, x, K_HS, d_BH, x_eff);
-    // }
-    vector2d2 rdf_chi_func(dual2 rho, dual2 T, const vector1d& x, const vector2d2& sigma_eff); // Eq. (A22) in svrm
-    // vector2d drdf_chi_drho_func(double rho, const vector1d& x); // Derivative of chi (from Eq. (22) in svrm)
+    vector2d2 rdf_chi_func(dual2 rho, dual2 T, const vector1d& x); // Eq. (A22) in svrm
+
     vector1d2 f_corr(dual2 alpha); // Eq. (A26) in svrm
 
-    // virtual dual2 a_1s_func(dual2 rho, dual2 T, const vector1d& x, const vector2d& lambda_k); // Forwards call to a_1s_func
     dual2 a_1s_func(int i, int j, dual2 rho, const vector1d& x, dual2 zeta_x, const vector2d2& d_BH, const vector2d& lambda_k); // Eq. (A16) in svrm (https://doi.org/10.1063/1.4819786)
-    // vector2d da1s_drho_func(double rho, const vector1d& x, const vector2d& d_BH, const vector2d& lambda_k); // Derivative of a1s wrt. density
 
-    // virtual vector2d2 B_func(dual2 rho, dual2 T, const vector1d& x, const vector2d& lambda); // Forwards call to B_func
     dual2 B_func(int i, int j, dual2 rho, const vector1d& x, dual2 zeta_x, const vector2d2& x_eff, const vector2d2& d_BH, const vector2d& lambda_k); // Eq. (A12) in svrm
-    // vector2d2 B_func(dual2 rho, const vector1d& x, const vector2d2& d_BH, const vector2d& lambda_k); // Forwards call to B_func
-    // vector2d dBdrho_func(double rho, const vector1d& x, double zeta_x, const vector2d& x_eff, const vector2d& d_BH, const vector2d& lambda_k); // Derivative wrt. density
-    // vector2d dBdrho_func(double rho, double T, const vector1d& x, const vector2d& lambda_k);
     dual2 I_func(int i, int j, const vector2d2& xeff, const vector2d& lambda_k); // Eq. (A14) in svrm (https://doi.org/10.1063/1.4819786)
     dual2 J_func(int i, int j, const vector2d2& xeff, const vector2d& lambda_k); // Eq. (A15) in svrm (https://doi.org/10.1063/1.4819786)
 
     inline dual2 K_HS_func(dual2 zeta_x){ // Eq. (A21) in svrm
         return pow(1 - zeta_x, 4) / (1 + 4 * zeta_x + 4 * pow(zeta_x, 2) - 4 * pow(zeta_x, 3) + pow(zeta_x, 4));
     }
-    // inline double dKHS_drho_func(double zeta_x, double dzx_drho){ // derivative of K_HS wrt. density.
-    //     return - 4 * dzx_drho * pow(1 - zeta_x, 3) * (2 + 5 * zeta_x - pow(zeta_x, 2) - 2 * pow(zeta_x, 3))
-    //             / pow(1 + 4 * zeta_x + 4 * pow(zeta_x, 2) - 4 * pow(zeta_x, 3) - pow(zeta_x, 4), 2);
-    // }
 
     static constexpr RDFConstants rdf_constants{
                             { // Gauss-Legendre nodes (20 points), see get_BH_diameters

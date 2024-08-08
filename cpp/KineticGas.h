@@ -47,11 +47,29 @@ Contains: The abstract class 'KineticGas', which computes the A_pqrl factors and
    NB: Resolution along the T-axis is 0.1 K, as (by experience) the collision integrals are a weak enough
    function of T to justify using T-values rounded to the nearest .1 K to improve speed, with little cost to precision.
 */
+struct StatePoint{
+    int T_dK, rho;
+    StatePoint(double T) : T_dK{static_cast<int>((T * 100.) + 0.5)} {}
+    StatePoint(double T, double rho) : T_dK{static_cast<int>((T * 100.) + 0.5)}, rho{static_cast<int>(rho)}{}
+
+    bool operator<(const StatePoint& other) const {
+        if (T_dK < other.T_dK) return true;
+        else if (T_dK == other.T_dK){
+            if (rho < other.rho) return true;
+        }
+        return false;
+    }
+};
+
 struct OmegaPoint{
-    int i, j, l, r, T_dK;
-    OmegaPoint(int i, int j, int l, int r, double T) : i{i}, j{j}, l{l}, r{r} {
+    int i, j, l, r, T_dK, rho;
+    OmegaPoint(int i, int j, int l, int r, double T) : i{i}, j{j}, l{l}, r{r}, rho{0} {
          T_dK = (int) ((T * 10.0) + 0.5); // Temperature in dK (10^-1 K)
     };
+
+    OmegaPoint(int i, int j, int l, int r, double T, double rho_) : OmegaPoint(i, j, l, r, T){
+        rho = static_cast<int>(rho_);
+    }
 
     bool operator<(const OmegaPoint& other) const {
         if (i < other.i) return true;
@@ -63,13 +81,15 @@ struct OmegaPoint{
                     if (r < other.r) return true;
                     else if (r == other.r){
                         if (T_dK < other.T_dK) return true;
+                        else if (T_dK == other.T_dK){
+                            if (rho < other.rho) return true;
+                        }
                     }
                 }
             }
         }
         return false;
     }
-
 };
 
 enum FrameOfReference{
@@ -90,24 +110,23 @@ class KineticGas{
     #endif
     virtual ~KineticGas(){};
 
-    // Collision integrals
-    virtual double omega(int i, int j, int l, int r, double T) = 0;
-
     // The transfer lengths related to momentum (MTL) and energy (ETL)
-    virtual vector2d get_mtl(double rho, double T, const vector1d& x) = 0;
-    virtual vector2d get_etl(double rho, double T, const vector1d& x) = 0;
+    // Inheriting classes must implement model_[mtl/etl]
+    inline vector2d get_mtl(double rho, double T, const vector1d& x){
+        set_internals(rho, T, x);
+        return model_mtl(rho, T, x);
+    }
+    inline vector2d get_etl(double rho, double T, const vector1d& x){
+        set_internals(rho, T, x);
+        return model_etl(rho, T, x);
+    }
 
     // Radial distribution function "at contact". Inheriting classes must implement model_rdf.
-    vector2d get_rdf(double rho, double T, const vector1d& mole_fracs) {
+    inline vector2d get_rdf(double rho, double T, const vector1d& mole_fracs) {
         if (is_idealgas) return vector2d(Ncomps, vector1d(Ncomps, 1.));
+        set_internals(rho, T, mole_fracs);
         return model_rdf(rho, T, mole_fracs);
     }
-    /*
-       The radial distribution function "at contact" for the given potential model. model_rdf is only called if object
-       is initialized with is_idealgas=true. If a potential model is implemented only for the ideal gas state, its
-       implementation of model_rdf should throw an std::invalid_argument error.
-    */
-    virtual vector2d model_rdf(double rho, double T, const vector1d& mole_fracs) = 0;
 
     #ifdef NOPYTHON
 // ---------------------------------------------------------------------------------------------------------------------------------------------- //
@@ -137,14 +156,11 @@ class KineticGas{
 
     std::vector<std::vector<double>> get_conductivity_matrix(double rho, double T, const std::vector<double>& x, int N);
     std::vector<double> get_diffusion_vector(double rho, double T, const std::vector<double>& x, int N);
-    double get_Lambda_ijpq(int i, int j, int p, int q, double rho, double T, const std::vector<double>& x);
+    // double get_Lambda_ijpq(int i, int j, int p, int q, double rho, double T, const std::vector<double>& x);
     std::vector<std::vector<double>> get_diffusion_matrix(double rho, double T, const std::vector<double>& x, int N);
     std::vector<double> get_conductivity_vector(double rho, double T, const std::vector<double>& x, int N);
     std::vector<std::vector<double>> get_viscosity_matrix(double rho, double T, const std::vector<double>&x, int N);
     std::vector<double> get_viscosity_vector(double rho, double T, const std::vector<double>& x, int N);
-
-    vector1d get_K_factors(double rho, double T, const vector1d& mole_fracs); // Eq. (1.2) of 'multicomponent docs'
-    vector1d get_K_prime_factors(double rho, double T, const vector1d& mole_fracs); // Eq. (5.4) of 'multicomponent docs'
 
 // ----------------------------------------------------------------------------------------------------------------------------------- //
 // -------------------------------------------------- Utility methods ---------------------------------------------------------------- //
@@ -157,35 +173,53 @@ class KineticGas{
     std::vector<double> get_wt_fracs(const std::vector<double> mole_fracs); // Compute weight fractions from mole fractions
     #ifdef NOPYTHON
         Eigen::MatrixXd CoM_to_FoR_matr(double T, double Vm, const std::vector<double>& x, int frame_of_reference, int solvent_idx);
-        Eigen::MatrixXd CoM_to_CoN_matr(double T, double Vm, const std::vector<double>& x);
-        Eigen::MatrixXd CoM_to_solvent_matr(double T, double Vm, const std::vector<double>& x, int solvent_idx);
-        Eigen::MatrixXd CoM_to_CoV_matr(double T, double Vm, const std::vector<double>& x);
-        Eigen::MatrixXd get_zarate_X_matr(const std::vector<double>& x, int dependent_idx);
-        Eigen::MatrixXd get_zarate_W_matr(const std::vector<double>& x, int dependent_idx);
-        
-        std::vector<std::vector<double>> get_chemical_potential_factors(double T, double Vm, const std::vector<double>& x);
-        std::vector<double> get_ksi_factors(double T, double Vm, const std::vector<double>& x);
     #endif
+    vector1d get_K_factors(double rho, double T, const vector1d& mole_fracs); // Eq. (1.2) of 'multicomponent docs'
+    vector1d get_K_prime_factors(double rho, double T, const vector1d& mole_fracs); // Eq. (5.4) of 'multicomponent docs'
+
 
 // ------------------------------------------------------------------------------------------------------------------------ //
 // --------------------------------------- KineticGas internals are below here -------------------------------------------- //
 // -------------------------------- End users should not need to care about any of this ----------------------------------- //
+protected:
 
     const size_t Ncomps;
     const bool is_idealgas;
     const bool is_singlecomp;
 
-    protected:
     std::vector<double> m;
     std::vector<std::vector<double>> M, m0;
     std::map<OmegaPoint, double> omega_map;
-    std::map<int, vector2d> mtl_map;
-    std::map<int, vector2d> etl_map;
+    std::map<StatePoint, vector2d> mtl_map;
+    std::map<StatePoint, vector2d> etl_map;
 
     #ifdef NOPYTHON
         const std::vector<json> compdata;
         std::unique_ptr<GenericEoS> eos;
     #endif
+
+    // set_internals is called at the start of all public methods. If a derived class needs to set any internals before running a computation,
+    // it should be done by overriding this method.
+    inline virtual void set_internals(double rho, double T, const vector1d& x){};
+    virtual OmegaPoint get_omega_point(int i, int j, int l, int r, double T){
+        return OmegaPoint(i, j, l, r, T);
+    }
+    virtual StatePoint get_transfer_length_point(double rho, double T, const vector1d& x){
+        return StatePoint(T);
+    }
+    
+    // Collision integrals
+    virtual double omega(int i, int j, int l, int r, double T) = 0;
+
+    /*
+       The radial distribution function "at contact" for the given potential model. model_rdf is only called if object
+       is initialized with is_idealgas=true. If a potential model is implemented only for the ideal gas state, its
+       implementation of model_rdf should throw an std::invalid_argument error.
+    */
+    virtual vector2d model_rdf(double rho, double T, const vector1d& mole_fracs) = 0;
+
+    virtual vector2d model_mtl(double rho, double T, const vector1d& x) = 0;
+    virtual vector2d model_etl(double rho, double T, const vector1d& x) = 0;
 
 // ----------------------------------------------------------------------------------------------------------------------------------- //
 // --------------------------------------- Methods to facilitate multithreading ------------------------------------------------------ //
@@ -209,8 +243,20 @@ class KineticGas{
     virtual void precompute_omega(const std::vector<int>& i_vec, const std::vector<int>& j_vec,
                         const std::vector<int>& l_vec, const std::vector<int>& r_vec, double T);
 
-    private:
-    void set_masses();
+private:
+
+    #ifdef NOPYTHON
+        Eigen::MatrixXd CoM_to_CoN_matr(double T, double Vm, const std::vector<double>& x);
+        Eigen::MatrixXd CoM_to_solvent_matr(double T, double Vm, const std::vector<double>& x, int solvent_idx);
+        Eigen::MatrixXd CoM_to_CoV_matr(double T, double Vm, const std::vector<double>& x);
+        Eigen::MatrixXd get_zarate_X_matr(const std::vector<double>& x, int dependent_idx);
+        Eigen::MatrixXd get_zarate_W_matr(const std::vector<double>& x, int dependent_idx);
+        
+        std::vector<std::vector<double>> get_chemical_potential_factors(double T, double Vm, const std::vector<double>& x);
+        std::vector<double> get_ksi_factors(double T, double Vm, const std::vector<double>& x);
+    #endif
+
+    void set_masses(); // Precompute reduced mass of particle pairs (used only on init.)
     void precompute_diffusion(int N, double T); // Forwards call to precompute_conductivity_omega. Override that instead.
     void precompute_th_diffusion(int N, double T); // Forwards call to precompute_conductivity_omega. Override that instead.
 
@@ -225,7 +271,7 @@ class KineticGas{
     // The diffusion and conductivity related square bracket integrals
     double H_ij(int p, int q, int i, int j, double T); // [S^(p)_{3/2}(U^2_i), S^(q)_{3/2}(U^2_j)]_{ij}
     double H_i(int p, int q, int i, int j, double T);  // [S^(p)_{3/2}(U^2_i), S^(q)_{3/2}(U^2_i)]_{ij}
-    double H_simple(int p, int q, int i, double T);           // [S^(p)_{3/2}(U^2_i), S^(q)_{3/2}(U^2_i)]_{i}
+    double H_simple(int p, int q, int i, double T);    // [S^(p)_{3/2}(U^2_i), S^(q)_{3/2}(U^2_i)]_{i}
 
     // Linear combination weights by Tompson, Tipton and Lloyalka
     double B_prime(int p, int q, int r, int l, double M1, double M2) const;
@@ -235,7 +281,7 @@ class KineticGas{
     // Viscosity related square bracket integrals
     double L_ij(int p, int q, int i, int j, double T); // [S^(p)_{5/2}(U^2_i), S^(q)_{5/2}(U^2_j)]_{ij}
     double L_i(int p, int q, int i, int j, double T);  // [S^(p)_{5/2}(U^2_i), S^(q)_{5/2}(U^2_i)]_{ij}
-    double L_simple(int p, int q, int i, double T);           // [S^(p)_{5/2}(U^2_i), S^(q)_{5/2}(U^2_i)]_{i}
+    double L_simple(int p, int q, int i, double T);    // [S^(p)_{5/2}(U^2_i), S^(q)_{5/2}(U^2_i)]_{i}
 };
 
 inline int delta(int i, int j) {return (i == j) ? 1 : 0;}

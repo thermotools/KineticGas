@@ -42,8 +42,7 @@ class Spherical : public KineticGas {
     
     virtual ~Spherical(){};
 
-    // Potential model, the dual case must be overridden. Overriding the other cases can give improved 
-    // efficiency of the code.
+    // Potential model, the dual case must be overridden. Overriding the other cases can give improved efficiency.
     virtual dual2 potential(int i, int j, dual2 r) = 0;
 
     virtual double potential(int i, int j, double r){
@@ -62,22 +61,26 @@ class Spherical : public KineticGas {
         return urr;
     }
 
-    double omega(int i, int j, int l, int r, double T) override;
-
-    vector2d model_rdf(double rho, double T, const vector1d& mole_fracs) override = 0;
-    vector2d get_mtl(double rho, double T, const vector1d& x) override; // Momentum transfer length
-    vector2d get_etl(double rho, double T, const vector1d& x) override; // Energy transfer length
-
     // Different collision diameter models are
     // -1 : Default model
     // 0 : Model presented in Refs. (I) and (II) (see top of file)
     // 1 : Unpublished model for momentum- and energy transfer lengths (MTL and ETL) (2024)
     void set_transfer_length_model(int model_id){
-        if (model_id == -1) transfer_length_model_id = default_tl_model_id;
+        if (model_id == -1) model_id = default_tl_model_id;
+        if (model_id != transfer_length_model_id){
+            mtl_map.clear(); etl_map.clear();
+        }
         transfer_length_model_id = model_id;
     }
+
+protected:
     const int default_tl_model_id = 1; // Default transfer length model
     int transfer_length_model_id = default_tl_model_id;
+
+    double omega(int i, int j, int l, int r, double T) override;
+    vector2d model_rdf(double rho, double T, const vector1d& mole_fracs) override = 0;
+    vector2d model_mtl(double rho, double T, const vector1d& x) override; // Momentum transfer length
+    vector2d model_etl(double rho, double T, const vector1d& x) override; // Energy transfer length
 
     double theta(int i, int j, const double T, const double g, const double b); // Angular coordinate at distance of closest approach.
     double chi(int i, int j, double T, double g, double b); // Deflection angle at given temperature, dimensionless velocity and impact parameter
@@ -88,7 +91,6 @@ class Spherical : public KineticGas {
     double omega_tester(int i, int j, int l, int r, double T, IntegrationParam& param);
     double w_integral_tester(int i, int j, double T, int l, int r, IntegrationParam& param);
 
-    protected:
     // In the general case, sigma is a scaling parameter on the order of the molecular size (m). Its specific physical meaning
     // may be different for different potential models. Likewise, 'eps' is a scaling parameter describing the molecular
     // interaction potential (J).
