@@ -65,12 +65,28 @@ class Spherical : public KineticGas {
     // -1 : Default model
     // 0 : Model presented in Refs. (I) and (II) (see top of file)
     // 1 : Unpublished model for momentum- and energy transfer lengths (MTL and ETL) (2024)
+    // 2 : Unpublished correlation for Argon transfer lengths
     void set_transfer_length_model(int model_id){
         if (model_id == -1) model_id = default_tl_model_id;
         if (model_id != transfer_length_model_id){
             mtl_map.clear(); etl_map.clear();
         }
         transfer_length_model_id = model_id;
+    }
+
+    std::string get_transfer_length_model(){
+        std::string model_id = std::to_string(transfer_length_model_id).append(" : ");
+        switch (transfer_length_model_id){
+        case 0:
+            model_id.append("Collision diameter"); break;
+        case 1:
+            model_id.append("Exchange weighted closest approach (EWCA)"); break;
+        case 2:
+            model_id.append("Correlation"); break;
+        default:
+            model_id.append("Invalid"); break;
+        }
+        return model_id;
     }
 
 protected:
@@ -98,11 +114,15 @@ protected:
     vector2d eps;
 
     vector2d get_transfer_length(double rho, double T, const vector1d& x, int property);
-    vector2d get_collision_diameters(double rho, double T, const vector1d& x); // Obsolete "collision diameter" model
 
-    /*****************************************************************************/
-    /**********************         TL MODEL 1              **********************/
-    /*****************************************************************************/
+    /**************************************************************************************************/
+    /**********************         TL MODEL 0 : Collision diameter              **********************/
+    /**************************************************************************************************/
+    vector2d get_collision_diameters(double rho, double T, const vector1d& x);
+
+    /*************************************************************************************************************************/
+    /**********************         TL MODEL 1 : Exchange weighted closest approach (EWCA)              **********************/
+    /*************************************************************************************************************************/
     double tl_inner(int i, int j, double T, double g, double I, int property);
     double tl_integrand(int i, int j, double T, double g, double b, double I, double bmax, int property);
     double momentum_transfer(int i, int j, double T, double g, double b);
@@ -116,9 +136,16 @@ protected:
     double get_tl_weight_normalizer(int i, int j, double T, int property);
     double get_tl_weight(int i, int j, double T, double g, double b, double I, double bmax, int property);
 
+    /********************************************************************************************/
+    /**********************         TL MODEL 2 : correlations              **********************/
+    /********************************************************************************************/
+
+    vector2d MTL_correlation(double rho, double T);
+    vector2d ETL_correlation(double rho, double T);
+
     // ------------------------------------------------------------------------------------------------------------------- //
-    // -------------------------- Spherical Internals are below here ----------------------------------------------------- //
-    // ---------------------- End users should not need to care about anything below -------------------------------------- //
+    // -------------------------------- Spherical Internals are below here ----------------------------------------------- //
+    // ---------------------- End users should not need to care about anything below ------------------------------------- //
     // ------------------------------------------------------------------------------------------------------------------- //
     double get_R0(int i, int j, double T, double g); // Solve get_R when b = 0
 

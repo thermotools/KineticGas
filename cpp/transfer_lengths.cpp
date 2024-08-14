@@ -79,15 +79,25 @@ vector2d Spherical::get_transfer_length(double rho, double T, const vector1d& x,
             }
             return tl;
         }
+        case 2: {
+            switch (property){
+            case transfer_lengths::MTL:
+                return MTL_correlation(rho, T);
+            case transfer_lengths::ETL:
+                return ETL_correlation(rho, T);
+            default:
+                throw std::runtime_error("Invalid transfer length type!");
+            }
+        }
         default:
             throw std::runtime_error("Invalid transfer length model!");
     }
 }
 
 
-/**********************************************************************************************/
-/***********************                      MODEL 0                  ************************/
-/**********************************************************************************************/
+/**************************************************************************************************/
+/**********************         TL MODEL 0 : Collision diameter              **********************/
+/**************************************************************************************************/
 
 vector2d Spherical::get_collision_diameters(double rho, double T, const std::vector<double>& x){
     // Evaluate the integral of Eq. (40) in RET for Mie fluids (doi: 10.1063/5.0149865)
@@ -160,9 +170,9 @@ vector2d Spherical::get_b_max(double T){
     return b_max;
 }
 
-/**********************************************************************************************/
-/***********************                      MODEL 1                  ************************/
-/**********************************************************************************************/
+/*************************************************************************************************************************/
+/**********************         TL MODEL 1 : Exchange weighted closest approach (EWCA)              **********************/
+/*************************************************************************************************************************/
 
 inline double dimless_relative_vdf(double g){
     return sqrt(2. / PI) * pow(g, 2) * exp(- 0.5 * pow(g, 2));
@@ -264,3 +274,26 @@ double Spherical::get_bmid(int i, int j, double g, double T){
     return b;
 }
 
+/********************************************************************************************/
+/**********************         TL MODEL 2 : correlations              **********************/
+/********************************************************************************************/
+
+vector2d Spherical::MTL_correlation(double rho, double T){
+    double rho_r = rho * pow(sigma[0][0], 3);
+    double Tr = T * BOLTZMANN / eps[0][0];
+
+    static constexpr double ai[2] = {1.033, 0.058};
+    static constexpr double bi[2] = {- 0.244, 0.325};
+    static constexpr double ci[2] = {0.270, 2.413};
+
+    double a = ai[0] + ai[1] * rho_r;
+    double b = bi[0] + bi[1] * a;
+    double c = ci[0] * sinh(ci[1] * rho_r);
+    double mtl = a - b * log(Tr) + c * exp(- Tr) / Tr;
+    return vector2d(Ncomps, vector1d(Ncomps, mtl * sigma[0][0]));
+}
+
+vector2d Spherical::ETL_correlation(double rho, double T){
+    throw std::runtime_error("ETL correlation not implemented!");
+    return MTL_correlation(rho, T);
+}

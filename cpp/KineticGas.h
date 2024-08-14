@@ -48,9 +48,10 @@ Contains: The abstract class 'KineticGas', which computes the A_pqrl factors and
    function of T to justify using T-values rounded to the nearest .1 K to improve speed, with little cost to precision.
 */
 struct StatePoint{
-    int T_dK, rho;
+    int T_dK;
+    double rho;
     StatePoint(double T) : T_dK{static_cast<int>((T * 100.) + 0.5)} {}
-    StatePoint(double T, double rho) : T_dK{static_cast<int>((T * 100.) + 0.5)}, rho{static_cast<int>(rho)}{}
+    StatePoint(double T, double rho) : T_dK{static_cast<int>((T * 100.) + 0.5)}, rho{rho}{}
 
     bool operator<(const StatePoint& other) const {
         if (T_dK < other.T_dK) return true;
@@ -205,7 +206,7 @@ protected:
         return OmegaPoint(i, j, l, r, T);
     }
     virtual StatePoint get_transfer_length_point(double rho, double T, const vector1d& x){
-        return StatePoint(T);
+        return StatePoint(T, rho);
     }
     
     // Collision integrals

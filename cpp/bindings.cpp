@@ -36,7 +36,8 @@ using vector2d = std::vector<vector1d>;
         .def("potential_dblderivative_rr", &Model::potential_dblderivative_rr) \
 
 #define Spherical_bindings(Model) \
-       .def("set_tl_model", &Sutherland::set_transfer_length_model)
+       .def("set_tl_model", &Model::set_transfer_length_model) \
+       .def("get_tl_model", &Model::get_transfer_length_model)
 
 
 PYBIND11_MODULE(libpykingas, handle){
