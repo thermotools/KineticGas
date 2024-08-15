@@ -282,18 +282,21 @@ vector2d Spherical::MTL_correlation(double rho, double T){
     double rho_r = rho * pow(sigma[0][0], 3);
     double Tr = T * BOLTZMANN / eps[0][0];
 
-    static constexpr double ai[2] = {1.033, 0.058};
-    static constexpr double bi[2] = {- 0.244, 0.325};
-    static constexpr double ci[2] = {0.270, 2.413};
+    static constexpr double s[5] = {1.0286, 0.0898, 0.617, 1.0726, - 0.6044};
 
-    double a = ai[0] + ai[1] * rho_r;
-    double b = bi[0] + bi[1] * a;
-    double c = ci[0] * sinh(ci[1] * rho_r);
-    double mtl = a - b * log(Tr) + c * exp(- Tr) / Tr;
+    double mtl = s[0] - s[1] * log(Tr) + s[2] * (rho_r / Tr) * exp(- (s[3] + s[4] * rho_r) * sqrt(Tr) );
     return vector2d(Ncomps, vector1d(Ncomps, mtl * sigma[0][0]));
 }
 
 vector2d Spherical::ETL_correlation(double rho, double T){
-    throw std::runtime_error("ETL correlation not implemented!");
-    return MTL_correlation(rho, T);
+    double rho_r = rho * pow(sigma[0][0], 3);
+    double Tr = T * BOLTZMANN / eps[0][0];
+
+    const double a = 1.0512;
+    const double bi[2] = {0.09792, - 0.0179};
+    const double ci[4] = {0.29934, - 1.1452, 2.3993, -1.483};
+    double b = bi[0] + bi[1] * rho_r;
+    double c = ci[0] + ci[1] * rho_r + ci[2] * pow(rho_r, 2) + ci[3] * pow(rho_r, 3);
+    double etl = a - b * log(Tr) + c / pow(Tr, 1.5);
+    return vector2d(Ncomps, vector1d(Ncomps, etl * sigma[0][0]));
 }

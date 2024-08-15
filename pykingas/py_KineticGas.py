@@ -780,7 +780,6 @@ class py_KineticGas:
         eta_dblprime = 0
         if idealgas is False: # eta_dblprime is only nonzero when density corrections are present, and vanish at infinite dilution
             mtl = self.get_mtl(particle_density, T, x)
-            print(particle_density * self.sigma[0][0]**3, T, mtl[0][0])
             rdf = self.get_rdf(particle_density, T, x)
             for i in range(self.ncomps):
                 for j in range(self.ncomps):
