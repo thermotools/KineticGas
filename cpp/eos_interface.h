@@ -2,11 +2,13 @@
 Contains: 
     GenericEoS : Interface describing the requirements of an EoS that is held by a KineticGas object.
     ThermoWrapper : Thin wrapper for the thermopack Thermo class that conforms to the GenericEoS interface.
+    PyWrapper : Wrapper for python-side EoS objects with signatures equivalent to those used in ThermoPack v2
 */
 #pragma once
 #include <iostream>
 #include <functional>
 #include <memory>
+#include <cppThermoPack/thermo.h>
 
 /*
 KineticGas objects hold an internal std::unique_ptr<GenericEoS>, which is used to compute various properties that we need an EoS for.
@@ -83,8 +85,6 @@ private:
     std::unique_ptr<const EoS_Interface> eos;
 };
 
-// #ifdef NOPYTHON
-#include <cppThermoPack/thermo.h>
 class ThermoWrapper{
     public:
     int VAPPH;
@@ -99,9 +99,8 @@ class ThermoWrapper{
     private:
     std::unique_ptr<Thermo> eos;
 };
-// #endif
 
-#ifndef NOPYTHON
+#ifdef PYLIB
 #include <pybind11/pybind11.h>
 namespace py = pybind11;
 
@@ -140,5 +139,4 @@ class PyWrapper{
     private:
     py::object eos;
 };
-
 #endif

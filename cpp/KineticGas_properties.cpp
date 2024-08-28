@@ -66,10 +66,8 @@ double KineticGas::thermal_conductivity(double T, double Vm, const vector1d& x, 
         vector1d K = get_K_factors(rho, T, x);
         vector2d etl = get_etl(rho, T, x);
 
-        vector3d diff_expansion_coeff = reshape_diffusive_expansion_vector(compute_diffusive_expansion_coeff(rho, T, x, N));
-
         double lambda_dblprime = 0.;
-        if (is_idealgas){ // lambda_dblprime is only nonzero when density corrections are present, and vanishes at infinite dilution
+        if (!is_idealgas){ // lambda_dblprime is only nonzero when density corrections are present, and vanishes at infinite dilution
             for (size_t i = 0; i < Ncomps; i++){
                 for (size_t j = 0; j < Ncomps; j++){
                     lambda_dblprime += pow(rho, 2) * sqrt(2 * PI * m[i] * m[j] * BOLTZMANN * T / (m[i] + m[j])) 
@@ -80,11 +78,18 @@ double KineticGas::thermal_conductivity(double T, double Vm, const vector1d& x, 
         }
 
         double lambda_prime = 0.;
-        Eigen::VectorXd dth{compute_dth_vector(diff_expansion_coeff, th_expansion_coeff)};
+        Eigen::VectorXd dth = Eigen::VectorXd::Zero(Ncomps);
+        vector3d diff_expansion_coeff(N, vector2d(Ncomps, vector1d(Ncomps, 0.)));
+        if (!is_singlecomp){
+            diff_expansion_coeff = reshape_diffusive_expansion_vector(compute_diffusive_expansion_coeff(rho, T, x, N));
+            dth = compute_dth_vector(diff_expansion_coeff, th_expansion_coeff);
+        }
         for (size_t i = 0; i < Ncomps; i++){
             double tmp = 0.;
-            for (size_t k = 0; k < Ncomps; k++){
-                tmp += diff_expansion_coeff[1][i][k] * dth(k);
+            if (!is_singlecomp){ // tmp is a Thermal diffusion related term, which is zero for a pure component
+                for (size_t k = 0; k < Ncomps; k++){
+                    tmp += diff_expansion_coeff[1][i][k] * dth(k);
+                }
             }
             lambda_prime += x[i] * K[i] * (th_expansion_coeff(Ncomps + i) - tmp);
         }
@@ -94,7 +99,7 @@ double KineticGas::thermal_conductivity(double T, double Vm, const vector1d& x, 
         double lamb_int_f = 1.32e3;
         double eta0 = viscosity(T, 1e6, x, N);
         double avg_mol_weight = 0.;
-        for (size_t i = 0; i < Ncomps; i++) avg_mol_weight += x[i] * m[i];
+        for (size_t i = 0; i < Ncomps; i++) {avg_mol_weight += x[i] * m[i];}
         avg_mol_weight *= AVOGADRO * 1e3;
         double Cp_id = (is_singlecomp) ? eos->Cp_ideal(T, 1) : 0.;
         if (!is_singlecomp){
@@ -363,9 +368,12 @@ Eigen::MatrixXd KineticGas::get_zarate_W_matr(const vector1d& x, int dependent_i
 Eigen::VectorXd KineticGas::compute_diffusive_expansion_coeff(double rho, double T, const vector1d& x, int N){
     Eigen::MatrixXd diff_matr{stdvector_to_EigenMatrix(get_diffusion_matrix(rho, T, x, N))};
     Eigen::VectorXd diff_vec{stdvector_to_EigenVector(get_diffusion_vector(rho, T, x, N))};
+    std::cout << "Diffusion : " << std::endl;
+    std::cout << diff_matr << "\n" << diff_vec << std::endl;
     return diff_matr.partialPivLu().solve(diff_vec);
 }
 vector3d KineticGas::reshape_diffusive_expansion_vector(const Eigen::VectorXd& d_ijq){
+    std::cout << "Diffusion response vector : \n" << d_ijq << std::endl;
     unsigned long N{d_ijq.size() / (Ncomps * Ncomps)};
     vector3d d_qij_matr(N, vector2d(Ncomps, vector1d(Ncomps, 0.)));
     for (int i = 0; i < Ncomps; i++){
@@ -378,17 +386,22 @@ vector3d KineticGas::reshape_diffusive_expansion_vector(const Eigen::VectorXd& d
     return d_qij_matr;
 }
 Eigen::VectorXd KineticGas::compute_dth_vector(const vector3d& d_qij, const Eigen::VectorXd& l){
+    if (is_singlecomp){ // dth_vector is related to thermal diffusion, which vanishes for a pure component.
+        return Eigen::VectorXd::Zero(Ncomps);
+    }
     Eigen::MatrixXd d_ij(Ncomps, Ncomps);
     Eigen::VectorXd l_i(Ncomps);
 
     for (int i = 0; i < Ncomps; i++){
         for (int j = 0; j < Ncomps; j++){
-            d_ij(i, j) = d_qij[0][i][j];
+            std::cout << "--- d(" << i << ", " << j << ") : " << abs(d_qij[0][i][j]) - abs(d_qij[0][0][0]) << std::endl;
+            d_ij(i, j) = d_qij[0][i][j] / d_qij[0][0][0];
         }
+        std::cout << "---- l(" << i << ") : " << l(i) << std::endl;
         l_i(i) = l(i);
     }
 
-    return d_ij.partialPivLu().solve(l_i);
+    return d_ij.partialPivLu().solve(l_i / d_qij[0][0][0]);
 }
 Eigen::VectorXd KineticGas::compute_thermal_expansion_coeff(double rho, double T, const vector1d& x, int N){
     Eigen::MatrixXd cond_matr{stdvector_to_EigenMatrix(get_conductivity_matrix(rho, T, x, N))};

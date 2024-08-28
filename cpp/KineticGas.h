@@ -30,15 +30,20 @@ Contains: The abstract class 'KineticGas', which computes the A_pqrl factors and
 #include <thread>
 #include <math.h>
 #include <iostream>
+#include <Eigen/Dense>
+#include <nlohmann/json.hpp>
+#include <cppThermopack/thermo.h>
+#include <memory>
 
-#ifdef NOPYTHON
-    #include "eos_interface.h"
-    #include <Eigen/Dense>
-    #include <nlohmann/json.hpp>
-    #include <cppThermopack/thermo.h>
-    #include <memory>
-    using json = nlohmann::json;
+#include "eos_interface.h"
+
+#ifdef PYLIB
+    #include <pybind11/pybind11.h>
+    namespace py = pybind11;
 #endif
+
+using json = nlohmann::json;
+
 
 /*
    To avoid unneccesary evaluations of the collision integrals, this struct is used to represent a point in 
@@ -85,9 +90,8 @@ enum FrameOfReference{
 class KineticGas{
     public:
     KineticGas(std::vector<double> mole_weights, bool is_idealgas, bool is_singlecomp);
-    #ifdef NOPYTHON
-        KineticGas(std::string comps, bool is_idealgas);
-    #endif
+    KineticGas(std::string comps, bool is_idealgas);
+
     virtual ~KineticGas(){};
 
     // Collision integrals
@@ -109,18 +113,28 @@ class KineticGas{
     */
     virtual vector2d model_rdf(double rho, double T, const vector1d& mole_fracs) = 0;
 
-    #ifdef NOPYTHON
 // ---------------------------------------------------------------------------------------------------------------------------------------------- //
 // --------------------------------------------- Interfaces to compute transport coefficients --------------------------------------------------- //
 // ------------------------ NOTE: Only compiled if compilation flag -DNOPYTHON is used ---------------------------------------- //
 
-        Eigen::MatrixXd interdiffusion(double T, double Vm, const std::vector<double>& x, int N=2, int frame_of_reference=FrameOfReference::CoN, int dependent_idx=-1, int solvent_idx=-1, bool do_compress=true);
-        double thermal_conductivity(double T, double Vm, const std::vector<double>& x, int N=2);
-        double viscosity(double T, double Vm, const std::vector<double>& x, int N=2);
-        Eigen::VectorXd thermal_diffusion_coeff(double T, double Vm, const std::vector<double>& x, int N=2, int frame_of_reference=FrameOfReference::CoN, int dependent_idx=-1, int solvent_idx=-1);
-        Eigen::VectorXd thermal_diffusion_ratio(double T, double Vm, const std::vector<double>& x, int N=2);
-        Eigen::MatrixXd thermal_diffusion_factor(double T, double Vm, const std::vector<double>& x, int N=2);
-        Eigen::MatrixXd interdiffusion_dependent_CoM(double T, double Vm, const std::vector<double>& x, int N=2);
+    Eigen::MatrixXd interdiffusion(double T, double Vm, const std::vector<double>& x, int N=2, int frame_of_reference=FrameOfReference::CoN, int dependent_idx=-1, int solvent_idx=-1, bool do_compress=true);
+    double thermal_conductivity(double T, double Vm, const std::vector<double>& x, int N=2);
+    double viscosity(double T, double Vm, const std::vector<double>& x, int N=2);
+    Eigen::VectorXd thermal_diffusion_coeff(double T, double Vm, const std::vector<double>& x, int N=2, int frame_of_reference=FrameOfReference::CoN, int dependent_idx=-1, int solvent_idx=-1);
+    Eigen::VectorXd thermal_diffusion_ratio(double T, double Vm, const std::vector<double>& x, int N=2);
+    Eigen::MatrixXd thermal_diffusion_factor(double T, double Vm, const std::vector<double>& x, int N=2);
+    Eigen::MatrixXd interdiffusion_dependent_CoM(double T, double Vm, const std::vector<double>& x, int N=2);
+
+    inline Eigen::MatrixXd interdiffusion_tp(double T, double p, const vector1d& x, int N=2, int frame_of_reference=FrameOfReference::CoN, int dependent_idx=-1, int solvent_idx=-1, bool do_compress=true){
+        return interdiffusion(T, eos->specific_volume(T, p, sanitize_mole_fracs_eos(x), eos->VAPPH), x, N, frame_of_reference, dependent_idx, solvent_idx, do_compress);
+    }
+    inline double thermal_conductivity_tp(double T, double p, const std::vector<double>& x, int N=2){return thermal_conductivity(T, eos->specific_volume(T, p, sanitize_mole_fracs_eos(x), eos->VAPPH), x, N);}
+    inline double viscosity_tp(double T, double p, const std::vector<double>& x, int N=2){return viscosity(T, eos->specific_volume(T, p, sanitize_mole_fracs_eos(x), eos->VAPPH), x, N);}
+    Eigen::VectorXd thermal_diffusion_coeff_tp(double T, double p, const std::vector<double>& x, int N=2, int frame_of_reference=FrameOfReference::CoN, int dependent_idx=-1, int solvent_idx=-1){
+        return thermal_diffusion_coeff(T, eos->specific_volume(T, p, sanitize_mole_fracs_eos(x), eos->VAPPH), x, N, frame_of_reference, dependent_idx, solvent_idx);
+    }
+    Eigen::VectorXd thermal_diffusion_ratio_tp(double T, double p, const std::vector<double>& x, int N=2){return thermal_diffusion_ratio(T, eos->specific_volume(T, p, sanitize_mole_fracs_eos(x), eos->VAPPH), x, N);}
+    Eigen::MatrixXd thermal_diffusion_factor_tp(double T, double p, const std::vector<double>& x, int N=2){return thermal_diffusion_factor(T, eos->specific_volume(T, p, sanitize_mole_fracs_eos(x), eos->VAPPH), x, N);}
 
 // ------------------------------------------------------------------------------------------------------------------------------------- //
 // ----------------- Matrices and vectors for the sets of equations (6-10) in Revised Enskog Theory for Mie fluids  -------------------- //
@@ -128,12 +142,11 @@ class KineticGas{
 // ----------------- for the velocity distribution functions. -------------------------------------------------------------------------- //
 // ----------------- The methods compute_* solve the appropriate equations and return the expansion coefficients ----------------------- //
     
-        Eigen::VectorXd compute_viscous_expansion_coeff(double rho, double T, const vector1d& x, int N);
-        Eigen::VectorXd compute_thermal_expansion_coeff(double rho, double T, const vector1d& x, int N);
-        Eigen::VectorXd compute_diffusive_expansion_coeff(double rho, double T, const vector1d& x, int N);
-        std::vector<std::vector<std::vector<double>>> reshape_diffusive_expansion_vector(const Eigen::VectorXd& d_ijq);
-        Eigen::VectorXd compute_dth_vector(const std::vector<std::vector<std::vector<double>>>& d_ijq, const Eigen::VectorXd& l);
-    #endif
+    Eigen::VectorXd compute_viscous_expansion_coeff(double rho, double T, const vector1d& x, int N);
+    Eigen::VectorXd compute_thermal_expansion_coeff(double rho, double T, const vector1d& x, int N);
+    Eigen::VectorXd compute_diffusive_expansion_coeff(double rho, double T, const vector1d& x, int N);
+    std::vector<std::vector<std::vector<double>>> reshape_diffusive_expansion_vector(const Eigen::VectorXd& d_ijq);
+    Eigen::VectorXd compute_dth_vector(const std::vector<std::vector<std::vector<double>>>& d_ijq, const Eigen::VectorXd& l);
 
     std::vector<std::vector<double>> get_conductivity_matrix(double rho, double T, const std::vector<double>& x, int N);
     std::vector<double> get_diffusion_vector(double rho, double T, const std::vector<double>& x, int N);
@@ -155,16 +168,23 @@ class KineticGas{
     */
 
     std::vector<double> get_wt_fracs(const std::vector<double> mole_fracs); // Compute weight fractions from mole fractions
-    #ifdef NOPYTHON
-        Eigen::MatrixXd CoM_to_FoR_matr(double T, double Vm, const std::vector<double>& x, int frame_of_reference, int solvent_idx);
-        Eigen::MatrixXd CoM_to_CoN_matr(double T, double Vm, const std::vector<double>& x);
-        Eigen::MatrixXd CoM_to_solvent_matr(double T, double Vm, const std::vector<double>& x, int solvent_idx);
-        Eigen::MatrixXd CoM_to_CoV_matr(double T, double Vm, const std::vector<double>& x);
-        Eigen::MatrixXd get_zarate_X_matr(const std::vector<double>& x, int dependent_idx);
-        Eigen::MatrixXd get_zarate_W_matr(const std::vector<double>& x, int dependent_idx);
-        
-        std::vector<std::vector<double>> get_chemical_potential_factors(double T, double Vm, const std::vector<double>& x);
-        std::vector<double> get_ksi_factors(double T, double Vm, const std::vector<double>& x);
+
+    Eigen::MatrixXd CoM_to_FoR_matr(double T, double Vm, const std::vector<double>& x, int frame_of_reference, int solvent_idx);
+    Eigen::MatrixXd CoM_to_CoN_matr(double T, double Vm, const std::vector<double>& x);
+    Eigen::MatrixXd CoM_to_solvent_matr(double T, double Vm, const std::vector<double>& x, int solvent_idx);
+    Eigen::MatrixXd CoM_to_CoV_matr(double T, double Vm, const std::vector<double>& x);
+    Eigen::MatrixXd get_zarate_X_matr(const std::vector<double>& x, int dependent_idx);
+    Eigen::MatrixXd get_zarate_W_matr(const std::vector<double>& x, int dependent_idx);
+    
+    std::vector<std::vector<double>> get_chemical_potential_factors(double T, double Vm, const std::vector<double>& x);
+    std::vector<double> get_ksi_factors(double T, double Vm, const std::vector<double>& x);
+
+    vector1d sanitize_mole_fracs(const vector1d& x);
+    vector1d sanitize_mole_fracs_eos(const vector1d& x);
+    #ifdef PYLIB
+        void set_eos(py::object eos_){
+            eos = std::make_unique<GenericEoS>(PyWrapper(eos_));
+        }
     #endif
 
 // ------------------------------------------------------------------------------------------------------------------------ //
@@ -182,10 +202,8 @@ class KineticGas{
     std::map<int, vector2d> mtl_map;
     std::map<int, vector2d> etl_map;
 
-    #ifdef NOPYTHON
-        const std::vector<json> compdata;
-        std::unique_ptr<GenericEoS> eos;
-    #endif
+    std::unique_ptr<GenericEoS> eos;
+    const std::vector<json> compdata;
 
 // ----------------------------------------------------------------------------------------------------------------------------------- //
 // --------------------------------------- Methods to facilitate multithreading ------------------------------------------------------ //

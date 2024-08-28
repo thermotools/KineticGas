@@ -40,7 +40,6 @@ KineticGas::KineticGas(const std::vector<double> mole_weights, bool is_idealgas,
     m{mole_weights}
     {set_masses();}
 
-#ifdef NOPYTHON
 std::vector<json> get_fluid_data(std::string comps){
     std::vector<std::string> fluid_files;
     std::string comp = "";
@@ -77,7 +76,6 @@ KineticGas::KineticGas(std::string comps, bool is_idealgas)
         }
         set_masses();
     }
-#endif
 
 std::vector<double> KineticGas::get_wt_fracs(const std::vector<double> mole_fracs){
     std::vector<double> wt_fracs(Ncomps, 0.);
@@ -89,6 +87,21 @@ std::vector<double> KineticGas::get_wt_fracs(const std::vector<double> mole_frac
         wt_fracs[i] = mole_fracs[i] * m[i] / tmp;
     }
     return wt_fracs;
+}
+
+vector1d KineticGas::sanitize_mole_fracs(const vector1d& x){
+    if (is_singlecomp){
+        return vector1d{.5, .5};
+    }
+    if (x.size() != Ncomps) throw std::runtime_error("Invalid number of mole fractions supplied!");
+    return x;
+}
+vector1d KineticGas::sanitize_mole_fracs_eos(const vector1d& x){
+    if (is_singlecomp){
+        return vector1d{1.};
+    }
+    if (x.size() != Ncomps) throw std::runtime_error("Invalid number of mole fractions supplied!");
+    return x;
 }
 
 // --------------------------------------------------------------------------------------------------- //
@@ -269,7 +282,6 @@ vector1d KineticGas::get_diffusion_vector(double rho, double T, const vector1d& 
                 delta_vector[Ncomps * N + N * (Ncomps - 1) * k + (i - 1)] += 8. / (25. * BOLTZMANN);
             }
         }
-        
     }
     return delta_vector;
 }

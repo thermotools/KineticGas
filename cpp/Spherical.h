@@ -36,9 +36,7 @@ class Spherical : public KineticGas {
                 std::vector<std::vector<double>> sigmaij,
                 bool is_idealgas);
     
-    #ifdef NOPYTHON
-        Spherical(std::string comps, bool is_idealgas) : KineticGas(comps, is_idealgas) {}
-    #endif
+    Spherical(std::string comps, bool is_idealgas) : KineticGas(comps, is_idealgas) {}
     
     virtual ~Spherical(){};
 
