@@ -276,13 +276,15 @@ double Spherical::get_bmid(int i, int j, double g, double T){
 
 /********************************************************************************************/
 /**********************         TL MODEL 2 : correlations              **********************/
+/***      NOTE: These correlations have been fitted to reproduce the viscosity and       ****/ 
+/***      thermal conductivity of argon, and should not be used for anything else.       ****/
 /********************************************************************************************/
 
 vector2d Spherical::MTL_correlation(double rho, double T){
     double rho_r = rho * pow(sigma[0][0], 3);
     double Tr = T * BOLTZMANN / eps[0][0];
 
-    static constexpr double s[5] = {1.0286, 0.0898, 0.617, 1.0726, - 0.6044};
+    static constexpr double s[5] = {1.029, 0.091, 0.615, 1.074, - 0.603};
 
     double mtl = s[0] - s[1] * log(Tr) + s[2] * (rho_r / Tr) * exp(- (s[3] + s[4] * rho_r) * sqrt(Tr) );
     return vector2d(Ncomps, vector1d(Ncomps, mtl * sigma[0][0]));
@@ -292,11 +294,15 @@ vector2d Spherical::ETL_correlation(double rho, double T){
     double rho_r = rho * pow(sigma[0][0], 3);
     double Tr = T * BOLTZMANN / eps[0][0];
 
-    const double a = 1.0512;
-    const double bi[2] = {0.09792, - 0.0179};
-    const double ci[4] = {0.29934, - 1.1452, 2.3993, -1.483};
-    double b = bi[0] + bi[1] * rho_r;
-    double c = ci[0] + ci[1] * rho_r + ci[2] * pow(rho_r, 2) + ci[3] * pow(rho_r, 3);
-    double etl = a - b * log(Tr) + c / pow(Tr, 1.5);
+    const double a = 1.054;
+    const double bi[2] = {0.100, - 0.023};
+    const double ci[2] = {- 1.166, 2.389};
+    const double c0 = 3. * bi[0];
+    const double c1 = ci[0];
+    const double c2 = ci[1];
+    const double c3 = (c1 - c0);
+    const double b = bi[0] + bi[1] * rho_r;
+    const double c = c0 + c1 * rho_r + c2 * pow(rho_r, 2) + c3 * pow(rho_r, 3);
+    const double etl = a - b * log(Tr) + c / pow(Tr, 1.5);
     return vector2d(Ncomps, vector1d(Ncomps, etl * sigma[0][0]));
 }
