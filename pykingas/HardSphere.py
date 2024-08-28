@@ -8,7 +8,7 @@ from numpy import pi
 from scipy.constants import Avogadro, Boltzmann as kB
 from scipy.optimize import root
 from .libpykingas import cpp_HardSphere
-from pykingas.py_KineticGas import py_KineticGas, IdealGas
+from pykingas.py_KineticGas import py_KineticGas
 import warnings
 
 class HardSphereEoS:
@@ -135,8 +135,7 @@ class HardSphere(py_KineticGas):
                                 + np.vstack(tuple(sigma for _ in range(self.ncomps))).transpose())
 
         self.cpp_kingas = cpp_HardSphere(self.mole_weights, self.sigma, is_idealgas, self._is_singlecomp)
-        if self.is_idealgas is True:
-            self.eos = IdealGas(comps)
-        else:
+        if self.eos is None:
             self.eos = HardSphereEoS(self.cpp_kingas, self.sigma)
+        self.cpp_kingas.set_eos(self.eos)
 

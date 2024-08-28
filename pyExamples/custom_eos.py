@@ -58,7 +58,7 @@ class DummyEOS:
         self.ncomps = len(comps.split(',')) # Not required, only used for this example
         self.VAPPH = None # Object must have this attribute, it can be whatever you like.
 
-    def chemical_potential_tv(self, T, V, n, dmudn=None):
+    def chemical_potential_tv(self, T, V, n, dmudt=None, dmudv=None, dmudn=None):
         """
         The chemical potential of the mixture. Note: Only dmudn is actually used by the py_KineticGas class.
         Also note: We need to have V in the signature, even though it is not used, in order to be compatible with
@@ -79,7 +79,7 @@ class DummyEOS:
         
         raise NotImplementedError('Only dmudn is implemented, because that is all we need for the pykingas package.')
 
-    def specific_volume(self, T, p, n, phase):
+    def specific_volume(self, T, p, n, phase, dvdt=None, dvdp=None, dvdn=None):
         """
         Compute molar volume. Note that we must have `n` and `phase` in the signature in
         order to be compatible with the signature of equation of state objects from ThermoPack.
@@ -96,8 +96,35 @@ class DummyEOS:
         print('DummyEOS is computing specific volume!')
         vm = 5 # Compute specific volume
         return_tuple = (vm, )
+        if dvdn is not None:
+            dvdn = 2. # We only need to implement dvdn for KineticGas to be happy
+            return_tuple += (dvdn, )
         return return_tuple # NOTE: ThermoPack 2.1 returns everything as tuples
 
+    def pressure_tv(T, V, n):
+        """
+        Compute pressure for an ideal gas, we must take `x` as an argument to be compatible with the generic ThermoPack
+        signature. This method is required for the solvent `frame_of_reference` diffusion and thermal diffusion coefficients.
+        &&
+        Args:
+            T (float) : Temperature [K]
+            Vm (float) : molar volume [m3 / mol]
+            x (list[float]) : mole fractions [-]
+
+        Returns:
+            (tuple) : (Pressure,)
+        """
+        return_tuple = (n * T / V, ) # NOTE: ThermoPack 2.1 returns everything as tuples
+        return return_tuple
+    
+    def idealenthalpysingle(T, ci, dhdt=None):
+        h_id = 0. # We don't need this value for KineticGas, just to mimic the ThermoPack signature
+        if dhdt is not None:
+            dhdt = 24. # Compute ideal gas isobaric heat capacity
+            return_tuple = (h_id, dhdt)
+            return return_tuple
+
+        return (h_id, )
 
 comps = 'H2O'
 eos = DummyEOS(comps)

@@ -11,6 +11,7 @@ import json
 import scipy.linalg as lin
 from scipy.constants import Boltzmann, Avogadro, pi, gas_constant
 import warnings, os
+from thermopack.ideal import ideal
 
 FLT_EPS = 1e-12
 __fluid_db_path__ = os.path.dirname(__file__) + '/fluids/'
@@ -45,79 +46,6 @@ def compress_diffusion_matr(M, dependent_idx):
             M_j += 1
         M_i += 1
     return M_indep
-
-class IdealGas:
-    """
-    Class to use for the eos attribute when is_idealgas == True.
-    Also serves as an example of a minimal implementation of an eos-object that can
-    be used if one wishes to supply a custom eos through the use_eos kwarg (See: MieKinGas)
-    """
-    def __init__(self, comps):
-        self.ncomps = len(comps.split(','))
-        self.VAPPH = 1 # Required to be compatible with a ThermoPack-style eos object. The value of the flag can be whatever you want
-
-    def chemical_potential_tv(self, T, V, n, dmudn=True):
-        """
-        The chemical potential of an ideal gas mixture. Note: Only dmudn is actually used by the py_KineticGas class.
-        Also note: We need to have V in the signature, even though it is not used, in order to be compatible with
-        the signature of chemical_potential_tv in thermopack.
-        &&
-        Args:
-            T (float) : Temperature [K]
-            V (float) : Volume [m3]
-            n (list[float]) : Mole numbers [mol]
-            dmudn (bool) : Flag to activate derivative calculation
-        Returns
-            tuple : chemical potential [J / mol] and derivatives
-        """
-        n = np.array(n)
-
-        if dmudn is True:
-            dmudn = np.identity(self.ncomps) * gas_constant * T / n
-            return 0, dmudn
-        raise NotImplementedError('Only dmudn is implemented, because that is all we need for the pykingas package.')
-
-    def specific_volume(self, T, p, n, phase, dvdn=False):
-        """
-        Compute molar volume for an ideal gas. Note that we must have `n` and `phase` in the signature in
-        order to be compatible with the signature of equation of state objects from ThermoPack. Partial molar volumes
-        must be implemented in order to use the solvent frame of reference.
-        &&
-        Args:
-            T (float) : Temperature [K]
-            p (float) : Pressure [Pa]
-            n (list[float]) : mole numbers [mol]
-            phase (int) : phase flag (see: ThermoPack)
-            dvdn (bool) : Compute partial molar volumes
-
-        Returns:
-            (float,) : molar volume [m3 / mol]
-        """
-        v = gas_constant * T / p
-        if dvdn is True:
-            return v, np.array([v for _ in range(self.ncomps)])
-        return v, # Because ThermoPack v2.1.0 returns everything as a tuple, we need to return a tuple.
-
-    def pressure_tv(self, T, Vm, x):
-        """
-        Compute pressure for an ideal gas, we must take `x` as an argument to be compatible with the generic ThermoPack
-        signature. This method is required for the solvent `frame_of_reference` diffusion and thermal diffusion coefficients.
-        &&
-        Args:
-            T (float) : Temperature [K]
-            Vm (float) : molar volume [m3 / mol]
-            x (list[float]) : mole fractions [-]
-
-        Returns:
-            (tuple) : (Pressure,)
-        """
-        return gas_constant * T / Vm
-
-    def idealenthalpysingle(self, T, i, dhdt=None):
-        warnings.warn('Idealenthalpy gives dummy values for IdealGas!', RuntimeWarning)
-        if dhdt is None:
-            return 0,
-        return 0, (5 / 2) * gas_constant
 
 class py_KineticGas:
 
@@ -172,7 +100,7 @@ class py_KineticGas:
 
         self.cpp_kingas = None
         if self.is_idealgas is True:
-            self.eos = IdealGas(comps)
+            self.eos = ideal(comps)
         else:
             self.eos = None
 
