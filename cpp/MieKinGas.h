@@ -26,9 +26,7 @@ class MieKinGas : public Spherical {
         lr{lr}
         {eps = epsilon; set_C_alpha();}
 
-    #ifdef NOPYTHON
-        MieKinGas(std::string comps, bool is_idealgas=false);
-    #endif
+    MieKinGas(std::string comps, bool is_idealgas=false);
 
     void set_C_alpha();
     void mix_sigma();

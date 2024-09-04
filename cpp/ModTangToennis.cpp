@@ -17,12 +17,19 @@ ModTangToennis::ModTangToennis(TangToennisParam param, vector1d mole_weights, ve
 }
 
 ModTangToennis::ModTangToennis(std::string comps, bool is_idealgas)
-    : Spherical(comps, is_idealgas)
+    : Spherical(comps, is_idealgas), param()
 {
     auto cdata = compdata[0]["ModTangToennis"];
-    param = TangToennisParam(cdata["A_div_k"], cdata["b"], cdata["A_tilde_div_k"],
-                             cdata["a"], cdata["a_tilde"], cdata["eps_div_k"],
-                             cdata["Re"], cdata["sigma"], cdata["C"]);
+    double A_div_k = compdata[0]["ModTangToennis"]["A_div_k"];
+    double b = compdata[0]["ModTangToennis"]["b"];
+    double A_tilde = compdata[0]["ModTangToennis"]["A_tilde"];
+    vector1d a = compdata[0]["ModTangToennis"]["a"];
+    double a_tilde = compdata[0]["ModTangToennis"]["a_tilde"];
+    double eps_div_k = compdata[0]["ModTangToennis"]["eps_div_k"];
+    double Re = compdata[0]["ModTangToennis"]["Re"];
+    double sigma_ = compdata[0]["ModTangToennis"]["sigma"];
+    vector1d C = compdata[0]["ModTangToennis"]["C"];
+    param = TangToennisParam(A_div_k, b, A_tilde, a, a_tilde, eps_div_k, Re, sigma_, C);
 }
 
 dual2 ModTangToennis::potential(int i, int j, dual2 r){

@@ -12,6 +12,7 @@ struct TangToennisParam{
     vector1d C;
     double a1, a2, am1, am2;
 
+    TangToennisParam() = default;
     TangToennisParam(double A, double b, double A_tilde, vector1d a,
                     double a_tilde, double eps_div_k, double Re, double sigma, vector1d C)
                     : A{A}, b{b}, A_tilde{A_tilde}, a_tilde{a_tilde}, eps_div_k{eps_div_k}, Re{Re}, C{C}

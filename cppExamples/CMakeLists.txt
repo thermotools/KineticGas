@@ -7,8 +7,8 @@ cmake_minimum_required(VERSION 3.16)
 cmake_policy(VERSION 3.12)
 project(cppExamples LANGUAGES C CXX)
 
-set(KineticGas_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..)
-find_package(KineticGas REQUIRED) # Assuming that KineticGas has already been installed with `make install`
+set(KINETICGAS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..) # Path to the directory containing kineticgas-config.cmake
+find_package(KINETICGAS REQUIRED) # Assuming that KineticGas has already been installed with `make install`
 
 add_executable(basic basic.cpp)
 target_link_libraries(basic PRIVATE kineticgas)

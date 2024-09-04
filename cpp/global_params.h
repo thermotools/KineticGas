@@ -16,3 +16,4 @@ void set_fluid_dir(const std::string& path);
 
 using vector1d = std::vector<double>;
 using vector2d = std::vector<vector1d>;
+using vector3d = std::vector<vector2d>;

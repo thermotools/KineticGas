@@ -1,4 +1,4 @@
-from pykingas.py_KineticGas import py_KineticGas, IdealGas
+from pykingas.py_KineticGas import py_KineticGas
 from .libpykingas import cpp_Sutherland
 import numpy as np
 from scipy.constants import Boltzmann
@@ -32,14 +32,13 @@ class Sutherland(py_KineticGas):
 
         self.cpp_kingas = cpp_Sutherland(self.mole_weights, self.sigma, self.eps_div_k * Boltzmann, self.C, self.lambdas,
                                          is_idealgas, self._is_singlecomp)
-        if use_eos is None:
+        if (use_eos is None) and (self.eos is None):
             self.eos = saftvrss(','.join(self.comps), init_from_db='SAFT-VR-MIE')
             for i in range(self.ncomps):
                 for j in range(self.ncomps):
                     self.eos.set_pair_potential_params(i + 1, j + 1, self.C[:, i, j], self.lambdas[:, i, j], self.sigma[i][j],
                                                        self.eps_div_k[i][j])
-        else:
-            self.eos = use_eos
+        self.cpp_kingas.set_eos(self.eos)
 
     @staticmethod
     def init_single(mole_weights, sigma, eps_div_k, C, lambdas, N=2, is_idealgas=False):
@@ -338,7 +337,7 @@ class S_MieKinGas(Sutherland):
             else:
                 eos = use_eos
         else:
-            eos = IdealGas(comps)
+            eos = None
 
         self.lij = lij
         self.kij = kij

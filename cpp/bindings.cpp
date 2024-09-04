@@ -7,6 +7,7 @@
 #include "Sutherland.h"
 #include "ExtendedSutherland.h"
 #include "ModTangToennis.h"
+#include "AxilrodTeller.h"
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 #include "pybind11/operators.h"
@@ -28,6 +29,10 @@ using vector2d = std::vector<vector1d>;
         .def("get_rdf", &Model::get_rdf) \
         .def("get_K_factors", &Model::get_K_factors) \
         .def("get_K_prime_factors", &Model::get_K_prime_factors) \
+        .def("set_eos", &Model::set_eos) \
+        \
+        .def("thermal_conductivity", &Model::thermal_conductivity) \
+        .def("thermal_conductivity_tp", &Model::thermal_conductivity_tp) \
 
 
 #define Spherical_potential_bindings(Model) \
@@ -105,6 +110,7 @@ PYBIND11_MODULE(libpykingas, handle){
                       bool
                     >()
             )
+        .def(py::init<std::string, bool>())
         KineticGas_bindings(MieKinGas)
         Spherical_potential_bindings(MieKinGas)
         Spherical_bindings(MieKinGas)
@@ -185,11 +191,11 @@ PYBIND11_MODULE(libpykingas, handle){
         ;
 
     py::class_<AT_TangToennies>(handle, "cpp_AT_TangToennies")
-        .def(py::init<std::string>())
+        .def(py::init<std::string, bool>())
         KineticGas_bindings(AT_TangToennies)
-        .def("potential", py::overload_cast<int, int, double>(&AT_TangToennies::potential))
-        .def("potential_r", &AT_TangToennies::potential_derivative_r)
-        .def("potential_rr", &AT_TangToennies::potential_dblderivative_rr)
+        .def("potential", py::overload_cast<int, int, double, double>(&AT_TangToennies::potential))
+        .def("potential_r", py::overload_cast<int, int, double, double>(&AT_TangToennies::potential_derivative_r))
+        .def("potential_rr", py::overload_cast<int, int, double, double>(&AT_TangToennies::potential_dblderivative_rr))
         .def("set_tl_model", &AT_TangToennies::set_transfer_length_model)
         ;
 

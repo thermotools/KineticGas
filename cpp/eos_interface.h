@@ -2,6 +2,7 @@
 Contains: 
     GenericEoS : Interface describing the requirements of an EoS that is held by a KineticGas object.
     ThermoWrapper : Thin wrapper for the thermopack Thermo class that conforms to the GenericEoS interface.
+    PyWrapper : Wrapper for python-side EoS objects with signatures equivalent to those used in ThermoPack v2
 */
 #pragma once
 #include <iostream>
@@ -72,7 +73,6 @@ private:
     template<typename T>
     struct WrappedEoS : EoS_Interface {
         T wrapped;
-        int VAPPH;
         WrappedEoS(T eos) : wrapped(std::move(eos)) {VAPPH = wrapped.VAPPH;}
 
         inline dmudn_signature override {return wrapped.dmudn(t, V, n);}
@@ -99,3 +99,44 @@ class ThermoWrapper{
     private:
     std::unique_ptr<Thermo> eos;
 };
+
+#ifdef PYLIB
+#include <pybind11/pybind11.h>
+namespace py = pybind11;
+
+class PyWrapper{
+    public:
+    int VAPPH;
+    PyWrapper(py::object eos) : VAPPH{eos.attr("VAPPH").cast<int>()}, eos{eos} {
+        std::vector<std::string> required_attr = {"chemical_potential_tv", "idealenthalpysingle", "pressure_tv", "specific_volume"};
+        for (const auto& attr : required_attr){
+            py::object tmp = eos.attr(attr.data()); // Trigger a python-side AttributeError if any of the required attributes are missing
+        }
+    }
+
+    inline std::vector<std::vector<double>> dmudn(double T, double V, const std::vector<double> n) const {
+        py::tuple rt = eos.attr("chemical_potential_tv")(T, V, n, false, false, true);
+        std::vector<std::vector<double>> r = rt[1].cast<std::vector<std::vector<double>>>();
+        return r;
+    }
+    inline double Cp_ideal(double T, int ci) const {
+        py::tuple rt = eos.attr("idealenthalpysingle")(T, ci, true);
+        return rt[1].cast<double>();
+    }
+    inline double pressure_tv(double T, double V, const std::vector<double> n) const {
+        py::tuple rt = eos.attr("pressure_tv")(T, V, n);
+        return rt[0].cast<double>();
+    }
+    inline double specific_volume(double T, double p, const std::vector<double> n, int phase) const {
+        py::tuple rt = eos.attr("specific_volume")(T, p, n, phase);
+        return rt[0].cast<double>();
+    }
+    inline std::vector<double> dvdn(double T, double p, const std::vector<double> n, int phase) const {
+        py::tuple rt = eos.attr("specific_volume")(T, p, n, phase, false, false, true);
+        return rt[1].cast<std::vector<double>>();
+    }
+
+    private:
+    py::object eos;
+};
+#endif
