@@ -1,5 +1,6 @@
-from pykingas.py_KineticGas import py_KineticGas
+from .py_KineticGas import py_KineticGas
 from .libpykingas import cpp_ModTangToennis, cpp_TangToennisParam, cpp_AT_TangToennies
+from .units import Units
 from scipy.constants import Boltzmann, Avogadro
 import numpy as np
 from scipy.integrate import quad
@@ -63,15 +64,33 @@ def mie_C(la, lr):
 
 class AT_TangToennies(py_KineticGas):
 
-    def __init__(self, comps):
+    def __init__(self, comps, parameter_ref='default'):
         super().__init__(comps, is_idealgas=True)
-        self.cpp_kingas = cpp_AT_TangToennies(comps)
+
+        self.cpp_kingas = cpp_AT_TangToennies(comps, self.is_idealgas, parameter_ref)
+
+        param = self.cpp_kingas.get_param()
+        self.eps_div_k = param.eps_div_k
+        self.sigma = param.sigma
+        self.Re = param.Re
     
-    def potential(self, r):
-        return self.cpp_kingas.potential(0, 0, r)
+    def potential(self, r, rho):
+        return self.cpp_kingas.potential(0, 0, r, rho * Avogadro)
 
-    def potential_r(self, r):
-        return self.cpp_kingas.potential_r(0, 0, r)
+    def potential_r(self, r, rho):
+        return self.cpp_kingas.potential_r(0, 0, r, rho * Avogadro)
 
-    def potential_rr(self, r):
-        return self.cpp_kingas.potential_rr(0, 0, r)
+    def potential_rr(self, r, rho):
+        return self.cpp_kingas.potential_rr(0, 0, r, rho * Avogadro)
+
+    def get_reducing_units(self):
+        """Utility
+        Get reducing units for this model, as a `Units` struct. See `units.py`.
+        &&
+        Args:
+            comp_idx (int, optional) : Which component to use for reducing units, defaults to first component
+
+        Returns:
+            Units : Struct holding the reducing units
+        """
+        return Units(self.mole_weights[0], self.sigma, self.eps_div_k)

@@ -107,6 +107,29 @@ class py_KineticGas:
     #####################################################
     #                   Utility                         #
     #####################################################
+    def get_tl_model(self):
+        """Utility
+        Get the currently active transfer length model
+        See docstring in KineticGas.h for valid models
+        &&
+        Returns:
+            (tuple[int, str]) : The index (id) of the current model, and a description  
+        """
+        return self.cpp_kingas.get_tl_model()
+    
+    def set_tl_model(self, model):
+        """Utility
+        Set the transfer length model
+        See docstring in KineticGas.h for valid models
+        &&
+        Args:
+            model (int) : The model id
+        
+        Raises:
+            RuntimeError : If the model id is invalid.
+        """
+        self.cpp_kingas.set_tl_model(model)
+
     def check_valid_composition(self, x):
         """Utility
         Check that enough mole fractions are supplied for the initialised model. Also check that they sum to unity.
@@ -116,7 +139,7 @@ class py_KineticGas:
         Args:
             x (array_like) : Molar composition
 
-        Raises
+        Raises:
             IndexError : If wrong number of mole fractions is supplied.
             RuntimeWarning : If mole fractions do not sum to unity.
 

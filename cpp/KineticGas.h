@@ -74,7 +74,7 @@ struct OmegaPoint{
     };
 
     OmegaPoint(int i, int j, int l, int r, double T, double rho_) : OmegaPoint(i, j, l, r, T){
-        rho = static_cast<int>(rho_);
+        rho = static_cast<int>((rho * 10) + 0.5);
     }
 
     bool operator<(const OmegaPoint& other) const {
@@ -115,8 +115,12 @@ class KineticGas{
 
     virtual ~KineticGas(){};
 
-    // The transfer lengths related to momentum (MTL) and energy (ETL)
-    // Inheriting classes must implement model_[mtl/etl]
+    /********************************************** TRANSFER LENGTHS ************************************************/
+    /*   The transfer lengths related to momentum (MTL) and energy (ETL)                                            */
+    /*   Inheriting classes must implement the protected methods model_[mtl/etl]                                    */
+    /*   Note: Some generic model_[mtl/etl] methods are implemented in Spherical, so if you are inherriting         */
+    /*         Spherical, you can use get_mtl and get_etl once the potential is implemented.                        */
+    /****************************************************************************************************************/
     inline vector2d get_mtl(double rho, double T, const vector1d& x){
         set_internals(rho, T, x);
         return model_mtl(rho, T, x);
@@ -126,7 +130,8 @@ class KineticGas{
         return model_etl(rho, T, x);
     }
 
-    // Radial distribution function "at contact". Inheriting classes must implement model_rdf.
+    // Radial distribution function "at contact". 
+    // Inheriting classes must implement the protected method model_rdf.
     inline vector2d get_rdf(double rho, double T, const vector1d& mole_fracs) {
         if (is_idealgas) return vector2d(Ncomps, vector1d(Ncomps, 1.));
         set_internals(rho, T, mole_fracs);
@@ -135,7 +140,6 @@ class KineticGas{
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------- //
 // --------------------------------------------- Interfaces to compute transport coefficients --------------------------------------------------- //
-// ------------------------ NOTE: Only compiled if compilation flag -DNOPYTHON is used ---------------------------------------- //
 
     Eigen::MatrixXd interdiffusion(double T, double Vm, const std::vector<double>& x, int N=2, int frame_of_reference=FrameOfReference::CoN, int dependent_idx=-1, int solvent_idx=-1, bool do_compress=true);
     double thermal_conductivity(double T, double Vm, const std::vector<double>& x, int N=2);
@@ -169,10 +173,9 @@ class KineticGas{
     Eigen::VectorXd compute_dth_vector(const std::vector<std::vector<std::vector<double>>>& d_ijq, const Eigen::VectorXd& l);
 
     std::vector<std::vector<double>> get_conductivity_matrix(double rho, double T, const std::vector<double>& x, int N);
-    std::vector<double> get_diffusion_vector(double rho, double T, const std::vector<double>& x, int N);
-    // double get_Lambda_ijpq(int i, int j, int p, int q, double rho, double T, const std::vector<double>& x);
-    std::vector<std::vector<double>> get_diffusion_matrix(double rho, double T, const std::vector<double>& x, int N);
     std::vector<double> get_conductivity_vector(double rho, double T, const std::vector<double>& x, int N);
+    std::vector<double> get_diffusion_vector(double rho, double T, const std::vector<double>& x, int N);
+    std::vector<std::vector<double>> get_diffusion_matrix(double rho, double T, const std::vector<double>& x, int N);
     std::vector<std::vector<double>> get_viscosity_matrix(double rho, double T, const std::vector<double>&x, int N);
     std::vector<double> get_viscosity_vector(double rho, double T, const std::vector<double>& x, int N);
 
@@ -225,14 +228,22 @@ protected:
     std::unique_ptr<GenericEoS> eos;
     const std::vector<json> compdata;
 
-    // set_internals is called at the start of all public methods. If a derived class needs to set any internals before running a computation,
+    // set_internals is called at the start of all public methods. 
+    // If a derived class needs to set any internals before running a computation,
     // it should be done by overriding this method.
     inline virtual void set_internals(double rho, double T, const vector1d& x){};
+
+    // Implementations of omega, model_mtl, and model_etl, may wish to use the omega_map, mtl_map and etl_map
+    // To store values for lazy evaluation (massive speedups)
+    // In that case, using these methods to get the state point of the computations ensures that inherriting 
+    // classes can override these if they want to handle state points differently 
+    // For example, if you are using a density-dependent potential, you will want to include the density in the OmegaPoint.
+    // See: Spherical for example.
     virtual OmegaPoint get_omega_point(int i, int j, int l, int r, double T){
         return OmegaPoint(i, j, l, r, T);
     }
     virtual StatePoint get_transfer_length_point(double rho, double T, const vector1d& x){
-        return StatePoint(T, rho);
+        return StatePoint(T);
     }
     
     // Collision integrals
@@ -240,7 +251,7 @@ protected:
 
     /*
        The radial distribution function "at contact" for the given potential model. model_rdf is only called if object
-       is initialized with is_idealgas=true. If a potential model is implemented only for the ideal gas state, its
+       is initialized with is_idealgas=false. If a potential model is implemented only for the ideal gas state, its
        implementation of model_rdf should throw an std::invalid_argument error.
     */
     virtual vector2d model_rdf(double rho, double T, const vector1d& mole_fracs) = 0;
@@ -271,17 +282,6 @@ protected:
                         const std::vector<int>& l_vec, const std::vector<int>& r_vec, double T);
 
 private:
-
-    #ifdef NOPYTHON
-        Eigen::MatrixXd CoM_to_CoN_matr(double T, double Vm, const std::vector<double>& x);
-        Eigen::MatrixXd CoM_to_solvent_matr(double T, double Vm, const std::vector<double>& x, int solvent_idx);
-        Eigen::MatrixXd CoM_to_CoV_matr(double T, double Vm, const std::vector<double>& x);
-        Eigen::MatrixXd get_zarate_X_matr(const std::vector<double>& x, int dependent_idx);
-        Eigen::MatrixXd get_zarate_W_matr(const std::vector<double>& x, int dependent_idx);
-        
-        std::vector<std::vector<double>> get_chemical_potential_factors(double T, double Vm, const std::vector<double>& x);
-        std::vector<double> get_ksi_factors(double T, double Vm, const std::vector<double>& x);
-    #endif
 
     void set_masses(); // Precompute reduced mass of particle pairs (used only on init.)
     void precompute_diffusion(int N, double T); // Forwards call to precompute_conductivity_omega. Override that instead.

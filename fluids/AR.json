@@ -64,5 +64,9 @@
             "Note": "Potential parameters use kelvin for energies, and nm for lengths, with the exception of sigma, which uses meters."
         }
     },
-    "LJs": {}
+    "AxilrodTellerCorrection": {
+        "default" : {
+            "nu" : 7.3527e-108
+        }
+    }
 }

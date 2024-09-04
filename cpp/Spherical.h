@@ -65,26 +65,52 @@ class Spherical : public KineticGas {
     // 1 : Unpublished model for momentum- and energy transfer lengths (MTL and ETL) (2024)
     // 2 : Unpublished correlation for Argon transfer lengths
     void set_transfer_length_model(int model_id){
-        if (model_id == -1) model_id = default_tl_model_id;
+        int input_model_id = model_id;
+        constexpr int valid_model_ids[3] = {0, 1, 2};
+        bool model_is_valid = false;
+        for (size_t i = 0; i < 3; i++){
+            if (model_id == valid_model_ids[i]) {
+                model_is_valid = true; break;
+            }
+        }
+
+        if ((model_id == -1) || (!model_is_valid)) model_id = default_tl_model_id;
         if (model_id != transfer_length_model_id){
             mtl_map.clear(); etl_map.clear();
         }
         transfer_length_model_id = model_id;
+
+        if (!model_is_valid){
+            std::string errmsg = "Invalid model id (" + std::to_string(input_model_id) 
+                                + "), falling back to default model (" + std::to_string(default_tl_model_id) 
+                                + ") in case this error is caught.\n";
+            throw std::runtime_error(errmsg);
+        }
     }
 
-    std::string get_transfer_length_model(){
+    std::pair<int, std::string> get_transfer_length_model(){
+        std::pair<int, std::string> model_id_descr;
+        model_id_descr.first = transfer_length_model_id;
         std::string model_id = std::to_string(transfer_length_model_id).append(" : ");
         switch (transfer_length_model_id){
         case 0:
-            model_id.append("Collision diameter"); break;
+            model_id_descr.second = "Collision diameter"; break;
         case 1:
-            model_id.append("Exchange weighted closest approach (EWCA)"); break;
+            model_id_descr.second = "Exchange weighted closest approach (EWCA)"; break;
         case 2:
-            model_id.append("Correlation"); break;
+            model_id_descr.second = "Correlation"; break;
         default:
-            model_id.append("Invalid"); break;
+            model_id_descr.second = "Invalid"; break;
         }
-        return model_id;
+        if (transfer_length_model_id == default_tl_model_id) model_id_descr.second.append(" (default)");
+        return model_id_descr;
+    }
+
+    StatePoint get_transfer_length_point(double rho, double T, const vector1d& x) override {
+        if (transfer_length_model_id == 2){
+            return StatePoint(T, rho);
+        }
+        return StatePoint(T);
     }
 
 protected:

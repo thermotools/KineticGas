@@ -15,7 +15,7 @@ struct TangToennisParam{
     TangToennisParam() = default;
     TangToennisParam(double A, double b, double A_tilde, vector1d a,
                     double a_tilde, double eps_div_k, double Re, double sigma, vector1d C)
-                    : A{A}, b{b}, A_tilde{A_tilde}, a_tilde{a_tilde}, eps_div_k{eps_div_k}, Re{Re}, C{C}
+                    : A{A}, b{b}, A_tilde{A_tilde}, a_tilde{a_tilde}, eps_div_k{eps_div_k}, Re{Re}, sigma{sigma}, C{C}
         {
         a1 = a[0]; a2 = a[1];
         am1 = a[2]; am2 = a[3];
@@ -25,8 +25,9 @@ struct TangToennisParam{
 class ModTangToennis : public Spherical {
     public:
     TangToennisParam param;
+
     ModTangToennis(TangToennisParam param, vector1d mole_weights, vector2d sigma, bool is_idealgas);
-    ModTangToennis(std::string comps, bool is_idealgas);
+    ModTangToennis(std::string comps, bool is_idealgas, std::string parameter_ref="default");
 
     dual2 potential(int i, int j, dual2 r) override;
     double potential(int i, int j, double r){
@@ -36,5 +37,7 @@ class ModTangToennis : public Spherical {
     vector2d model_rdf(double rho, double T, const vector1d& x){
         throw std::runtime_error("Modified Tang-Toennis only implemented for ideal gas!");
     }
+
+    TangToennisParam get_param(){return param;};
 
 };

@@ -175,6 +175,28 @@ PYBIND11_MODULE(libpykingas, handle){
                         double, double, double, double,
                         vector1d>()
              )
+        .def_readwrite("sigma", &TangToennisParam::sigma)
+        .def_readwrite("eps_div_k", &TangToennisParam::eps_div_k)
+        .def_readwrite("Re", &TangToennisParam::Re)
+        .def("__repr__",
+        [](const TangToennisParam &t) {
+            std::stringstream strm;
+            strm << "TangToennisParam\n"
+                 << "\tA       : " << t.A << "\n"
+                 << "\tb       : " << t.b << "\n"
+                 << "\tA_tilde : " << t.A_tilde << "\n"
+                 << "\ta_tilde : " << t.a_tilde << "\n"
+                 << "\ta       : [ " << t.am2 << ", " << t.am1 << ", " << t.a1 << ", " << t.a2 << " ]\n"
+                 << "\tC       : [ ";
+            for (size_t i = 0; i < 5; i++){
+                strm << t.C[i] << ", ";
+            }
+            strm << t.C[5] << " ]\n\t-----\n"
+                 << "\tsigma   : " << t.sigma << "\n"
+                 << "\teps_div_k : " << t.eps_div_k << "\n"
+                 << "\tRe      : " << t.Re << std::endl;
+            return strm.str();
+        })
         ;
 
     py::class_<ModTangToennis>(handle, "cpp_ModTangToennis")
@@ -191,12 +213,13 @@ PYBIND11_MODULE(libpykingas, handle){
         ;
 
     py::class_<AT_TangToennies>(handle, "cpp_AT_TangToennies")
-        .def(py::init<std::string, bool>())
+        .def(py::init<std::string, bool, std::string>())
         KineticGas_bindings(AT_TangToennies)
+        Spherical_bindings(AT_TangToennies)
+        .def("get_param", &AT_TangToennies::get_param)
         .def("potential", py::overload_cast<int, int, double, double>(&AT_TangToennies::potential))
         .def("potential_r", py::overload_cast<int, int, double, double>(&AT_TangToennies::potential_derivative_r))
         .def("potential_rr", py::overload_cast<int, int, double, double>(&AT_TangToennies::potential_dblderivative_rr))
-        .def("set_tl_model", &AT_TangToennies::set_transfer_length_model)
         ;
 
     py::class_<HardSphere>(handle, "cpp_HardSphere")
