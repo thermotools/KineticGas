@@ -16,6 +16,15 @@ ModTangToennis::ModTangToennis(TangToennisParam param, vector1d mole_weights, ve
     if (!is_idealgas) throw std::runtime_error("Modified Tang-Toennis only implemented for ideal gas!");
 }
 
+ModTangToennis::ModTangToennis(std::string comps, bool is_idealgas)
+    : Spherical(comps, is_idealgas)
+{
+    auto cdata = compdata[0]["ModTangToennis"];
+    param = TangToennisParam(cdata["A_div_k"], cdata["b"], cdata["A_tilde_div_k"],
+                             cdata["a"], cdata["a_tilde"], cdata["eps_div_k"],
+                             cdata["Re"], cdata["sigma"], cdata["C"]);
+}
+
 dual2 ModTangToennis::potential(int i, int j, dual2 r){
     r *= 1e9; // Using nm internally
     if (r < 0.4 * param.Re){

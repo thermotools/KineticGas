@@ -1,5 +1,5 @@
 from pykingas.py_KineticGas import py_KineticGas
-from .libpykingas import cpp_ModTangToennis, cpp_TangToennisParam
+from .libpykingas import cpp_ModTangToennis, cpp_TangToennisParam, cpp_AT_TangToennies
 from scipy.constants import Boltzmann, Avogadro
 import numpy as np
 from scipy.integrate import quad
@@ -59,3 +59,19 @@ class ModTangToennis(py_KineticGas):
 
 def mie_C(la, lr):
     return (lr / (lr - la)) * (lr / la)**(la / (lr - la))
+
+
+class AT_TangToennies(py_KineticGas):
+
+    def __init__(self, comps):
+        super().__init__(comps, is_idealgas=True)
+        self.cpp_kingas = cpp_AT_TangToennies(comps)
+    
+    def potential(self, r):
+        return self.cpp_kingas.potential(0, 0, r)
+
+    def potential_r(self, r):
+        return self.cpp_kingas.potential_r(0, 0, r)
+
+    def potential_rr(self, r):
+        return self.cpp_kingas.potential_rr(0, 0, r)

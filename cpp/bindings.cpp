@@ -184,6 +184,15 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("set_tl_model", &ModTangToennis::set_transfer_length_model)
         ;
 
+    py::class_<AT_TangToennies>(handle, "cpp_AT_TangToennies")
+        .def(py::init<std::string>())
+        KineticGas_bindings(AT_TangToennies)
+        .def("potential", py::overload_cast<int, int, double>(&AT_TangToennies::potential))
+        .def("potential_r", &AT_TangToennies::potential_derivative_r)
+        .def("potential_rr", &AT_TangToennies::potential_dblderivative_rr)
+        .def("set_tl_model", &AT_TangToennies::set_transfer_length_model)
+        ;
+
     py::class_<HardSphere>(handle, "cpp_HardSphere")
         .def(py::init<
                         vector1d,

@@ -25,6 +25,7 @@ class ModTangToennis : public Spherical {
     public:
     TangToennisParam param;
     ModTangToennis(TangToennisParam param, vector1d mole_weights, vector2d sigma, bool is_idealgas);
+    ModTangToennis(std::string comps, bool is_idealgas);
 
     dual2 potential(int i, int j, dual2 r) override;
     double potential(int i, int j, double r){
