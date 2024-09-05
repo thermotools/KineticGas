@@ -75,7 +75,51 @@ public:
 
     double get_epsilon_eff(int i, int j, double rho){
         const double r_min = get_rmin(i, j, rho);
-        return potential(i, j, r_min, rho);
+        return - potential(i, j, r_min, rho);
+    }
+
+    double get_dBH(int i, int j, double temp, double rho){
+        double sigma_eff = get_sigma_eff(i, j, rho);
+        double beta = 1 / (BOLTZMANN * temp);
+        double r_cut = 0.5;
+        const auto integrand = [&](double r){return (1 - exp(- beta * potential(i, j, r * sigma_eff, rho)));};
+        while (abs(integrand(r_cut) - 1) < 1e-12){
+            r_cut += 1e-2;
+        }
+        r_cut -= 1e-2;
+        double integral = r_cut;
+        integral += simpson(integrand, r_cut, 1, 50);
+        return integral * sigma_eff;
+    }
+
+    double get_vdw_alpha_eff(int i, int j, double rho){
+        const double sigma_eff = get_sigma_eff(0, 0, rho);
+        const double r_min = get_rmin(0, 0, rho) / sigma_eff;
+        const double eps_eff = get_epsilon_eff(0, 0, rho);
+        const auto integrand = [&](double r){return - potential(i, j, r * sigma_eff, rho) * pow(r, 2) / eps_eff;};
+        double r_start = 1;
+        double r_stop = r_min;
+        double tol = 1e-2;
+        double integral = simpson(integrand, r_start, r_stop, 100);
+        r_start = r_stop; r_stop = 2 * r_min;
+        integral += simpson(integrand, r_start, r_stop, 100);
+        r_start = r_stop; r_stop = 3 * r_min;
+        for (size_t ti = 0; ti < 8; ti++){
+            tol /= 10;
+            while (integrand(r_stop) > tol){
+                r_stop += 1;
+            }
+            double part = simpson(integrand, r_start, r_stop, 50);
+            integral += part;
+            r_start = r_stop;
+        }
+        return integral;
+    }
+
+    double get_vdw_alpha(int i, int j, double rho){
+        const double vdw_alpha_eff = get_vdw_alpha_eff(i, j, rho);
+        const double eps_eff = get_epsilon_eff(i, j, rho);
+        return vdw_alpha_eff * (eps_eff / T::eps[i][j]);
     }
 
 protected:

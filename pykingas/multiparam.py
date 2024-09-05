@@ -72,7 +72,7 @@ class AT_TangToennies(py_KineticGas):
         param = self.cpp_kingas.get_param()
         self.eps_div_k = param.eps_div_k
         self.sigma = param.sigma
-        self.Re = param.Re
+        self.Re = param.Re * 1e-9
     
     def potential(self, r, rho):
         return self.cpp_kingas.potential(0, 0, r, rho * Avogadro)

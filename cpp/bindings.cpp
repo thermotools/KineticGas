@@ -220,6 +220,12 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("potential", py::overload_cast<int, int, double, double>(&AT_TangToennies::potential))
         .def("potential_r", py::overload_cast<int, int, double, double>(&AT_TangToennies::potential_derivative_r))
         .def("potential_rr", py::overload_cast<int, int, double, double>(&AT_TangToennies::potential_dblderivative_rr))
+        .def("get_sigma_eff", &AT_TangToennies::get_sigma_eff)
+        .def("get_rmin", &AT_TangToennies::get_rmin)
+        .def("get_epsilon_eff", &AT_TangToennies::get_epsilon_eff)
+        .def("get_dBH", &AT_TangToennies::get_dBH)
+        .def("get_vdw_alpha", &AT_TangToennies::get_vdw_alpha)
+        .def("get_vdw_alpha_eff", &AT_TangToennies::get_vdw_alpha_eff)
         ;
 
     py::class_<HardSphere>(handle, "cpp_HardSphere")
