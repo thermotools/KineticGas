@@ -29,7 +29,8 @@ double Spherical::omega(int i, int j, int l, int r, double T){
         if (is_singlecomp){
             for (int ci = 0; ci < Ncomps; ci++){
                 for (int cj = 0; cj < Ncomps; cj++){
-                    OmegaPoint purepoint{ci, cj, l, r, T};
+                    if (((ci == i) && (cj == j)) || ((ci == j) && (cj == i))) continue;
+                    OmegaPoint purepoint = get_omega_point(ci, cj, l, r, T);
                     omega_map[purepoint] = val;
                 }
             }

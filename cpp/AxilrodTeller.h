@@ -50,13 +50,42 @@ public:
         auto [u0, ur, urr] = autodiff::derivatives(func, autodiff::wrt(rd, rd), autodiff::at(rd));
         return urr;
     }
+
+    double get_sigma_eff(int i, int j, double rho){
+        double sigma_eff = T::sigma[i][j];
+        const double tol = 1e-10;
+        double f = potential(i, j, sigma_eff, rho);
+        while (abs(f / T::eps[i][j]) > tol){
+            sigma_eff -= f / potential_derivative_r(i, j, sigma_eff, rho);
+            f = potential(i, j, sigma_eff, rho);
+        }
+        return sigma_eff;
+    }
+
+    double get_rmin(int i, int j, double rho){
+        double r_min = T::sigma[i][j];
+        const double tol = 1e-10;
+        double f = potential_derivative_r(i, j, r_min, rho);
+        while (abs(f * T::sigma[i][j] / T::eps[i][j]) > tol){
+            r_min -= f / potential_dblderivative_rr(i, j, r_min, rho);
+            f = potential_derivative_r(i, j, r_min, rho);
+        }
+        return r_min;
+    }
+
+    double get_epsilon_eff(int i, int j, double rho){
+        const double r_min = get_rmin(i, j, rho);
+        return potential(i, j, r_min, rho);
+    }
+
 protected:
     void set_internals(double rho, double temp, const vector1d& x) override {
+        std::cout << "Setting current rho : " << rho * pow(T::sigma[0][0], 3) << std::endl;
         current_rho = rho;
     }
 
     StatePoint get_transfer_length_point(double rho, double temp, const vector1d& x) override {
-        return StatePoint(rho, temp);
+        return StatePoint(temp, rho);
     }
 
     OmegaPoint get_omega_point(int i, int j, int l, int r, double temp){
@@ -67,7 +96,7 @@ protected:
 private:
     vector2d alpha_pol; // Polarizability
     vector2d ion_energy; // Ionization energy
-    vector2d at_energy;
+    vector2d at_energy; // Axilrod-Teller nonadditive energy
 
     double current_rho{-1};
 

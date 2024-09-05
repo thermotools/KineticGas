@@ -68,14 +68,13 @@ struct StatePoint{
 };
 
 struct OmegaPoint{
-    int i, j, l, r, T_dK, rho;
-    OmegaPoint(int i, int j, int l, int r, double T) : i{i}, j{j}, l{l}, r{r}, rho{0} {
+    int i, j, l, r, T_dK;
+    double rho;
+    OmegaPoint(int i, int j, int l, int r, double T, double rho) : i{i}, j{j}, l{l}, r{r}, rho{rho} {
          T_dK = (int) ((T * 10.0) + 0.5); // Temperature in dK (10^-1 K)
     };
 
-    OmegaPoint(int i, int j, int l, int r, double T, double rho_) : OmegaPoint(i, j, l, r, T){
-        rho = static_cast<int>((rho * 10) + 0.5);
-    }
+    OmegaPoint(int i, int j, int l, int r, double T) : OmegaPoint(i, j, l, r, T, 0){}
 
     bool operator<(const OmegaPoint& other) const {
         if (i < other.i) return true;
@@ -176,7 +175,28 @@ class KineticGas{
     std::vector<double> get_conductivity_vector(double rho, double T, const std::vector<double>& x, int N);
     std::vector<double> get_diffusion_vector(double rho, double T, const std::vector<double>& x, int N);
     std::vector<std::vector<double>> get_diffusion_matrix(double rho, double T, const std::vector<double>& x, int N);
+
+    /*
+        Viscosity matrix : The left hand side of the equation to solve for the viscous expansion coefficients
+        Sorted as
+            [B_{0, 0}^(0, 0), B_{0, 1}^(0, 0), ... B_{0, c}^(0, 0), B_{0, 0}^(1, 0), ... B_{0, c}^(N, 0)]
+            [B_{1, 0}^(0, 0), B_{1, 1}^(0, 0), ... B_{1, c}^(0, 0), B_{1, 0}^(1, 0), ... B_{1, c}^(N, 0)]
+            [     ...       ,      ...       , ...         ...     ,      ...      , ...       ...      ]
+            [B_{c, 0}^(0, 0), B_{c, 1}^(0, 0), ... B_{c, c}^(0, 0), B_{c, 0}^(1, 0), ... B_{c, c}^(N, 0)]
+            [B_{0, 0}^(0, 1), B_{0, 1}^(0, 1), ... B_{0, c}^(0, 1), B_{0, 0}^(1, 1), ... B_{c, c}^(N, 1)]
+            [     ...       ,      ...       , ...         ...     ,      ...      , ...       ...      ]
+            [B_{c, 0}^(0, N), B_{c, 1}^(0, N), ... B_{c, c}^(0, N), B_{c, 0}^(1, N), ... B_{c, c}^(N, N)]
+        Where subscripts indicate component indices, and superscripts indicate Enskog approximation summation indices, such
+        that element (B[p * Ncomps + i][q * Ncomps + j]) is B_{i, j}^(p, q)
+    */
     std::vector<std::vector<double>> get_viscosity_matrix(double rho, double T, const std::vector<double>&x, int N);
+
+    /*
+        Viscosity vector : The right hand side of the equation to solve for the viscous expansion coefficients
+        Sorted as [b_0^(0), b_1^(0), ... b_Nc^(0), b_0^(1), b_1^(1), ... b_Nc^(N)]
+        where subscripts indicate component indices, and superscripts indicate Enskog approximation order indices,
+        such that element (b[p * Ncomps + i]) is b_i^(p).
+    */
     std::vector<double> get_viscosity_vector(double rho, double T, const std::vector<double>& x, int N);
 
 // ----------------------------------------------------------------------------------------------------------------------------------- //
@@ -276,16 +296,16 @@ protected:
         These need to be protected instead of private, because QuantumMie needs to override them to prevent a race condition
         without locking everything with a mutex on every call to omega.
     */
-    virtual void precompute_conductivity(int N, double T, bool precompute_etl=true);
-    virtual void precompute_viscosity(int N, double T);
+    virtual void precompute_conductivity(int N, double T, double rho, bool precompute_etl=true);
+    virtual void precompute_viscosity(int N, double T, double rho);
     virtual void precompute_omega(const std::vector<int>& i_vec, const std::vector<int>& j_vec,
                         const std::vector<int>& l_vec, const std::vector<int>& r_vec, double T);
 
 private:
 
     void set_masses(); // Precompute reduced mass of particle pairs (used only on init.)
-    void precompute_diffusion(int N, double T); // Forwards call to precompute_conductivity_omega. Override that instead.
-    void precompute_th_diffusion(int N, double T); // Forwards call to precompute_conductivity_omega. Override that instead.
+    void precompute_diffusion(int N, double T, double rho); // Forwards call to precompute_conductivity_omega. Override that instead.
+    void precompute_th_diffusion(int N, double T, double rho); // Forwards call to precompute_conductivity_omega. Override that instead.
 
 // ------------------------------------------------------------------------------------------------------------------------ //
 // ---------------------------------------------- Square bracket integrals ------------------------------------------------ //

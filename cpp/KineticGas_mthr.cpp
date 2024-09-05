@@ -55,12 +55,12 @@ void KineticGas::precompute_omega(const std::vector<int>& i_vec, const std::vect
  that i = [1, 2, 3, 4], j = [5, 6, 7, 8] can be sliced to i_slices = [[1, 2], [3, 4]], j_slices = [[5, 6], [7, 8]]
  Finally, pass the slices to individual threads that compute omega_integrals for their slice.
  */
-void KineticGas::precompute_conductivity(int N, double T, bool precompute_etl){
-
+void KineticGas::precompute_conductivity(int N, double T, double rho, bool precompute_etl){
+    int true_Ncomps = (is_singlecomp) ? 1 : Ncomps;
     std::vector<int> i_vec, j_vec, l_vec, r_vec;
     int n_vals{0};
-    for (int i = 0; i < Ncomps; i++){
-        for (int j = i; j < Ncomps; j++){
+    for (int i = 0; i < true_Ncomps; i++){
+        for (int j = i; j < true_Ncomps; j++){
             for (int l = 1; l <= N; l++){
                 for (int r = l; r <= 2 * (N - 1) + 2 - l; r++){
                     i_vec.push_back(i);
@@ -79,26 +79,27 @@ void KineticGas::precompute_conductivity(int N, double T, bool precompute_etl){
 
     std::vector<std::thread> threads;
     for (int core_idx = 0; core_idx < Ncores; core_idx++){
+        if (i_slices[core_idx].size() == 0) continue;
         threads.push_back(std::thread(&KineticGas::precompute_omega, this, std::ref(i_slices[core_idx]), std::ref(j_slices[core_idx]),
                            std::ref(l_slices[core_idx]), std::ref(r_slices[core_idx]), std::ref(T)));
     }
-    if (precompute_etl) get_etl(0, T, vector1d(Ncomps, 0));
+    if (precompute_etl && !is_idealgas) get_etl(rho, T, vector1d(Ncomps, 0));
     for (int core_idx = 0; core_idx < Ncores; core_idx++){
         threads[core_idx].join();
     }
 }
-void KineticGas::precompute_diffusion(int N, double T){
-    precompute_conductivity(N, T, false); // Don't need ETL for diffusion
+void KineticGas::precompute_diffusion(int N, double T, double rho){
+    precompute_conductivity(N, T, rho, false); // Don't need ETL for diffusion
 }
-void KineticGas::precompute_th_diffusion(int N, double T){
-    precompute_conductivity(N, T);
+void KineticGas::precompute_th_diffusion(int N, double T, double rho){
+    precompute_conductivity(N, T, rho, true);
 }
-void KineticGas::precompute_viscosity(int N, double T){
-
+void KineticGas::precompute_viscosity(int N, double T, double rho){
+    int true_Ncomps = (is_singlecomp) ? 1 : Ncomps;
     std::vector<int> i_vec, j_vec, l_vec, r_vec;
     int n_vals{0};
-    for (int i = 0; i < Ncomps; i++){
-        for (int j = i; j < Ncomps; j++){
+    for (int i = 0; i < true_Ncomps; i++){
+        for (int j = i; j < true_Ncomps; j++){
             for (int l = 1; l <= N + 1; l++){
                 for (int r = l; r <= 2 * (N - 1) + 4 - l; r++){
                     i_vec.push_back(i);
@@ -117,10 +118,15 @@ void KineticGas::precompute_viscosity(int N, double T){
 
     std::vector<std::thread> threads;
     for (int core_idx = 0; core_idx < Ncores; core_idx++){
+        if (i_slices[core_idx].size() == 0) continue;
+        std::cout << "Starting thread (" << core_idx << ") with : " << std::endl;
+        for (size_t val_idx = 0; val_idx < i_slices[core_idx].size(); val_idx++){
+            std::cout << "\t(" << val_idx << ") : [ " << i_slices[core_idx][val_idx] << ", " << j_slices[core_idx][val_idx] << ", " << l_slices[core_idx][val_idx] << ", " << r_slices[core_idx][val_idx] << " ]" << std::endl;
+        }
         threads.push_back(std::thread(&KineticGas::precompute_omega, this, std::ref(i_slices[core_idx]), std::ref(j_slices[core_idx]),
                            std::ref(l_slices[core_idx]), std::ref(r_slices[core_idx]), std::ref(T)));
     }
-    get_mtl(0, T, vector1d(Ncomps, 0));
+    if (!is_idealgas) get_mtl(rho, T, vector1d(Ncomps, 0));
     for (int core_idx = 0; core_idx < Ncores; core_idx++){
         threads[core_idx].join();
     }

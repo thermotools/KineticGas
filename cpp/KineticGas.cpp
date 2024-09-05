@@ -162,7 +162,7 @@ vector2d KineticGas::get_conductivity_matrix(double rho, double T, const vector1
     vector2d matr(N * Ncomps, vector1d(N * Ncomps, 0.));
     vector1d wt_fracs = get_wt_fracs(x);
 
-    precompute_conductivity(N, T); // Compute all the collision integrals and transfer lengths required for this conductivity
+    precompute_conductivity(N, T, rho); // Compute all the collision integrals and transfer lengths required for this conductivity
 
     // Build omega_k row of the matrix
     for (int i = 0; i < Ncomps; i++){
@@ -225,7 +225,7 @@ vector2d KineticGas::get_diffusion_matrix(double rho, double T, const vector1d& 
     vector2d matr(N*pow(Ncomps, 2), vector1d(N*pow(Ncomps, 2), 0.));
     vector1d wt_fracs = get_wt_fracs(x);
 
-    precompute_diffusion(N, T); // Compute all the collision integrals required for this diffusion matrix
+    precompute_diffusion(N, T, rho); // Compute all the collision integrals required for this diffusion matrix
 
     for (int k = 0; k < Ncomps; k++){ // Build omega_k block of the matrix
         for (int i = 0; i < Ncomps; i++){
@@ -292,11 +292,13 @@ vector1d KineticGas::get_diffusion_vector(double rho, double T, const vector1d& 
 
 vector2d KineticGas::get_viscosity_matrix(double rho, double T, const vector1d&x, int N){
     set_internals(rho, T, x);
+    get_omega_point(0, 0, 1, 1, T);
     vector2d rdf = get_rdf(rho, T, x);
+    get_omega_point(0, 0, 1, 1, T);
     vector2d viscosity_mat(Ncomps * N, vector1d(Ncomps * N, 0.));
 
-    precompute_viscosity(N, T); // Compute all the collision integrals and transfer lengths required for this viscosity
-
+    precompute_viscosity(N, T, rho); // Compute all the collision integrals and transfer lengths required for this viscosity
+    get_omega_point(0, 0, 1, 1, T);
     for (int p = 0; p < N; p++){
         for (int i = 0; i < Ncomps; i++){
             for (int q = 0; q < N; q++){
@@ -314,6 +316,7 @@ vector2d KineticGas::get_viscosity_matrix(double rho, double T, const vector1d&x
     }
     return viscosity_mat;
 }
+
 vector1d KineticGas::get_viscosity_vector(double rho, double T, const vector1d& x, int N){
     set_internals(rho, T, x);
     vector1d K_prime = get_K_prime_factors(rho, T, x);
