@@ -85,6 +85,7 @@ void KineticGas::precompute_conductivity(int N, double T, double rho, bool preco
     }
     if (precompute_etl && !is_idealgas) get_etl(rho, T, vector1d(Ncomps, 0));
     for (int core_idx = 0; core_idx < Ncores; core_idx++){
+        if (i_slices[core_idx].size() == 0) continue;
         threads[core_idx].join();
     }
 }
@@ -119,15 +120,12 @@ void KineticGas::precompute_viscosity(int N, double T, double rho){
     std::vector<std::thread> threads;
     for (int core_idx = 0; core_idx < Ncores; core_idx++){
         if (i_slices[core_idx].size() == 0) continue;
-        std::cout << "Starting thread (" << core_idx << ") with : " << std::endl;
-        for (size_t val_idx = 0; val_idx < i_slices[core_idx].size(); val_idx++){
-            std::cout << "\t(" << val_idx << ") : [ " << i_slices[core_idx][val_idx] << ", " << j_slices[core_idx][val_idx] << ", " << l_slices[core_idx][val_idx] << ", " << r_slices[core_idx][val_idx] << " ]" << std::endl;
-        }
         threads.push_back(std::thread(&KineticGas::precompute_omega, this, std::ref(i_slices[core_idx]), std::ref(j_slices[core_idx]),
                            std::ref(l_slices[core_idx]), std::ref(r_slices[core_idx]), std::ref(T)));
     }
     if (!is_idealgas) get_mtl(rho, T, vector1d(Ncomps, 0));
     for (int core_idx = 0; core_idx < Ncores; core_idx++){
+        if (i_slices[core_idx].size() == 0) continue;
         threads[core_idx].join();
     }
 }

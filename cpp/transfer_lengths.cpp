@@ -258,25 +258,23 @@ double Spherical::tl_ewca(int i, int j, double T, int property){
     const auto integrand = [&](double g) -> std::pair<double, double> {return ewca_inner(i, j, T, g, property);};
     std::pair<double, double> I1, I2;
     std::thread t1([&](std::pair<double, double>& I_){I_ = weighted_simpson(integrand, g0, g1, 15);}, std::ref(I1));
-    std::thread t2([&](std::pair<double, double>& I_){I_ = weighted_simpson(integrand, g1, gmax, 10);}, std::ref(I2));
-    t1.join(); t2.join();
+    I2 = weighted_simpson(integrand, g1, gmax, 10);
+    t1.join();
     double F = I1.first + I2.first;
     double W = I1.second + I2.second;
     return F / W;
 }
 
 std::pair<double, double> Spherical::ewca_inner(int i, int j, double T, double g, int property){
-    const double bmax = get_b_max_g(i, j, g, T);
     const double bmid = get_bmid(i, j, g, T);
+    const double bmax = get_b_max_g(i, j, g, T, bmid);
+    
     const double b0 = 0.;
     const auto func = [&](double b){return get_R(i, j, T, g, b * sigma[i][j]);};
     const auto wt = [&](double b){return ewca_weight(i, j, T, g, b, property);};
     std::pair<double, double> I1, I2;
     I1 = weighted_simpson(func, wt, b0, bmid, 15);
     I2 = weighted_simpson(func, wt, bmid, bmax, 20);
-    // std::thread t1([&](std::pair<double, double>& I_){I_ = weighted_simpson(func, wt, b0, bmid, 15);}, std::ref(I1));
-    // std::thread t2([&](std::pair<double, double>& I_){I_ = weighted_simpson(func, wt, bmid, bmax, 20);}, std::ref(I2));
-    // t1.join(); t2.join();
     double F = I1.first + I2.first;
     double W = I1.second + I2.second;
     return std::pair<double, double>(F, W);
@@ -297,28 +295,23 @@ double Spherical::momentum_transfer(int i, int j, double T, double g, double b){
     double chi_val = chi(i, j, T, g, b * sigma[i][j]);
     double red_mass = m[i] * m[j] / (m[i] + m[j]);
     double U = sqrt(2 * BOLTZMANN * T / red_mass) * g;
-    return red_mass * U * sqrt(2 * (1 - cos(chi_val))) * abs(sin(chi_val / 2.));
+    return g * sqrt(2 * (1 - cos(chi_val))) * abs(sin(chi_val / 2.));
 }
 
 double Spherical::energy_transfer(int i, int j, double T, double g, double b){
     double chi_val = chi(i, j, T, g, b * sigma[i][j]);
     double red_mass = m[i] * m[j] / (m[i] + m[j]);
     double U = sqrt(2 * BOLTZMANN * T / red_mass) * g;
-    return red_mass * U * abs(cos(chi_val) - sin(chi_val) - 1);
+    return g * abs(cos(chi_val) - sin(chi_val) - 1);
 }
 
-double Spherical::get_b_max_g(int i, int j, double g, double T){
+double Spherical::get_b_max_g(int i, int j, double g, double T, double bmid){
     double b, db, chi_val;
     if (g == 0) return 10.;
-    b = 5.;
-    db = -0.5;
+    b = 2 * bmid;
+    db = 0.5;
     chi_val = chi(i, j, T, g, b * sigma[i][j]);
-    while (abs(db) > 1e-3){
-        double scale = g * sqrt(2 * (1 - cos(chi_val))) * abs(sin(chi_val / 2.));
-        if (scale > 1e-3){
-            b -= db;
-            db *= 0.5;
-        }
+    while (abs(chi_val + 1e-5) > 1e-3){
         b += db;
         chi_val = chi(i, j, T, g, b * sigma[i][j]);
     }
@@ -327,16 +320,30 @@ double Spherical::get_b_max_g(int i, int j, double g, double T){
 
 double Spherical::get_bmid(int i, int j, double g, double T){
     if (g == 0) return 5.;
-    double b = 0.5;
+    double b = 0.9;
     double db = 0.1;
     double chi_val = chi(i, j, T, g, b * sigma[i][j]);
-    while (abs(db) > 1e-5){
+    double next_chi_val;
+    double dchidb = 10; // Init with placeholder to start loop
+    double step_tol = 1e-6;
+    double chi_tol = 1e-6;
+    while ((abs(chi_val) > chi_tol) && (abs(db) > step_tol)){
         if ((chi_val < 0 && db > 0) || (chi_val > 0 && db < 0)){
-            db *= -0.5;
+            db *= -0.9;
         }
-        b += db;
-        chi_val = chi(i, j, T, g, b * sigma[i][j]);
-        if (b > 10) {
+        next_chi_val = chi(i, j, T, g, (b + db) * sigma[i][j]);
+        while (abs(next_chi_val) >= abs(chi_val)){
+            db *= 0.1;
+            next_chi_val = chi(i, j, T, g, (b + db) * sigma[i][j]);
+            if (abs(db) < step_tol) break;
+        }
+        if (abs(db) > step_tol){
+            b += db;
+            dchidb = (chi_val - next_chi_val) / db;
+            chi_val = next_chi_val;
+            db = - chi_val / dchidb;
+        }
+        if ((b > 10) || (b < 0)) {
             std::cout << "bmid did not converge!" << std::endl;
             throw std::runtime_error("Unable to converge bmid!");
             break;

@@ -292,9 +292,7 @@ vector1d KineticGas::get_diffusion_vector(double rho, double T, const vector1d& 
 
 vector2d KineticGas::get_viscosity_matrix(double rho, double T, const vector1d&x, int N){
     set_internals(rho, T, x);
-    get_omega_point(0, 0, 1, 1, T);
     vector2d rdf = get_rdf(rho, T, x);
-    get_omega_point(0, 0, 1, 1, T);
     vector2d viscosity_mat(Ncomps * N, vector1d(Ncomps * N, 0.));
 
     precompute_viscosity(N, T, rho); // Compute all the collision integrals and transfer lengths required for this viscosity

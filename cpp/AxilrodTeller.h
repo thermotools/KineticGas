@@ -33,8 +33,10 @@ public:
     }
 
     double potential(int i, int j, double r, double rho){
-        dual2 rd{r}, rhod{rho};
-        return potential(i, j, rd, rhod).val.val;
+        double E2 = T::potential(i, j, r);
+        double correction_factor = - 0.85 * (at_energy[i][j] * rho) / (T::eps[i][j] * pow(T::sigma[i][j], 6));
+        double E3 = correction_factor * E2;
+        return E2 + E3;
     }
 
     double potential_derivative_r(int i, int j, double r, double rho){
@@ -124,7 +126,6 @@ public:
 
 protected:
     void set_internals(double rho, double temp, const vector1d& x) override {
-        std::cout << "Setting current rho : " << rho * pow(T::sigma[0][0], 3) << std::endl;
         current_rho = rho;
     }
 

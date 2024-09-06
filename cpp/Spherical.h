@@ -153,7 +153,7 @@ protected:
     double momentum_transfer(int i, int j, double T, double g, double b);
     double energy_transfer(int i, int j, double T, double g, double b);
 
-    double get_b_max_g(int i, int j, double g, double T); // Find b such that eps < chi(b) < 0, for small eps.
+    double get_b_max_g(int i, int j, double g, double T, double bmid); // Find b such that eps < chi(b) < 0, for small eps.
     double get_bmid(int i, int j, double g, double T); // Solve chi = 0
 
     /********************************************************************************************/
