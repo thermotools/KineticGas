@@ -59,3 +59,24 @@ dual2 ModTangToennis::potential(int i, int j, dual2 r){
     }
     return u * BOLTZMANN;
 }
+
+double ModTangToennis::potential(int i, int j, double r){
+    r *= 1e9; // Using nm internally
+    if (r < 0.4 * param.Re){
+        return (param.A_tilde / r) * exp(- param.a_tilde * r) * BOLTZMANN;
+    }
+    double u = param.A * exp(param.a1 * r + param.a2 * pow(r, 2) + param.am1 * pow(r, -1) + param.am2 * pow(r, -2));
+    double exp_prefactor = exp(- param.b * r);
+    for (int n = 3; n <= 8; n++){
+        double tmp = 0.;
+        int k = 0;
+        for (; k <= std::min(2 * n, 10); k++){
+            tmp += pow(param.b * r, k) / partialfactorial(1, k);
+        }
+        for (; k <= 2 * n; k++){ // Prevent factorial overflow
+            tmp += (pow(param.b * r, 10) / partialfactorial(1, 10)) * (pow(param.b * r, k - 10) / partialfactorial(11, k));
+        }
+        u -= (param.C[n - 3] / pow(r, 2 * n)) * (1 - exp_prefactor * tmp);
+    }
+    return u * BOLTZMANN;
+}
