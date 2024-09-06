@@ -33,8 +33,7 @@ double KineticGas::viscosity(double T, double Vm, const std::vector<double>& x, 
 
     Eigen::VectorXd expansion_coeff{visc_matr.partialPivLu().solve(visc_vec)};
 
-    std::vector<std::vector<double>> mtl{get_mtl(rho, T, x)};
-    std::vector<std::vector<double>> rdf{get_rdf(rho, T, x)};
+    vector2d rdf{get_rdf(rho, T, x)};
     std::vector<double> K_prime{get_K_prime_factors(rho, T, x)};
 
     double eta_prime{0.0};
@@ -45,6 +44,7 @@ double KineticGas::viscosity(double T, double Vm, const std::vector<double>& x, 
 
     if (is_idealgas) return eta_prime; // The second term is only included if (is_idealgas == True)
 
+    vector2d mtl = get_mtl(rho, T, x);
     double eta_dblprime{0.0};
     for (int i = 0; i < Ncomps; i++){
         for (int j = 0; j < Ncomps; j++){
@@ -64,10 +64,10 @@ double KineticGas::thermal_conductivity(double T, double Vm, const vector1d& x, 
 
         vector2d rdf = get_rdf(rho, T, x);
         vector1d K = get_K_factors(rho, T, x);
-        vector2d etl = get_etl(rho, T, x);
 
         double lambda_dblprime = 0.;
         if (!is_idealgas){ // lambda_dblprime is only nonzero when density corrections are present, and vanishes at infinite dilution
+            vector2d etl = get_etl(rho, T, x);
             for (size_t i = 0; i < Ncomps; i++){
                 for (size_t j = 0; j < Ncomps; j++){
                     lambda_dblprime += pow(rho, 2) * sqrt(2 * PI * m[i] * m[j] * BOLTZMANN * T / (m[i] + m[j])) 
@@ -175,10 +175,10 @@ Eigen::VectorXd KineticGas::thermal_diffusion_coeff(double T, double Vm, const v
     Eigen::VectorXd l = compute_thermal_expansion_coeff(rho, T, x, N);
     vector1d ksi = get_ksi_factors(T, Vm, x);
     vector2d rdf = get_rdf(rho, T, x);
-    vector2d etl = get_etl(rho, T, x);
 
     Eigen::MatrixXd b = Eigen::MatrixXd::Identity(Ncomps, Ncomps);
     if (!is_idealgas){
+        vector2d etl = get_etl(rho, T, x);
         for (size_t j = 0; j < Ncomps; j++){
             for (size_t k = 0; k < Ncomps; k++){
                 b(j, k) += (4. * PI / 3) * rho * x[k] * pow(etl[j][k], 3) * M[j][k] * rdf[j][k]; 
@@ -243,7 +243,6 @@ Eigen::VectorXd KineticGas::thermal_diffusion_ratio(double T, double Vm, const v
     Eigen::VectorXd DT = thermal_diffusion_coeff(T, Vm, x, N, FrameOfReference::CoM, -1);
     Eigen::MatrixXd Dij = interdiffusion(T, Vm, x, N, FrameOfReference::CoM, -1, -1, false);
     vector2d rdf = get_rdf(rho, T, x);
-    vector2d etl = get_etl(rho, T, x);
     vector1d ksi = get_ksi_factors(T, Vm, x);
     Eigen::MatrixXd A(Ncomps, Ncomps);
 
@@ -260,6 +259,7 @@ Eigen::VectorXd KineticGas::thermal_diffusion_ratio(double T, double Vm, const v
     }
     else{
         DT(Ncomps - 1) = 0.;
+        vector2d etl = get_etl(rho, T, x);
         for (size_t i = 0; i < Ncomps; i++){
             for (size_t j = 0; j < Ncomps; j++){
                 int k_delta = (i == j) ? 1 : 0;

@@ -390,11 +390,11 @@ class py_KineticGas:
         a = self.compute_cond_vector(particle_density, T, x, N=N)
         P = self.get_P_factors(Vm, T, x)
         rdf = self.get_rdf(particle_density, T, x)
-        etl = self.get_etl(particle_density, T, x)
         b = np.empty((self.ncomps, self.ncomps)) # Precomputing some factors that are used many places later
         if self.is_idealgas is True:
             b = np.identity(self.ncomps)
         else:
+            etl = self.get_etl(particle_density, T, x)
             for j in range(self.ncomps):
                 for k in range(self.ncomps):
                     b[j, k] = k_delta(j, k) + (4 * np.pi / 3) * particle_density * x[k] * etl[j][k] ** 3 * self.M[j, k] \
@@ -495,7 +495,7 @@ class py_KineticGas:
         Dij = self.interdiffusion(T, Vm, x, N=N, frame_of_reference='CoM',
                                   use_binary=False, use_independent=True, dependent_idx=self.ncomps - 1)
         rdf = self.get_rdf(particle_density, T, x)
-        etl = self.get_etl(particle_density, T, x)
+        
         P = self.get_P_factors(Vm, T, x)
         A = np.zeros((self.ncomps, self.ncomps))
 
@@ -511,6 +511,7 @@ class py_KineticGas:
             DT[-1] = 1
         else:
             DT[-1] = 0
+            etl = self.get_etl(particle_density, T, x)
             for i in range(self.ncomps):
                 for j in range(self.ncomps):
                     DT[-1] += x[i] * (k_delta(i, j) + (4 * np.pi / 3) * particle_density * x[j] * etl[i][j]**3 * self.M[i, j] * rdf[i][j])
@@ -665,7 +666,6 @@ class py_KineticGas:
         a = self.compute_cond_vector(particle_density, T, x, N=N)
         rdf = self.get_rdf(particle_density, T, x)
         K = self.cpp_kingas.get_K_factors(particle_density, T, x)
-        etl = self.get_etl(particle_density, T, x)
         d = self.compute_diffusion_coeff_vector(particle_density, T, x, N=N)
         d = self.reshape_diffusion_coeff_vector(d)
 
@@ -678,10 +678,9 @@ class py_KineticGas:
             lambda_prime += x[i] * K[i] * (a[self.ncomps + i] - tmp)
         lambda_prime *= (5 * Boltzmann / 4)
 
-
-
         lambda_dblprime = 0
         if idealgas is False:  # lambda_dblprime is only nonzero when density corrections are present, and vanishes at infinite dilution
+            etl = self.get_etl(particle_density, T, x)
             for i in range(self.ncomps):
                 for j in range(self.ncomps):
                     lambda_dblprime += particle_density ** 2 * np.sqrt(
