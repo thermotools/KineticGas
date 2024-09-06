@@ -147,18 +147,14 @@ protected:
     /*************************************************************************************************************************/
     /**********************         TL MODEL 1 : Exchange weighted closest approach (EWCA)              **********************/
     /*************************************************************************************************************************/
-    double tl_inner(int i, int j, double T, double g, double I, int property);
-    double tl_integrand(int i, int j, double T, double g, double b, double I, double bmax, int property);
+    double tl_ewca(int i, int j, double T, int property);
+    std::pair<double, double> ewca_inner(int i, int j, double T, double g, int property);
+    double ewca_weight(int i, int j, double T, double g, double b, int property);
     double momentum_transfer(int i, int j, double T, double g, double b);
     double energy_transfer(int i, int j, double T, double g, double b);
 
     double get_b_max_g(int i, int j, double g, double T); // Find b such that eps < chi(b) < 0, for small eps.
     double get_bmid(int i, int j, double g, double T); // Solve chi = 0
-
-    double tl_weight_integrand(int i, int j, double T, double g, double b, double bmax, int property);
-    double tl_weight_inner(int i, int j, double T, double g, int property);
-    double get_tl_weight_normalizer(int i, int j, double T, int property);
-    double get_tl_weight(int i, int j, double T, double g, double b, double I, double bmax, int property);
 
     /********************************************************************************************/
     /**********************         TL MODEL 2 : correlations              **********************/

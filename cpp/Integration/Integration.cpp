@@ -317,6 +317,48 @@ double simpson(std::function<double(double)> func, double x0, double xN, int N_i
     return val;
 }
 
+std::pair<double, double> weighted_simpson(std::function<double(double)> func, std::function<double(double)> wt, double x0, double xN, int N_intervals){
+    double dx = (xN - x0) / N_intervals;
+    double F{0}, W{0}, w1{0}, w2{0};
+
+    w1 = wt(x0); w2 = wt(xN);
+    W += w1 + w2;
+    F += func(x0) * w1 + func(xN) * w2;
+    for (size_t i = 1; i <= (N_intervals / 2) - 1; i++){
+        w1 = wt(x0 + (2 * i - 1) * dx);
+        w2 = wt(x0 + (2 * i) * dx);
+        W += 4. * w1 + 2. * w2;
+        F += 4. * func(x0 + (2 * i - 1) * dx) * w1 + 2. * func(x0 + (2 * i) * dx) * w2;
+    }
+    w1 = wt(xN - dx);
+    W += 4. * w1;
+    F += 4. * func(xN - dx) * w1;
+    W *= dx / 3.;
+    F *= dx / 3.;
+    return std::pair<double, double>(F, W);
+}
+
+std::pair<double, double> weighted_simpson(std::function<std::pair<double, double>(double)> FW, double x0, double xN, int N_intervals){
+    double dx = (xN - x0) / N_intervals;
+    double F{0}, W{0};
+    std::pair<double, double> FW_1, FW_2;
+    FW_1 = FW(x0); FW_2 = FW(xN);
+    F += FW_1.first + FW_2.first;
+    W += FW_1.second + FW_2.second;
+    for (size_t i = 1; i <= (N_intervals / 2) - 1; i++){
+        FW_1 = FW(x0 + (2 * i - 1) * dx); 
+        FW_2 = FW(x0 + (2 * i) * dx);
+        F += 4. * FW_1.first + 2. * FW_2.first;
+        W += 4. * FW_1.second + 2. * FW_2.second;
+    }
+    FW_1 = FW(xN - dx);
+    F += 4. * FW_1.first;
+    W += 4. * FW_1.second;
+    F *= dx / 3;
+    W *= dx / 3;
+    return std::pair<double, double>(F, W);
+}
+
 double tanh_sinh(std::function<double(double)> func, double h, double tol){
     constexpr int n_max_intervals = 10000;
     double I{0.0};
