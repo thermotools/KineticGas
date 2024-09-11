@@ -36,6 +36,9 @@ file(GLOB COMMON_SRC ${SRC_DIR}/*.cpp)
 list(REMOVE_ITEM COMMON_SRC ${SRC_DIR}/bindings.cpp ${SRC_DIR}/run_kineticgas.cpp)
 list(APPEND COMMON_SRC ${SRC_DIR}/Integration/Integration.cpp)
 
+if (NOT THERMOPACK_DIR)
+  set(THERMOPACK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cpp/external/thermopack)
+endif()
 find_package(thermopack REQUIRED)
 if(NOT THERMOPACK_INSTALLED)
   message("${ColorRed}ThermoPack was found, but is not installed. Resorting to building ThermoPack from source. If you have installed ThermoPack, 

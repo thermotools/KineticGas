@@ -96,8 +96,8 @@ PYBIND11_MODULE(libpykingas, handle){
         KineticGas_bindings(ExtSutherland)
         // Spherical_potential_bindings(ExtSutherland)
         Spherical_bindings(ExtSutherland)
-    //     .def("saft_rdf", &ExtSutherland::saft_rdf)
-    //     .def("get_rdf_terms", &ExtSutherland::get_rdf_terms)
+        .def("saft_rdf", &ExtSutherland::saft_rdf)
+        .def("get_rdf_terms", &ExtSutherland::get_rdf_terms)
         ;
 
     py::class_<MieKinGas>(handle, "cpp_MieKinGas")
