@@ -784,3 +784,71 @@ class ExtSutherland(py_KineticGas):
             float : Value of pair-potential second derivative (N/m)
         """
         return self.cpp_kingas.potential_dblderivative_rr(i, j, r)
+
+
+class AT_Sutherland(ExtSutherland):
+
+    def __init__(self, mole_weights, sigma, eps_div_k, C, lambdas, beta_exp, rho_exp, N=2, is_idealgas=False, use_eos=None, singlecomp=False):
+        super().__init__(mole_weights, sigma, eps_div_k, C, lambdas, beta_exp, rho_exp, N=N, is_idealgas=is_idealgas, use_eos=use_eos, singlecomp=singlecomp)
+
+    @staticmethod
+    def init_single(mole_weights, sigma, eps_div_k, C, lambdas, beta_exp, N=2, is_idealgas=False, at_correction=1, at_alpha=0.1):
+        """Constructor
+        Initialize a pure-fluid Sutherland-Sum
+        &&
+        Args:
+            mole_weights (float) : Mole weight of species (g / mol)
+            sigma (float) : Size parameter (m)
+            eps_div_k (float) : Energy parameter divided by Boltzmann constant (K)
+            C (1d array) : Coefficient of each term
+            lambdas (1d array) : Exponent of each term
+            beta_exp (1d array) : Inverse temperature exponent of each term
+            rho_exp (1d array) : Density exponent of each term
+            N (int, optional) : Default Enskog approximation order (default 2)
+            is_idealgas (bool, optional) : Whether model is strictly at infinite dilution (default False)
+
+        Returns:
+             Sutherland : Initialized single-component model.
+        """
+        rho_exp = [0 for _ in C]
+        nterms = len(C)
+        if at_correction == 1:
+            for k in range(nterms):
+                Ci, li, bi = C[k], lambdas[k], beta_exp[k]
+                C.append(- Ci * at_alpha)
+                lambdas.append(li)
+                beta_exp.append(bi)
+                rho_exp.append(1)
+        elif at_correction == 2:
+            for k in range(nterms):
+                Ci, li, bi = C[k], lambdas[k], beta_exp[k]
+                if Ci < 0:
+                    C.append(- Ci * at_alpha)
+                    lambdas.append(li)
+                    beta_exp.append(bi)
+                    rho_exp.append(1)
+
+        print(f'Init with:\n\tC : {C}\n\tlamb : {lambdas}\n\tbeta_exp : {beta_exp}\n\trho_exp : {rho_exp}')
+        return ExtSutherland.init_single(mole_weights, sigma, eps_div_k, C, lambdas, beta_exp, rho_exp, N=N, is_idealgas=is_idealgas)
+
+    @staticmethod
+    def init_single_reduced(C, lambdas, beta_exp, N=2, is_idealgas=False, at_correction=1, at_alpha=0.1):
+        """Constructor
+        Initialize a pure-fluid Sutherland-Sum, with default values for sigma, eps_div_k and mass
+        &&
+        Args:
+            C (1d array) : Coefficient of each term
+            lambdas (1d array) : Exponent of each term
+            beta_exp (1d array) : Inverse temperature exponent of each term
+            rho_exp (1d array) : Density exponent of each term
+            N (int, optional) : Default Enskog approximation order (default 2)
+            is_idealgas (bool, optional) : Whether model is strictly at infinite dilution (default False)
+
+        Returns:
+             Sutherland : Initialized single-component model.
+        """
+        assert len(lambdas) == len(C)
+        m = 10
+        sigma = 3e-10
+        eps_div_k = 100
+        return AT_Sutherland.init_single(m, sigma, eps_div_k, C, lambdas, beta_exp, N=N, is_idealgas=is_idealgas, at_correction=at_correction, at_alpha=at_alpha)

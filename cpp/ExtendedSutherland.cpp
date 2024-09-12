@@ -12,10 +12,12 @@ vector2d dual_to_double(const vector2d2& vin){
 }
 
 dual2 ExtSutherland::potential(int i, int j, dual2 r, dual2 T, dual2 rho){
+    if (T > 1e4) throw std::runtime_error("Using density instead of T?");
     dual2 p{0.0};
-    set_C_eff(rho, T);
+    dual2 beta = eps[i][j] / (BOLTZMANN * T);
+    dual2 rho_r = rho * pow(sigma[i][j], 3);
     for (size_t k = 0; k < nterms; k++){
-        p += C_eff[k][i][j] * pow(sigma[i][j] / r, lambda[k][i][j]);
+        p += C[k][i][j] * pow(rho_r, rho_exp[k][i][j]) * pow(beta, beta_exp[k][i][j]) * pow(sigma[i][j] / r, lambda[k][i][j]);
     }
     return eps[i][j] * p;
 }
@@ -29,28 +31,32 @@ double ExtSutherland::potential(int i, int j, double r){
 }
 
 double ExtSutherland::potential(int i, int j, double r, double T, double rho){
+    if (T > 1e4) throw std::runtime_error("Using density instead of T?");
     double p{0.0};
-    set_C_eff(rho, T);
+    double beta = eps[i][j] / (BOLTZMANN * T);
+    double rho_r = rho * pow(sigma[i][j], 3);
     for (size_t k = 0; k < nterms; k++){
-        p += C_eff[k][i][j].val.val * pow(sigma[i][j] / r, lambda[k][i][j]);
+        p += C[k][i][j] * pow(rho_r, rho_exp[k][i][j]) * pow(beta, beta_exp[k][i][j])* pow(sigma[i][j] / r, lambda[k][i][j]);
     }
     return eps[i][j] * p;
 }
 
 dual2 ExtSutherland::potential_r(int i, int j, dual2 r, dual2 T, dual2 rho){
     dual2 p{0.0};
-    set_C_eff(rho, T);
+    dual2 beta = eps[i][j] / (BOLTZMANN * T);
+    dual2 rho_r = rho * pow(sigma[i][j], 3);
     for (size_t k = 0; k < nterms; k++){
-        p -= C_eff[k][i][j] * lambda[k][i][j] * pow(sigma[i][j] / r, lambda[k][i][j] + 1.) / sigma[i][j];
+        p -= C[k][i][j] * pow(rho_r, rho_exp[k][i][j]) * pow(beta, beta_exp[k][i][j]) * lambda[k][i][j] * pow(sigma[i][j] / r, lambda[k][i][j] + 1.) / sigma[i][j];
     }
     return eps[i][j] * p;
 }
 
 dual2 ExtSutherland::potential_rr(int i, int j, dual2 r, dual2 T, dual2 rho){
     dual2 p{0.0};
-    set_C_eff(rho, T);
+    dual2 beta = eps[i][j] / (BOLTZMANN * T);
+    dual2 rho_r = rho * pow(sigma[i][j], 3);
     for (size_t k = 0; k < nterms; k++){
-        p += C_eff[k][i][j] * lambda[k][i][j] * (lambda[k][i][j] + 1.) * pow(sigma[i][j] / r, lambda[k][i][j] + 2) / pow(sigma[i][j], 2);
+        p += C[k][i][j] * pow(rho_r, rho_exp[k][i][j]) * pow(beta, beta_exp[k][i][j]) * lambda[k][i][j] * (lambda[k][i][j] + 1.) * pow(sigma[i][j] / r, lambda[k][i][j] + 2) / pow(sigma[i][j], 2);
     }
     return eps[i][j] * p;
 }
@@ -69,11 +75,11 @@ dual2 ExtSutherland::potential_rr(int i, int j, dual2 r){
 
 void ExtSutherland::set_effective_params(dual2 rho, dual2 T){
     if ((rho == current_rho) && (T == current_T)) return;
-    current_rho = static_cast<double>(rho); current_T = static_cast<double>(T);
     set_C_eff(rho, T);
     set_sigma_eff(rho, T);
     set_epsilon_eff(rho, T);
     set_vdw_alpha(rho, T);
+    current_rho = static_cast<double>(rho); current_T = static_cast<double>(T);
 }
 
 void ExtSutherland::set_C_eff(dual2 rho, dual2 T){
@@ -97,10 +103,9 @@ void ExtSutherland::set_sigma_eff(dual2 rho, dual2 T){
                 sigma_eff[i][j] = sigma[i][j];
             }
             do {
-                u = potential(i, j, sigma_eff[i][j]);
-                ur = potential_r(i, j, sigma_eff[i][j]);
+                u = potential(i, j, sigma_eff[i][j], T, rho);
+                ur = potential_r(i, j, sigma_eff[i][j], T, rho);
                 sigma_eff[i][j] -= u / ur;
-                
             } while (abs(u) / eps[i][j] > 1e-6);
             sigma_eff[j][i] = sigma_eff[i][j];
         }
@@ -155,13 +160,12 @@ vector2d ExtSutherland::get_b_max(double T){
 
 vector2d2 ExtSutherland::get_BH_diameters(dual2 rho, dual2 T){
     // 20-point Gauss-Legendre from 0.5 sigma to 1 sigma. Using constant value of 1 for integrand within (0, 0.5) sigma.
-    set_effective_params(rho, T);
     vector2d2 d_BH(Ncomps, vector1d2(Ncomps, 0.0));
     dual2 beta = 1. / (BOLTZMANN * T);
     for (size_t i = 0; i < Ncomps; i++){
         d_BH[i][i] = 2.;
         for (size_t n = 0; n < 20; n++){
-            d_BH[i][i] += rdf_constants.gl_w[n] * (1. - exp(- beta * potential(i, i, sigma_eff[i][i] * (rdf_constants.gl_x[n] / 4. + 3. / 4.))));
+            d_BH[i][i] += rdf_constants.gl_w[n] * (1. - exp(- beta * potential(i, i, sigma_eff[i][i] * (rdf_constants.gl_x[n] / 4. + 3. / 4.), T, rho)));
         }
         d_BH[i][i] *= sigma_eff[i][i] / 4.;
     }
@@ -172,6 +176,12 @@ vector2d2 ExtSutherland::get_BH_diameters(dual2 rho, dual2 T){
         }
     }
     return d_BH;
+}
+
+vector2d ExtSutherland::get_BH_diameters(double rho, double T){
+    set_effective_params(rho, T);
+    vector2d2 dBH_dual = get_BH_diameters(static_cast<dual2>(rho), static_cast<dual2>(T));
+    return dual_to_double(dBH_dual);
 }
 
 vector2d ExtSutherland::get_BH_diameters(double T){
@@ -215,7 +225,6 @@ vector2d ExtSutherland::saft_rdf(double rho_d, double T_d, const vector1d& x, in
 }
 
 vector3d ExtSutherland::get_rdf_terms(double rho, double T, const vector1d& x){
-    set_effective_params(rho, T);
     vector3d terms;
     terms.push_back(saft_rdf(rho, T, x, 0));
     terms.push_back(saft_rdf(rho, T, x, 1));
@@ -323,7 +332,6 @@ dual2 ExtSutherland::J_func(int i, int j, const vector2d2& xeff, const vector2d&
 }
 
 dual2 ExtSutherland::a1_func(int i, int j, dual2 rho, dual2 T, const vector1d& x){
-    set_effective_params(rho, T);
     vector2d2 d_BH = get_BH_diameters(rho, T);
     return a1_func(i, j, rho, x, d_BH);
 }
@@ -423,7 +431,6 @@ vector2d2 ExtSutherland::get_xeff(const vector2d2& d_BH){
 }
 
 dual2 ExtSutherland::a2_div_chi_func(int i, int j, dual2 rho, dual2 T, const vector1d& x){
-    set_effective_params(rho, T);
     vector2d2 d_BH = get_BH_diameters(rho, T);
     dual2 zeta_x = zeta_x_func(rho, x, d_BH);
     dual2 K_HS = K_HS_func(zeta_x);

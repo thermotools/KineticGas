@@ -69,6 +69,7 @@ public:
     vector2d saft_rdf(double rho, double T, const std::vector<double>& x, int order=2, bool g2_correction=true);
     vector3d get_rdf_terms(double rho, double T, const vector1d& x); // Return g0, g1, g2 (no correction), g2 (with correction)
     virtual vector2d2 get_BH_diameters(dual2 rho, dual2 T);
+    vector2d get_BH_diameters(double rho, double T);
 
     vector2d get_sigma_eff(double rho, double T){
         set_sigma_eff(rho, T);
@@ -83,6 +84,11 @@ public:
     vector2d get_epsilon_eff(double rho, double T){
         set_epsilon_eff(rho, T);
         return dual_to_double(eps_eff);
+    }
+
+    vector2d get_vdw_alpha(double rho, double T){
+        set_effective_params(rho, T);
+        return dual_to_double(vdw_alpha);
     }
 
     // ------------------------------------------------------------------------------------------------------------------- //

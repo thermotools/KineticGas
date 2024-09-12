@@ -98,6 +98,11 @@ PYBIND11_MODULE(libpykingas, handle){
         Spherical_bindings(ExtSutherland)
         .def("saft_rdf", &ExtSutherland::saft_rdf)
         .def("get_rdf_terms", &ExtSutherland::get_rdf_terms)
+        .def("get_sigma_eff", &ExtSutherland::get_sigma_eff)
+        .def("get_rmin", &ExtSutherland::get_sigma_min)
+        .def("get_epsilon_eff", &ExtSutherland::get_epsilon_eff)
+        .def("get_dBH", py::overload_cast<double, double>(&ExtSutherland::get_BH_diameters))
+        .def("get_vdw_alpha", &ExtSutherland::get_vdw_alpha)
         ;
 
     py::class_<MieKinGas>(handle, "cpp_MieKinGas")
