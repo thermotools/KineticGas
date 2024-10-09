@@ -21,16 +21,6 @@ hs = HardSphere('AR,KR,XE') # RET-HS for Ar/Kr/He mixture
 
 The component identifiers are equivalent to the file names in the `pykingas/fluids` directory, and are consistent with the identifiers used by `ThermoPack`. A list of all available fluids and their identifiers can be found in the [Fluid identifiers](fluid_identifiers.html) section.
 
-### Note on pure components
-
-*When doing computations for a single component, two mole fractions must be supplied.*
-
-Internally pure components are treated as binary mixtures of equivalent species, such that a model initialized with e.g. `MieKinGas('H2')` will treat pure hydrogen as a mixture of "Hydrogen with hydrogen". This allows computation of the self-diffusion coefficient through the normal `interdiffusion` method, but carries the caveat mentioned above.
-
-Properties are not dependent on the supplied mole fractions, but it has been found that for numerical stability, the choice `x = [0.5, 0.5]` is best.
-
-This may be changed in future versions, such that no mole fraction needs to be supplied when working with pure fluids.
-
 ### Specifying parameters
 
 If we wish to pass specific parameters to the models, this is done through various keyword arguments, as
@@ -85,6 +75,10 @@ Properties at infinite dilution can be of interest. Note that at infinite diluti
 from pykingas.MieKinGas import MieKinGas
 mie = MieKinGas('H2', is_idealgas=True) # Properties of hydrogen at infinite dilution
 ```
+
+## Working in reduced units
+
+When working in reduced (Lennard-Jones) units
 
 ## Making predictions
 
