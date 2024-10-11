@@ -6,6 +6,7 @@ jobs:
         name: Test on ${{ matrix.os }}
         runs-on: ${{ matrix.os }}
         strategy:
+            fail-fast: false
             matrix:
                 os: [macos-latest, macos-12, ubuntu-latest]
         steps:
@@ -16,10 +17,9 @@ jobs:
             # Used to host cibuildwheel
             - uses: actions/setup-python@v4
         
-            - name: Setup Fortran
-              uses: fortran-lang/setup-fortran@v1
+            - uses: fortran-lang/setup-fortran@v1
               with:
-                compiler: gfortran
+                compiler: gcc
                 version: 13
             
             - name: Build KineticGas
