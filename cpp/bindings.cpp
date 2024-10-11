@@ -1,13 +1,9 @@
 #include "KineticGas.h"
 #include "Factorial.h"
 #include "MieKinGas.h"
-#include "QuantumMie.h"
 #include "HardSphere.h"
 #include "PseudoHardSphere.h"
-#include "Sutherland.h"
-#include "ExtendedSutherland.h"
 #include "ModTangToennis.h"
-#include "AxilrodTeller.h"
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 #include "pybind11/operators.h"
@@ -73,33 +69,6 @@ PYBIND11_MODULE(libpykingas, handle){
             return strm.str();
         });
 
-    py::class_<Sutherland>(handle, "cpp_Sutherland")
-        .def(py::init<vector1d, vector2d, vector2d, vector3d, vector3d, bool, bool>())
-        KineticGas_bindings(Sutherland)
-        Spherical_potential_bindings(Sutherland)
-        Spherical_bindings(Sutherland)
-        .def("set_active_LJ_rdf", &Sutherland::set_active_LJ_rdf)
-        .def("get_sigma_eff", &Sutherland::get_sigma_eff)
-        .def("get_sigma_min", &Sutherland::get_sigma_min)
-        .def("get_epsilon_eff", &Sutherland::get_epsilon_eff)
-        .def("get_vdw_alpha", &Sutherland::get_vdw_alpha)
-        .def("get_BH_diameters", &Sutherland::get_BH_diameters)
-        .def("rdf_g0", py::overload_cast<double, double, const vector1d&>(&Sutherland::rdf_g0_func))
-        .def("rdf_g1", py::overload_cast<double, double, const vector1d&>(&Sutherland::rdf_g1_func))
-        .def("rdf_g2", py::overload_cast<double, double, const vector1d&, bool>(&Sutherland::rdf_g2_func))
-        ;
-    
-    py::class_<ExtSutherland>(handle, "cpp_ExtSutherland")
-        .def(py::init<vector1d, vector2d, vector2d, 
-                        vector3d, vector3d, vector3d, vector3d,
-                        bool, bool>())
-        KineticGas_bindings(ExtSutherland)
-        // Spherical_potential_bindings(ExtSutherland)
-        Spherical_bindings(ExtSutherland)
-    //     .def("saft_rdf", &ExtSutherland::saft_rdf)
-    //     .def("get_rdf_terms", &ExtSutherland::get_rdf_terms)
-        ;
-
     py::class_<MieKinGas>(handle, "cpp_MieKinGas")
         .def(py::init<vector1d,
                       vector2d,
@@ -155,21 +124,6 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("set_dd_lim", &IntegrationParam::set_dd_lim)
         ;
 
-   py::class_<QuantumMie>(handle, "cpp_QuantumMie")
-        .def(py::init<vector1d, vector2d, vector2d, vector2d, vector2d, std::vector<int>, bool, bool>())
-        KineticGas_bindings(QuantumMie)
-        Spherical_bindings(QuantumMie)
-        // .def("potential", py::overload_cast<int, int, double, double>(&QuantumMie::potential))
-        // .def("potential_derivative_r", py::overload_cast<int, int, double, double>(&QuantumMie::potential_derivative_r))
-        // .def("potential_dblderivative_rr", py::overload_cast<int, int, double, double>(&QuantumMie::potential_dblderivative_rr))
-        // .def("get_sigma_eff", py::overload_cast<double>(&QuantumMie::get_sigma_eff))
-        // .def("get_sigma_min", py::overload_cast<double>(&QuantumMie::get_sigma_min))
-        // .def("get_epsilon_eff", py::overload_cast<double>(&QuantumMie::get_epsilon_eff))
-        // .def("get_BH_diameters", &QuantumMie::get_BH_diameters)
-        .def("saft_rdf", &QuantumMie::saft_rdf)
-        .def("get_rdf_terms", &QuantumMie::get_rdf_terms)
-        ;
-
     py::class_<TangToennisParam>(handle, "cpp_TangToennisParam")
         .def(py::init<double, double, double, vector1d,
                         double, double, double, double,
@@ -188,15 +142,6 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("potential_r", &ModTangToennis::potential_derivative_r)
         .def("potential_rr", &ModTangToennis::potential_dblderivative_rr)
         .def("set_tl_model", &ModTangToennis::set_transfer_length_model)
-        ;
-
-    py::class_<AT_TangToennies>(handle, "cpp_AT_TangToennies")
-        .def(py::init<std::string, bool>())
-        KineticGas_bindings(AT_TangToennies)
-        .def("potential", py::overload_cast<int, int, double, double>(&AT_TangToennies::potential))
-        .def("potential_r", py::overload_cast<int, int, double, double>(&AT_TangToennies::potential_derivative_r))
-        .def("potential_rr", py::overload_cast<int, int, double, double>(&AT_TangToennies::potential_dblderivative_rr))
-        .def("set_tl_model", &AT_TangToennies::set_transfer_length_model)
         ;
 
     py::class_<HardSphere>(handle, "cpp_HardSphere")

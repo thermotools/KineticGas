@@ -44,6 +44,12 @@ set the environment variable 'THERMOPACK_DIR=</path/to/thermopack>' to help cmak
   return()
 endif()
 
+set(CMAKE_INSTALL_RPATH ${THERMOPACK_LIB})
+set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+set(CMAKE_SKIP_BUILD_RPATH FALSE)
+set(CMAKE_BUILD_RPATH_USE_ORIGIN TRUE)
+
 set(FLUID_DIR ${CMAKE_CURRENT_SOURCE_DIR}/fluids CACHE STRING "Default search path for fluid files")
 message(STATUS "Default search path for fluid files : ${FLUID_DIR}")
 
