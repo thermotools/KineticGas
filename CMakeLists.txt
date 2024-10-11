@@ -36,9 +36,12 @@ list(APPEND COMMON_SRC ${SRC_DIR}/Integration/Integration.cpp)
 
 find_package(thermopack REQUIRED)
 if(NOT THERMOPACK_INSTALLED)
-  message("${ColorRed}ThermoPack was found, but is not installed. Resorting to building ThermoPack from source. If you have installed ThermoPack, 
-          set the environment variable 'THERMOPACK_DIR=</path/to/thermopack>' to help cmake find your installation.")
+message("${ColorYellow}ThermoPack was found, but is not installed. If you have installed ThermoPack, 
+set the environment variable 'THERMOPACK_DIR=</path/to/thermopack>' to help cmake find your installation.")
+  message(STATUS "Target 'thermopack' created from the files found at ${THERMOPACK_ROOT}.")
+  message("${ColorBlue}Try Running `make install` to build and install thermopack, before re-running `cmake .. && make install` to build KineticGas.")
   add_subdirectory(${THERMOPACK_ROOT}) # We need to build thermopack, because it has not been installed.
+  return()
 endif()
 
 set(FLUID_DIR ${CMAKE_CURRENT_SOURCE_DIR}/fluids CACHE STRING "Default search path for fluid files")
