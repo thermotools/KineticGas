@@ -19,7 +19,7 @@ set(Python_FIND_VIRTUALENV ONLY)
 if(NOT MSVC)
   set(CMAKE_CXX_FLAGS "-Wfatal-errors -Wall -Wextra -Wno-unknown-pragmas -Wno-unused-parameter -Wno-sign-compare -pthread")
   set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wno-unused-parameter")
-  set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -D_GLIBCXX_DEBUG -Wno-unused-parameter -Wno-unused-const-variable")
+  set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -DDEBUG -Wno-unused-parameter -Wno-unused-const-variable")
 endif(NOT MSVC)
 
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cpp/external)

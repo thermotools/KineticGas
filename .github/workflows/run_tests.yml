@@ -24,10 +24,14 @@ jobs:
             
             - name: Build KineticGas
               run: |
+                cd cpp/external/thermopack
                 mkdir build
                 cd build
                 cmake ..
                 make -j4 install
+                cd ../../..
+                mkdir build
+                cd build
                 cmake ..
                 make -j4 install
             

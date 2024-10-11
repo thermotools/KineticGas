@@ -203,6 +203,9 @@ class KineticGas{
             eos = std::make_unique<GenericEoS>(PyWrapper(eos_));
         }
     #endif
+    void set_eos(GenericEoS&& other){
+        eos = std::make_unique<GenericEoS>(std::move(other));
+    }
     vector1d get_K_factors(double rho, double T, const vector1d& mole_fracs); // Eq. (1.2) of 'multicomponent docs'
     vector1d get_K_prime_factors(double rho, double T, const vector1d& mole_fracs); // Eq. (5.4) of 'multicomponent docs'
 

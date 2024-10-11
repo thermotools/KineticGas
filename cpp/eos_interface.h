@@ -36,7 +36,11 @@ public:
     int VAPPH;
     template<typename T>
     GenericEoS(T eos_) : eos(std::make_unique<WrappedEoS<T>>(std::move(eos_))) {VAPPH = eos->VAPPH;}
-
+    
+    GenericEoS(GenericEoS&& other){
+        eos.swap(other.eos);
+        VAPPH = other.VAPPH;
+    }
     /*
     All inputs are:
         t : Temperature (K)
