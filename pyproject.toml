@@ -29,7 +29,7 @@ classifiers = [
 ]
 dependencies = ["numpy~=1.22", 
                 "scipy~=1.7", 
-                "thermopack~=2.3"]
+                "thermopack~=2.2"]
 
 [tool.cibuildwheel]
 test-command = "pytest {project}/tests"
