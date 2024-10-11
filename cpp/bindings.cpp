@@ -25,7 +25,7 @@ using vector2d = std::vector<vector1d>;
         .def("get_rdf", &Model::get_rdf) \
         .def("get_K_factors", &Model::get_K_factors) \
         .def("get_K_prime_factors", &Model::get_K_prime_factors) \
-        .def("set_eos", &Model::set_eos) \
+        .def("set_eos", py::overload_cast<py::object>(&Model::set_eos)) \
         \
         .def("thermal_conductivity", &Model::thermal_conductivity) \
         .def("thermal_conductivity_tp", &Model::thermal_conductivity_tp) \
