@@ -34,9 +34,12 @@ file(GLOB COMMON_SRC ${SRC_DIR}/*.cpp)
 list(REMOVE_ITEM COMMON_SRC ${SRC_DIR}/bindings.cpp ${SRC_DIR}/run_kineticgas.cpp)
 list(APPEND COMMON_SRC ${SRC_DIR}/Integration/Integration.cpp)
 
-if (NOT DEFINED THERMOPACK_DIR)
+if (NOT DEFINED ENV{THERMOPACK_DIR})
   set(THERMOPACK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cpp/external/thermopack)
+  message("Set THERMOPACK_DIR to ${THERMOPACK_DIR}")
 endif()
+
+message("THERMOPACK_DIR is ${THERMOPACK_DIR}")
 
 find_package(THERMOPACK REQUIRED)
 if(NOT THERMOPACK_INSTALLED)
