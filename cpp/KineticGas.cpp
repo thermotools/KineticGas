@@ -41,6 +41,7 @@ KineticGas::KineticGas(const std::vector<double> mole_weights, bool is_idealgas,
     {set_masses();}
 
 std::vector<json> get_fluid_data(std::string comps){
+    std::string fluid_dir = get_fluid_dir();
     std::vector<std::string> fluid_files;
     std::string comp = "";
     for (char c : comps){

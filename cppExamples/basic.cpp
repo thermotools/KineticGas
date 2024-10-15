@@ -6,6 +6,13 @@
 int main(){
     MieKinGas mie("AR,KR,NE"); // MieKinGas for argon/krypton/neon mixture
 
+    std::cout << "Searching for fluid data at default location : " << get_fluid_dir() << std::endl;
+    set_fluid_dir("/usr/local/data/fluids");
+    std::cout << "Fluid data search path set to absolute path : " << get_fluid_dir() << std::endl;
+    set_fluid_dir("../pykingas/fluids");
+    std::cout << "Using relative path : " << get_fluid_dir() << std::endl;
+    
+
     double T = 300; // Temperature (K)
     double Vm = 20e-3; // Molar volume (m3 / mol)
     std::vector<double> x = {0.5, 0.3, 0.2}; // Molar composition

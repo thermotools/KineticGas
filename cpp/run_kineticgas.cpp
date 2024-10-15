@@ -4,9 +4,9 @@
 #include <vector>
 
 int main(){
-    std::cout << "Default fluid dir : " << fluid_dir << std::endl;
-    // set_fluid_dir("./fluids");
-    // std::cout << "Reading from fluid dir : " << fluid_dir << std::endl;
+    std::cout << "Default fluid dir : " << get_fluid_dir() << std::endl;
+    set_fluid_dir("../fluids");
+    std::cout << "Reading from fluid dir : " << get_fluid_dir() << std::endl;
 
     double ep = 120 * BOLTZMANN;
     double sig = 3.4e-10;

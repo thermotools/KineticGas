@@ -11,8 +11,8 @@ constexpr double PLANCK = 6.62607015e-34;
 constexpr double HBAR = PLANCK / (2.0 * PI);
 constexpr double FLTEPS = 1e-10;
 
-extern std::string fluid_dir;
-void set_fluid_dir(const std::string& path);
+void set_fluid_dir(const std::string path);
+std::string get_fluid_dir();
 
 using vector1d = std::vector<double>;
 using vector2d = std::vector<vector1d>;
