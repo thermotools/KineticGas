@@ -4,7 +4,9 @@ project(KineticGas LANGUAGES C CXX)
 
 string(ASCII 27 Esc)
 set(ColorBlue "${Esc}[34m")
+set(ColorYellow "${Esc}[93m")
 set(ColorRed "${Esc}[31m")
+set(ColorDefault "${Esc}[0m")
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "No build type specified, defaulting to Release")
@@ -34,19 +36,21 @@ file(GLOB COMMON_SRC ${SRC_DIR}/*.cpp)
 list(REMOVE_ITEM COMMON_SRC ${SRC_DIR}/bindings.cpp ${SRC_DIR}/run_kineticgas.cpp)
 list(APPEND COMMON_SRC ${SRC_DIR}/Integration/Integration.cpp)
 
-if (NOT DEFINED ENV{THERMOPACK_DIR})
+if (DEFINED ENV{THERMOPACK_DIR})
+  set(THERMOPACK_DIR $ENV{THERMOPACK_DIR})
+  message(STATUS "Searching for thermopack in THERMOPACK_DIR: $ENV{THERMOPACK_DIR}")
+else()
   message(STATUS "THERMOPACK_DIR is not defined!")
   set(THERMOPACK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cpp/external/thermopack)
   message(STATUS "Setting THERMOPACK_DIR: ${THERMOPACK_DIR}")
 endif()
 
-message(STATUS "THERMOPACK_DIR: ${THERMOPACK_DIR}")
 find_package(THERMOPACK REQUIRED)
 if(NOT THERMOPACK_INSTALLED)
-message("${ColorYellow}ThermoPack was found, but is not installed. If you have installed ThermoPack, 
-set the environment variable 'THERMOPACK_DIR=</path/to/thermopack>' to help cmake find your installation.")
-  message(STATUS "Target 'thermopack' created from the files found at ${THERMOPACK_ROOT}.")
-  message("${ColorBlue}Try Running `make install` to build and install thermopack, before re-running `cmake .. && make install` to build KineticGas.")
+message(STATUS "${ColorRed}ThermoPack was found, but is not installed. If you have installed ThermoPack, 
+set the environment variable 'THERMOPACK_DIR=</path/to/thermopack>' to help cmake find your installation.${ColorDefault}")
+  message(STATUS "${ColorBlue}Target 'thermopack' created from the files found at ${THERMOPACK_ROOT}.${ColorDefault}")
+  message(STATUS "${ColorBlue}Try Running `make install` to build and install thermopack, before re-running `cmake .. && make install` to build KineticGas.${ColorDefault}")
   add_subdirectory(${THERMOPACK_ROOT}) # We need to build thermopack, because it has not been installed.
   return() # Hoping that thermopack target has been created by thermopack, exiting ...
 endif()
