@@ -88,6 +88,7 @@ from pykingas.py_KineticGas import py_KineticGas
 from pykingas.MieType import MieType
 from pykingas.MieKinGas import MieKinGas
 from pykingas.HardSphere import HardSphere
+from pykingas.multiparam import ModTangToennis
 
 DOC_VERSION = 'Current'
 KINETICGAS_ROOT, MARKDOWN_DIR = get_root_and_markdown_dir(DOC_VERSION)
@@ -102,7 +103,7 @@ def get_autogen_header(classname):
 layout: default
 version: {version_tag}
 title: Methods in the {classname} class
-permalink: /v{DOC_VERSION.lower()}/{classname}_methods.html
+permalink: /v{DOC_VERSION.lower()}/{classname.lower()}_methods.html
 ---\n\n'''
     header += '<!--- \n'
     header += 'Generated at: ' + datetime.today().isoformat() + '\n'
@@ -306,11 +307,12 @@ def get_markdown_contents(sections, section_headers, section_intro, method_dict)
 
     return md_text
 
-def basic_class_to_markdown(classname, eosname, methods, intro_text=None, inherits=None):
+def basic_class_to_markdown(classname, eosname, methods, intro_text=None, inherits=None, filename=None):
     """
     Generate markdown documentation file for a class that implements only Constructor and unility methods.
     """
-
+    if filename is None:
+        filename = classname
     sections = ['Constructor',
                 'Utility',
                 'cpp-interface']
@@ -328,10 +330,10 @@ def basic_class_to_markdown(classname, eosname, methods, intro_text=None, inheri
     ofile_text = get_autogen_header(classname)
     if intro_text is None:
         if inherits is None:
-            ofile_text += f'The `{classname}` class, found in `pykingas/{classname}.py`, is the interface to the \n' \
+            ofile_text += f'The `{classname}` class, found in `pykingas/{filename}.py`, is the interface to the \n' \
                           f'{eosname} Model. This class implements utility methods to access parameters etc.\n\n'
         else:
-            ofile_text += f'The `{classname}` class, found in `pykingas/{classname}.py`, inherrits ' \
+            ofile_text += f'The `{classname}` class, found in `pykingas/{filename}.py`, inherrits ' \
                           f'from the {inherits} class, and  is the interface to the \n' \
                           f'{eosname} Model. This class implements utility methods to access mixing parameters etc.\n\n'
     else:
@@ -406,6 +408,15 @@ def miekingas_to_markdown():
     specific_methods = sorted(list(set(class_methods) - set(parent_methods)))
     basic_class_to_markdown(classname, eosname, specific_methods, inherits='MieType')
 
+def modtangtoennies_to_markdown():
+    classname = 'ModTangToennies'
+    eosname = 'Modified Tang-Toennies'
+
+    class_methods = inspect.getmembers(ModTangToennis, predicate=inspect.isfunction)
+    parent_methods = inspect.getmembers(py_KineticGas, predicate=inspect.isfunction)
+    specific_methods = sorted(list(set(class_methods) - set(parent_methods)))
+    basic_class_to_markdown(classname, eosname, specific_methods, inherits='py_KineticGas', filename='multiparam')
+
 def hardsphere_to_markdown():
     classname = 'HardSphere'
     eosname = 'RET-HS'
@@ -422,3 +433,4 @@ if __name__ == '__main__':
     mietype_to_markdown()
     miekingas_to_markdown()
     hardsphere_to_markdown()
+    modtangtoennies_to_markdown()

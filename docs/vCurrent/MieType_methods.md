@@ -2,11 +2,11 @@
 layout: default
 version: 
 title: Methods in the MieType class
-permalink: /vcurrent/MieType_methods.html
+permalink: /vcurrent/mietype_methods.html
 ---
 
 <!--- 
-Generated at: 2024-04-18T17:31:55.382397
+Generated at: 2024-10-16T17:34:53.824163
 This is an auto-generated file, generated using the script at KineticGas/pyUtils/markdown_from_docstrings.py
 The file is created by parsing the docstrings of the methods in the 
 MieType class. For instructions on how to use the parser routines, see the
@@ -22,11 +22,17 @@ Mie-Type Model. This class implements utility methods to access mixing parameter
     * [get_BH_diameters](#get_bh_diametersself-t)
     * [get_epsilon_matrix](#get_epsilon_matrixself-eps_div_k-kij)
     * [get_lambda_matrix](#get_lambda_matrixself-lambdas-lij)
+    * [get_reducing_units](#get_reducing_unitsself-comp_idx0)
     * [get_sigma_matrix](#get_sigma_matrixself-sigma)
+    * [potential](#potentialself-i-j-r)
+    * [potential_r](#potential_rself-i-j-r)
+    * [potential_rr](#potential_rrself-i-j-r)
     * [set_eps_div_k](#set_eps_div_kself-eps_div_k-update_eostrue)
     * [set_la](#set_laself-la-update_eostrue)
     * [set_lr](#set_lrself-lr-update_eostrue)
     * [set_sigma](#set_sigmaself-sigma-update_eostrue)
+  * [Interfaces to C++ methods](#interfaces-to-c-methods)
+    * [saft_rdf](#saft_rdfself-t-vm-x-order2-g2_correctiontrue)
   * [Internal methods](#internal-methods)
     * [\_\_update_cpp_kingas_param\_\_](#__update_cpp_kingas_param__self)
     * [\_\_update_eos_param\_\_](#__update_eos_param__self)
@@ -84,7 +90,11 @@ Set- and get methods for interaction parameters, mixing parameters ...
     * [get_BH_diameters](#get_bh_diametersself-t)
     * [get_epsilon_matrix](#get_epsilon_matrixself-eps_div_k-kij)
     * [get_lambda_matrix](#get_lambda_matrixself-lambdas-lij)
+    * [get_reducing_units](#get_reducing_unitsself-comp_idx0)
     * [get_sigma_matrix](#get_sigma_matrixself-sigma)
+    * [potential](#potentialself-i-j-r)
+    * [potential_r](#potential_rself-i-j-r)
+    * [potential_rr](#potential_rrself-i-j-r)
     * [set_eps_div_k](#set_eps_div_kself-eps_div_k-update_eostrue)
     * [set_la](#set_laself-la-update_eostrue)
     * [set_lr](#set_lrself-lr-update_eostrue)
@@ -142,6 +152,22 @@ Compute pair-interaction $\lambda_r$ parameters, apply mixing parameter.
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Repulsive exponent for each pair-interaction. 
 
+### `get_reducing_units(self, comp_idx=0)`
+Get reducing units for this model, as a `Units` struct. See `units.py`.
+ 
+
+#### Args:
+
+&nbsp;&nbsp;&nbsp;&nbsp; **comp_idx (int, optional) :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Which component to use for reducing units, defaults to first component 
+
+#### Returns:
+
+&nbsp;&nbsp;&nbsp;&nbsp; **Units :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Struct holding the reducing units 
+
 ### `get_sigma_matrix(self, sigma)`
 Compute interaction parameter $\sigma$ for each particle pair, applying mixing parameters given by `self.lij`.
 Warning: Use of mixing parameters is not thouroughly tested.
@@ -164,6 +190,36 @@ Warning: Use of mixing parameters is not thouroughly tested.
 &nbsp;&nbsp;&nbsp;&nbsp; **Warning:** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Use of mixing parameters is not thouroughly tested.  
+
+### `potential(self, i, j, r)`
+Evaluate the interaction potential between types i and j at distance r
+
+Args:
+i, j (int) : Component indices
+r (float) : Distance [m]
+Returns:
+float : Interaction potential [J]
+ 
+
+### `potential_r(self, i, j, r)`
+Evaluate the derivative of the interaction potential between types i and j at distance r
+
+Args:
+i, j (int) : Component indices
+r (float) : Distance [m]
+Returns:
+float : First derivative of interaction potential [N]
+ 
+
+### `potential_rr(self, i, j, r)`
+Evaluate the second derivative of the interaction potential between types i and j at distance r
+
+Args:
+i, j (int) : Component indices
+r (float) : Distance [m]
+Returns:
+float : Second derivative of interaction potential [N / m]
+ 
 
 ### `set_eps_div_k(self, eps_div_k, update_eos=True)`
 Set the well depth parameter. Note: Running with `update_eos=False` will result in a model using
@@ -200,6 +256,47 @@ Args:
 sigma (list[float or None]) : Size parameter for each pure component. Use `None` for default values. Unit (m).
 update_eos (bool) : If True (default) also update the eos.
  
+
+## Interfaces to C++ methods
+
+Lightweight wrappers for the most commonly used C++ side methods.
+
+### Table of contents
+  * [Interfaces to C++ methods](#interfaces-to-c-methods)
+    * [saft_rdf](#saft_rdfself-t-vm-x-order2-g2_correctiontrue)
+
+
+### `saft_rdf(self, T, Vm, x, order=2, g2_correction=True)`
+Compute the radial distribution function at contact
+ 
+
+#### Args:
+
+&nbsp;&nbsp;&nbsp;&nbsp; **T (float) :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Temperature [K]
+
+&nbsp;&nbsp;&nbsp;&nbsp; **Vm (float) :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Molar volume [m3/mol]
+
+&nbsp;&nbsp;&nbsp;&nbsp; **x (list[float]) :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Molar composition [-]
+
+&nbsp;&nbsp;&nbsp;&nbsp; **order (int) :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Pertubation order
+
+&nbsp;&nbsp;&nbsp;&nbsp; **g2_correction (bool) :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Use correction factor for g2? 
+
+#### Returns:
+
+&nbsp;&nbsp;&nbsp;&nbsp; **2d array :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  RDF at contact, indexed by component pair. 
 
 ## Internal methods
 

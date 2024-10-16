@@ -5,9 +5,7 @@ title: Getting started - In C++
 permalink: /vcurrent/getting_started_cpp.html
 ---
 
-## Getting started: In C++
-
-For instructions on building the `KineticGas` C++ library, see the [installation guide](installation#c).
+For instructions on building the `KineticGas` C++ library, see the [installation guide](source_build.html#c).
 
 A basic example showing initialization of a model is found in [`cppExamples/basic.cpp`](), the `cppExamples` directory also contains a `CMakeLists.txt` showing how to obtain the required headers for the `KineticGas` library, as well as link the library to your program.
 
@@ -32,7 +30,7 @@ The interfaces for property calculations are more or less equivalent to those us
   * `CoM` - Center of mass (barycentric)
   * `CoV` - Center of volume
   * `solvent` - Solvent, solvent index is the `dependent_idx`, which defaults to the last component.
-  * `zarate`, `zarate_x`, and `zarate_w` - See the [memo](/KineticGas/memo/diffusion_definitions.pdf)
-  * See the python docs and the [memo](/KineticGas/memo/diffusion_definitions.pdf) for more details on definitions of the diffusion coefficients.
+  * `zarate`, `zarate_x`, and `zarate_w` - See the [memo](/KineticGas/memo/diffusion/diffusion_definitions.pdf)
+  * See the python docs and the [memo](/KineticGas/memo/diffusion/diffusion_definitions.pdf) for more details on definitions of the diffusion coefficients.
   * *Note*: The optional `dependent_idx` argument to `interdiffusion` supports python-style negative indexing.
 

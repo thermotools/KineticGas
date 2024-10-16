@@ -7,9 +7,9 @@ permalink: /vcurrent/getting_started_py.html
 
 In addition to this explanation, some examples may be found in the [pyExamples directory](https://github.com/thermotools/KineticGas_private/tree/main/pyExamples).
 
-## Initializing a model
+## Initialising a model
 
-The available models are `HardSphere` - The RET for Hard Spheres, `MieKinGas` - The RET-Mie. They are initialized by passing the appropriate component identifiers to the class constructors.
+The available models are `HardSphere` - The RET for Hard Spheres, `MieKinGas` - The RET-Mie. They are initialised by passing the appropriate component identifiers to the class constructors.
 
 ```Python
 from pykingas.HardSphere import HardSphere
