@@ -21,7 +21,7 @@ jobs:
         
             - name: Dowload thermopack
               run: |
-                curl -o thermopack.zip https://github.com/vegardjervell/thermopack/releases/download/Latest-beta/thermopack-${{ matrix.os }}.zip
+                curl -L -o thermopack.zip https://github.com/vegardjervell/thermopack/releases/download/Latest-beta/thermopack-${{ matrix.os }}.zip
                 unzip thermopack.zip
                 export THERMOPACK_DIR=${PWD}/thermopack-${{ matrix.os }}/
             
