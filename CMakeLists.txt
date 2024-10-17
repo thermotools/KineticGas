@@ -84,7 +84,7 @@ if(pylib)
   add_subdirectory(${PYBIND11_ROOT})
   pybind11_add_module(${pyTARGET} ${COMMON_SRC} ${SRC_DIR}/bindings.cpp)
 
-  if(NOT MSVC AND NOT APPLE)
+  if(NOT MSVC)
     set_target_properties(${pyTARGET} PROPERTIES 
                           INSTALL_RPATH ${THERMOPACK_ROOT}/installed
                           INSTALL_RPATH_USE_LINK_PATH TRUE)

@@ -37,6 +37,10 @@ jobs:
                 cd build
                 cmake ..
                 make -j4 install
+              
+            - name: Inspect libpykingas
+              if: matrix.os != 'ubuntu-latest' && matrix.os != 'windows-latest'
+              run: otool -L ../pykingas/libpykingas.*
             
             - name: Run pytests
               run: |

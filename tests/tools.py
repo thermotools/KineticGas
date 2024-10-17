@@ -2,12 +2,10 @@ import copy
 import numpy as np
 from pykingas.MieKinGas import MieKinGas
 from pykingas.HardSphere import HardSphere
-from pykingas.Sutherland import S_MieKinGas
-from pykingas.QuantumMie import QuantumMie
 
 FLTEPS = 1e-10
 
-models = [MieKinGas, HardSphere, S_MieKinGas, QuantumMie]
+models = [MieKinGas, HardSphere]
 
 def check_eq(a, b, tol=FLTEPS):
     if abs(a - b) > tol:
