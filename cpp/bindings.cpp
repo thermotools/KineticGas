@@ -4,6 +4,7 @@
 #include "HardSphere.h"
 #include "PseudoHardSphere.h"
 #include "ModTangToennis.h"
+#include "LJSpline.h"
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 #include "pybind11/operators.h"
@@ -165,4 +166,15 @@ PYBIND11_MODULE(libpykingas, handle){
             )
         KineticGas_bindings(PseudoHardSphere)
         Spherical_bindings(PseudoHardSphere);
+
+    py::class_<LJSpline>(handle, "cpp_LJSpline")
+        .def(py::init<
+                        vector1d,
+                        vector2d,
+                        vector2d,
+                        bool, bool
+                    >()
+            )
+        KineticGas_bindings(LJSpline)
+        Spherical_bindings(LJSpline);
 }
