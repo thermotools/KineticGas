@@ -10,7 +10,7 @@ jobs:
             matrix:
                 os: [macOS-latest, macOS-12, ubuntu-latest]
         env:
-          thermopack_dir: thermopack-${{ matrix.os }}
+          THERMOPACK_DIR: thermopack-${{ matrix.os }}
         steps:
             - uses: actions/checkout@v4
             - name: checkout submodules
@@ -19,7 +19,7 @@ jobs:
             # Used to host cibuildwheel
             - uses: actions/setup-python@v4
         
-            - name: Dowload thermopack
+            - name: Download thermopack
               run: |
                 curl -L -o thermopack.zip https://github.com/vegardjervell/thermopack/releases/download/Latest-beta/thermopack-${{ matrix.os }}.zip
                 unzip thermopack.zip
@@ -27,6 +27,7 @@ jobs:
             
             - name: Build KineticGas
               run: |
+                echo "THERMOPACK_DIR (GH_ENV) : ${{ env.THERMOPACK_DIR }} / (ENV) ${THERMOPACK_DIR}"
                 export THERMOPACK_DIR=${PWD}/${{ env.THERMOPACK_DIR }}
                 ls -R ${THERMOPACK_DIR}
                 mkdir build
