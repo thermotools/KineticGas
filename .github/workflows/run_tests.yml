@@ -19,12 +19,15 @@ jobs:
             # Used to host cibuildwheel
             - uses: actions/setup-python@v4
         
-            - name: Download thermopack
+            - name: Install thermopack
               run: |
                 curl -L -o thermopack.zip https://github.com/vegardjervell/thermopack/releases/download/Latest-beta/thermopack-${{ matrix.os }}.zip
                 unzip thermopack.zip
                 export THERMOPACK_DIR=${PWD}/thermopack-${{ matrix.os }}/
-            
+                curl -L -o thermopack_whl.zip https://github.com/vegardjervell/thermopack/releases/download/Latest-beta/wheel-v2-${{ matrix.os }}.zip
+                unzip thermopack_whl.zip
+                pip install wheel-v2-${{ matrix.os }}/*
+                
             - name: Build KineticGas
               run: |
                 echo "THERMOPACK_DIR (GH_ENV) : ${{ env.THERMOPACK_DIR }} / (ENV) ${THERMOPACK_DIR}"
