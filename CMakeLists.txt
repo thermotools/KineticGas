@@ -47,7 +47,7 @@ endif()
 
 find_package(THERMOPACK REQUIRED)
 if(NOT THERMOPACK_INSTALLED)
-message(STATUS "${ColorRed}ThermoPack was found, but is not installed. If you have installed ThermoPack, 
+  message(STATUS "${ColorRed}ThermoPack was found, but is not installed. If you have installed ThermoPack, 
 set the environment variable 'THERMOPACK_DIR=</path/to/thermopack>' to help cmake find your installation.${ColorDefault}")
   message(STATUS "${ColorBlue}Target 'thermopack' created from the files found at ${THERMOPACK_ROOT}.${ColorDefault}")
   message(STATUS "${ColorBlue}Try Running `make install` to build and install thermopack, before re-running `cmake .. && make install` to build KineticGas.${ColorDefault}")

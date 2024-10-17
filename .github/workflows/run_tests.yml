@@ -8,7 +8,9 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                os: [macos-latest, macos-12, ubuntu-latest]
+                os: [macOS-latest, macOS-12, ubuntu-latest]
+        env:
+          thermopack_dir: thermopack-${{ matrix.os }}
         steps:
             - uses: actions/checkout@v4
             - name: checkout submodules
@@ -17,19 +19,16 @@ jobs:
             # Used to host cibuildwheel
             - uses: actions/setup-python@v4
         
-            - uses: fortran-lang/setup-fortran@v1
-              with:
-                compiler: gcc
-                version: 13
+            - name: Dowload thermopack
+              run: |
+                curl -o thermopack.zip https://github.com/vegardjervell/thermopack/releases/download/Latest-beta/thermopack-${{ matrix.os }}.zip
+                unzip thermopack.zip
+                export THERMOPACK_DIR=${PWD}/thermopack-${{ matrix.os }}/
             
             - name: Build KineticGas
               run: |
-                cd cpp/external/thermopack
-                mkdir build
-                cd build
-                cmake ..
-                make -j4 install
-                cd ../../../..
+                export THERMOPACK_DIR=${PWD}/${{ env.THERMOPACK_DIR }}
+                ls -R ${THERMOPACK_DIR}
                 mkdir build
                 cd build
                 cmake ..
