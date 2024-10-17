@@ -44,14 +44,16 @@ class Spherical : public KineticGas {
     virtual dual2 potential(int i, int j, dual2 r) = 0;
 
     virtual double potential(int i, int j, double r){
-        return potential(i, j, static_cast<dual>(r)).val.val;
-    };
+        return potential(i, j, static_cast<dual2>(r)).val.val;
+    }
+
     virtual double potential_derivative_r(int i, int j, double r){
         dual2 rd = r;
         const auto func = [&](dual2 r_){return potential(i, j, r_);};
         auto [u0, ur, urr] = autodiff::derivatives(func, autodiff::wrt(rd), autodiff::at(rd));
         return ur;
     }
+
     virtual double potential_dblderivative_rr(int i, int j, double r){
         dual2 rd = r;
         const auto func = [&](dual2 r_){return potential(i, j, r_);};
