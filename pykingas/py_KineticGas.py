@@ -374,8 +374,7 @@ class py_KineticGas:
         else:
             for j in range(self.ncomps):
                 for k in range(self.ncomps):
-                    b[j, k] = k_delta(j, k) + (4 * np.pi / 3) * particle_density * x[k] * etl[j][k] ** 3 * self.M[j, k] \
-                              * rdf[j][k]
+                    b[j, k] = k_delta(j, k) + (4 * np.pi / 3) * particle_density * x[k] * etl[j][k] ** 3 * self.M[j, k] * rdf[j][k]
 
         DT = np.zeros(self.ncomps)
         for i in range(self.ncomps):
@@ -628,8 +627,6 @@ class py_KineticGas:
             M = sum(self.mole_weights * x) * Avogadro * 1e3
             for i in range(self.ncomps):
                 _, Cpi_id = self.eos.idealenthalpysingle(T, 1 if self._is_singlecomp else i + 1, dhdt=True)
-                # _, Cpi_id = self.eos.idealenthalpysingle(T, 1, dhdt=True)
-                # Mi = self.mole_weights[i] * Avogadro * 1e3  # Mole weight in g / mol
                 Cp += x[i] * Cpi_id
 
             Cp_factor = (Cp - 5 * gas_constant / 2) / M
@@ -654,8 +651,6 @@ class py_KineticGas:
                 tmp += d[i, 1, k] * dth[k]
             lambda_prime += x[i] * K[i] * (a[self.ncomps + i] - tmp)
         lambda_prime *= (5 * Boltzmann / 4)
-
-
 
         lambda_dblprime = 0
         if idealgas is False:  # lambda_dblprime is only nonzero when density corrections are present, and vanishes at infinite dilution
@@ -882,28 +877,19 @@ class py_KineticGas:
         Vm, = self.eos.specific_volume(T, p, x, self.eos.VAPPH)  # Assuming vapour phase
         return self.thermal_diffusion_factor(T, Vm, x, N=N)
 
-    def thermal_conductivity_tp(self, T, p, x, N=None):
+    def thermal_conductivity_tp(self, T, p, x, N=None, contributions='all'):
         """Tp-property
         Compute molar volume using the internal equation of state (`self.eos`), assuming vapour, and pass the call to
         `self.thermal_conductivity`. See `self.thermal_conductivity` for documentation.
         """
         Vm, = self.eos.specific_volume(T, p, x, self.eos.VAPPH)  # Assuming vapour phase
-        return self.thermal_conductivity(T, Vm, x, N=N)
+        return self.thermal_conductivity(T, Vm, x, N=N, contributions=contributions)
 
     def thermal_coductivity_tp(self, T, p, x, N=None):
         """Deprecated
         Slightly embarrasing typo in method name... Keeping alive for a while because some code out there uses this one.
         """
         warnings.warn('This method will be removed! Use thermal_conductivity_tp. (Note the missing "N")', DeprecationWarning)
-        Vm, = self.eos.specific_volume(T, p, x, self.eos.VAPPH)  # Assuming vapour phase
-        return self.thermal_conductivity(T, Vm, x, N=N)
-
-    def thermal_conductivity_tp(self, T, p, x, N=None):
-        """Tp-property
-        Compute molar volume using the internal equation of state (`self.eos`), assuming vapour, and pass the call to
-        `self.thermal_conductivity`. See `self.thermal_conductivity` for documentation.
-        """
-        warnings.warn("Deprecated due to typo in method name... will be removed.", DeprecationWarning)
         Vm, = self.eos.specific_volume(T, p, x, self.eos.VAPPH)  # Assuming vapour phase
         return self.thermal_conductivity(T, Vm, x, N=N)
 
