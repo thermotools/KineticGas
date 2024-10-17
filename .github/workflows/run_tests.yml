@@ -40,7 +40,7 @@ jobs:
               
             - name: Inspect libpykingas
               if: matrix.os != 'ubuntu-latest' && matrix.os != 'windows-latest'
-              run: otool -L ../pykingas/libpykingas.*
+              run: otool -L pykingas/libpykingas.*
             
             - name: Run pytests
               run: |
