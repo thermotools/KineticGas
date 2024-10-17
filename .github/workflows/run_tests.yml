@@ -8,7 +8,7 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                os: [macOS-latest, macOS-12, ubuntu-latest]
+                os: [macOS-latest, macOS-12, ubuntu-latest, windows-latest]
         env:
           THERMOPACK_DIR: thermopack-${{ matrix.os }}
         steps:
@@ -20,6 +20,7 @@ jobs:
             - uses: actions/setup-python@v4
         
             - name: Install thermopack
+              if: matrix.os != 'windows-latest'
               run: |
                 curl -L -o thermopack.zip https://github.com/vegardjervell/thermopack/releases/download/Latest-beta/thermopack-${{ matrix.os }}.zip
                 unzip thermopack.zip
@@ -27,7 +28,19 @@ jobs:
                 curl -L -o thermopack_whl.zip https://github.com/vegardjervell/thermopack/releases/download/Latest-beta/wheel-v2-${{ matrix.os }}.zip
                 unzip thermopack_whl.zip
                 pip install wheel-v2-${{ matrix.os }}/*
-                
+            
+            - name: Install thermopack Windows
+              if: matrix.os == 'windows-latest'
+              shell: pwsh
+              run: |
+                Invoke-WebRequest -Uri "https://github.com/vegardjervell/thermopack/releases/download/Latest-beta/thermopack-${{ matrix.os }}.zip" -OutFile "thermopack.zip"
+                Expand-Archive -Path "thermopack.zip" -DestinationPath "thermopack-${{ matrix.os }}"
+                $THERMOPACK_DIR = "$PWD/${{ env.THERMOPACK_DIR }}"
+                [System.Environment]::SetEnvironmentVariable("THERMOPACK_DIR", $THERMOPACK_DIR)
+                Invoke-WebRequest -Uri "https://github.com/vegardjervell/thermopack/releases/download/Latest-beta/wheel-v2-${{ matrix.os }}.zip" -OutFile "thermopack_whl.zip"
+                Expand-Archive -Path "thermopack_whl.zip" -DestinationPath "wheel-v2-${{ matrix.os }}"
+                pip install "wheel-v2-${{ matrix.os }}/*"
+
             - name: Build KineticGas
               run: |
                 echo "THERMOPACK_DIR (GH_ENV) : ${{ env.THERMOPACK_DIR }} / (ENV) ${THERMOPACK_DIR}"
@@ -37,7 +50,18 @@ jobs:
                 cd build
                 cmake ..
                 make -j4 install
-              
+            
+            - name: Build KineticGas Windows
+              if: matrix.os == 'windows-latest'
+              shell: pwsh
+              run: |
+                pip install .
+                $THERMOPACK_DIR = "$PWD/${{ env.THERMOPACK_DIR }}"
+                mkdir build
+                cd build
+                cmake ..
+                cmake --build . --config=Release --target install
+
             - name: Inspect libpykingas
               if: matrix.os != 'ubuntu-latest' && matrix.os != 'windows-latest'
               run: otool -L pykingas/libpykingas.*
