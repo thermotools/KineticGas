@@ -68,14 +68,13 @@ struct StatePoint{
 };
 
 struct OmegaPoint{
-    int i, j, l, r, T_dK, rho;
-    OmegaPoint(int i, int j, int l, int r, double T) : i{i}, j{j}, l{l}, r{r}, rho{0} {
+    int i, j, l, r, T_dK;
+    double rho;
+    OmegaPoint(int i, int j, int l, int r, double T, double rho) : i{i}, j{j}, l{l}, r{r}, rho{rho} {
          T_dK = (int) ((T * 10.0) + 0.5); // Temperature in dK (10^-1 K)
     };
 
-    OmegaPoint(int i, int j, int l, int r, double T, double rho_) : OmegaPoint(i, j, l, r, T){
-        rho = static_cast<int>(rho_);
-    }
+    OmegaPoint(int i, int j, int l, int r, double T) : OmegaPoint(i, j, l, r, T, 0){}
 
     bool operator<(const OmegaPoint& other) const {
         if (i < other.i) return true;
@@ -115,8 +114,12 @@ class KineticGas{
 
     virtual ~KineticGas(){};
 
-    // The transfer lengths related to momentum (MTL) and energy (ETL)
-    // Inheriting classes must implement model_[mtl/etl]
+    /********************************************** TRANSFER LENGTHS ************************************************/
+    /*   The transfer lengths related to momentum (MTL) and energy (ETL)                                            */
+    /*   Inheriting classes must implement the protected methods model_[mtl/etl]                                    */
+    /*   Note: Some generic model_[mtl/etl] methods are implemented in Spherical, so if you are inherriting         */
+    /*         Spherical, you can use get_mtl and get_etl once the potential is implemented.                        */
+    /****************************************************************************************************************/
     inline vector2d get_mtl(double rho, double T, const vector1d& x){
         set_internals(rho, T, x);
         return model_mtl(rho, T, x);
@@ -126,7 +129,8 @@ class KineticGas{
         return model_etl(rho, T, x);
     }
 
-    // Radial distribution function "at contact". Inheriting classes must implement model_rdf.
+    // Radial distribution function "at contact". 
+    // Inheriting classes must implement the protected method model_rdf.
     inline vector2d get_rdf(double rho, double T, const vector1d& mole_fracs) {
         if (is_idealgas) return vector2d(Ncomps, vector1d(Ncomps, 1.));
         set_internals(rho, T, mole_fracs);
@@ -172,11 +176,31 @@ class KineticGas{
     Eigen::VectorXd compute_dth_vector(const std::vector<std::vector<std::vector<double>>>& d_ijq, const Eigen::VectorXd& l);
 
     std::vector<std::vector<double>> get_conductivity_matrix(double rho, double T, const std::vector<double>& x, int N);
-    std::vector<double> get_diffusion_vector(double rho, double T, const std::vector<double>& x, int N);
-    // double get_Lambda_ijpq(int i, int j, int p, int q, double rho, double T, const std::vector<double>& x);
-    std::vector<std::vector<double>> get_diffusion_matrix(double rho, double T, const std::vector<double>& x, int N);
     std::vector<double> get_conductivity_vector(double rho, double T, const std::vector<double>& x, int N);
+    std::vector<double> get_diffusion_vector(double rho, double T, const std::vector<double>& x, int N);
+    std::vector<std::vector<double>> get_diffusion_matrix(double rho, double T, const std::vector<double>& x, int N);
+
+    /*
+        Viscosity matrix : The left hand side of the equation to solve for the viscous expansion coefficients
+        Sorted as
+            [B_{0, 0}^(0, 0), B_{0, 1}^(0, 0), ... B_{0, c}^(0, 0), B_{0, 0}^(1, 0), ... B_{0, c}^(N, 0)]
+            [B_{1, 0}^(0, 0), B_{1, 1}^(0, 0), ... B_{1, c}^(0, 0), B_{1, 0}^(1, 0), ... B_{1, c}^(N, 0)]
+            [     ...       ,      ...       , ...         ...     ,      ...      , ...       ...      ]
+            [B_{c, 0}^(0, 0), B_{c, 1}^(0, 0), ... B_{c, c}^(0, 0), B_{c, 0}^(1, 0), ... B_{c, c}^(N, 0)]
+            [B_{0, 0}^(0, 1), B_{0, 1}^(0, 1), ... B_{0, c}^(0, 1), B_{0, 0}^(1, 1), ... B_{c, c}^(N, 1)]
+            [     ...       ,      ...       , ...         ...     ,      ...      , ...       ...      ]
+            [B_{c, 0}^(0, N), B_{c, 1}^(0, N), ... B_{c, c}^(0, N), B_{c, 0}^(1, N), ... B_{c, c}^(N, N)]
+        Where subscripts indicate component indices, and superscripts indicate Enskog approximation summation indices, such
+        that element (B[p * Ncomps + i][q * Ncomps + j]) is B_{i, j}^(p, q)
+    */
     std::vector<std::vector<double>> get_viscosity_matrix(double rho, double T, const std::vector<double>&x, int N);
+
+    /*
+        Viscosity vector : The right hand side of the equation to solve for the viscous expansion coefficients
+        Sorted as [b_0^(0), b_1^(0), ... b_Nc^(0), b_0^(1), b_1^(1), ... b_Nc^(N)]
+        where subscripts indicate component indices, and superscripts indicate Enskog approximation order indices,
+        such that element (b[p * Ncomps + i]) is b_i^(p).
+    */
     std::vector<double> get_viscosity_vector(double rho, double T, const std::vector<double>& x, int N);
 
 // ----------------------------------------------------------------------------------------------------------------------------------- //
@@ -231,14 +255,22 @@ protected:
     std::unique_ptr<GenericEoS> eos;
     const std::vector<json> compdata;
 
-    // set_internals is called at the start of all public methods. If a derived class needs to set any internals before running a computation,
+    // set_internals is called at the start of all public methods. 
+    // If a derived class needs to set any internals before running a computation,
     // it should be done by overriding this method.
     inline virtual void set_internals(double rho, double T, const vector1d& x){};
+
+    // Implementations of omega, model_mtl, and model_etl, may wish to use the omega_map, mtl_map and etl_map
+    // To store values for lazy evaluation (massive speedups)
+    // In that case, using these methods to get the state point of the computations ensures that inherriting 
+    // classes can override these if they want to handle state points differently 
+    // For example, if you are using a density-dependent potential, you will want to include the density in the OmegaPoint.
+    // See: Spherical for example.
     virtual OmegaPoint get_omega_point(int i, int j, int l, int r, double T){
         return OmegaPoint(i, j, l, r, T);
     }
     virtual StatePoint get_transfer_length_point(double rho, double T, const vector1d& x){
-        return StatePoint(T, rho);
+        return StatePoint(T);
     }
     
     // Collision integrals
@@ -246,7 +278,7 @@ protected:
 
     /*
        The radial distribution function "at contact" for the given potential model. model_rdf is only called if object
-       is initialized with is_idealgas=true. If a potential model is implemented only for the ideal gas state, its
+       is initialized with is_idealgas=false. If a potential model is implemented only for the ideal gas state, its
        implementation of model_rdf should throw an std::invalid_argument error.
     */
     virtual vector2d model_rdf(double rho, double T, const vector1d& mole_fracs) = 0;
@@ -271,27 +303,16 @@ protected:
         These need to be protected instead of private, because QuantumMie needs to override them to prevent a race condition
         without locking everything with a mutex on every call to omega.
     */
-    virtual void precompute_conductivity(int N, double T, bool precompute_etl=true);
-    virtual void precompute_viscosity(int N, double T);
+    virtual void precompute_conductivity(int N, double T, double rho, bool precompute_etl=true);
+    virtual void precompute_viscosity(int N, double T, double rho);
     virtual void precompute_omega(const std::vector<int>& i_vec, const std::vector<int>& j_vec,
                         const std::vector<int>& l_vec, const std::vector<int>& r_vec, double T);
 
 private:
 
-    #ifdef NOPYTHON
-        Eigen::MatrixXd CoM_to_CoN_matr(double T, double Vm, const std::vector<double>& x);
-        Eigen::MatrixXd CoM_to_solvent_matr(double T, double Vm, const std::vector<double>& x, int solvent_idx);
-        Eigen::MatrixXd CoM_to_CoV_matr(double T, double Vm, const std::vector<double>& x);
-        Eigen::MatrixXd get_zarate_X_matr(const std::vector<double>& x, int dependent_idx);
-        Eigen::MatrixXd get_zarate_W_matr(const std::vector<double>& x, int dependent_idx);
-        
-        std::vector<std::vector<double>> get_chemical_potential_factors(double T, double Vm, const std::vector<double>& x);
-        std::vector<double> get_ksi_factors(double T, double Vm, const std::vector<double>& x);
-    #endif
-
     void set_masses(); // Precompute reduced mass of particle pairs (used only on init.)
-    void precompute_diffusion(int N, double T); // Forwards call to precompute_conductivity_omega. Override that instead.
-    void precompute_th_diffusion(int N, double T); // Forwards call to precompute_conductivity_omega. Override that instead.
+    void precompute_diffusion(int N, double T, double rho); // Forwards call to precompute_conductivity_omega. Override that instead.
+    void precompute_th_diffusion(int N, double T, double rho); // Forwards call to precompute_conductivity_omega. Override that instead.
 
 // ------------------------------------------------------------------------------------------------------------------------ //
 // ---------------------------------------------- Square bracket integrals ------------------------------------------------ //

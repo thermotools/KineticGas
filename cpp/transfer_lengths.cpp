@@ -43,18 +43,94 @@ vector2d Spherical::model_etl(double rho, double T, const vector1d& x){
     return etl;
 }
 
+// vector2d Spherical::get_transfer_length(double rho, double T, const vector1d& x, int property){
+//     switch (transfer_length_model_id) {
+//         case 0:
+//             return get_collision_diameters(rho, T, x);
+//         case 1: {
+//             double g0 = 0.;
+//             double g1 = 3.5;
+//             double gmax = 5.;
+//             if (is_singlecomp){
+//                 double I = get_tl_weight_normalizer(0, 0, T, property);
+//                 const auto integrand = [&](double g){return tl_inner(0, 0, T, g, I, property);};
+//                 const auto wt = [&](double g){return tl_weight_inner(0, 0, T, g, property);};
+//                 std::pair<double, double> I1, I2;
+//                 std::thread t1([&](std::pair<double, double>& I_){I_ = weighted_simpson(integrand, wt, g0, g1, 15);}, std::ref(I1));
+//                 std::thread t2([&](std::pair<double, double>& I_){I_ = weighted_simpson(integrand, wt, g1, g_max, 10);}, std::ref(I2));
+//                 t1.join(); t2.join();
+//                 double F = I1.first + I2.first;
+//                 double W = I1.second + I2.second;
+//                 const double tl = F / W;
+//                 // std::vector<std::thread> threads;
+//                 // constexpr size_t ncores = 8;
+//                 // double dg01 = (g1 - g0) / ncores;
+//                 // double dg11 = (gmax - g1) / ncores;
+//                 // vector1d tl_parts(ncores);
+//                 // for (size_t ci = 0; ci < ncores; ci++){
+//                 //     std::cout << "Started thread " << ci << std::endl;
+//                 //     threads.push_back(std::thread(
+//                 //         [&](double& tl_part){
+//                 //             // double I = get_tl_weight_normalizer(0, 0, T, property);
+//                 //             // const auto integrand = [&](double g){return tl_inner(0, 0, T, g, I, property);};
+//                 //             tl_part = simpson(integrand, g0 + dg01 * ci, g0 + dg01 * (ci + 1), 2) + simpson(integrand, g1 + dg11 * ci, g1 + dg11 * (ci + 1), 2);
+//                 //         }, std::ref(tl_parts[ci])));
+//                 // }
+//                 // int ci = 0;
+//                 // for (auto it = threads.begin(); it != threads.end(); ++it){
+//                 //     it->join();
+//                 //     std::cout << "Joined thread " << ci++ << std::endl;
+//                 // }
+//                 // double tl = 0;
+//                 // for (size_t ci = 0; ci < ncores; ci++){
+//                 //     tl += tl_parts[ci];
+//                 // }
+//                 return vector2d(Ncomps, vector1d(Ncomps, tl));
+//             }
+//             vector2d tl(Ncomps, vector1d(Ncomps, 0.));
+//             std::vector<std::thread> threads;
+//             for (int i = 0; i < Ncomps; i++){
+//                 for (int j = i; j < Ncomps; j++){
+//                     threads.push_back(std::thread(
+//                         [&](double& tl_ij, const int ci, const int cj){
+//                             double I = get_tl_weight_normalizer(ci, cj, T, property);
+//                             const auto integrand = [&](double g){return tl_inner(ci, cj, T, g, I, property);};
+//                             tl_ij = simpson(integrand, g0, g1, 15) + simpson(integrand, g1, gmax, 10);
+//                         }, std::ref(tl[i][j]), i, j));
+//                 }
+//             }
+//             for (auto it = threads.begin(); it != threads.end(); ++it){
+//                 it->join();
+//             }
+//             for (int i = 0; i < Ncomps; i++){
+//                 for (int j = i; j < Ncomps; j++){
+//                     tl[j][i] = tl[i][j];
+//                 }
+//             }
+//             return tl;
+//         }
+//         case 2: {
+//             switch (property){
+//             case transfer_lengths::MTL:
+//                 return MTL_correlation(rho, T);
+//             case transfer_lengths::ETL:
+//                 return ETL_correlation(rho, T);
+//             default:
+//                 throw std::runtime_error("Invalid transfer length type!");
+//             }
+//         }
+//         default:
+//             throw std::runtime_error("Invalid transfer length model!");
+//     }
+// }
+
 vector2d Spherical::get_transfer_length(double rho, double T, const vector1d& x, int property){
     switch (transfer_length_model_id) {
         case 0:
             return get_collision_diameters(rho, T, x);
         case 1: {
-            double g0 = 0.;
-            double g1 = 3.5;
-            double gmax = 5.;
             if (is_singlecomp){
-                double I = get_tl_weight_normalizer(0, 0, T, property);
-                const auto integrand = [&](double g){return tl_inner(0, 0, T, g, I, property);};
-                const double tl = simpson(integrand, g0, g1, 15) + simpson(integrand, g1, gmax, 10);
+                double tl = tl_ewca(0, 0, T, property);
                 return vector2d(Ncomps, vector1d(Ncomps, tl));
             }
             vector2d tl(Ncomps, vector1d(Ncomps, 0.));
@@ -63,9 +139,7 @@ vector2d Spherical::get_transfer_length(double rho, double T, const vector1d& x,
                 for (int j = i; j < Ncomps; j++){
                     threads.push_back(std::thread(
                         [&](double& tl_ij, const int ci, const int cj){
-                            double I = get_tl_weight_normalizer(ci, cj, T, property);
-                            const auto integrand = [&](double g){return tl_inner(ci, cj, T, g, I, property);};
-                            tl_ij = simpson(integrand, g0, g1, 15) + simpson(integrand, g1, gmax, 10);
+                            tl_ij = tl_ewca(ci, cj, T, property);
                         }, std::ref(tl[i][j]), i, j));
                 }
             }
@@ -93,7 +167,6 @@ vector2d Spherical::get_transfer_length(double rho, double T, const vector1d& x,
             throw std::runtime_error("Invalid transfer length model!");
     }
 }
-
 
 /**************************************************************************************************/
 /**********************         TL MODEL 0 : Collision diameter              **********************/
@@ -178,76 +251,67 @@ inline double dimless_relative_vdf(double g){
     return sqrt(2. / PI) * pow(g, 2) * exp(- 0.5 * pow(g, 2));
 }
 
-double Spherical::tl_inner(int i, int j, double T, double g, double I, int property){
-    const double bmax = get_b_max_g(i, j, g, T);
-    const double bmid = get_bmid(i, j, g, T);
-    const double b0 = 0.;
-    const auto integrand = [&](double b){return get_tl_weight(i, j, T, g, b, I, bmax, property) * get_R(i, j, T, g, b * sigma[i][j]);};
-    double val = simpson(integrand, b0, bmid, 15);
-    val += simpson(integrand, bmid, bmax, 20);
-    return val;
+double Spherical::tl_ewca(int i, int j, double T, int property){
+    double g0 = 0.;
+    double g1 = 3.5;
+    double gmax = 5.;
+    const auto integrand = [&](double g) -> std::pair<double, double> {return ewca_inner(i, j, T, g, property);};
+    std::pair<double, double> I1, I2;
+    std::thread t1([&](std::pair<double, double>& I_){I_ = weighted_simpson(integrand, g0, g1, 15);}, std::ref(I1));
+    I2 = weighted_simpson(integrand, g1, gmax, 10);
+    t1.join();
+    double F = I1.first + I2.first;
+    double W = I1.second + I2.second;
+    return F / W;
 }
 
-double Spherical::tl_weight_integrand(int i, int j, double T, double g, double b, double bmax, int property){
+std::pair<double, double> Spherical::ewca_inner(int i, int j, double T, double g, int property){
+    const double bmid = get_bmid(i, j, g, T);
+    const double bmax = get_b_max_g(i, j, g, T, bmid);
+    
+    const double b0 = 0.;
+    const auto func = [&](double b){return get_R(i, j, T, g, b * sigma[i][j]);};
+    const auto wt = [&](double b){return ewca_weight(i, j, T, g, b, property);};
+    std::pair<double, double> I1, I2;
+    I1 = weighted_simpson(func, wt, b0, bmid, 15);
+    I2 = weighted_simpson(func, wt, bmid, bmax, 20);
+    double F = I1.first + I2.first;
+    double W = I1.second + I2.second;
+    return std::pair<double, double>(F, W);
+}
+
+double Spherical::ewca_weight(int i, int j, double T, double g, double b, int property){
     switch (property) {
         case transfer_lengths::MTL:
-            return momentum_transfer(i, j, T, g, b) * dimless_relative_vdf(g) * g * 2 * PI * b;
+            return momentum_transfer(i, j, T, g, b) * dimless_relative_vdf(g) * g * b;
         case transfer_lengths::ETL:
-            return energy_transfer(i, j, T, g, b) * dimless_relative_vdf(g) * g * 2 * PI * b;
+            return energy_transfer(i, j, T, g, b) * dimless_relative_vdf(g) * g * b;
         default:
             throw std::runtime_error("Invalid collision diameter model id!");
     }
-}
-
-double Spherical::get_tl_weight(int i, int j, double T, double g, double b, double I, double bmax, int property){
-    return tl_weight_integrand(i, j, T, g, b, bmax, property) / I;
-}
-
-double Spherical::get_tl_weight_normalizer(int i, int j, double T, int property){
-    double g0 = 0;
-    double g1 = 3.5;
-    double g_max = 5.;
-    const auto integrand = [&](double g){return tl_weight_inner(i, j, T, g, property);};
-    double I = simpson(integrand, g0, g1, 15);
-    I += simpson(integrand, g1, g_max, 10);
-    return I;
-}
-
-double Spherical::tl_weight_inner(int i, int j, double T, double g, int property){
-    double bmax = get_b_max_g(i, j, g, T);
-    double bmid = get_bmid(i, j, g, T);
-    const auto integrand = [&](double b){return tl_weight_integrand(i, j, T, g, b, bmax, property);};
-    double val = simpson(integrand, 0., bmid, 15);
-    val += simpson(integrand, bmid, bmax, 20);
-    return val;
 }
 
 double Spherical::momentum_transfer(int i, int j, double T, double g, double b){
     double chi_val = chi(i, j, T, g, b * sigma[i][j]);
     double red_mass = m[i] * m[j] / (m[i] + m[j]);
     double U = sqrt(2 * BOLTZMANN * T / red_mass) * g;
-    return red_mass * U * sqrt(2 * (1 - cos(chi_val))) * abs(sin(chi_val / 2.));
+    return g * sqrt(2 * (1 - cos(chi_val))) * abs(sin(chi_val / 2.));
 }
 
 double Spherical::energy_transfer(int i, int j, double T, double g, double b){
     double chi_val = chi(i, j, T, g, b * sigma[i][j]);
     double red_mass = m[i] * m[j] / (m[i] + m[j]);
     double U = sqrt(2 * BOLTZMANN * T / red_mass) * g;
-    return red_mass * U * abs(cos(chi_val) - sin(chi_val) - 1);
+    return g * abs(cos(chi_val) - sin(chi_val) - 1);
 }
 
-double Spherical::get_b_max_g(int i, int j, double g, double T){
+double Spherical::get_b_max_g(int i, int j, double g, double T, double bmid){
     double b, db, chi_val;
     if (g == 0) return 10.;
-    b = 5.;
-    db = -0.5;
+    b = 2 * bmid;
+    db = 0.5;
     chi_val = chi(i, j, T, g, b * sigma[i][j]);
-    while (abs(db) > 1e-3){
-        double scale = g * sqrt(2 * (1 - cos(chi_val))) * abs(sin(chi_val / 2.));
-        if (scale > 1e-3){
-            b -= db;
-            db *= 0.5;
-        }
+    while (abs(chi_val + 1e-5) > 1e-3){
         b += db;
         chi_val = chi(i, j, T, g, b * sigma[i][j]);
     }
@@ -256,16 +320,30 @@ double Spherical::get_b_max_g(int i, int j, double g, double T){
 
 double Spherical::get_bmid(int i, int j, double g, double T){
     if (g == 0) return 5.;
-    double b = 0.5;
+    double b = 0.9;
     double db = 0.1;
     double chi_val = chi(i, j, T, g, b * sigma[i][j]);
-    while (abs(db) > 1e-5){
+    double next_chi_val;
+    double dchidb = 10; // Init with placeholder to start loop
+    double step_tol = 1e-6;
+    double chi_tol = 1e-6;
+    while ((abs(chi_val) > chi_tol) && (abs(db) > step_tol)){
         if ((chi_val < 0 && db > 0) || (chi_val > 0 && db < 0)){
-            db *= -0.5;
+            db *= -0.9;
         }
-        b += db;
-        chi_val = chi(i, j, T, g, b * sigma[i][j]);
-        if (b > 10) {
+        next_chi_val = chi(i, j, T, g, (b + db) * sigma[i][j]);
+        while (abs(next_chi_val) >= abs(chi_val)){
+            db *= 0.1;
+            next_chi_val = chi(i, j, T, g, (b + db) * sigma[i][j]);
+            if (abs(db) < step_tol) break;
+        }
+        if (abs(db) > step_tol){
+            b += db;
+            dchidb = (chi_val - next_chi_val) / db;
+            chi_val = next_chi_val;
+            db = - chi_val / dchidb;
+        }
+        if ((b > 10) || (b < 0)) {
             std::cout << "bmid did not converge!" << std::endl;
             throw std::runtime_error("Unable to converge bmid!");
             break;

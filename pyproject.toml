@@ -7,6 +7,9 @@ sdist.include = ["libpykingas*", "fluids"]
 sdist.exclude = ["tests/"]
 wheel.expand-macos-universal-tags = true
 
+[tool.scikit-build.cmake.define]
+RECOMPILE_PYLIB = {env="RECOMPILE_PYLIB", default="OFF"}
+
 [project]
 name = "pykingas"
 version = "2.1b0"

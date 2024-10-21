@@ -137,6 +137,28 @@ PYBIND11_MODULE(libpykingas, handle){
                         double, double, double, double,
                         vector1d>()
              )
+        .def_readwrite("sigma", &TangToennisParam::sigma)
+        .def_readwrite("eps_div_k", &TangToennisParam::eps_div_k)
+        .def_readwrite("Re", &TangToennisParam::Re)
+        .def("__repr__",
+        [](const TangToennisParam &t) {
+            std::stringstream strm;
+            strm << "TangToennisParam\n"
+                 << "\tA       : " << t.A << "\n"
+                 << "\tb       : " << t.b << "\n"
+                 << "\tA_tilde : " << t.A_tilde << "\n"
+                 << "\ta_tilde : " << t.a_tilde << "\n"
+                 << "\ta       : [ " << t.am2 << ", " << t.am1 << ", " << t.a1 << ", " << t.a2 << " ]\n"
+                 << "\tC       : [ ";
+            for (size_t i = 0; i < 5; i++){
+                strm << t.C[i] << ", ";
+            }
+            strm << t.C[5] << " ]\n\t-----\n"
+                 << "\tsigma   : " << t.sigma << "\n"
+                 << "\teps_div_k : " << t.eps_div_k << "\n"
+                 << "\tRe      : " << t.Re << std::endl;
+            return strm.str();
+        })
         ;
 
     py::class_<ModTangToennis>(handle, "cpp_ModTangToennis")
