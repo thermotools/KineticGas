@@ -135,26 +135,29 @@ class KineticGas{
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------- //
 // --------------------------------------------- Interfaces to compute transport coefficients --------------------------------------------------- //
-// ------------------------ NOTE: Only compiled if compilation flag -DNOPYTHON is used ---------------------------------------- //
+// ---------------------------------------------------------------------------------------------------------------------------------------------- // 
 
     Eigen::MatrixXd interdiffusion(double T, double Vm, const std::vector<double>& x, int N=2, int frame_of_reference=FrameOfReference::CoN, int dependent_idx=-1, int solvent_idx=-1, bool do_compress=true);
     double thermal_conductivity(double T, double Vm, const std::vector<double>& x, int N=2);
+    double thermal_diffusivity(double T, double Vm, const vector1d& x, int N=2);
     double viscosity(double T, double Vm, const std::vector<double>& x, int N=2);
+    double kinematic_viscosity(double T, double Vm, const vector1d& x, int N=2);
     Eigen::VectorXd thermal_diffusion_coeff(double T, double Vm, const std::vector<double>& x, int N=2, int frame_of_reference=FrameOfReference::CoN, int dependent_idx=-1, int solvent_idx=-1);
     Eigen::VectorXd thermal_diffusion_ratio(double T, double Vm, const std::vector<double>& x, int N=2);
     Eigen::MatrixXd thermal_diffusion_factor(double T, double Vm, const std::vector<double>& x, int N=2);
     Eigen::MatrixXd interdiffusion_dependent_CoM(double T, double Vm, const std::vector<double>& x, int N=2);
 
-    inline Eigen::MatrixXd interdiffusion_tp(double T, double p, const vector1d& x, int N=2, int frame_of_reference=FrameOfReference::CoN, int dependent_idx=-1, int solvent_idx=-1, bool do_compress=true){
-        return interdiffusion(T, eos->specific_volume(T, p, sanitize_mole_fracs_eos(x), eos->VAPPH), x, N, frame_of_reference, dependent_idx, solvent_idx, do_compress);
-    }
+    // ------------------------------------------------------------------------------------------------------------------- //
+    // ----------- TP-interface methods: These just compute molar volume and feed the call to the methods above ---------- //
+
+    inline Eigen::MatrixXd interdiffusion_tp(double T, double p, const vector1d& x, int N=2, int frame_of_reference=FrameOfReference::CoN, int dependent_idx=-1, int solvent_idx=-1, bool do_compress=true){return interdiffusion(T, eos->specific_volume(T, p, sanitize_mole_fracs_eos(x), eos->VAPPH), x, N, frame_of_reference, dependent_idx, solvent_idx, do_compress);}
     inline double thermal_conductivity_tp(double T, double p, const std::vector<double>& x, int N=2){return thermal_conductivity(T, eos->specific_volume(T, p, sanitize_mole_fracs_eos(x), eos->VAPPH), x, N);}
+    inline double thermal_diffusivity_tp(double T, double p, const vector1d& x, int N=2){return thermal_diffusivity(T, eos->specific_volume(T, p, sanitize_mole_fracs_eos(x), eos->VAPPH), x, N);}
     inline double viscosity_tp(double T, double p, const std::vector<double>& x, int N=2){return viscosity(T, eos->specific_volume(T, p, sanitize_mole_fracs_eos(x), eos->VAPPH), x, N);}
-    Eigen::VectorXd thermal_diffusion_coeff_tp(double T, double p, const std::vector<double>& x, int N=2, int frame_of_reference=FrameOfReference::CoN, int dependent_idx=-1, int solvent_idx=-1){
-        return thermal_diffusion_coeff(T, eos->specific_volume(T, p, sanitize_mole_fracs_eos(x), eos->VAPPH), x, N, frame_of_reference, dependent_idx, solvent_idx);
-    }
-    Eigen::VectorXd thermal_diffusion_ratio_tp(double T, double p, const std::vector<double>& x, int N=2){return thermal_diffusion_ratio(T, eos->specific_volume(T, p, sanitize_mole_fracs_eos(x), eos->VAPPH), x, N);}
-    Eigen::MatrixXd thermal_diffusion_factor_tp(double T, double p, const std::vector<double>& x, int N=2){return thermal_diffusion_factor(T, eos->specific_volume(T, p, sanitize_mole_fracs_eos(x), eos->VAPPH), x, N);}
+    inline double kinematic_viscosity_tp(double T, double p, const vector1d& x, int N=2){return kinematic_viscosity(T, eos->specific_volume(T, p, sanitize_mole_fracs_eos(x), eos->VAPPH), x, N);}
+    inline Eigen::VectorXd thermal_diffusion_coeff_tp(double T, double p, const std::vector<double>& x, int N=2, int frame_of_reference=FrameOfReference::CoN, int dependent_idx=-1, int solvent_idx=-1){return thermal_diffusion_coeff(T, eos->specific_volume(T, p, sanitize_mole_fracs_eos(x), eos->VAPPH), x, N, frame_of_reference, dependent_idx, solvent_idx);}
+    inline Eigen::VectorXd thermal_diffusion_ratio_tp(double T, double p, const std::vector<double>& x, int N=2){return thermal_diffusion_ratio(T, eos->specific_volume(T, p, sanitize_mole_fracs_eos(x), eos->VAPPH), x, N);}
+    inline Eigen::MatrixXd thermal_diffusion_factor_tp(double T, double p, const std::vector<double>& x, int N=2){return thermal_diffusion_factor(T, eos->specific_volume(T, p, sanitize_mole_fracs_eos(x), eos->VAPPH), x, N);}
 
 // ------------------------------------------------------------------------------------------------------------------------------------- //
 // ----------------- Matrices and vectors for the sets of equations (6-10) in Revised Enskog Theory for Mie fluids  -------------------- //

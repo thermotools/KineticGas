@@ -8,6 +8,13 @@ set(ColorYellow "${Esc}[93m")
 set(ColorRed "${Esc}[31m")
 set(ColorDefault "${Esc}[0m")
 
+option(build "Recompile KineticGas?" ON) # If set to off, assumes that KineticGas is installed and does nothing. Useful in combination with pip
+if(NOT build)
+  message(STATUS "Assuming KineticGas is already built and installed. Exiting ...")
+  message(STATUS "${ColorBlue}To disable this behaviour, clear the CMakeCache and re-run cmake.${ColorDefault}")
+  return()
+endif()
+
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "No build type specified, defaulting to Release")
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)

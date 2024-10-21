@@ -574,6 +574,8 @@ class py_KineticGas:
                                         method description and (doi 10.1140/epje/i2019-11803-2). Defaults to `True`.
             dependent_idx (int) : Only applicable when `use_zarate=True` (default behaviour). The index of the dependent
                                     species. Defaults to the last species.
+        Returns:
+            (ndarray) : Soret coefficient matrix (K$^{-1}$)
         """
         if N is None:
             N = self.default_N
@@ -611,7 +613,7 @@ class py_KineticGas:
                                             contributions in the same order as indicated in the supplied flag.
 
         Returns:
-            (float) : The thermal conductivity of the mixture.
+            (float) : The thermal conductivity of the mixture [W / m K].
         """
         if N is None:
             N = self.default_N
@@ -671,6 +673,24 @@ class py_KineticGas:
         else:
             return contribs[contributions]
 
+    def thermal_diffusivity(self, T, Vm, x, N=None):
+        """TV-property
+        Compute the thermal diffusivity
+        &&
+        Args:
+            T (float) : Temperature [K]
+            Vm (float) : Molar volume [m3 / mol]
+            x (array_like) : Molar composition [-]
+            N (int, optional) : Enskog approximation order
+
+        Returns:
+            (float) : Thermal diffusivity of the mixture [m2 / s].
+        """
+        if N is None:
+            N = self.default_N
+        x = self.check_valid_composition(x)
+        return self.cpp_kingas.thermal_diffusivity(T, Vm, x, N)
+
     def viscosity(self, T, Vm, x, N=None, idealgas=None):
         r"""TV-Property
         Compute the shear viscosity, $\eta$. For models initialized with `is_idealgas=True`, the shear viscosity
@@ -684,7 +704,7 @@ class py_KineticGas:
             idealgas (bool, optional) : Use infinite dilution value? Defaults to model default value (set on init)
 
         Returns:
-            (float) : The shear viscosity of the mixture.
+            (float) : The shear viscosity of the mixture [Pa s].
         """
         if N is None:
             N = self.default_N
@@ -710,6 +730,24 @@ class py_KineticGas:
             eta_dblprime *= 4 * particle_density**2 * np.sqrt(2 * np.pi * Boltzmann * T) / 15
 
         return eta_prime + eta_dblprime
+
+    def kinematic_viscosity(self, T, Vm, x, N=None):
+        """TV-property
+        Compute the kinematic viscosity
+        &&
+        Args:
+            T (float) : Temperature [K]
+            Vm (float) : Molar volume [m3 / mol]
+            x (array_like) : Molar composition [-]
+            N (int, optional) : Enskog approximation order
+
+        Returns:
+            (float) : The kinematic viscosity of the mixture [m2 / s]
+        """
+        if N is None:
+            N = self.default_N
+        x = self.check_valid_composition(x)
+        return self.cpp_kingas.kinematic_viscosity(T, Vm, x, N)
 
     def bulk_viscosity(self, T, Vm, x, N=None):
         """TV-property
@@ -885,6 +923,14 @@ class py_KineticGas:
         Vm, = self.eos.specific_volume(T, p, x, self.eos.VAPPH)  # Assuming vapour phase
         return self.thermal_conductivity(T, Vm, x, N=N, contributions=contributions)
 
+    def thermal_diffusivity_tp(self, T, p, x, N=None):
+        """Tp-property
+        Compute molar volume using the internal equation of state (`self.eos`), assuming vapour, and pass the call to
+        `self.thermal_diffusivity`. See `self.thermal_diffusivity` for documentation.
+        """
+        Vm, = self.eos.specific_volume(T, p, x, self.eos.VAPPH)  # Assuming vapour phase
+        return self.thermal_diffusivity(T, Vm, x, N=N)
+
     def thermal_coductivity_tp(self, T, p, x, N=None):
         """Deprecated
         Slightly embarrasing typo in method name... Keeping alive for a while because some code out there uses this one.
@@ -900,6 +946,13 @@ class py_KineticGas:
         """
         Vm, = self.eos.specific_volume(T, p, x, self.eos.VAPPH)  # Assuming vapour phase
         return self.viscosity(T, Vm, x, N=N)
+    
+    def kinematic_viscosity_tp(self, T, Vm, x, N=None):
+        """Tp-property
+        Compute molar volume using the internal equation of state (`self.eos`), assuming vapour, and pass the call to
+        `self.kinematic_viscosity`. See `self.kinematic_viscosity` for documentation.
+        """
+        return self.cpp_kingas.kinematic_viscosity_tp(T, Vm, x, N)
 
     #####################################################
     #        Frame of Reference Transformations         #

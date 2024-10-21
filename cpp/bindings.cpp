@@ -14,6 +14,15 @@ using vector1d = std::vector<double>;
 using vector2d = std::vector<vector1d>;
 
 #define KineticGas_bindings(Model) \
+        .def("viscosity", &Model::viscosity) \
+        .def("viscosity_tp", &Model::viscosity_tp) \
+        .def("kinematic_viscosity", &Model::kinematic_viscosity) \
+        .def("kinematic_viscosity_tp", &Model::kinematic_viscosity_tp) \
+        .def("thermal_conductivity", &Model::thermal_conductivity) \
+        .def("thermal_conductivity_tp", &Model::thermal_conductivity_tp) \
+        .def("thermal_diffusivity", &Model::thermal_diffusivity) \
+        .def("thermal_diffusivity_tp", &Model::thermal_diffusivity_tp) \
+        \
         .def("get_conductivity_vector", &Model::get_conductivity_vector) \
         .def("get_diffusion_vector", &Model::get_diffusion_vector) \
         .def("get_diffusion_matrix", &Model::get_diffusion_matrix) \
@@ -27,8 +36,7 @@ using vector2d = std::vector<vector1d>;
         .def("get_K_prime_factors", &Model::get_K_prime_factors) \
         .def("set_eos", py::overload_cast<py::object>(&Model::set_eos)) \
         \
-        .def("thermal_conductivity", &Model::thermal_conductivity) \
-        .def("thermal_conductivity_tp", &Model::thermal_conductivity_tp) \
+        
 
 
 #define Spherical_potential_bindings(Model) \

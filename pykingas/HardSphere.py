@@ -5,7 +5,7 @@ Purpose: Wrapper for the HardSphere class.
 
 import numpy as np
 from numpy import pi
-from scipy.constants import Avogadro, Boltzmann as kB
+from scipy.constants import Avogadro, Boltzmann as kB, gas_constant
 from scipy.optimize import root
 from .libpykingas import cpp_HardSphere
 from pykingas.py_KineticGas import py_KineticGas

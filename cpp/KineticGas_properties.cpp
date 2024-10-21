@@ -57,6 +57,15 @@ double KineticGas::viscosity(double T, double Vm, const std::vector<double>& x, 
 
 }
 
+double KineticGas::kinematic_viscosity(double T, double Vm, const vector1d& x, int N){
+    double visc = viscosity(T, Vm, x, N);
+    double rho_m = 0;
+    for (size_t i = 0; i < Ncomps; i++){
+        rho_m += x[i] * m[i] * AVOGADRO / Vm;
+    }
+    return visc / rho_m;
+}
+
 double KineticGas::thermal_conductivity(double T, double Vm, const vector1d& x, int N){
     #ifdef DEBUG
         if (!eos.get()) throw std::runtime_error("EoS is not set (in get_chemical_potential_factors)");
@@ -115,6 +124,12 @@ double KineticGas::thermal_conductivity(double T, double Vm, const vector1d& x, 
 
     const double cond = lambda_prime + lambda_dblprime + lamba_internal;
     return cond;
+}
+
+double KineticGas::thermal_diffusivity(double T, double Vm, const vector1d& x, int N){
+    double tcond = thermal_conductivity(T, Vm, x, N);
+    double Cp = eos->Cp_real(T, Vm, x);
+    return tcond * Vm / Cp;
 }
 
 Eigen::MatrixXd compress_diffusion_matrix(const Eigen::MatrixXd& D_in, int dependent_idx){

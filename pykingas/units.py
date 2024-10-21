@@ -32,4 +32,6 @@ class Units:
         self.D = L_unit ** 2 / self._time_unit
         self.p = self.E / self.V
         self.visc = self.p * self._time_unit
+        self.kvisc = self.L**2 / self._time_unit
+        self.tdiff = self.kvisc
         self.tcond = self.E / (self._time_unit * self.T * self.L)
