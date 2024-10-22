@@ -24,7 +24,7 @@ def k_delta(i, j): # Kronecker delta
     return 0
 
 def compress_diffusion_matr(M, dependent_idx):
-    """Utility
+    """Internal
     Remove the dependent row and column from a diffusion matrix, returning an (N - 1 x N - 1) matrix.
     &&
     Args:
@@ -110,7 +110,7 @@ class py_KineticGas:
     def get_tl_model(self):
         """Utility
         Get the currently active transfer length model
-        See docstring in KineticGas.h for valid models
+        Use `get_valid_tl_models` for an overview of valid models.
         &&
         Returns:
             (tuple[int, str]) : The index (id) of the current model, and a description  
@@ -120,7 +120,7 @@ class py_KineticGas:
     def set_tl_model(self, model):
         """Utility
         Set the transfer length model
-        See docstring in KineticGas.h for valid models
+        Use `get_valid_tl_models` for an overview of valid models.
         &&
         Args:
             model (int) : The model id
@@ -129,9 +129,17 @@ class py_KineticGas:
             RuntimeError : If the model id is invalid.
         """
         self.cpp_kingas.set_tl_model(model)
+    
+    def get_valid_tl_models(self):
+        """Utility
+        Get valid transfer length model identifiers
+        &&
+        Returns:
+            (dict) : Keys are the model identifiers (used with `set_tl_model`), values are model descriptions.
+        """
 
     def check_valid_composition(self, x):
-        """Utility
+        """Internal
         Check that enough mole fractions are supplied for the initialised model. Also check that they sum to unity.
         for single-component mixtures, returns [0.5, 0.5], such that [1] can be supplied, even though single-component
         fluids are treated as binaries internally.
@@ -155,7 +163,7 @@ class py_KineticGas:
         return np.array(x)
 
     def get_Eij(self, Vm, T, x):
-        r"""Utility
+        r"""Internal
         Compute the factors
 
         $$ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k \neq j}}, $$
@@ -194,7 +202,7 @@ class py_KineticGas:
         return Eij
 
     def get_P_factors(self, Vm, T, x):
-        r"""Utility
+        r"""Internal
         Compute the factors $\Xi_i = \sum_j E_{ij}$, where $E_{ij}$ are the factors computed by `get_Eij`.
         &&
         Args:
@@ -1264,7 +1272,7 @@ class py_KineticGas:
     #####################################################
 
     def compute_diffusion_coeff_vector(self, particle_density, T, mole_fracs, N=None):
-        r"""Utility
+        r"""Internal
         Compute the diffusive response function Sonine polynomial expansion coefficients by solving the set of equations
 
         $$D d = \delta$$
@@ -1302,7 +1310,7 @@ class py_KineticGas:
         return d
 
     def reshape_diffusion_coeff_vector(self, d):
-        r"""Utility
+        r"""Internal
         The vector returned by `compute_diffusion_coeff_vector` contains the diffusive response function sonine
         polynomial expansion coefficients (eg. $d_{i, j}^{(q)}$ ).
         To more easily access the correct coefficients, this method reshapes the vector to a matrix indiced
@@ -1324,7 +1332,7 @@ class py_KineticGas:
         return matr
     
     def compute_dth_vector(self, particle_density, T, mole_fracs, N=None):
-        r"""Utility
+        r"""Internal
         Compute the coefficients $d_i^{(J = 0)}$, by solving the set of equations
 
         $$\sum_j d_{i,j}^{(0)} d_j^{\vec{J} = 0} = \ell_i^{(0)}$$,
@@ -1363,7 +1371,7 @@ class py_KineticGas:
         return dth
 
     def compute_cond_vector(self, particle_density, T, mole_fracs, N=None):
-        r"""Utility
+        r"""Internal
         Compute the thermal response function Sonine polynomial expansion coefficients by solving the set of equations
 
         $$\Lambda \ell = \lambda$$
@@ -1409,7 +1417,7 @@ class py_KineticGas:
         return np.array(a)
     
     def compute_visc_vector(self, T, particle_density, mole_fracs, N=None):
-        r"""Utility
+        r"""Internal
         Compute the viscous response function Sonine polynomial expansion coefficients by solving the set of equations
 
         $$\Beta b = \beta$$

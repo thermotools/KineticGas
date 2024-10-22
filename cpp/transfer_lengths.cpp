@@ -126,9 +126,9 @@ vector2d Spherical::model_etl(double rho, double T, const vector1d& x){
 
 vector2d Spherical::get_transfer_length(double rho, double T, const vector1d& x, int property){
     switch (transfer_length_model_id) {
-        case 0:
+        case TransferLengthModel::collision_diameter:
             return get_collision_diameters(rho, T, x);
-        case 1: {
+        case TransferLengthModel::EWCA: {
             if (is_singlecomp){
                 double tl = tl_ewca(0, 0, T, property);
                 return vector2d(Ncomps, vector1d(Ncomps, tl));
@@ -153,7 +153,7 @@ vector2d Spherical::get_transfer_length(double rho, double T, const vector1d& x,
             }
             return tl;
         }
-        case 2: {
+        case TransferLengthModel::correlation: {
             switch (property){
             case transfer_lengths::MTL:
                 return MTL_correlation(rho, T);

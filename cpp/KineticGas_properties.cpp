@@ -128,7 +128,7 @@ double KineticGas::thermal_conductivity(double T, double Vm, const vector1d& x, 
 
 double KineticGas::thermal_diffusivity(double T, double Vm, const vector1d& x, int N){
     double tcond = thermal_conductivity(T, Vm, x, N);
-    double Cp = eos->Cp_real(T, Vm, x);
+    double Cp = eos->Cp_real(T, Vm, sanitize_mole_fracs_eos(x));
     return tcond * Vm / Cp;
 }
 

@@ -105,6 +105,58 @@ vector1d KineticGas::sanitize_mole_fracs_eos(const vector1d& x){
     return x;
 }
 
+void KineticGas::set_transfer_length_model(int model_id){
+    int input_model_id = model_id;
+    bool model_is_valid = false;
+    for (int id = TransferLengthModel::DEFAULT; id != TransferLengthModel::INVALID; id++){
+        if (model_id == id) {
+            model_is_valid = true; break;
+        }
+    }
+
+    if ((model_id == TransferLengthModel::DEFAULT) || (!model_is_valid)) model_id = default_tl_model_id;
+    if (model_id != transfer_length_model_id){
+        mtl_map.clear(); etl_map.clear();
+    }
+    transfer_length_model_id = model_id;
+
+    if (!model_is_valid){
+        std::string errmsg = "Invalid model id (" + std::to_string(input_model_id) 
+                            + "), falling back to default model (" + std::to_string(default_tl_model_id) 
+                            + ") in case this error is caught.\n";
+        throw std::runtime_error(errmsg);
+    }
+}
+
+std::pair<int, std::string> KineticGas::get_transfer_length_model(){
+    std::pair<int, std::string> model_id_descr;
+    std::map<int, std::string> model_id_descr_map = get_valid_transfer_length_models();
+    model_id_descr.first = transfer_length_model_id;
+    model_id_descr.second = model_id_descr_map[model_id_descr.first];
+    if (transfer_length_model_id == default_tl_model_id) model_id_descr.second.append(" (default)");
+    return model_id_descr;
+}
+
+std::map<int, std::string> KineticGas::get_valid_transfer_length_models(){
+    std::map<int, std::string> model_id_descr;
+    int model_id = TransferLengthModel::DEFAULT;
+    for (; model_id != TransferLengthModel::INVALID; model_id++){
+        switch (transfer_length_model_id){
+        case TransferLengthModel::DEFAULT:
+            model_id_descr[model_id] = "Default"; break;
+        case TransferLengthModel::collision_diameter:
+            model_id_descr[model_id] = "Collision diameter"; break;
+        case TransferLengthModel::EWCA:
+            model_id_descr[model_id] = "Exchange weighted closest approach (EWCA)"; break;
+        case TransferLengthModel::correlation:
+            model_id_descr[model_id] = "Correlation"; break;
+        default:
+            model_id_descr[model_id] = "Invalid"; break;
+        }
+    }
+    return model_id_descr;
+}
+
 // --------------------------------------------------------------------------------------------------- //
 //             K-factors, neccesary for computations above infinite dilution                           //
 // --------------------------------------------------------------------------------------------------- //

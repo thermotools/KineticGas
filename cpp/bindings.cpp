@@ -22,6 +22,14 @@ using vector2d = std::vector<vector1d>;
         .def("thermal_conductivity_tp", &Model::thermal_conductivity_tp) \
         .def("thermal_diffusivity", &Model::thermal_diffusivity) \
         .def("thermal_diffusivity_tp", &Model::thermal_diffusivity_tp) \
+        .def("get_mtl", &Model::get_mtl) \
+        .def("get_etl", &Model::get_etl) \
+        .def("get_rdf", &Model::get_rdf) \
+        .def("set_eos", py::overload_cast<py::object>(&Model::set_eos)) \
+        \
+        .def("set_tl_model", &Model::set_transfer_length_model) \
+        .def("get_tl_model", &Model::get_transfer_length_model) \
+        .def("get_valid_tl_models", &Model::get_valid_transfer_length_models) \
         \
         .def("get_conductivity_vector", &Model::get_conductivity_vector) \
         .def("get_diffusion_vector", &Model::get_diffusion_vector) \
@@ -29,25 +37,14 @@ using vector2d = std::vector<vector1d>;
         .def("get_conductivity_matrix", &Model::get_conductivity_matrix) \
         .def("get_viscosity_matrix", &Model::get_viscosity_matrix)\
         .def("get_viscosity_vector", &Model::get_viscosity_vector)\
-        .def("get_mtl", &Model::get_mtl) \
-        .def("get_etl", &Model::get_etl) \
-        .def("get_rdf", &Model::get_rdf) \
         .def("get_K_factors", &Model::get_K_factors) \
         .def("get_K_prime_factors", &Model::get_K_prime_factors) \
-        .def("set_eos", py::overload_cast<py::object>(&Model::set_eos)) \
         \
         
-
-
 #define Spherical_potential_bindings(Model) \
         .def("potential", py::overload_cast<int, int, double>(&Model::potential)) \
         .def("potential_derivative_r", &Model::potential_derivative_r) \
         .def("potential_dblderivative_rr", &Model::potential_dblderivative_rr) \
-
-#define Spherical_bindings(Model) \
-       .def("set_tl_model", &Model::set_transfer_length_model) \
-       .def("get_tl_model", &Model::get_transfer_length_model)
-
 
 PYBIND11_MODULE(libpykingas, handle){
     handle.doc() = "Is this documentation? This is documentation.";
@@ -90,7 +87,6 @@ PYBIND11_MODULE(libpykingas, handle){
         .def(py::init<std::string, bool>())
         KineticGas_bindings(MieKinGas)
         Spherical_potential_bindings(MieKinGas)
-        Spherical_bindings(MieKinGas)
         .def("get_BH_diameters", &MieKinGas::get_BH_diameters)
         .def("get_vdw_alpha", &MieKinGas::get_vdw_alpha)
         .def("saft_rdf", &MieKinGas::saft_rdf)
@@ -194,5 +190,5 @@ PYBIND11_MODULE(libpykingas, handle){
                     >()
             )
         KineticGas_bindings(PseudoHardSphere)
-        Spherical_bindings(PseudoHardSphere);
+        ;
 }
