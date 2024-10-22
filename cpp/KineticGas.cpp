@@ -141,7 +141,7 @@ std::map<int, std::string> KineticGas::get_valid_transfer_length_models(){
     std::map<int, std::string> model_id_descr;
     int model_id = TransferLengthModel::DEFAULT;
     for (; model_id != TransferLengthModel::INVALID; model_id++){
-        switch (transfer_length_model_id){
+        switch (model_id){
         case TransferLengthModel::DEFAULT:
             model_id_descr[model_id] = "Default"; break;
         case TransferLengthModel::collision_diameter:
@@ -154,6 +154,7 @@ std::map<int, std::string> KineticGas::get_valid_transfer_length_models(){
             model_id_descr[model_id] = "Invalid"; break;
         }
     }
+    model_id_descr[default_tl_model_id].append(" (default)");
     return model_id_descr;
 }
 
