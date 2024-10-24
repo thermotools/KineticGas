@@ -133,7 +133,6 @@ std::pair<int, std::string> KineticGas::get_transfer_length_model(){
     std::map<int, std::string> model_id_descr_map = get_valid_transfer_length_models();
     model_id_descr.first = transfer_length_model_id;
     model_id_descr.second = model_id_descr_map[model_id_descr.first];
-    if (transfer_length_model_id == default_tl_model_id) model_id_descr.second.append(" (default)");
     return model_id_descr;
 }
 
