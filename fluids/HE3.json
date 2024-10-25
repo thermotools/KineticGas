@@ -1,16 +1,15 @@
 {
-    "ident": "HE",
+    "ident": "HE3",
     "formula": "HE",
-    "cas_number": "7440-59-7",
-    "name": "HELIUM-4",
+    "cas_number": "14762-55-1",
+    "name": "HELIUM-3",
     "aliases": [
-        "Helium",
-        "HE4",
-        "R704"
+        "Helium3",
+        "HE3"
     ],
-    "mol_weight": 4.003,
+    "mol_weight": 3.003,
     "default_fh_order": 0,
-    "spin" : 0,
+    "spin" : 0.5,
     "Mie": {
         "Herdes": {
             "sigma": 3.353e-10,

@@ -10,6 +10,7 @@
     ],
     "mol_weight": 2.01594,
     "default_fh_order": 0,
+    "spin" : 1,
     "Mie": {
         "default": {
             "sigma": 3.2571e-10,
