@@ -71,6 +71,9 @@ class HardSphereEoS:
             return 0.,
         return 0., 5 * 8.314 / 2
 
+    def enthalpy_tvp(self, T, V, n, dhdt=None):
+        raise NotImplementedError("This is just a dummy implementation...")
+
 def HS_pressure(rho, T, x, sigma, chi):
     p = rho * kB * T
     for i in range(len(x)):

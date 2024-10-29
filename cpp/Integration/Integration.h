@@ -176,3 +176,4 @@ std::pair<double, double> weighted_simpson(std::function<std::pair<double, doubl
 */
 double tanh_sinh(std::function<double(double)> func, double dh, double tol=1e-5);
 
+double newton(const std::function<double(double)>& fun, const std::function<double(double)>& df, double x0, double tol=1e-10);

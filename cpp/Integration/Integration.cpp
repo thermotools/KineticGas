@@ -380,3 +380,12 @@ double tanh_sinh(std::function<double(double)> func, double h, double tol){
     }
     return I;
 }
+
+double newton(const std::function<double(double)>& fun, const std::function<double(double)>& df, double x0, double tol){
+    double f_val;
+    do {
+        f_val = fun(x0);
+        x0 -= f_val / df(x0);
+    } while (abs(f_val) > tol);
+    return x0;
+}

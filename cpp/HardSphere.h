@@ -18,6 +18,17 @@ class HardSphere : public KineticGas {
         : KineticGas(mole_weights, is_idealgas, is_singlecomp), sigma{sigmaij}{
     }
     
+    double cross_section(int i, int j, int l){
+        double prefactor;
+        if (l % 2 == 0){
+            prefactor = 1 - 2. / (l + 1);
+        }
+        else {
+            prefactor = 1;
+        }
+        return prefactor * PI * pow(sigma[i][j], 2);
+    }
+
     double omega(int i, int j, int l, int r, double T) override {
         double w = w_integral(i, j, T, l, r); 
         if (i == j) return pow(sigma.at(i).at(j), 2) * sqrt((PI * BOLTZMANN * T) / m.at(i)) * w;

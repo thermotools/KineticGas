@@ -4,6 +4,7 @@
 #include "HardSphere.h"
 #include "PseudoHardSphere.h"
 #include "ModTangToennis.h"
+#include "Quantum.h"
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 #include "pybind11/operators.h"
@@ -180,8 +181,18 @@ PYBIND11_MODULE(libpykingas, handle){
         KineticGas_bindings(HardSphere)
         .def("chi", &HardSphere::chi)
         .def("omega", &HardSphere::omega)
-        .def("w_integral", &HardSphere::w_integral);
+        .def("w_integral", &HardSphere::w_integral)
+        .def("cross_section", &HardSphere::cross_section)
+        ;
     
+    py::class_<Quantum>(handle, "cpp_Quantum")
+        .def(py::init<std::string>())
+        KineticGas_bindings(Quantum)
+        .def("cross_section", &Quantum::cross_section)
+        .def("wave_function", &Quantum::wave_function)
+        .def("phase_shift", &Quantum::phase_shift)
+        ;
+
     py::class_<PseudoHardSphere>(handle, "cpp_PseudoHardSphere")
         .def(py::init<
                         vector1d,
