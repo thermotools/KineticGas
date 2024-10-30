@@ -23,21 +23,25 @@
 // -------------------------------Constructor and helper functions------------------------------------ //
 
 void KineticGas::set_masses(){
-    m0 = std::vector<std::vector<double>>(Ncomps, std::vector<double>(Ncomps));
-    M = std::vector<std::vector<double>>(Ncomps, std::vector<double>(Ncomps));
+    m0 = vector2d(Ncomps, vector1d(Ncomps));
+    M = vector2d(Ncomps, vector1d(Ncomps));
+    red_mass = vector2d(Ncomps, vector1d(Ncomps));
     for (int i = 0; i < Ncomps; i++){
         for (int j = 0; j < Ncomps; j++){
             M[i][j] = (m[i] / (m[i] + m[j]));
             m0[i][j] = (m[i] + m[j]);
+            red_mass[i][j] = M[i][j] * m[j];
         }
     }
 }
 
-KineticGas::KineticGas(const std::vector<double> mole_weights, bool is_idealgas, bool is_singlecomp) 
+KineticGas::KineticGas(vector1d mole_weights, vector2d sigma, vector2d eps, bool is_idealgas, bool is_singlecomp) 
   : Ncomps{static_cast<unsigned long>(mole_weights.size())},
     is_idealgas{is_idealgas},
     is_singlecomp{is_singlecomp},
-    m{mole_weights}
+    m{mole_weights},
+    sigma{sigma},
+    eps{eps}
     {set_masses();}
 
 std::vector<json> get_fluid_data(std::string comps){
@@ -63,6 +67,10 @@ std::vector<json> get_fluid_data(std::string comps){
         file.close();
     }
     return fluids;
+}
+
+Units KineticGas::get_reducing_units(int i, int j){
+    return Units(red_mass[i][j], sigma[i][j], eps[i][j]);
 }
 
 KineticGas::KineticGas(std::string comps, bool is_idealgas) 

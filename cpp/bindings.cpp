@@ -46,6 +46,7 @@ using vector2d = std::vector<vector1d>;
         .def("potential", py::overload_cast<int, int, double>(&Model::potential)) \
         .def("potential_derivative_r", &Model::potential_derivative_r) \
         .def("potential_dblderivative_rr", &Model::potential_dblderivative_rr) \
+        .def("get_reducing_units", &Model::get_reducing_units) \
 
 PYBIND11_MODULE(libpykingas, handle){
     handle.doc() = "Is this documentation? This is documentation.";
@@ -74,6 +75,24 @@ PYBIND11_MODULE(libpykingas, handle){
             strm << "ij = " << p.i << p.j << ", l = " << p.l << ", r = " << p.r << " T = " << p.T_dK << " dK";
             return strm.str();
         });
+    
+    py::class_<Units>(handle, "Units")
+        .def_readonly("T", &Units::T)           // Temperature (K)
+        .def_readonly("L", &Units::L)           // Length (m)
+        .def_readonly("m", &Units::m)           // Mass (kg)
+        .def_readonly("E", &Units::E)           // Energy (J)
+        .def_readonly("V", &Units::V)           // Volume (m3)
+        .def_readonly("t", &Units::t)           // Time (s)
+        .def_readonly("F", &Units::F)           // Force (N)
+        .def_readonly("speed", &Units::speed)   // Speed (m / s)
+        .def_readonly("rho", &Units::rho)       // Density (mol / m3)
+        .def_readonly("D", &Units::D)           // Diffusion (m^2 / s)
+        .def_readonly("p", &Units::p)           // Pressure (Pa)
+        .def_readonly("visc", &Units::visc)     // Shear viscosity (Pa s)
+        .def_readonly("kvisc", &Units::kvisc)   // Kinematic viscosity (m^2 / s)
+        .def_readonly("tdiff", &Units::tdiff)   // Thermal diffusivity (m^2 / s)
+        .def_readonly("tcond", &Units::tcond)   // Thermal conductivity
+        ;
 
     py::class_<MieKinGas>(handle, "cpp_MieKinGas")
         .def(py::init<vector1d,

@@ -41,10 +41,6 @@ class Spherical : public KineticGas {
     virtual double potential_dblderivative_rr(int i, int j, double r);
 
 protected:
-    // In the general case, sigma and eps are scaling parameters for the molecular interaction, 
-    // with sigma being the length scale (m) and eps being the energy scale (J).
-    vector2d sigma, eps;
-
     double omega(int i, int j, int l, int r, double T) override;
     vector2d model_rdf(double rho, double T, const vector1d& mole_fracs) override = 0;
     vector2d model_mtl(double rho, double T, const vector1d& x) override; // Momentum transfer length
