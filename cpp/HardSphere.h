@@ -15,8 +15,10 @@ class HardSphere : public KineticGas {
     HardSphere(std::vector<double> mole_weights,
         std::vector<std::vector<double>> sigmaij,
         bool is_idealgas, bool is_singlecomp)
-        : KineticGas(mole_weights, is_idealgas, is_singlecomp), sigma{sigmaij}{
-    }
+        : KineticGas(mole_weights, sigma, 
+            vector2d(mole_weights.size(), vector1d(mole_weights.size(), 1)),  // Use dummy value for energy parameter
+            is_idealgas, is_singlecomp) 
+    {}
     
     double omega(int i, int j, int l, int r, double T) override {
         double w = w_integral(i, j, T, l, r); 

@@ -54,7 +54,7 @@ using json = nlohmann::json;
 
 class KineticGas{
     public:
-    KineticGas(std::vector<double> mole_weights, bool is_idealgas, bool is_singlecomp);
+    KineticGas(vector1d mole_weights, vector2d sigma, vector2d eps, bool is_idealgas, bool is_singlecomp);
     KineticGas(std::string comps, bool is_idealgas);
 
     virtual ~KineticGas(){};
@@ -139,7 +139,7 @@ class KineticGas{
         The CoM_to_* methods return the transformation matrix (psi) used to transform diffusion coefficients from the 
         centre of mass (CoM) frame of reference (FoR) to the centre of moles (CoN), centre of volume (CoV) or solvent FoR
     */
-
+    virtual Units get_reducing_units(int ci, int cj); // Return a `Units` struct holding the reducing units created from the ci-cj potential parameters.
     std::vector<double> get_wt_fracs(const std::vector<double> mole_fracs); // Compute weight fractions from mole fractions
 
     Eigen::MatrixXd CoM_to_FoR_matr(double T, double Vm, const std::vector<double>& x, int frame_of_reference, int solvent_idx);
@@ -174,11 +174,18 @@ protected:
     const bool is_idealgas;
     const bool is_singlecomp;
 
-    std::vector<double> m; // Particle masses (kg)
-    std::vector<std::vector<double>> M, m0;
+    vector1d m; // Particle masses (kg)
+    vector2d M, m0, red_mass;
     std::map<OmegaPoint, double> omega_map;
     std::map<StatePoint, vector2d> mtl_map;
     std::map<StatePoint, vector2d> etl_map;
+
+    // In the general case, sigma and eps are scaling parameters for the molecular interaction, 
+    // with sigma being the length scale (m) and eps being the energy scale (J).
+    // In general, these are just used for convenience to make things non-dimensional. If your potential
+    // model does not use them (like HardSphere, which has no energy scale), just set them to dummy-values,
+    // they are not used in any computations, so can safely be ignored if you want to ignore them.
+    vector2d sigma, eps;
 
     std::unique_ptr<GenericEoS> eos;
     const std::vector<json> compdata; // Fluid data for each component, 

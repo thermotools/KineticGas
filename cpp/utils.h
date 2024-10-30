@@ -76,3 +76,41 @@ enum TransferLengthModel{
     correlation, // Unpublished correlation for Argon transfer lengths
     INVALID // Used to terminate loops over all model identifiers
 };
+
+struct Units {
+    const double 
+     T      // Temperature (K)
+    ,L      // Length (m)
+    ,m      // Mass (kg)
+    ,E      // Energy (J)
+    ,V      // Volume (m3)
+    ,t      // Time (s)
+    ,F      // Force (N)
+    ,speed  // Speed (m / s)
+    ,rho    // Density (mol / m3)
+    ,D      // Diffusion (m^2 / s)
+    ,p      // Pressure (Pa)
+    ,visc   // Shear viscosity (Pa s)
+    ,kvisc  // Kinematic viscosity (m^2 / s)
+    ,tdiff  // Thermal diffusivity (m^2 / s)
+    ,tcond  // Thermal conductivity
+    ;
+
+    Units(double m_unit, double L_unit, double T_unit) 
+        : T{T_unit}
+        , L{L_unit}
+        , m{m_unit}
+        , E{T * BOLTZMANN}
+        , V{pow(L, 3)}
+        , t{sqrt(m / E) * L}
+        , F{E / L}
+        , speed{L / t}
+        , rho{1 / (AVOGADRO * V)}
+        , D{pow(L, 2) / t}
+        , p{E / V}
+        , visc{p * t}
+        , kvisc{D}
+        , tdiff{kvisc}
+        , tcond{E / (t * T * L)}
+    {}
+};

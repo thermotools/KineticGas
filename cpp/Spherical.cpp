@@ -5,7 +5,7 @@ Spherical::Spherical(vector1d mole_weights,
                     vector2d sigmaij,
                     vector2d eps,
                     bool is_idealgas, bool is_singlecomp) 
-                    : KineticGas(mole_weights, is_idealgas, is_singlecomp), sigma{sigmaij}, eps{eps}
+                    : KineticGas(mole_weights, sigma, eps, is_idealgas, is_singlecomp)
                     {}
 
 double Spherical::potential(int i, int j, double r){
