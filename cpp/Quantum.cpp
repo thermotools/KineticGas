@@ -32,61 +32,35 @@ double bessel_deriv(int n, double r, size_t kind){
     }
 }
 
-dual spherical_bessel(dual r, int n, size_t kind){
-    const auto prefactor = [&](int k) -> dual {return (Fac(n + k) / (Fac(k) * Fac(n - k))).eval() / pow(2 * r, k);};
-    dual jcos{0.}, jsin{0.};
-    switch (kind) {
-        case 1:
-            for (int k = abs(((n - 1) % 4) - 0); k <= n; k += 4){ jcos += prefactor(k);}
-            for (int k = abs(((n - 1) % 4) - 1); k <= n; k += 4){ jsin -= prefactor(k);}
-            for (int k = abs(((n - 1) % 4) - 2); k <= n; k += 4){ jcos -= prefactor(k);}
-            for (int k = abs(((n - 1) % 4) - 3); k <= n; k += 4){ jsin += prefactor(k);}
-            break;
-        case 2:
-            for (int k = abs((n % 4) - 0); k <= n; k += 4) { jcos += prefactor(k);}
-            for (int k = abs((n % 4) - 1); k <= n; k += 4) { jsin -= prefactor(k);}
-            for (int k = abs((n % 4) - 2); k <= n; k += 4) { jcos -= prefactor(k);}
-            for (int k = abs((n % 4) - 2); k <= n; k += 4) { jsin += prefactor(k);}
-            if ((n + 1) % 2 == 1) {jcos *= -1; jsin *= -1;}
-            break;
-        default: throw std::runtime_error("Invalid spherical_bessel kind : " + std::to_string(kind));
-    }
-    return (jcos * cos(r) + jsin * sin(r)) / r;
-}
-
 Quantum::Quantum(std::string comps) : Spherical(comps, true) {
     half_spin = std::vector<size_t>(Ncomps, 0);
     sigma = vector2d(Ncomps, vector1d(Ncomps, 0.));
     eps = vector2d(Ncomps, vector1d(Ncomps, 0.));
     for (size_t i = 0; i < Ncomps; i++){
         half_spin[i] = static_cast<size_t>(static_cast<double>(compdata[i]["spin"]) * 2 + 0.5);
-        sigma[i][i] = 1;
-        eps[i][i] = 1;
+        sigma[i][i] = 3e-10;
+        eps[i][i] = 150 * BOLTZMANN;
     }
 }
 
 dual2 Quantum::potential(int i, int j, dual2 r){
-    return 4 * (pow(1. / r, 12) - pow(1. / r, 6));
+    return 4 * eps[i][j] * (pow(sigma[i][j] / r, 12) - pow(sigma[i][j] / r, 6));
 }
 
 double Quantum::potential(int i, int j, double r){
-    return 4 * (pow(1. / r, 12) - pow(1. / r, 6));
+    return 4 * eps[i][j] * (pow(sigma[i][j] / r, 12) - pow(sigma[i][j] / r, 6));
 }
 double Quantum::potential_derivative_r(int i, int j, double r){
-    return 4 * (6 * pow(1. / r, 7) - 12 * pow(1. / r, 13));
+    return 4 * eps[i][j] * (6 * pow(sigma[i][j] / r, 7) - 12 * pow(sigma[i][j] / r, 13));
 }
-// double Quantum::potential_rr(int i, int j, double r){
-//     return 0;
-// }
 
 double Quantum::JKWB_phase_shift(int i, int j, int l, double E){
-    double red_mass = 1;
-    double k = sqrt(2. * red_mass * E); //  / HBAR;
+    double k = sqrt(2. * red_mass[i][j] * E) / HBAR;
     double T = 50;
-    double g = sqrt(E / (BOLTZMANN * T));
-    double b = (l + 0.5) / k;
+    double g = sqrt(E * eps[i][j] / (BOLTZMANN * T));
+    double b = ((l + 0.5) / k);
     
-    double R = get_R(i, j, T, g, b);
+    double R = get_R(i, j, T, g, b / sigma[i][j]) * sigma[i][j];
     if (abs(R - b) < 1e-6) return 0;
     std::cout << "JKWB : " << b << ", " << R;
     while (1 - pow(b / R, 2) - potential(i, j, R) / E < 0) {
@@ -94,7 +68,7 @@ double Quantum::JKWB_phase_shift(int i, int j, int l, double E){
         std::cout << " => " << R;
     }
     std::cout << std::endl;
-    const auto integrand1 = [&](double r){return sqrt(1 - pow(b / r, 2) - potential(i, j, r) / E) - sqrt(1 - pow(b / r, 2));};
+    const auto integrand1 = [&](double r){return sqrt(1 - pow(b / r, 2) - potential(i, j, r * sigma[i][j]) / E) - sqrt(1 - pow(b / r, 2));};
     double I1, I2;
     if (b < R){
         const auto integrand2 = [&](double r){return sqrt(1 - pow(b / r, 2));};
@@ -110,8 +84,9 @@ double Quantum::JKWB_phase_shift(int i, int j, int l, double E){
     return k * (I1 + I2);
 }
 
-vector2d Quantum::wave_function(int i, int j, int l, const double E, const double r_end, const double step_size){
-    const double k2 = 1.; // 2. * (m[i] * m[j] / (m[i] + m[j]))/ (pow(HBAR, 2));
+vector2d Quantum::wave_function(int i, int j, int l, double E, double r_end, double step_size){
+    E *= eps[i][j]; step_size *= sigma[i][j]; r_end *= sigma[i][j];
+    const double k2 = 2. * red_mass[i][j] / (pow(HBAR, 2));
     const double k = sqrt(k2 * E);
     const double s2 = pow(step_size, 2) / 12.;
 
@@ -143,7 +118,7 @@ vector2d Quantum::wave_function(int i, int j, int l, const double E, const doubl
         return atan((k * djl - gamma * jl) / (k * dyl - gamma * yl)); // local phase shift
     }; 
 
-    double r0 = 5;
+    double r0 = 0.5 * sigma[i][j];
     vector1d r = {r0, r0 + step_size};
     vector1d g_vals = {g_fun(r[0]), g_fun(r[1])};
     vector1d psi = {0., step_size};
@@ -160,10 +135,10 @@ vector2d Quantum::wave_function(int i, int j, int l, const double E, const doubl
 }
 
 double Quantum::phase_shift(int i, int j, int l, double E){
-    const double step_size{1e-6 * pow(E, 1. / 3.)};
+    const double step_size{1e-3 * pow(E, 1. / 3.) * sigma[i][j]};
+    E *= eps[i][j];
     const double s2 = pow(step_size, 2) / 12.;
-    // E *= BOLTZMANN;
-    double k2 = 1.; // 2. * (m[i] * m[j] / (m[i] + m[j]))/ (pow(HBAR, 2));
+    double k2 = (2. * red_mass[i][j] / pow(HBAR, 2));
     double k = sqrt(k2 * E);
 
     const auto g_fun = [&](double r_i){return (l * (l + 1)) / pow(r_i, 2) + k2 * (potential(i, j, r_i) - E);};
@@ -177,7 +152,7 @@ double Quantum::phase_shift(int i, int j, int l, double E){
         psi_n[n_step] = next_psi;
     };
 
-    double r0 = 0.5;
+    double r0 = 0.5 * sigma[i][j];
     std::array<double, 5> r = {0, 0, 0, r0, r0 + step_size};
     std::array<double, 5> g_vals = {0, 0, 0, g_fun(r[3]), g_fun(r[4])};
     std::array<double, 5> psi = {0, 0, 0, 0, step_size};
@@ -207,6 +182,7 @@ double Quantum::phase_shift(int i, int j, int l, double E){
         prev_delta = new_delta;
         numerov_step(r, psi, g_vals);
         new_delta = local_phase_shift(r, psi, g_vals);
+        std::cout << "Phase shift : " << r[2] / sigma[i][j] << ", " << new_delta << std::endl;
     } while (abs(new_delta - prev_delta) > 1e-8);
     return new_delta;
 }
@@ -271,7 +247,7 @@ double Quantum::cross_section(int i, int j, int n, double E){
         int l_even = 0;
         double q_even;
         do {
-            q_even = cross_section_kernel(i, j, n, l_even, E);
+            q_even = cross_section_kernel(i, j, n, l_even, E / eps[i][j]);
             Q_even += q_even;
             l_even += 2;
         } while (abs(q_even) > 1e-6 * Q_even);
@@ -282,13 +258,13 @@ double Quantum::cross_section(int i, int j, int n, double E){
         int l_odd = 1;
         double q_odd;
         do {
-            q_odd = cross_section_kernel(i, j, n, l_odd, E);
+            q_odd = cross_section_kernel(i, j, n, l_odd, E / eps[i][j]);
             Q_odd += q_odd;
             l_odd += 2;
         } while (abs(q_odd) > 1e-6 * Q_odd);
         Q += odd_prefactor * Q_odd;
     } 
-    double kappa_mul_E_squared = 2. * m[i] * m[j] / ((m[i] + m[j]) * HBAR); // The factor E has been included in omega instead
+    double kappa_mul_E_squared = 2. * red_mass[i][j] / HBAR; // The factor E has been included in omega instead
     Q *= 4. * PI / kappa_mul_E_squared;
     return Q;
 }
@@ -299,6 +275,6 @@ double Quantum::quantum_omega(int i, int j, int n, int s, double T){
     for (int si = 2; si <= s + 1; si++){
         sfac *= si;
     }
-    const auto kernel = [&](double E){return cross_section(i, j, n, E) * exp(- beta * E) * pow(beta * E, s + 2) / sfac;};
-    return simpson(kernel, 0, 10, 50);
+    const auto kernel = [&](double E){return cross_section(i, j, n, E * eps[i][j]) * exp(- beta * E * eps[i][j]) * pow(beta * E * eps[i][j], s + 2);};
+    return simpson(kernel, 0, 10, 50) / sfac;
 }
