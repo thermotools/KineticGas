@@ -10,6 +10,11 @@ public:
     double potential(int i, int j, double r) override;
     double potential_derivative_r(int i, int j, double r);
 
+    vector2d get_de_boer();
+    double get_de_boer(int i, int j);
+    double get_de_boer(int i){return get_de_boer(i, i);}
+    void set_de_boer_mass(int i, double de_boer);
+
     vector2d wave_function(int i, int j, int l, double E, double r_end, double dr);
     double JKWB_phase_shift(int i, int j, int l, double E);
     double phase_shift(int i, int j, int l, double E);

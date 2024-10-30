@@ -197,6 +197,7 @@ protected:
     // If a derived class needs to set any internals before running a computation,
     // it should be done by overriding this method.
     inline virtual void set_internals(double rho, double T, const vector1d& x){};
+    void set_masses(); // Precompute reduced mass of particle pairs. Call this if you for some reason have modified particle masses after init.
 
     // Implementations of omega, model_mtl, and model_etl, may wish to use the omega_map, mtl_map and etl_map
     // To store values for lazy evaluation (massive speedups)
@@ -245,7 +246,6 @@ protected:
 
 private:
 
-    void set_masses(); // Precompute reduced mass of particle pairs (used only on init.)
     void precompute_diffusion(int N, double T, double rho); // Forwards call to precompute_conductivity_omega. Override that instead.
     void precompute_th_diffusion(int N, double T, double rho); // Forwards call to precompute_conductivity_omega. Override that instead.
 

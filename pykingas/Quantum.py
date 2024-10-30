@@ -20,3 +20,15 @@ class Quantum(py_KineticGas):
     def JKWB_phase_shift(self, i, j, l, E):
         return self.cpp_kingas.JKWB_phase_shift(i, j, l, E)
     
+    def get_reducing_units(self, i=0, j=None):
+        j = j if (j is not None) else i
+        return self.cpp_kingas.get_reducing_units(i, j)
+    
+    def get_de_boer(self, i=None, j=None):
+        if (i is None) and (j is None) : return self.cpp_kingas.get_de_boer()
+        elif (j is None): j = i
+        return self.cpp_kingas.get_de_boer(i, j)
+    
+    def set_de_boer_mass(self, i, de_boer):
+        self.cpp_kingas.set_de_boer_mass(i, de_boer)
+    

@@ -203,10 +203,15 @@ PYBIND11_MODULE(libpykingas, handle){
     py::class_<Quantum>(handle, "cpp_Quantum")
         .def(py::init<std::string>())
         KineticGas_bindings(Quantum)
+        Spherical_potential_bindings(Quantum)
         .def("cross_section", &Quantum::cross_section)
         .def("wave_function", &Quantum::wave_function)
         .def("phase_shift", &Quantum::phase_shift)
         .def("JKWB_phase_shift", &Quantum::JKWB_phase_shift)
+        .def("get_de_boer", py::overload_cast<>(&Quantum::get_de_boer))
+        .def("get_de_boer", py::overload_cast<int, int>(&Quantum::get_de_boer))
+        .def("get_de_boer", py::overload_cast<int>(&Quantum::get_de_boer))
+        .def("set_de_boer_mass", &Quantum::set_de_boer_mass)
         ;
 
     py::class_<PseudoHardSphere>(handle, "cpp_PseudoHardSphere")

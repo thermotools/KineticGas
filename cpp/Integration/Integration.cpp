@@ -319,19 +319,18 @@ double simpson(std::function<double(double)> func, double x0, double xN, int N_i
 
 double simpson_inf(std::function<double(double)> func, double x0, double init_end, double tol){
     double I = simpson(func, x0, init_end, 10);
-    std::cout << "start : " << I << std::endl;
-    return 0;
+    // std::cout << "start : " << I << std::endl;
     double dx = (init_end - x0) / 10.;
     double I_part = 0;
     double part_tol = tol * 1e6;
     do {
-        x0 = init_end + 10 * dx;
+        x0 = init_end;
         init_end += 10 * dx;
         I_part = simpson(func, x0, init_end, 10);
         I += I_part;
-        std::cout << "simpson : " << x0 << " => " << init_end << " : " << I_part << ", " << I << ", " << part_tol << std::endl;
+        // std::cout << "simpson : " << x0 << " => " << init_end << " : " << I << ", " << I_part << ", " << part_tol << std::endl;
         if (abs(I_part / I) < part_tol) {
-            dx *= 2; part_tol *= 1e-10;
+            dx *= 2; part_tol *= 0.1;
         }
     } while ( part_tol > tol );
     return I;

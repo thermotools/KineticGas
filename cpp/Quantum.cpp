@@ -38,50 +38,81 @@ Quantum::Quantum(std::string comps) : Spherical(comps, true) {
     eps = vector2d(Ncomps, vector1d(Ncomps, 0.));
     for (size_t i = 0; i < Ncomps; i++){
         half_spin[i] = static_cast<size_t>(static_cast<double>(compdata[i]["spin"]) * 2 + 0.5);
-        sigma[i][i] = 3e-10;
-        eps[i][i] = 150 * BOLTZMANN;
+        for (size_t j = 0; j < Ncomps; j++){
+            sigma[i][j] = 3e-10;
+            eps[i][j] = 150 * BOLTZMANN;
+        }
     }
+}
+
+vector2d Quantum::get_de_boer(){
+    vector2d de_boer(Ncomps, vector1d(Ncomps));
+    for (size_t i = 0; i < Ncomps; i++){
+        for (size_t j = 0; j < Ncomps; j++){
+            de_boer[i][j] = get_de_boer(i, j);
+        }
+    }
+    return de_boer;
+}
+double Quantum::get_de_boer(int i, int j){return PLANCK / (sigma[i][j] * sqrt(2. * red_mass[i][j] * eps[i][j]));}
+
+void Quantum::set_de_boer_mass(int i, double de_boer){
+    m[i] = pow(PLANCK / (sigma[i][i] * de_boer), 2) / (2. * eps[i][i]);
+    set_masses();
 }
 
 dual2 Quantum::potential(int i, int j, dual2 r){
     return 4 * eps[i][j] * (pow(sigma[i][j] / r, 12) - pow(sigma[i][j] / r, 6));
 }
-
 double Quantum::potential(int i, int j, double r){
     return 4 * eps[i][j] * (pow(sigma[i][j] / r, 12) - pow(sigma[i][j] / r, 6));
 }
 double Quantum::potential_derivative_r(int i, int j, double r){
-    return 4 * eps[i][j] * (6 * pow(sigma[i][j] / r, 7) - 12 * pow(sigma[i][j] / r, 13));
+    return 4 * eps[i][j] * (6 * pow(sigma[i][j] / r, 6) - 12 * pow(sigma[i][j] / r, 12)) * (1. / r);
 }
 
 double Quantum::JKWB_phase_shift(int i, int j, int l, double E){
+    E *= eps[i][j];
     double k = sqrt(2. * red_mass[i][j] * E) / HBAR;
     double T = 50;
-    double g = sqrt(E * eps[i][j] / (BOLTZMANN * T));
-    double b = ((l + 0.5) / k);
+    double g = sqrt(E / (BOLTZMANN * T));
+    double b = ((l + 0.5) / k) / sigma[i][j];
     
-    double R = get_R(i, j, T, g, b / sigma[i][j]) * sigma[i][j];
-    if (abs(R - b) < 1e-6) return 0;
-    std::cout << "JKWB : " << b << ", " << R;
-    while (1 - pow(b / R, 2) - potential(i, j, R) / E < 0) {
-        R += 1e-6 * sigma[i][j];
-        std::cout << " => " << R;
+    double R = get_R(i, j, T, g, b * sigma[i][j]) / sigma[i][j];
+    std::cout << "JKWB (l, E, g, b, R) : " << l << ", " << E / eps[i][j] << ", " << g << ", " << b << ", " << R << std::endl;
+    while (1 - pow(b / R, 2) - potential(i, j, R * sigma[i][j]) / E < 0) {
+        R += 1e-3;
     }
-    std::cout << std::endl;
+    
     const auto integrand1 = [&](double r){return sqrt(1 - pow(b / r, 2) - potential(i, j, r * sigma[i][j]) / E) - sqrt(1 - pow(b / r, 2));};
+    
+    if (abs(R - b) < 1e-6){
+        double lower_lim = (R > b) ? R : b;
+        std::cout << "R, b : " << R << ", " << b << " (" << lower_lim << ")" << std::endl; 
+        double I = k * simpson_inf(integrand1, lower_lim, 1.5 * lower_lim) * sigma[i][j];
+        std::cout << "I : " << I << std::endl;
+        return I;
+    }
+
     double I1, I2;
     if (b < R){
         const auto integrand2 = [&](double r){return sqrt(1 - pow(b / r, 2));};
         I1 = simpson_inf(integrand1, R, 1.5 * R);
+        std::cout << " b < R : " << b << " < " << R << std::endl; 
         I2 = - simpson(integrand2, b, R, 10);
     }
     else {
-        const auto integrand2 = [&](double r){return sqrt(1 - pow(b / r, 2) - potential(i, j, r) / E);};
+        const auto integrand2 = [&](double r){
+            double I = sqrt(1 - pow(b / r, 2) - potential(i, j, r * sigma[i][j]) / E);
+            std::cout << "inside : " << b << ", " << r << " : " << I << std::endl;
+            return I;
+        };
         I1 = simpson_inf(integrand1, b, 1.5 * b);
+        std::cout << " b > R : " << b << " > " << R << std::endl; 
         I2 = simpson(integrand2, R, b, 10);
     }
     std::cout << " I1, I2 : " << I1 << ", " << I2 << std::endl;
-    return k * (I1 + I2);
+    return k * (I1 + I2) * sigma[i][j];
 }
 
 vector2d Quantum::wave_function(int i, int j, int l, double E, double r_end, double step_size){
@@ -175,15 +206,46 @@ double Quantum::phase_shift(int i, int j, int l, double E){
         return atan((k * djl - gamma * jl) / (k * dyl - gamma * yl)); // local phase shift
     }; 
 
-    for (size_t i = 0; i < 5; i++) numerov_step(r, psi, g_vals); // Need to fill the arrays before we can start computing phase shifts.
-    double prev_delta;
-    double new_delta = 2. * PI;
-    do {
+    size_t nsteps_init = static_cast<size_t>((5 * sigma[i][j] - r0) / step_size);
+    for (size_t i = 0; i < nsteps_init; i++) numerov_step(r, psi, g_vals); // Do some steps computing phase shifts.
+    double prev_delta = 2 * PI;
+    double new_delta = - prev_delta;
+    double current_err;
+    // ---------------------------------- ITERATION TO SOLVE FOR PHASE SHIFT --------------------------------- //
+    // --- We integrate the wave function outwards, and at regular intervals compute the local phase shift (LPS). 
+    // --- When the change between two checks is below a tolerance, we terminate.
+    // --- Because the LPS oscillates, the change in the LPS between steps is periodic, with the same period as 
+    // --- the wave function. Therefore, we do as follows:
+    // --- (1) Iterate out to the first minimum in change, computing the LPS at each step. 
+    // --- (2) Iterate out to the first maximum in change, computing the LPS at each step.
+    // --- (3) Iterate one half period of the wave function before re-computing the LPS. Terminate when the change between two periods 
+    // ---      is below the tolerance.
+    // --- This ensures that we are checking the LPS at the point in the period wher it changes most rapidly, to ensure that we
+    // --- do not terminate the iteration prematurely because we are at a point in the period where it happens to change slowly. 
+    
+    // Find minimum in change (check at each step)
+    do { 
+        current_err = abs(new_delta - prev_delta); 
         prev_delta = new_delta;
         numerov_step(r, psi, g_vals);
         new_delta = local_phase_shift(r, psi, g_vals);
-        std::cout << "Phase shift : " << r[2] / sigma[i][j] << ", " << new_delta << std::endl;
-    } while (abs(new_delta - prev_delta) > 1e-8);
+    } while (abs(new_delta - prev_delta) < current_err); 
+
+    // Find maximum in change (check at each step)
+    do {
+        current_err = abs(new_delta - prev_delta); 
+        prev_delta = new_delta;
+        numerov_step(r, psi, g_vals);
+        new_delta = local_phase_shift(r, psi, g_vals);
+    } while (abs(new_delta - prev_delta) > current_err);
+
+    // Find distance where change is below tolerance, only check once per period.
+    do {
+        size_t nsteps_period = static_cast<size_t>(PI / (k * step_size));
+        prev_delta = new_delta;
+        for (size_t i = 0; i < nsteps_period; i++) numerov_step(r, psi, g_vals);
+        new_delta = local_phase_shift(r, psi, g_vals);
+    } while (abs(new_delta - prev_delta) > 1e-5);
     return new_delta;
 }
 
