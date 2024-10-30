@@ -343,6 +343,19 @@ vector1d KineticGas::get_diffusion_vector(double rho, double T, const vector1d& 
     return delta_vector;
 }
 
+/*
+    Viscosity matrix : The left hand side of the equation to solve for the viscous expansion coefficients
+    Sorted as
+        [B_{0, 0}^(0, 0), B_{0, 1}^(0, 0), ... B_{0, c}^(0, 0), B_{0, 0}^(1, 0), ... B_{0, c}^(N, 0)]
+        [B_{1, 0}^(0, 0), B_{1, 1}^(0, 0), ... B_{1, c}^(0, 0), B_{1, 0}^(1, 0), ... B_{1, c}^(N, 0)]
+        [     ...       ,      ...       , ...         ...     ,      ...      , ...       ...      ]
+        [B_{c, 0}^(0, 0), B_{c, 1}^(0, 0), ... B_{c, c}^(0, 0), B_{c, 0}^(1, 0), ... B_{c, c}^(N, 0)]
+        [B_{0, 0}^(0, 1), B_{0, 1}^(0, 1), ... B_{0, c}^(0, 1), B_{0, 0}^(1, 1), ... B_{c, c}^(N, 1)]
+        [     ...       ,      ...       , ...         ...     ,      ...      , ...       ...      ]
+        [B_{c, 0}^(0, N), B_{c, 1}^(0, N), ... B_{c, c}^(0, N), B_{c, 0}^(1, N), ... B_{c, c}^(N, N)]
+    Where subscripts indicate component indices, and superscripts indicate Enskog approximation summation indices, such
+    that element (B[p * Ncomps + i][q * Ncomps + j]) is B_{i, j}^(p, q)
+*/
 vector2d KineticGas::get_viscosity_matrix(double rho, double T, const vector1d&x, int N){
     set_internals(rho, T, x);
     vector2d rdf = get_rdf(rho, T, x);
@@ -368,6 +381,12 @@ vector2d KineticGas::get_viscosity_matrix(double rho, double T, const vector1d&x
     return viscosity_mat;
 }
 
+/*
+    Viscosity vector : The right hand side of the equation to solve for the viscous expansion coefficients
+    Sorted as [b_0^(0), b_1^(0), ... b_Nc^(0), b_0^(1), b_1^(1), ... b_Nc^(N)]
+    where subscripts indicate component indices, and superscripts indicate Enskog approximation order indices,
+    such that element (b[p * Ncomps + i]) is b_i^(p).
+*/
 vector1d KineticGas::get_viscosity_vector(double rho, double T, const vector1d& x, int N){
     set_internals(rho, T, x);
     vector1d K_prime = get_K_prime_factors(rho, T, x);

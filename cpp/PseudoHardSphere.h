@@ -15,7 +15,7 @@ class PseudoHardSphere : public Spherical {
     PseudoHardSphere(std::vector<double> mole_weights,
         std::vector<std::vector<double>> sigmaij,
         bool is_idealgas, bool is_singlecomp)
-        : Spherical(mole_weights, sigmaij, is_idealgas, is_singlecomp) {}
+        : Spherical(mole_weights, sigmaij, vector2d(mole_weights.size(), vector1d(mole_weights.size(), 1)), is_idealgas, is_singlecomp) {}
     
     dual2 potential(int i, int j, dual2 r) override {
         if (r > sigma[i][j]){

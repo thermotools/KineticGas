@@ -159,11 +159,7 @@ PYBIND11_MODULE(libpykingas, handle){
         ;
 
     py::class_<ModTangToennis>(handle, "cpp_ModTangToennis")
-        .def(py::init<TangToennisParam,
-                        vector1d,
-                        vector2d,
-                        bool>()
-             )
+        .def(py::init<TangToennisParam, vector1d, bool>())
         KineticGas_bindings(ModTangToennis)
         .def("potential", py::overload_cast<int, int, double>(&ModTangToennis::potential))
         .def("potential_r", &ModTangToennis::potential_derivative_r)
