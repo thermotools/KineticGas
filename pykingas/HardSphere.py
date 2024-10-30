@@ -70,6 +70,10 @@ class HardSphereEoS:
         if dhdt is None:
             return 0.,
         return 0., 5 * 8.314 / 2
+    
+    def enthalpy_tvp(self, T, V, n, dhdt=None):
+        warnings.warn("enthalpy_tvp is a dummy implementation!")
+        return self.idealenthalpysingle(T, 0, dhdt=dhdt)
 
 def HS_pressure(rho, T, x, sigma, chi):
     p = rho * kB * T

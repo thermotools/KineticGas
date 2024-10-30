@@ -5,10 +5,10 @@ Contains: Transfer length models (see: <unpublished> 2024).
             - Use get_mtl and get_etl to compute the transfer lengths you need.
             
             - These forward the call to get_transfer_length, which handles dispatch to the appropriate 
-              transfer length model: collision diameters, (old) or transfer lengths (new)
+              transfer length model.
                 - Use set_transfer_length_model to select the model beforehand.
 
-            - In the case of the (new) models, all methods used in the computation are the same, except for the
+            - In the case of the EWCA models, all methods used in the computation are the same, except for the
               function computing the weight, so the parameter "property", which should be one of the values in the 
               enum "transfer_lengths", is passed through the call chain until the weight is computed, and used in
               tl_weight_integrand to select the correct weight function.
@@ -42,87 +42,6 @@ vector2d Spherical::model_etl(double rho, double T, const vector1d& x){
     etl_map[point] = etl;
     return etl;
 }
-
-// vector2d Spherical::get_transfer_length(double rho, double T, const vector1d& x, int property){
-//     switch (transfer_length_model_id) {
-//         case 0:
-//             return get_collision_diameters(rho, T, x);
-//         case 1: {
-//             double g0 = 0.;
-//             double g1 = 3.5;
-//             double gmax = 5.;
-//             if (is_singlecomp){
-//                 double I = get_tl_weight_normalizer(0, 0, T, property);
-//                 const auto integrand = [&](double g){return tl_inner(0, 0, T, g, I, property);};
-//                 const auto wt = [&](double g){return tl_weight_inner(0, 0, T, g, property);};
-//                 std::pair<double, double> I1, I2;
-//                 std::thread t1([&](std::pair<double, double>& I_){I_ = weighted_simpson(integrand, wt, g0, g1, 15);}, std::ref(I1));
-//                 std::thread t2([&](std::pair<double, double>& I_){I_ = weighted_simpson(integrand, wt, g1, g_max, 10);}, std::ref(I2));
-//                 t1.join(); t2.join();
-//                 double F = I1.first + I2.first;
-//                 double W = I1.second + I2.second;
-//                 const double tl = F / W;
-//                 // std::vector<std::thread> threads;
-//                 // constexpr size_t ncores = 8;
-//                 // double dg01 = (g1 - g0) / ncores;
-//                 // double dg11 = (gmax - g1) / ncores;
-//                 // vector1d tl_parts(ncores);
-//                 // for (size_t ci = 0; ci < ncores; ci++){
-//                 //     std::cout << "Started thread " << ci << std::endl;
-//                 //     threads.push_back(std::thread(
-//                 //         [&](double& tl_part){
-//                 //             // double I = get_tl_weight_normalizer(0, 0, T, property);
-//                 //             // const auto integrand = [&](double g){return tl_inner(0, 0, T, g, I, property);};
-//                 //             tl_part = simpson(integrand, g0 + dg01 * ci, g0 + dg01 * (ci + 1), 2) + simpson(integrand, g1 + dg11 * ci, g1 + dg11 * (ci + 1), 2);
-//                 //         }, std::ref(tl_parts[ci])));
-//                 // }
-//                 // int ci = 0;
-//                 // for (auto it = threads.begin(); it != threads.end(); ++it){
-//                 //     it->join();
-//                 //     std::cout << "Joined thread " << ci++ << std::endl;
-//                 // }
-//                 // double tl = 0;
-//                 // for (size_t ci = 0; ci < ncores; ci++){
-//                 //     tl += tl_parts[ci];
-//                 // }
-//                 return vector2d(Ncomps, vector1d(Ncomps, tl));
-//             }
-//             vector2d tl(Ncomps, vector1d(Ncomps, 0.));
-//             std::vector<std::thread> threads;
-//             for (int i = 0; i < Ncomps; i++){
-//                 for (int j = i; j < Ncomps; j++){
-//                     threads.push_back(std::thread(
-//                         [&](double& tl_ij, const int ci, const int cj){
-//                             double I = get_tl_weight_normalizer(ci, cj, T, property);
-//                             const auto integrand = [&](double g){return tl_inner(ci, cj, T, g, I, property);};
-//                             tl_ij = simpson(integrand, g0, g1, 15) + simpson(integrand, g1, gmax, 10);
-//                         }, std::ref(tl[i][j]), i, j));
-//                 }
-//             }
-//             for (auto it = threads.begin(); it != threads.end(); ++it){
-//                 it->join();
-//             }
-//             for (int i = 0; i < Ncomps; i++){
-//                 for (int j = i; j < Ncomps; j++){
-//                     tl[j][i] = tl[i][j];
-//                 }
-//             }
-//             return tl;
-//         }
-//         case 2: {
-//             switch (property){
-//             case transfer_lengths::MTL:
-//                 return MTL_correlation(rho, T);
-//             case transfer_lengths::ETL:
-//                 return ETL_correlation(rho, T);
-//             default:
-//                 throw std::runtime_error("Invalid transfer length type!");
-//             }
-//         }
-//         default:
-//             throw std::runtime_error("Invalid transfer length model!");
-//     }
-// }
 
 vector2d Spherical::get_transfer_length(double rho, double T, const vector1d& x, int property){
     switch (transfer_length_model_id) {
