@@ -54,14 +54,60 @@ dual spherical_bessel(dual r, int n, size_t kind){
     return (jcos * cos(r) + jsin * sin(r)) / r;
 }
 
+Quantum::Quantum(std::string comps) : Spherical(comps, true) {
+    half_spin = std::vector<size_t>(Ncomps, 0);
+    sigma = vector2d(Ncomps, vector1d(Ncomps, 0.));
+    eps = vector2d(Ncomps, vector1d(Ncomps, 0.));
+    for (size_t i = 0; i < Ncomps; i++){
+        half_spin[i] = static_cast<size_t>(static_cast<double>(compdata[i]["spin"]) * 2 + 0.5);
+        sigma[i][i] = 1;
+        eps[i][i] = 1;
+    }
+}
+
+dual2 Quantum::potential(int i, int j, dual2 r){
+    return 4 * (pow(1. / r, 12) - pow(1. / r, 6));
+}
+
 double Quantum::potential(int i, int j, double r){
     return 4 * (pow(1. / r, 12) - pow(1. / r, 6));
 }
-double Quantum::potential_r(int i, int j, double r){
+double Quantum::potential_derivative_r(int i, int j, double r){
     return 4 * (6 * pow(1. / r, 7) - 12 * pow(1. / r, 13));
 }
-double Quantum::potential_rr(int i, int j, double r){
-    return 0;
+// double Quantum::potential_rr(int i, int j, double r){
+//     return 0;
+// }
+
+double Quantum::JKWB_phase_shift(int i, int j, int l, double E){
+    double red_mass = 1;
+    double k = sqrt(2. * red_mass * E); //  / HBAR;
+    double T = 50;
+    double g = sqrt(E / (BOLTZMANN * T));
+    double b = (l + 0.5) / k;
+    
+    double R = get_R(i, j, T, g, b);
+    if (abs(R - b) < 1e-6) return 0;
+    std::cout << "JKWB : " << b << ", " << R;
+    while (1 - pow(b / R, 2) - potential(i, j, R) / E < 0) {
+        R += 1e-6 * sigma[i][j];
+        std::cout << " => " << R;
+    }
+    std::cout << std::endl;
+    const auto integrand1 = [&](double r){return sqrt(1 - pow(b / r, 2) - potential(i, j, r) / E) - sqrt(1 - pow(b / r, 2));};
+    double I1, I2;
+    if (b < R){
+        const auto integrand2 = [&](double r){return sqrt(1 - pow(b / r, 2));};
+        I1 = simpson_inf(integrand1, R, 1.5 * R);
+        I2 = - simpson(integrand2, b, R, 10);
+    }
+    else {
+        const auto integrand2 = [&](double r){return sqrt(1 - pow(b / r, 2) - potential(i, j, r) / E);};
+        I1 = simpson_inf(integrand1, b, 1.5 * b);
+        I2 = simpson(integrand2, R, b, 10);
+    }
+    std::cout << " I1, I2 : " << I1 << ", " << I2 << std::endl;
+    return k * (I1 + I2);
 }
 
 vector2d Quantum::wave_function(int i, int j, int l, const double E, const double r_end, const double step_size){
@@ -114,7 +160,7 @@ vector2d Quantum::wave_function(int i, int j, int l, const double E, const doubl
 }
 
 double Quantum::phase_shift(int i, int j, int l, double E){
-    const double step_size{1e-4};
+    const double step_size{1e-6 * pow(E, 1. / 3.)};
     const double s2 = pow(step_size, 2) / 12.;
     // E *= BOLTZMANN;
     double k2 = 1.; // 2. * (m[i] * m[j] / (m[i] + m[j]))/ (pow(HBAR, 2));
@@ -247,7 +293,7 @@ double Quantum::cross_section(int i, int j, int n, double E){
     return Q;
 }
 
-double Quantum::omega(int i, int j, int n, int s, double T){
+double Quantum::quantum_omega(int i, int j, int n, int s, double T){
     double beta = 1. / (T * BOLTZMANN);
     double sfac = 1;
     for (int si = 2; si <= s + 1; si++){

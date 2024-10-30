@@ -148,6 +148,8 @@ double integrate2d(const Point& origin, const Point& end,
     Standard Simpson-rule integration, with N_intervals between x0 and xN, where N_intervals >= 2
 */
 double simpson(std::function<double(double)> func, double x0, double xN, int N_intervals);
+double simpson_inf(std::function<double(double)> func, double x0, double init_end, double tol=1e-8);
+
 
 /*
     Simpson integration of the function g(x) = w(x)f(x), and w(x) simultaneously.

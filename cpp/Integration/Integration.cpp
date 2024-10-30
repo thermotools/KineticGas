@@ -317,6 +317,26 @@ double simpson(std::function<double(double)> func, double x0, double xN, int N_i
     return val;
 }
 
+double simpson_inf(std::function<double(double)> func, double x0, double init_end, double tol){
+    double I = simpson(func, x0, init_end, 10);
+    std::cout << "start : " << I << std::endl;
+    return 0;
+    double dx = (init_end - x0) / 10.;
+    double I_part = 0;
+    double part_tol = tol * 1e6;
+    do {
+        x0 = init_end + 10 * dx;
+        init_end += 10 * dx;
+        I_part = simpson(func, x0, init_end, 10);
+        I += I_part;
+        std::cout << "simpson : " << x0 << " => " << init_end << " : " << I_part << ", " << I << ", " << part_tol << std::endl;
+        if (abs(I_part / I) < part_tol) {
+            dx *= 2; part_tol *= 1e-10;
+        }
+    } while ( part_tol > tol );
+    return I;
+}
+
 std::pair<double, double> weighted_simpson(std::function<double(double)> func, std::function<double(double)> wt, double x0, double xN, int N_intervals){
     double dx = (xN - x0) / N_intervals;
     double F{0}, W{0}, w1{0}, w2{0};

@@ -191,6 +191,7 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("cross_section", &Quantum::cross_section)
         .def("wave_function", &Quantum::wave_function)
         .def("phase_shift", &Quantum::phase_shift)
+        .def("JKWB_phase_shift", &Quantum::JKWB_phase_shift)
         ;
 
     py::class_<PseudoHardSphere>(handle, "cpp_PseudoHardSphere")

@@ -17,3 +17,6 @@ class Quantum(py_KineticGas):
     def phase_shift(self, i, j, l, E):
         return self.cpp_kingas.phase_shift(i, j, l, E)
     
+    def JKWB_phase_shift(self, i, j, l, E):
+        return self.cpp_kingas.JKWB_phase_shift(i, j, l, E)
+    
