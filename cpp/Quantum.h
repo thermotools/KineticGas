@@ -17,11 +17,14 @@ public:
 
     vector2d wave_function(int i, int j, int l, double E, double r_end, double dr);
     double JKWB_phase_shift(int i, int j, int l, double E);
+    double JKWB_upper_E_limit(int i, int j);
     double phase_shift(int i, int j, int l, double E);
     double cross_section_A(int n, int l, size_t k);
     double cross_section_kernel(int i, int j, double n, double l, double E);
-    double cross_section(int i, int j, int n, double E);
+    double cross_section(int i, int j, int n, double E) override;
     double quantum_omega(int i, int j, int n, int s, double T);
+
+    double classical_cross_section(int i, int j, int l, double E);
 
     std::vector<size_t> half_spin; // Spin of each particle multiplied by two 
 protected:

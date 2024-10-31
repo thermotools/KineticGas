@@ -90,13 +90,45 @@ double Spherical::w_integrand(int i, int j, double T,
     return 2 * exp(- pow(g, 2)) * pow(g, 2.0 * r + 3.0) * (1 - pow(cos(chi_val), l)) * b;
 };
 
+double Spherical::cross_section(int i, int j, int l, double E){
+    /*
+        Collision cross-sections, \int_0^{\infty} (1 - \cos^{l}(\chi)) b \d b
+        - i, j : Component indices
+        - l : Cross section moment
+        - E : Dinemsionless collision energy (E / (k_B T) = 0.5 * red_mass[i][j] * g_{ij}^2)
+
+        Note: Because other internal functions work with dimensionless velocity, rather than collision energy,
+              we must set a dummy temperature to convert the energy to a collision velocity.
+    */
+    if (l == 0) return 0;
+    E *= eps[i][j];
+    const double T = 300;
+    const double g = sqrt(2. * E / (red_mass[i][j] * BOLTZMANN * T));
+    const auto integrand = [&](double b){
+        double chi_val = chi(i, j, T, g, b * sigma[i][j]);
+        return (1. - pow(cos(chi_val), l)) * b;
+    };
+    return pow(sigma[i][j], 2) * simpson_inf(integrand, 1e-6, 0.5); // Integration carried out in reduced units.
+}
+
+double Spherical::hs_cross_section(int i, int j, int l){
+    if (l % 2 == 1) return PI * pow(sigma[i][j], 2);
+    return (1 - 1. / (1 + l)) * PI * pow(sigma[i][j], 2);
+}
+
+double Spherical::reduced_cross_section(int i, int j, int l, double E){
+    double Q = cross_section(i, j, l, E); 
+    double Q_hs = hs_cross_section(i, j, l);
+    return Q / Q_hs; 
+}
+
 /*
 Contains functions for computing the collision integrals
 Common variables are:
     i, j : Species indices
     T : Temperature [K]
-    l, r : Collision integral indices (in omega and w_<potential_type> functions)
-    g : Dimentionless relative velocity of molecules
+    l, r : Collision integral indices
+    g : Dimentionless relative velocity of molecules, reduced using : 0.5 * red_mass[i][j] * v^2 = g^2 * k_B T (See: Eq. (3) of Ref. (II) in header file.) 
     b : "Impact paramter", closest distance of approach of the centers of mass if molecules were non-interacting point particles
     theta : Angular polar coordinate. Theta = 0 when the particles are infinitely far away from each other, before the collision,
         theta(t1) is the angle between the line between the particles before interaction begins (at infinite distance), and the line between the particles at t = t1
@@ -108,7 +140,12 @@ Common variables are:
 // Helper funcions for computing dimentionless collision integrals
 
 double Spherical::theta(int i, int j, const double T, const double g, const double b){
-    // Compute deflection angle for a collision
+    /* Compute angular collision coordinate at distance of closest approach
+        - i, j : Component indices
+        - T : Temperature (K)
+        - g : Dimensionless relative velocity
+        - b : Impact parameter (m)
+    */
     if (b / sigma[i][j] > 100) return PI / 2;
     if (b / sigma[i][j] < 1e-3) return 0;
     double R = get_R(i, j, T, g, b);
@@ -116,11 +153,26 @@ double Spherical::theta(int i, int j, const double T, const double g, const doub
 }
 
 double Spherical::theta_r(int i, int j, double r, double T, double g, double b){
+    /* Compute Angular collision coordinate at specified distance
+        - i, j : Component indices
+        - r : Separation distance (m)
+        - T : Temperature (K)
+        - g : Dimensionless relative velocity
+        - b : Impact parameter (m)
+    */
     double R = get_R(i, j, T, g, b);
     return theta_r(i, j, R, r, T, g, b);
 }
 
 double Spherical::theta_r(int i, int j, double R, double r, double T, double g, double b){
+    /* Compute Angular collision coordinate at specified distance, when distance of closest approach is known
+        - i, j : Component indices
+        - R : Distance of closest approach (m)
+        - r : Separation distance (m)
+        - T : Temperature (K)
+        - g : Dimensionless relative velocity
+        - b : Impact parameter (m)
+    */
     if (b / sigma[i][j] > 100) return PI / 2;
     if (b / sigma[i][j] < 1e-3) return 0;
     const double dh{7.5e-3};
@@ -187,6 +239,12 @@ double Spherical::get_R_rootfunc_derivative(int i, int j, double T, double g, do
 }
 
 double Spherical::get_R(int i, int j, double T, double g, double b){
+    /* Compute distance of closest approach (m)
+        - i, j : Component indices
+        - T : Temperature (K)
+        - g : Dimensionless relative velocity
+        - b : Impact parameter (m)
+    */
     if ((b / sigma[i][j] < 1e-5) || (g < 1e-6)) return get_R0(i, j, T, g); // Treat separately (set b = 0, and handle g = 0 case)
     // Newtons method
     double tol = 1e-5; // Relative to sigma[i][j]
@@ -233,6 +291,12 @@ double Spherical::get_R0(int i, int j, double T, double g){
 }
 
 double Spherical::chi(int i, int j, double T, double g, double b){
+    /* Compute deflection angle
+        - i, j : Component indices
+        - T : Temperature (K)
+        - g : Dimensionless relative velocity
+        - b : Impact parameter (m)
+    */
     if (b / sigma[i][j] > 100) return 0;
     double t = theta(i, j, T, g, b);
     return PI - 2.0 * t;

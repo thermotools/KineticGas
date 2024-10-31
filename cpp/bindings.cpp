@@ -205,6 +205,8 @@ PYBIND11_MODULE(libpykingas, handle){
         KineticGas_bindings(Quantum)
         Spherical_potential_bindings(Quantum)
         .def("cross_section", &Quantum::cross_section)
+        .def("classical_cross_section", &Quantum::classical_cross_section)
+        .def("reduced_cross_section", &Quantum::reduced_cross_section)
         .def("wave_function", &Quantum::wave_function)
         .def("phase_shift", &Quantum::phase_shift)
         .def("JKWB_phase_shift", &Quantum::JKWB_phase_shift)
@@ -212,6 +214,7 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("get_de_boer", py::overload_cast<int, int>(&Quantum::get_de_boer))
         .def("get_de_boer", py::overload_cast<int>(&Quantum::get_de_boer))
         .def("set_de_boer_mass", &Quantum::set_de_boer_mass)
+        .def("JKWB_upper_E_limit", &Quantum::JKWB_upper_E_limit)
         ;
 
     py::class_<PseudoHardSphere>(handle, "cpp_PseudoHardSphere")

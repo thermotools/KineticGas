@@ -40,6 +40,10 @@ class Spherical : public KineticGas {
     virtual double potential_derivative_r(int i, int j, double r);
     virtual double potential_dblderivative_rr(int i, int j, double r);
 
+    virtual double cross_section(int i, int j, int l, double E);
+    double hs_cross_section(int i, int j, int l);
+    double reduced_cross_section(int i, int j, int l, double E); // Reduced using corresponding Hard sphere value
+
 protected:
     double omega(int i, int j, int l, int r, double T) override;
     vector2d model_rdf(double rho, double T, const vector1d& mole_fracs) override = 0;

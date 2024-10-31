@@ -8,8 +8,8 @@ class Quantum(py_KineticGas):
         self.cpp_kingas = cpp_Quantum(comps)
         self.eos = None
     
-    def cross_section(self, i, j, l, E):
-        return self.cpp_kingas.cross_section(i, j, l, E)
+    def cross_section(self, i, j, l, E, reduced=False):
+        return self.cpp_kingas.reduced_cross_section(i, j, l, E) if (reduced is True) else self.cpp_kingas.cross_section(i, j, l, E)
 
     def wave_function(self, i, j, l, E, r_end, dr=0.1):
         return self.cpp_kingas.wave_function(i, j, l, E, r_end, dr)
@@ -31,4 +31,8 @@ class Quantum(py_KineticGas):
     
     def set_de_boer_mass(self, i, de_boer):
         self.cpp_kingas.set_de_boer_mass(i, de_boer)
+
+    def JKWB_upper_E_limit(self, i=0, j=None):
+        j = i if (j is None) else j
+        return self.cpp_kingas.JKWB_upper_E_limit(i, j)
     

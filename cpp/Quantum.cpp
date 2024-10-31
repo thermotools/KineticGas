@@ -57,7 +57,7 @@ vector2d Quantum::get_de_boer(){
 double Quantum::get_de_boer(int i, int j){return PLANCK / (sigma[i][j] * sqrt(2. * red_mass[i][j] * eps[i][j]));}
 
 void Quantum::set_de_boer_mass(int i, double de_boer){
-    m[i] = pow(PLANCK / (sigma[i][i] * de_boer), 2) / (2. * eps[i][i]);
+    m[i] = pow(PLANCK / (sigma[i][i] * de_boer), 2) / eps[i][i];
     set_masses();
 }
 
@@ -69,6 +69,13 @@ double Quantum::potential(int i, int j, double r){
 }
 double Quantum::potential_derivative_r(int i, int j, double r){
     return 4 * eps[i][j] * (6 * pow(sigma[i][j] / r, 6) - 12 * pow(sigma[i][j] / r, 12)) * (1. / r);
+}
+
+double Quantum::JKWB_upper_E_limit(int i, int j){
+    double deBoer = get_de_boer(i, j);
+    double margin = 5; // Some suitably large number ...
+    double E_red = pow(margin * deBoer, 2) + 1;
+    return E_red;
 }
 
 double Quantum::JKWB_phase_shift(int i, int j, int l, double E){
@@ -166,7 +173,7 @@ vector2d Quantum::wave_function(int i, int j, int l, double E, double r_end, dou
 }
 
 double Quantum::phase_shift(int i, int j, int l, double E){
-    const double step_size{1e-3 * pow(E, 1. / 3.) * sigma[i][j]};
+    const double step_size = ((E < 1e-3) ? 1e-4 : 1e-3 * pow(E, 1. / 3.))* sigma[i][j];
     E *= eps[i][j];
     const double s2 = pow(step_size, 2) / 12.;
     double k2 = (2. * red_mass[i][j] / pow(HBAR, 2));
@@ -287,22 +294,29 @@ double Quantum::cross_section_kernel(int i, int j, double n, double l, double E)
 }
 
 double Quantum::cross_section(int i, int j, int n, double E){
+    E *= eps[i][j];
     if (is_singlecomp) i = j;
     
     double even_prefactor, odd_prefactor;
     if (i != j) {
         even_prefactor = odd_prefactor = 1.;
+        std::cout << "Using Boltzmann! (" << i << ", " << j << ")" << std::endl;
     }
     else {
-        double S = half_spin[i] * 2;
+        double S = half_spin[i] / 2.;
         even_prefactor = (S + 1) / (2 * S + 1);
         odd_prefactor = S / (2 * S + 1);
         if (half_spin[i] % 2 != 0) { // Odd Half-Integer spin, Fermions: Swap prefactors
+            std::cout << "Using Fermi-Dirac! (" << i << ", " << j << ") : " << S << std::endl;
             double tmp = even_prefactor;
             even_prefactor = odd_prefactor;
             odd_prefactor = tmp;
         }
+        else {
+            std::cout << "Using Bose-Einstein! (" << i << ", " << j << ") : " << S << std::endl;
+        }
     }
+    std::cout << "Prefactors : " << even_prefactor << ", " << odd_prefactor << std::endl;
     double Q = 0;
     if (even_prefactor > 0.){
         double Q_even = 0;
@@ -326,9 +340,14 @@ double Quantum::cross_section(int i, int j, int n, double E){
         } while (abs(q_odd) > 1e-6 * Q_odd);
         Q += odd_prefactor * Q_odd;
     } 
-    double kappa_mul_E_squared = 2. * red_mass[i][j] / HBAR; // The factor E has been included in omega instead
-    Q *= 4. * PI / kappa_mul_E_squared;
+
+    double k2 = 2. * red_mass[i][j] * E / pow(HBAR, 2);
+    Q *= 4. * PI / k2;
     return Q;
+}
+
+double Quantum::classical_cross_section(int i, int j, int l, double E){
+    return Spherical::cross_section(i, j, l, E);
 }
 
 double Quantum::quantum_omega(int i, int j, int n, int s, double T){
