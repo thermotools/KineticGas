@@ -8,7 +8,7 @@ Contains:
 #include <iostream>
 #include <functional>
 #include <memory>
-#include <cppThermoPack/thermo.h>
+#include <cppThermopack/thermo.h>
 
 /*
 KineticGas objects hold an internal std::unique_ptr<GenericEoS>, which is used to compute various properties that we need an EoS for.

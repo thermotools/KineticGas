@@ -8,7 +8,7 @@ class IdealDummy{
     public:
     int VAPPH;
     IdealDummy() {};
-    inline std::vector<std::vector<double>> dmudn(double T, double V, const std::vector<double> n) const {throw std::runtime_error("dmudn not implemented!");}
+    inline std::vector<std::vector<double>> dmudn(double T, double V, const std::vector<double> n) const {return {{0}};}
     inline double Cp_ideal(double T, int ci) const {return 5. * GAS_CONSTANT / 2.;}
     inline double pressure_tv(double T, double V, const std::vector<double> n) const {throw std::runtime_error("pressure_tv not implemented!");}
     inline double specific_volume(double t, double p, const std::vector<double> n, int phase) const {throw std::runtime_error("specific_volume not implemented!");}
@@ -152,8 +152,6 @@ class LJSpline : public Spherical {
 
     autodiff::dual K_HS(autodiff::dual rho_dual, autodiff::dual T);
     double dK_HS_drho(double rho, double T);
-
-
 };
 
 

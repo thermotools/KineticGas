@@ -49,7 +49,7 @@ def compress_diffusion_matr(M, dependent_idx):
 
 class py_KineticGas:
 
-    def __init__(self, comps, mole_weights=None, N=3, is_idealgas=False):
+    def __init__(self, comps, mole_weights=None, N=3, is_idealgas=False, is_single_component=False):
         """Constructor
         &&
         Args:
@@ -59,7 +59,7 @@ class py_KineticGas:
                                 In addition, several density-dependent factors are set to zero, to ensure consistency with
                                 the ideal gas law / Gibbs-Duhem for an ideal gas.
         """
-        self._is_singlecomp = False
+        self._is_singlecomp = is_single_component
         self.default_N = N
         self.is_idealgas = is_idealgas
         self.computed_d_points = {} # dict of state points in which (d_1, d0, d1) have already been computed
@@ -592,129 +592,135 @@ class py_KineticGas:
         alpha = self.thermal_diffusion_factor(T, Vm, x, N=N)
         return alpha / T
 
-    def thermal_conductivity(self, T, Vm, x, N=None, idealgas=None, include_internal=True, contributions='all'):
-        r"""TV-Property
-        Compute the thermal conductivity, $\lambda$. For models initialized with `is_idealgas=True`, the thermal
-        conductivity is not a function of density (i.e. $d \lambda / d V_m = 0$).
-        See Eq. (13) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
-        &&
-        Args:
-            T (float) : Temperature [K]
-            Vm (float) : Molar volume [m3 / mol]
-            x (array_like) : Molar composition [-]
-            N (int, optional) : Enskog approximation order (>= 2)
-            idealgas (bool, optional) : Return infinite dilution value? Defaults to model default (set on init).
-            include_internal (bool, optional) : Include contribution from internal degrees of freedom, computed using
-                                                Eucken equation (doi.org/10.6028/NIST.IR.8209). Defaults to True.
-            contributions (str, optional) : Return only specific contributions, can be ('all', '(i)nternal',
-                                            '(t)ranslational', '(d)ensity', or several of the above, such as 'tid' or 'td'.
-                                            If several contributions are selected, these are returned in an array of
-                                            contributions in the same order as indicated in the supplied flag.
+    # def thermal_conductivity(self, T, Vm, x, N=None, idealgas=None, include_internal=True, contributions='all'):
+    #     r"""TV-Property
+    #     Compute the thermal conductivity, $\lambda$. For models initialized with `is_idealgas=True`, the thermal
+    #     conductivity is not a function of density (i.e. $d \lambda / d V_m = 0$).
+    #     See Eq. (13) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+    #     &&
+    #     Args:
+    #         T (float) : Temperature [K]
+    #         Vm (float) : Molar volume [m3 / mol]
+    #         x (array_like) : Molar composition [-]
+    #         N (int, optional) : Enskog approximation order (>= 2)
+    #         idealgas (bool, optional) : Return infinite dilution value? Defaults to model default (set on init).
+    #         include_internal (bool, optional) : Include contribution from internal degrees of freedom, computed using
+    #                                             Eucken equation (doi.org/10.6028/NIST.IR.8209). Defaults to True.
+    #         contributions (str, optional) : Return only specific contributions, can be ('all', '(i)nternal',
+    #                                         '(t)ranslational', '(d)ensity', or several of the above, such as 'tid' or 'td'.
+    #                                         If several contributions are selected, these are returned in an array of
+    #                                         contributions in the same order as indicated in the supplied flag.
 
-        Returns:
-            (float) : The thermal conductivity of the mixture.
-        """
-        if N is None:
-            N = self.default_N
-        if idealgas is None:
-            idealgas = self.is_idealgas
+    #     Returns:
+    #         (float) : The thermal conductivity of the mixture.
+    #     """
+    #     if N is None:
+    #         N = self.default_N
+    #     if idealgas is None:
+    #         idealgas = self.is_idealgas
 
-        x = self.check_valid_composition(x)
-        lambda_int = 0
-        if include_internal is True:
-            f_int = 1.32e3
-            eta_0 = self.viscosity(T, 1e10, x, N=N, idealgas=True)
-            Cp = 0
-            M = sum(self.mole_weights * x) * Avogadro * 1e3
-            for i in range(self.ncomps):
-                _, Cpi_id = self.eos.idealenthalpysingle(T, 1 if self._is_singlecomp else i + 1, dhdt=True)
-                # _, Cpi_id = self.eos.idealenthalpysingle(T, 1, dhdt=True)
-                # Mi = self.mole_weights[i] * Avogadro * 1e3  # Mole weight in g / mol
-                Cp += x[i] * Cpi_id
+    #     x = self.check_valid_composition(x)
+    #     lambda_int = 0
+    #     if include_internal is True:
+    #         f_int = 1.32e3
+    #         eta_0 = self.viscosity(T, 1e10, x, N=N, idealgas=True)
+    #         Cp = 0
+    #         M = sum(self.mole_weights * x) * Avogadro * 1e3
+    #         for i in range(self.ncomps):
+    #             _, Cpi_id = self.eos.idealenthalpysingle(T, 1 if self._is_singlecomp else i + 1, dhdt=True)
+    #             # _, Cpi_id = self.eos.idealenthalpysingle(T, 1, dhdt=True)
+    #             # Mi = self.mole_weights[i] * Avogadro * 1e3  # Mole weight in g / mol
+    #             Cp += x[i] * Cpi_id
 
-            Cp_factor = (Cp - 5 * gas_constant / 2) / M
-            lambda_int = f_int * eta_0 * Cp_factor
+    #         Cp_factor = (Cp - 5 * gas_constant / 2) / M
+    #         lambda_int = f_int * eta_0 * Cp_factor
 
-        if contributions == 'i':
-            return lambda_int
+    #     if contributions == 'i':
+    #         return lambda_int
 
-        particle_density = Avogadro / Vm
-        a = self.compute_cond_vector(particle_density, T, x, N=N)
-        rdf = self.get_rdf(particle_density, T, x)
-        K = self.cpp_kingas.get_K_factors(particle_density, T, x)
-        etl = self.get_etl(particle_density, T, x)
-        d = self.compute_diffusion_coeff_vector(particle_density, T, x, N=N)
-        d = self.reshape_diffusion_coeff_vector(d)
+    #     particle_density = Avogadro / Vm
+    #     a = self.compute_cond_vector(particle_density, T, x, N=N)
+    #     rdf = self.get_rdf(particle_density, T, x)
+    #     K = self.cpp_kingas.get_K_factors(particle_density, T, x)
+    #     etl = self.get_etl(particle_density, T, x)
+    #     d = self.compute_diffusion_coeff_vector(particle_density, T, x, N=N)
+    #     d = self.reshape_diffusion_coeff_vector(d)
 
-        lambda_prime = 0
-        dth = self.compute_dth_vector(particle_density, T, x, N=N)
-        for i in range(self.ncomps):
-            tmp = 0
-            for k in range(self.ncomps):
-                tmp += d[i, 1, k] * dth[k]
-            lambda_prime += x[i] * K[i] * (a[self.ncomps + i] - tmp)
-        lambda_prime *= (5 * Boltzmann / 4)
+    #     lambda_prime = 0
+    #     dth = self.compute_dth_vector(particle_density, T, x, N=N)
+    #     for i in range(self.ncomps):
+    #         tmp = 0
+    #         for k in range(self.ncomps):
+    #             tmp += d[i, 1, k] * dth[k]
+    #         lambda_prime += x[i] * K[i] * (a[self.ncomps + i] - tmp)
+    #     lambda_prime *= (5 * Boltzmann / 4)
 
 
 
-        lambda_dblprime = 0
-        if idealgas is False:  # lambda_dblprime is only nonzero when density corrections are present, and vanishes at infinite dilution
-            for i in range(self.ncomps):
-                for j in range(self.ncomps):
-                    lambda_dblprime += particle_density ** 2 * np.sqrt(
-                        2 * pi * self.m[i] * self.m[j] * Boltzmann * T / (self.m[i] + self.m[j])) \
-                                       * (x[i] * x[j]) / (self.m[i] + self.m[j]) * (etl[i][j] ** 4) * rdf[i][j]
-            lambda_dblprime *= (4 * Boltzmann / 3)
+    #     lambda_dblprime = 0
+    #     if idealgas is False:  # lambda_dblprime is only nonzero when density corrections are present, and vanishes at infinite dilution
+    #         for i in range(self.ncomps):
+    #             for j in range(self.ncomps):
+    #                 lambda_dblprime += particle_density ** 2 * np.sqrt(
+    #                     2 * pi * self.m[i] * self.m[j] * Boltzmann * T / (self.m[i] + self.m[j])) \
+    #                                    * (x[i] * x[j]) / (self.m[i] + self.m[j]) * (etl[i][j] ** 4) * rdf[i][j]
+    #         lambda_dblprime *= (4 * Boltzmann / 3)
 
-        cond = lambda_prime + lambda_int + lambda_dblprime
-        if contributions == 'all':
-            return cond
+    #     cond = lambda_prime + lambda_int + lambda_dblprime
+    #     if contributions == 'all':
+    #         return cond
 
-        contribs = {'t' : lambda_prime, 'i' : lambda_int, 'd' : lambda_dblprime}
-        if len(contributions) > 1:
-            return np.array([contribs[c] for c in contributions])
-        else:
-            return contribs[contributions]
+    #     contribs = {'t' : lambda_prime, 'i' : lambda_int, 'd' : lambda_dblprime}
+    #     if len(contributions) > 1:
+    #         return np.array([contribs[c] for c in contributions])
+    #     else:
+    #         return contribs[contributions]
 
-    def viscosity(self, T, Vm, x, N=None, idealgas=None):
-        r"""TV-Property
-        Compute the shear viscosity, $\eta$. For models initialized with `is_idealgas=True`, the shear viscosity
-        is not a function of density (i.e. $d \eta / d V_m = 0). See Eq. (12) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
-        &&
-        Args:
-            T (float) : Temperature [K]
-            Vm (float) : Molar volume [m3 / mol]
-            x (array_like) : Molar composition [-]
-            N (int, optional) : Enskog approximation order
-            idealgas (bool, optional) : Use infinite dilution value? Defaults to model default value (set on init)
+    def thermal_conductivity(self,T,Vm,x,N=2):
+        return self.cpp_kingas.thermal_conductivity(T,Vm,x,N)
 
-        Returns:
-            (float) : The shear viscosity of the mixture.
-        """
-        if N is None:
-            N = self.default_N
-        if idealgas is None:
-            idealgas = self.is_idealgas
-        x = self.check_valid_composition(x)
-        particle_density = Avogadro / Vm
-        b = self.compute_visc_vector(T, particle_density, x, N=N)
-        K_prime = self.cpp_kingas.get_K_prime_factors(particle_density, T, x) if (idealgas is False) else np.ones(self.ncomps)
+    # def viscosity(self, T, Vm, x, N=None, idealgas=None):
+    #     r"""TV-Property
+    #     Compute the shear viscosity, $\eta$. For models initialized with `is_idealgas=True`, the shear viscosity
+    #     is not a function of density (i.e. $d \eta / d V_m = 0). See Eq. (12) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+    #     &&
+    #     Args:
+    #         T (float) : Temperature [K]
+    #         Vm (float) : Molar volume [m3 / mol]
+    #         x (array_like) : Molar composition [-]
+    #         N (int, optional) : Enskog approximation order
+    #         idealgas (bool, optional) : Use infinite dilution value? Defaults to model default value (set on init)
 
-        eta_prime = 0
-        for i in range(self.ncomps):
-            eta_prime += K_prime[i] * x[i] * b[i]
-        eta_prime *= Boltzmann * T / 2
+    #     Returns:
+    #         (float) : The shear viscosity of the mixture.
+    #     """
+    #     if N is None:
+    #         N = self.default_N
+    #     if idealgas is None:
+    #         idealgas = self.is_idealgas
+    #     x = self.check_valid_composition(x)
+    #     particle_density = Avogadro / Vm
+    #     b = self.compute_visc_vector(T, particle_density, x, N=N)
+    #     K_prime = self.cpp_kingas.get_K_prime_factors(particle_density, T, x) if (idealgas is False) else np.ones(self.ncomps)
 
-        eta_dblprime = 0
-        if idealgas is False: # eta_dblprime is only nonzero when density corrections are present, and vanish at infinite dilution
-            mtl = self.get_mtl(particle_density, T, x)
-            rdf = self.get_rdf(particle_density, T, x)
-            for i in range(self.ncomps):
-                for j in range(self.ncomps):
-                    eta_dblprime += np.sqrt(self.m[i] * self.m[j] / (self.m[i] + self.m[j])) * x[i] * x[j] * mtl[i][j]**4 * rdf[i][j]
-            eta_dblprime *= 4 * particle_density**2 * np.sqrt(2 * np.pi * Boltzmann * T) / 15
+    #     eta_prime = 0
+    #     for i in range(self.ncomps):
+    #         eta_prime += K_prime[i] * x[i] * b[i]
+    #     eta_prime *= Boltzmann * T / 2
 
-        return eta_prime + eta_dblprime
+    #     eta_dblprime = 0
+    #     if idealgas is False: # eta_dblprime is only nonzero when density corrections are present, and vanish at infinite dilution
+    #         mtl = self.get_mtl(particle_density, T, x)
+    #         rdf = self.get_rdf(particle_density, T, x)
+    #         for i in range(self.ncomps):
+    #             for j in range(self.ncomps):
+    #                 eta_dblprime += np.sqrt(self.m[i] * self.m[j] / (self.m[i] + self.m[j])) * x[i] * x[j] * mtl[i][j]**4 * rdf[i][j]
+    #         eta_dblprime *= 4 * particle_density**2 * np.sqrt(2 * np.pi * Boltzmann * T) / 15
+
+    #     return eta_prime + eta_dblprime
+    
+    def viscosity(self,T,Vm,x,N=2):
+        return self.cpp_kingas.viscosity(T,Vm,x,N)
 
     def bulk_viscosity(self, T, Vm, x, N=None):
         """TV-property

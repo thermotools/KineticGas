@@ -3,20 +3,24 @@ import matplotlib.pyplot as plt
 from pykingas.LJSpline import LJSpline
 
 
-ljs = LJSpline(1e-10,100.0,40.0)
+ljs = LJSpline(3.4e-10,120.0,40.0)
 
-rdf = ljs.get_rdf(1e30,100,[0.5,0.5])
+rdf = ljs.get_rdf((3.4e-10)**-(3),300,[0.5,0.5])
 
 print(r"$\rho^* = 1$")
 print(r"$T^* = 1$")
 print("RDF at contact: ", rdf)
 
-rho_array = np.linspace(0.1,1.4,8)*1e6
+rho_array = np.array([1/(20e-3)])#np.linspace(0.1,1.4,8)*1e6
 Vm_array = 1/rho_array
-mu_list = []
+eta_list = []
+lambda_list = []
 
-for vm in rho_array:
-    mu_list.append(ljs.viscosity(100,vm,[0.5,0.5]))
+for vm in Vm_array:
+    eta_list.append(ljs.viscosity(300,vm,[0.5,0.5]))
+    lambda_list.append(ljs.thermal_conductivity(300,vm,[0.5,0.5]))
 
-plt.plot(rho_array, mu_list, "-o")
+print(eta_list)
+print(lambda_list)
+plt.plot(rho_array, eta_list, "-o")
 plt.show()

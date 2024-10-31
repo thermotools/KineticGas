@@ -154,6 +154,9 @@ double Spherical::theta_integral(int i, int j, double T, double R, double g, dou
 }
 
 double Spherical::theta_integrand(int i, int j, double T, double r, double g, double b){
+    double t = pow((pow(r, 4) / pow(b, 2)) * (1.0 - potential(i, j, r) / (BOLTZMANN * T * pow(g, 2))) - pow(r, 2), -0.5);
+    if (t != t) {    
+        return 0;}
     return pow((pow(r, 4) / pow(b, 2)) * (1.0 - potential(i, j, r) / (BOLTZMANN * T * pow(g, 2))) - pow(r, 2), -0.5);
 }
 

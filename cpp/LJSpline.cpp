@@ -131,13 +131,12 @@ double LJSpline::get_g2_MCA(double rho, double T) {
 }
 
 double LJSpline::gamma_corr(double rho, double T) {
-    std::vector<double> phi = {12.81213109, 9.40368497, 0.55898639, -5.13125192, 10.49874304};
+    std::vector<double> phi = {16.1284916, -10.15024328, 13.30221007, -0.54347841, 7.21743605};
     double eta = get_eta(T,rho);
     double x0 = get_x0(T);
     double T_reduced = T*BOLTZMANN/eps[0][0];
     double theta = exp(1/T_reduced)-1;
-    double alpha = 0.5357287350276779; //Numerical value of 1/(eps*sigma²)*\int (u(r)r²dr)
-    double gamma = phi[0]*(-tanh(phi[1]*(phi[2]-alpha))+1)*eta*pow(x0,3)*theta*exp(phi[3]*eta*pow(x0,3)+phi[4]*pow(eta,2)*pow(x0,6));
+    double gamma = phi[0]*eta*pow(x0,3)*theta*exp(phi[1]*eta*pow(x0,3)+phi[2]*pow(eta,2)*pow(x0,6))*(1+phi[3]*theta+phi[4]*eta*pow(x0,3));
     return gamma;
 }
 

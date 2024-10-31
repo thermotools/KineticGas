@@ -8,7 +8,7 @@ from numpy import pi
 from scipy.constants import Avogadro, Boltzmann as kB
 from scipy.optimize import root
 from .libpykingas import cpp_LJSpline
-from pykingas.py_KineticGas import py_KineticGas, IdealGas
+from pykingas.py_KineticGas import py_KineticGas
 
 class LJSpline(py_KineticGas):
 
