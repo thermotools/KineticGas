@@ -26,7 +26,7 @@ public:
 
     double classical_cross_section(int i, int j, int l, double E);
 
-    std::vector<size_t> half_spin; // Spin of each particle multiplied by two 
+    std::vector<unsigned int> half_spin; // Spin of each particle multiplied by two 
 protected:
     vector2d model_rdf(double rho, double T, const vector1d& mole_fracs) override {throw std::runtime_error("Method model_rdf not implemented for Quantum!");}
 private:

@@ -3,7 +3,7 @@
 #include "MieKinGas.h"
 #include "HardSphere.h"
 #include "PseudoHardSphere.h"
-#include "ModTangToennis.h"
+#include "multiparam.h"
 #include "Quantum.h"
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
@@ -46,6 +46,8 @@ using vector2d = std::vector<vector1d>;
         .def("potential", py::overload_cast<int, int, double>(&Model::potential)) \
         .def("potential_derivative_r", &Model::potential_derivative_r) \
         .def("potential_dblderivative_rr", &Model::potential_dblderivative_rr) \
+        .def("potential_r", &Model::potential_derivative_r) \
+        .def("potential_rr", &Model::potential_dblderivative_rr) \
         .def("get_reducing_units", &Model::get_reducing_units) \
 
 PYBIND11_MODULE(libpykingas, handle){
@@ -183,7 +185,6 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("potential", py::overload_cast<int, int, double>(&ModTangToennis::potential))
         .def("potential_r", &ModTangToennis::potential_derivative_r)
         .def("potential_rr", &ModTangToennis::potential_dblderivative_rr)
-        .def("set_tl_model", &ModTangToennis::set_transfer_length_model)
         ;
 
     py::class_<HardSphere>(handle, "cpp_HardSphere")
@@ -215,6 +216,12 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("get_de_boer", py::overload_cast<int>(&Quantum::get_de_boer))
         .def("set_de_boer_mass", &Quantum::set_de_boer_mass)
         .def("JKWB_upper_E_limit", &Quantum::JKWB_upper_E_limit)
+        ;
+    
+    py::class_<HFD_B2, Quantum>(handle, "cpp_HFD_B2")
+        .def(py::init<std::string>())
+        KineticGas_bindings(HFD_B2)
+        Spherical_potential_bindings(HFD_B2)
         ;
 
     py::class_<PseudoHardSphere>(handle, "cpp_PseudoHardSphere")

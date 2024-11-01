@@ -8,6 +8,15 @@ class Quantum(py_KineticGas):
         self.cpp_kingas = cpp_Quantum(comps)
         self.eos = None
     
+    def potential(self, i, j, r):
+        return self.cpp_kingas.potential(i, j, r)
+    
+    def potential_r(self, i, j, r):
+        return self.cpp_kingas.potential_r(i, j, r)
+    
+    def potential_rr(self, i, j, r):
+        return self.cpp_kingas.potential_rr(i, j, r)
+
     def cross_section(self, i, j, l, E, reduced=False):
         return self.cpp_kingas.reduced_cross_section(i, j, l, E) if (reduced is True) else self.cpp_kingas.cross_section(i, j, l, E)
 

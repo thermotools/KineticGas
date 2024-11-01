@@ -158,5 +158,24 @@
             "bib_reference": "HYVA parameters with non-integer repulsive exponent"
         }
     },
-    "LJs": {}
+    "HFD-B2": {
+        "default": {
+            "A": 1.9221529e5,
+            "alpha": 10.73520708,
+            "c6": 1.34920045,
+            "c8": 0.41365922,
+            "c10": 0.17078164,
+            "C6": 0.0009260149409399379,
+            "C8": 2.5043621360101606e-05,
+            "C10": 9.120287155332109e-07,
+            "beta_star": -1.89296514,
+            "beta": -21.46,
+            "D": 1.4132,
+            "eps_div_k": 10.94,
+            "rm": 0.2970,
+            "sigma": 2.64205e-10,
+            "bib_reference": "R A Aziz and M J Slaman 1990 Metrologia 27 211",
+            "Note": "Beware fucked up units (see implementation or reference)."
+        }
+    }
 }

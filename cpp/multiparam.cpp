@@ -1,4 +1,4 @@
-#include "ModTangToennis.h"
+#include "multiparam.h"
 #include <algorithm>
 
 double partialfactorial(int start, int stop){
@@ -80,4 +80,66 @@ double ModTangToennis::potential(int i, int j, double r){
         u -= (param.C[n - 3] / pow(r, 2 * n)) * (1 - exp_prefactor * tmp);
     }
     return u * BOLTZMANN;
+}
+
+HFD_B2::HFD_B2(std::string comps) : Quantum(comps) {
+    const auto cdata = compdata[0]["HFD-B2"]["default"];
+    param.A = cdata["A"];
+    param.alpha = cdata["alpha"];
+    param.c6 = cdata["c6"];
+    param.c8 = cdata["c8"];
+    param.c10 = cdata["c10"];
+
+    param.c_vec[0] = param.c6;
+    param.c_vec[1] = param.c8;
+    param.c_vec[2] = param.c10;
+
+    param.C6 = cdata["C6"];
+    param.C8 = cdata["C8"];
+    param.C10 = cdata["C10"];
+    param.beta_star = cdata["beta_star"];
+    param.beta = cdata["beta"];
+    param.D = cdata["D"];
+    param.eps_div_k = cdata["eps_div_k"];
+    param.rm = cdata["rm"];
+    param.sigma = cdata["sigma"];
+
+    for (size_t i = 0; i < Ncomps; i++){
+        for (size_t j = 0; j < Ncomps; j++){
+            sigma[i][j] = param.sigma;
+            eps[i][j] = param.eps_div_k * BOLTZMANN;
+        }
+    }
+}
+
+dual2 HFD_B2::potential(int i, int j, dual2 r){
+    r *= 1e9; // working in nm internally
+    dual2 x = r / param.rm;
+    dual2 V = param.A * exp(- param.alpha * x + param.beta_star * pow(x, 2));
+
+    if (x < 1e-10) return eps[i][j] * V;
+
+    dual2 F = (x > param.D) ? static_cast<dual2>(1.) : exp(-pow((param.D / x) - 1, 2));
+    dual2 C = 0;
+    for (size_t j = 0; j <= 2; j++){
+        C += param.c_vec[j] / pow(x, 2 * j + 6);
+    }
+    V -= F * C;
+    return V * eps[i][j];
+}
+
+double HFD_B2::potential(int i, int j, double r){
+    r *= 1e9; // working in nm internally
+    double x = r / param.rm;
+    double V = param.A * exp(- param.alpha * x + param.beta_star * pow(x, 2));
+
+    if (x < 1e-10) return eps[i][j] * V;
+
+    double F = (x > param.D) ? 1. : exp(-pow((param.D / x) - 1, 2));
+    double C = 0;
+    for (size_t j = 0; j <= 2; j++){
+        C += param.c_vec[j] / pow(x, 2 * j + 6);
+    }
+    V -= F * C;
+    return V * param.eps_div_k * BOLTZMANN;
 }

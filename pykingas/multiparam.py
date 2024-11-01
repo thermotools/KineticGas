@@ -1,5 +1,6 @@
 from pykingas.py_KineticGas import py_KineticGas
-from .libpykingas import cpp_ModTangToennis, cpp_TangToennisParam
+from pykingas.Quantum import Quantum
+from .libpykingas import cpp_ModTangToennis, cpp_TangToennisParam, cpp_HFD_B2
 from scipy.constants import Boltzmann, Avogadro
 import numpy as np
 from scipy.integrate import quad
@@ -93,3 +94,9 @@ class ModTangToennis(py_KineticGas):
         E += quad(integrand, 1.5 * self.sigma * 1e10, np.inf)[0]
         E *= 1e-30
         return - E / ((self.eps_div_k * Boltzmann) * self.sigma ** 3)
+    
+class HFD_B2(Quantum):
+
+    def __init__(self, comps):
+        super().__init__(comps)
+        self.cpp_kingas = cpp_HFD_B2(comps)

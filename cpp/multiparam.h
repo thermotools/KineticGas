@@ -1,6 +1,7 @@
 #pragma once
 #include "KineticGas.h"
 #include "Spherical.h"
+#include "Quantum.h"
 #include "global_params.h"
 #include <autodiff/forward/dual.hpp>
 
@@ -37,5 +38,22 @@ class ModTangToennis : public Spherical {
     }
 
     TangToennisParam get_param(){return param;};
+};
 
+struct HFD_B2_Param {
+    double A, alpha, c6, c8, c10, C6, C8, C10, beta_star, beta, D, eps_div_k, rm, sigma;
+    std::array<double, 3> c_vec = {0, 0, 0};
+};
+
+class HFD_B2 : public Quantum {
+public:
+    HFD_B2(std::string comps);
+    HFD_B2(HFD_B2_Param param);
+
+    dual2 potential(int i, int j, dual2 r) override;
+    double potential(int i, int j, double r) override;
+
+    HFD_B2_Param get_param(){return param;}
+private:
+    HFD_B2_Param param;
 };
