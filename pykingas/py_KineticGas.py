@@ -192,84 +192,87 @@ class py_KineticGas:
     #          Transport property computations          #
     #####################################################
 
-    def interdiffusion(self, T, Vm, x, N=None,
-                       use_independent=True, dependent_idx=None,
-                        frame_of_reference='CoN', use_binary=True,
-                        solvent_idx=None):
-        r"""TV-property
-        Compute the interdiffusion coefficients [m^2 / s]. Default definition is
+    # def interdiffusion(self, T, Vm, x, N=None,
+    #                    use_independent=True, dependent_idx=None,
+    #                     frame_of_reference='CoN', use_binary=True,
+    #                     solvent_idx=None):
+    #     r"""TV-property
+    #     Compute the interdiffusion coefficients [m^2 / s]. Default definition is
 
-        $$ J_i^{(n, n)} = - \sum_{j \neq l} D_{ij} \nabla n_j, \nabla T = \nabla p = F_k = 0 \forall k $$
+    #     $$ J_i^{(n, n)} = - \sum_{j \neq l} D_{ij} \nabla n_j, \nabla T = \nabla p = F_k = 0 \forall k $$
 
-        where the flux, $J_i^{(n, n)}$ is on a molar basis, in the molar frame of reference, and $j \neq l$ is an
-        independent set of forces with $l=$ `dependent_idx`.
-        For fluxes in other frames of reference, use the `frame_of_reference` kwarg.
-        For the diffusion coefficients describing the fluxes' response to all forces (not independent) the definition
-        is:
+    #     where the flux, $J_i^{(n, n)}$ is on a molar basis, in the molar frame of reference, and $j \neq l$ is an
+    #     independent set of forces with $l=$ `dependent_idx`.
+    #     For fluxes in other frames of reference, use the `frame_of_reference` kwarg.
+    #     For the diffusion coefficients describing the fluxes' response to all forces (not independent) the definition
+    #     is:
 
-        $$ J_i^{(n, n)} = - \sum_j D_{ij} \nabla n_j, \nabla T = \nabla p = F_k = 0 \forall k $$
+    #     $$ J_i^{(n, n)} = - \sum_j D_{ij} \nabla n_j, \nabla T = \nabla p = F_k = 0 \forall k $$
 
-        use the `use_independent` and `dependent_idx` kwargs to switch between these definitions.
-        See: Eq. (17-20) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
-        &&
-        Args:
-            T (float) : Temperature (K)
-            Vm (float) : Molar volume (m3 / mol)
-            x (array_like) : composition (mole fractions)
-            N (int, optional) : Enskog approximation order. Default set on model initialisation.
-            use_binary (bool, optional) : If the mixture is binary, and an independent set of fluxes and forces is considered, i.e.
-                `use_independent=True`, the diffusion coefficients will be exactly equal with opposite sign. Setting
-                `use_binary=True` will in that case only return the coefficient describing the independent flux-force relation.
-            use_independent (bool, optional) : Return diffusion coefficients for independent set of forces.
-            dependent_idx (int, optional) : Index of the dependent molar density gradient (only if `use_independent=True`, the default behaviour).
-                Defaults to last component, except when `frame_of_reference='solvent'`, in which case default is equal
-                to `solvent_idx`.
-            frame_of_reference (str, optional) : Which frame of reference the diffusion coefficients apply to. Default
-                is `'CoN'`. Can be `'CoN'` (molar FoR), `'CoM'` (barycentric FoR), `'solvent'` (solvent FoR), `'zarate'` (See Memo on
-                definitions of the diffusion coefficient), `'zarate_x'` ($D^{(x)}$ as defined by Ortiz de Zárate, doi 10.1140/epje/i2019-11803-2)
-                or `'zarate_w'` ($D^{(w)}$ as defined by Ortiz de Zárate).
-            solvent_idx (int, optional) : Index of component identified as solvent (only when using `frame_of_reference='solvent'`)
+    #     use the `use_independent` and `dependent_idx` kwargs to switch between these definitions.
+    #     See: Eq. (17-20) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+    #     &&
+    #     Args:
+    #         T (float) : Temperature (K)
+    #         Vm (float) : Molar volume (m3 / mol)
+    #         x (array_like) : composition (mole fractions)
+    #         N (int, optional) : Enskog approximation order. Default set on model initialisation.
+    #         use_binary (bool, optional) : If the mixture is binary, and an independent set of fluxes and forces is considered, i.e.
+    #             `use_independent=True`, the diffusion coefficients will be exactly equal with opposite sign. Setting
+    #             `use_binary=True` will in that case only return the coefficient describing the independent flux-force relation.
+    #         use_independent (bool, optional) : Return diffusion coefficients for independent set of forces.
+    #         dependent_idx (int, optional) : Index of the dependent molar density gradient (only if `use_independent=True`, the default behaviour).
+    #             Defaults to last component, except when `frame_of_reference='solvent'`, in which case default is equal
+    #             to `solvent_idx`.
+    #         frame_of_reference (str, optional) : Which frame of reference the diffusion coefficients apply to. Default
+    #             is `'CoN'`. Can be `'CoN'` (molar FoR), `'CoM'` (barycentric FoR), `'solvent'` (solvent FoR), `'zarate'` (See Memo on
+    #             definitions of the diffusion coefficient), `'zarate_x'` ($D^{(x)}$ as defined by Ortiz de Zárate, doi 10.1140/epje/i2019-11803-2)
+    #             or `'zarate_w'` ($D^{(w)}$ as defined by Ortiz de Zárate).
+    #         solvent_idx (int, optional) : Index of component identified as solvent (only when using `frame_of_reference='solvent'`)
 
-        Returns:
-            (ndarray or float) : Diffusion coefficients, shape varies based on options and number of components. Unit [m^2 / s]
-        """
-        if dependent_idx is None:
-            dependent_idx = self.ncomps - 1
-        while dependent_idx < 0:
-            dependent_idx += self.ncomps
-        x = self.check_valid_composition(x)
-        D = self.interdiffusion_general(T, Vm, x, N=N)
-        # psi = Transformation matrix from 'centre of mass' to 'frame_of_reference'
-        # get_com_2_for_matr() dispatches the call to specific functions for different frames of reference.
-        if frame_of_reference == 'zarate_x':
-            D = self.interdiffusion(T, Vm, x, N=N, frame_of_reference='CoN', dependent_idx=dependent_idx, use_independent=True, use_binary=False)
-            return compress_diffusion_matr(D, dependent_idx)
-        elif frame_of_reference == 'zarate':
-            X = self.get_zarate_X_matr(x, dependent_idx)
-            D_x = self.interdiffusion(T, Vm, x, N=N, frame_of_reference='zarate_x', dependent_idx=dependent_idx, use_binary=False)
-            return X @ D_x @ np.linalg.inv(X)
-        elif frame_of_reference == 'zarate_w':
-            W = self.get_zarate_W_matr(x, dependent_idx)
-            D_z = self.interdiffusion(T, Vm, x, N=N, frame_of_reference='zarate', dependent_idx=dependent_idx, use_binary=False)
-            return W @ D_z @ np.linalg.inv(W)
+    #     Returns:
+    #         (ndarray or float) : Diffusion coefficients, shape varies based on options and number of components. Unit [m^2 / s]
+    #     """
+    #     if dependent_idx is None:
+    #         dependent_idx = self.ncomps - 1
+    #     while dependent_idx < 0:
+    #         dependent_idx += self.ncomps
+    #     x = self.check_valid_composition(x)
+    #     D = self.interdiffusion_general(T, Vm, x, N=N)
+    #     # psi = Transformation matrix from 'centre of mass' to 'frame_of_reference'
+    #     # get_com_2_for_matr() dispatches the call to specific functions for different frames of reference.
+    #     if frame_of_reference == 'zarate_x':
+    #         D = self.interdiffusion(T, Vm, x, N=N, frame_of_reference='CoN', dependent_idx=dependent_idx, use_independent=True, use_binary=False)
+    #         return compress_diffusion_matr(D, dependent_idx)
+    #     elif frame_of_reference == 'zarate':
+    #         X = self.get_zarate_X_matr(x, dependent_idx)
+    #         D_x = self.interdiffusion(T, Vm, x, N=N, frame_of_reference='zarate_x', dependent_idx=dependent_idx, use_binary=False)
+    #         return X @ D_x @ np.linalg.inv(X)
+    #     elif frame_of_reference == 'zarate_w':
+    #         W = self.get_zarate_W_matr(x, dependent_idx)
+    #         D_z = self.interdiffusion(T, Vm, x, N=N, frame_of_reference='zarate', dependent_idx=dependent_idx, use_binary=False)
+    #         return W @ D_z @ np.linalg.inv(W)
 
-        psi = self.get_com_2_for_matr(T, Vm, x, frame_of_reference, solvent_idx=solvent_idx)
-        D = psi @ D
-        if use_independent is True:
-            if dependent_idx is None:
-                if frame_of_reference == 'solvent':
-                    dependent_idx = solvent_idx
-                else:
-                    dependent_idx = self.ncomps - 1
-            P = self.get_P_factors(Vm, T, x)
-            D_dep = copy.deepcopy(D)
-            for i in range(self.ncomps):
-                for j in range(self.ncomps):
-                    D[i, j] -= (P[j] / P[dependent_idx]) * D_dep[i, dependent_idx]
-            if use_binary is True and self.ncomps == 2:
-                independent_idx = 1 - dependent_idx
-                return D[independent_idx][independent_idx] # Return the independent fluxes response to the independent force
-        return D
+    #     psi = self.get_com_2_for_matr(T, Vm, x, frame_of_reference, solvent_idx=solvent_idx)
+    #     D = psi @ D
+    #     if use_independent is True:
+    #         if dependent_idx is None:
+    #             if frame_of_reference == 'solvent':
+    #                 dependent_idx = solvent_idx
+    #             else:
+    #                 dependent_idx = self.ncomps - 1
+    #         P = self.get_P_factors(Vm, T, x)
+    #         D_dep = copy.deepcopy(D)
+    #         for i in range(self.ncomps):
+    #             for j in range(self.ncomps):
+    #                 D[i, j] -= (P[j] / P[dependent_idx]) * D_dep[i, dependent_idx]
+    #         if use_binary is True and self.ncomps == 2:
+    #             independent_idx = 1 - dependent_idx
+    #             return D[independent_idx][independent_idx] # Return the independent fluxes response to the independent force
+    #     return D
+
+    def selfdiff_ljs(self,T,Vm,x,N=2,FoR=1,dependent_index=-1,solvent_index=-1,do_compress=True):
+        return self.cpp_kingas.selfdiffusion(T,Vm,x,N,FoR,dependent_index,solvent_index,do_compress)
 
     def interdiffusion_general(self, T, Vm, x, N=None):
         r"""TV-property

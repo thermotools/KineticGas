@@ -34,7 +34,7 @@ int main(){
 
     // std::cout << "CoM => CoV :\n" << mie.CoM_to_CoV_matr(T, Vm, x2) << std::endl;
 
-    double ep = 120 * BOLTZMANN;
+    double ep = 117 * BOLTZMANN;
     double sig = 3.4e-10;
     double MW = 40*1e-3 / AVOGADRO;
 
@@ -43,14 +43,14 @@ int main(){
     std::vector<double> x = {0.5, 0.5};
 
     LJSpline ljs({MW, MW}, {{sig, sig}, {sig, sig}}, {{ep, ep}, {ep, ep}}, false, true);
-    std::cout << "VISCOSITY LJS: " << ljs.viscosity(T,Vm,x) << std::endl;
-    std::cout << "CONDUCTIVITY LJS: " << ljs.thermal_conductivity(T,Vm,x) << std::endl;
-    std::cout << "SELFDIFF LJS: " << ljs.interdiffusion(T,Vm,x) << std::endl;
+    //std::cout << "VISCOSITY LJS: " << ljs.viscosity(T,Vm,x) << std::endl;
+    //std::cout << "CONDUCTIVITY LJS: " << ljs.thermal_conductivity(T,Vm,x) << std::endl;
+    //std::cout << "SELFDIFF LJS: " << ljs.selfdiffusion(T,Vm,x) << std::endl;
     MieKinGas mie({MW, MW}, {{sig, sig}, {sig, sig}}, {{ep, ep}, {ep, ep}}, {{6., 6.}, {6., 6.}}, {{12., 12.}, {12., 12.}}, false, true);
     GenericEoS eos(ThermoWrapper(Saftvrmie("AR")));
     mie.set_eos(std::move(eos));
-    std::cout << "VISCOSITY MIE: " << mie.viscosity(T,Vm,x) << std::endl;
-    std::cout << "CONDUCTIVITY MIE: " << mie.thermal_conductivity(T,Vm,x) << std::endl;
+    //std::cout << "VISCOSITY MIE: " << mie.viscosity(T,Vm,x) << std::endl;
+    //std::cout << "CONDUCTIVITY MIE: " << mie.thermal_conductivity(T,Vm,x) << std::endl;
     std::cout << "SELFDIFF MIE: " << mie.interdiffusion(T,Vm,x) << std::endl;
     return 0;
 }

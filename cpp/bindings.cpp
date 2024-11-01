@@ -32,6 +32,7 @@ using vector2d = std::vector<vector1d>;
         .def("thermal_conductivity_tp", &Model::thermal_conductivity_tp) \
         .def("viscosity", &Model::viscosity) \
         .def("interdiffusion", &Model::interdiffusion) \
+        .def("selfdiffusion", &Model::selfdiffusion) \
 
 
 #define Spherical_potential_bindings(Model) \
