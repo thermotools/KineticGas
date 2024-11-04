@@ -3,6 +3,7 @@
 
 #pragma once
 #include "Spherical.h"
+#include "cppThermopack/ljs.h"
 
 class IdealDummy{
     public:
@@ -23,7 +24,10 @@ class LJSpline : public Spherical {
     : Spherical(mole_weights, sigmaij, eps, is_idealgas, is_singlecomp), a{-24192. / 3211.}, b{-387072. / 61009.},
     rs{pow(26./7. , 1./6.)*sigma[0][0]}, rc{67. * rs / 48.} 
     {
-        eos = std::make_unique<GenericEoS>(IdealDummy());
+        LJs_bh bh_eos{"Default",1.0};
+        // bh_eos.set_sigma_eps(sigma[0][0],eps[0][0]);
+        GenericEoS ljs_eos{ThermoWrapper(std::move(bh_eos))};
+        this -> set_eos(std::move(ljs_eos));
         if ((sigmaij.size() > 2) | (mole_weights.size() > 2) | (eps.size() > 2)) 
         {
             throw std::invalid_argument("The Lennard-Jones/spline is not implemented for multicomponent systems (yet)!");
@@ -152,10 +156,6 @@ class LJSpline : public Spherical {
 
     autodiff::dual K_HS(autodiff::dual rho_dual, autodiff::dual T);
     double dK_HS_drho(double rho, double T);
-
-    double selfdiffusion(double T, double Vm, const std::vector<double>& x, int N=2, int frame_of_reference=FrameOfReference::CoN, int dependent_idx=-1, int solvent_idx=-1, bool do_compress=true){
-        return *(interdiffusion(T, Vm, x, N,frame_of_reference, dependent_idx, solvent_idx,do_compress).data());}
-    
 };
 
 

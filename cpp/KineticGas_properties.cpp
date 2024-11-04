@@ -415,21 +415,16 @@ vector2d KineticGas::get_chemical_potential_factors(double T, double Vm, const s
     #endif
     vector2d dmudrho(Ncomps, vector1d(Ncomps, 0));
     if (is_singlecomp){
-        // const vector2d dmudn_pure = eos->dmudn(T, Vm, {1.});
-        // const double RT = GAS_CONSTANT * T;
-        // const double dmudrho_pure = Vm * dmudn_pure[0][0];
-        // const double rho = 1 / Vm;
-        // dmudrho[0][0] = (dmudrho_pure + RT * x[1] / (rho * x[0])) / AVOGADRO;
-        // dmudrho[0][1] = dmudrho[1][0] = (dmudrho_pure - RT / rho) / AVOGADRO;
-        // dmudrho[1][1] = (dmudrho_pure + RT * x[0] / (rho * x[1])) / AVOGADRO;
+        std::cout << "hei" << std::endl;
+        const vector2d dmudn_pure = eos->dmudn(T, Vm, {1.});
+        std::cout << dmudn_pure[0][0] << std::endl;
         const double RT = GAS_CONSTANT * T;
-        dmudrho[0][0] = (Vm*RT+Vm*RT*x[1]/x[0]) / AVOGADRO;
-        dmudrho[0][1] = (Vm*RT-Vm*RT) / AVOGADRO;
-        dmudrho[1][0] = (Vm*RT-Vm*RT) / AVOGADRO;
-        dmudrho[1][1] = (Vm*RT+Vm*RT*x[0]/x[1]) / AVOGADRO;
-        std::cout << dmudrho[0][0] << std::endl;
-        std::cout << dmudrho[1][0] << std::endl;
-        std::cout << dmudrho[1][1] << std::endl;
+        std::cout << RT << std::endl;
+        const double dmudrho_pure = Vm * dmudn_pure[0][0];
+        const double rho = 1 / Vm;
+        dmudrho[0][0] = (dmudrho_pure + RT * x[1] / (rho * x[0])) / AVOGADRO;
+        dmudrho[0][1] = dmudrho[1][0] = (dmudrho_pure - RT / rho) / AVOGADRO;
+        dmudrho[1][1] = (dmudrho_pure + RT * x[0] / (rho * x[1])) / AVOGADRO;
     }
     else{
         const vector2d dmudn = eos->dmudn(T, Vm, x);

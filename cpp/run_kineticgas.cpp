@@ -1,5 +1,6 @@
 #include "MieKinGas.h"
 #include "cppThermopack/saftvrmie.h"
+#include "cppThermopack/ljs.h"
 #include "LJSpline.h"
 #include <iostream>
 #include <vector>
@@ -43,9 +44,24 @@ int main(){
     std::vector<double> x = {0.5, 0.5};
 
     LJSpline ljs({MW, MW}, {{sig, sig}, {sig, sig}}, {{ep, ep}, {ep, ep}}, false, true);
+    //LJs_bh ljs_bh("Default", 1.0);
+    //ljs_bh.set_sigma_eps(sig,117);
+    //GenericEoS ljs_eos{ThermoWrapper(LJs_bh("Default",1.0))};
+    //ljs.set_eos(std::move(ljs_eos));
+
+    //LJs_bh bh_eos{"Default",1.0};
+    //LJs_bh bh_eos{1e-10,100};
+    //bh_eos.set_sigma_eps(3.4e-10,117);
+    //std::cout << bh_eos.get_sigma()[0] << std::endl;
+    //std::cout << bh_eos.get_eps_div_k()[0] << std::endl;
+    //GenericEoS ljs_eos{ThermoWrapper(LJs_bh(sig,1.0))};
+    //ljs.set_eos(std::move(ljs_eos));
+
+    
+
     //std::cout << "VISCOSITY LJS: " << ljs.viscosity(T,Vm,x) << std::endl;
     //std::cout << "CONDUCTIVITY LJS: " << ljs.thermal_conductivity(T,Vm,x) << std::endl;
-    //std::cout << "SELFDIFF LJS: " << ljs.selfdiffusion(T,Vm,x) << std::endl;
+    std::cout << "SELFDIFF LJS: " << ljs.selfdiffusion(T,Vm,x) << std::endl;
     MieKinGas mie({MW, MW}, {{sig, sig}, {sig, sig}}, {{ep, ep}, {ep, ep}}, {{6., 6.}, {6., 6.}}, {{12., 12.}, {12., 12.}}, false, true);
     GenericEoS eos(ThermoWrapper(Saftvrmie("AR")));
     mie.set_eos(std::move(eos));
