@@ -53,7 +53,7 @@ References:
 using json = nlohmann::json;
 
 class KineticGas{
-    public:
+public:
     KineticGas(vector1d mole_weights, vector2d sigma, vector2d eps, bool is_idealgas, bool is_singlecomp);
     KineticGas(std::string comps, bool is_idealgas);
 
@@ -181,7 +181,7 @@ protected:
     const bool is_singlecomp;
 
     vector1d m; // Particle masses (kg)
-    vector2d M, m0, red_mass;
+    vector2d M, m0, red_mass; // Various combinations of particle masses that show up often
     std::map<OmegaPoint, double> omega_map;
     std::map<StatePoint, vector2d> mtl_map;
     std::map<StatePoint, vector2d> etl_map;
@@ -189,15 +189,14 @@ protected:
     // In the general case, sigma and eps are scaling parameters for the molecular interaction, 
     // with sigma being the length scale (m) and eps being the energy scale (J).
     // In general, these are just used for convenience to make things non-dimensional. If your potential
-    // model does not use them (like HardSphere, which has no energy scale), just set them to dummy-values,
-    // they are not used in any computations, so can safely be ignored if you want to ignore them.
+    // model does not use them (like HardSphere, which has no energy scale), just set them to dummy-values.
     vector2d sigma, eps;
 
     std::unique_ptr<GenericEoS> eos;
     const std::vector<json> compdata; // Fluid data for each component, 
 
     const int default_tl_model_id = TransferLengthModel::EWCA; // Default transfer length model
-    int transfer_length_model_id = default_tl_model_id;
+    int transfer_length_model_id = default_tl_model_id; // Currently active transfer length model
 
     // set_internals is called at the start of all public methods. 
     // If a derived class needs to set any internals before running a computation,

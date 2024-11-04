@@ -29,7 +29,7 @@ class IntegrationParam;
 
 class Spherical : public KineticGas {
     public:
-    Spherical(vector1d mole_weights, vector2d sigmaij, vector2d eps, bool is_idealgas, bool is_singlecomp);
+    Spherical(vector1d mole_weights, vector2d sigma, vector2d eps, bool is_idealgas, bool is_singlecomp);
     Spherical(std::string comps, bool is_idealgas) : KineticGas(comps, is_idealgas) {}
     
     virtual ~Spherical(){};

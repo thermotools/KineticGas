@@ -20,12 +20,12 @@ class HardSphereEoS:
         self.sigma = sigma
 
     def pressure_tv(self, T, V, n):
-        x = n / sum(n)
+        x = np.array(n) / sum(n)
         rho = Avogadro / V
         chi = self.cpp_model.get_rdf(rho, T, x)
         return HS_pressure(rho, T, x, self.sigma, chi),
 
-    def specific_volume(self, T, p, n, phase, dvdn=False):
+    def specific_volume(self, T, p, n, phase, dvdt=None, dvdp=None, dvdn=False):
         v_init = Avogadro * kB * T / p
         v = root(lambda Vm : self.pressure_tv(T, Vm[0], n)[0] - p, x0=np.array([v_init])).x[0]
         if dvdn is False:
@@ -45,7 +45,7 @@ class HardSphereEoS:
 
         return v, dvdn
 
-    def chemical_potential_tv(self, T, V, n, dmudn=False):
+    def chemical_potential_tv(self, T, V, n, dmudt=None, dmudv=None, dmudn=False):
         n = np.array(n)
         x = n / sum(n)
         Vm = V / sum(n)

@@ -176,10 +176,9 @@ Eigen::MatrixXd KineticGas::interdiffusion(double T, double Vm, const vector1d& 
     */
     if (dependent_idx < 0 && frame_of_reference == FrameOfReference::solvent) dependent_idx = solvent_idx;
     while (dependent_idx < 0) dependent_idx += Ncomps;
-    
     if (frame_of_reference == FrameOfReference::zarate_x){
-        Eigen::MatrixXd D = interdiffusion(T, Vm, x, N, FrameOfReference::CoN, dependent_idx);
-        return compress_diffusion_matrix(D, dependent_idx);
+        Eigen::MatrixXd D = interdiffusion(T, Vm, x, N, FrameOfReference::CoN, dependent_idx, dependent_idx, true);
+        return D;
     }
     else if (frame_of_reference == FrameOfReference::zarate){
         Eigen::MatrixXd X = get_zarate_X_matr(x, dependent_idx);
@@ -195,7 +194,6 @@ Eigen::MatrixXd KineticGas::interdiffusion(double T, double Vm, const vector1d& 
     Eigen::MatrixXd psi = CoM_to_FoR_matr(T, Vm, x, frame_of_reference, solvent_idx);
     Eigen::MatrixXd D_dep = interdiffusion_dependent_CoM(T, Vm, x, N);
     D_dep = psi * D_dep;
-    
     Eigen::MatrixXd D{D_dep};
     vector1d ksi = get_ksi_factors(T, Vm, x);
     for (size_t i = 0; i < Ncomps; i++){
@@ -332,7 +330,7 @@ Eigen::MatrixXd KineticGas::interdiffusion_dependent_CoM(double T, double Vm, co
     double rho = AVOGADRO / Vm;
     vector3d d = reshape_diffusive_expansion_vector(compute_diffusive_expansion_coeff(rho, T, x, N));
     vector2d E = get_chemical_potential_factors(T, Vm, x);
-    Eigen::MatrixXd Dij(Ncomps, Ncomps);
+    Eigen::MatrixXd Dij = Eigen::MatrixXd::Zero(Ncomps, Ncomps);
     for (size_t i = 0; i < Ncomps; i++){
         for (size_t j = 0; j < Ncomps; j++){
             for (size_t k = 0; k < Ncomps; k++){

@@ -23,7 +23,7 @@ def check_eq_arr(a, b):
     return True
 
 def check_eq_lst(lst):
-    if any(abs(lst - lst[0]) > FLTEPS):
+    if any(abs(np.array(lst) - lst[0]) > FLTEPS):
         return False
     return True
 

@@ -136,6 +136,8 @@ class ThermoWrapper{
 
 #ifdef PYLIB
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+#include <pybind11/numpy.h>
 namespace py = pybind11;
 
 class PyWrapper{
@@ -148,8 +150,8 @@ class PyWrapper{
         }
     }
 
-    inline std::vector<std::vector<double>> dmudn(double T, double V, const std::vector<double> n) const {
-        py::tuple rt = eos.attr("chemical_potential_tv")(T, V, n, false, false, true);
+    inline std::vector<std::vector<double>> dmudn(double T, double V, std::vector<double> n) const {
+        py::tuple rt = eos.attr("chemical_potential_tv")(T, V, n, py::none(), py::none(), true);
         std::vector<std::vector<double>> r = rt[1].cast<std::vector<std::vector<double>>>();
         return r;
     }
@@ -170,7 +172,7 @@ class PyWrapper{
         return rt[0].cast<double>();
     }
     inline std::vector<double> dvdn(double T, double p, const std::vector<double> n, int phase) const {
-        py::tuple rt = eos.attr("specific_volume")(T, p, n, phase, false, false, true);
+        py::tuple rt = eos.attr("specific_volume")(T, p, n, phase, py::none(), py::none(), true);
         return rt[1].cast<std::vector<double>>();
     }
 

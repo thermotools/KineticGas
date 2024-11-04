@@ -35,13 +35,13 @@ void KineticGas::set_masses(){
     }
 }
 
-KineticGas::KineticGas(vector1d mole_weights, vector2d sigma, vector2d eps, bool is_idealgas, bool is_singlecomp) 
-  : Ncomps{static_cast<unsigned long>(mole_weights.size())},
-    is_idealgas{is_idealgas},
-    is_singlecomp{is_singlecomp},
-    m{mole_weights},
-    sigma{sigma},
-    eps{eps}
+KineticGas::KineticGas(vector1d mole_weights, vector2d sigma, vector2d eps, bool is_idealgas, bool is_singlecomp)
+    : Ncomps{static_cast<size_t>(mole_weights.size())},
+     is_idealgas{is_idealgas},
+     is_singlecomp{is_singlecomp},
+     m{mole_weights},
+     sigma{sigma},
+     eps{eps}
     {set_masses();}
 
 std::vector<json> get_fluid_data(std::string comps){
@@ -73,7 +73,7 @@ Units KineticGas::get_reducing_units(int i, int j){
     return Units(red_mass[i][j], sigma[i][j], eps[i][j]);
 }
 
-int frame_of_reference_map(std::string frame_of_ref){
+int KineticGas::frame_of_reference_map(std::string frame_of_ref){
     if (frame_of_ref == "CoN") return FrameOfReference::CoN;
     if (frame_of_ref == "CoM") return FrameOfReference::CoM;
     if (frame_of_ref == "CoV") return FrameOfReference::CoV;

@@ -7,8 +7,14 @@ See : J. Chem. Phys. 139, 154504 (2013); https://doi.org/10.1063/1.4819786
 #include "MieKinGas.h"
 #include <nlohmann/json.hpp>
 #include <cppThermopack/saftvrmie.h>
+#include <cppThermopack/ideal.h>
 
 using namespace mie_rdf_constants;
+
+MieKinGas::MieKinGas(vector1d mole_weights, vector2d sigma, vector2d eps, vector2d la, vector2d lr, bool is_idealgas, bool is_singlecomp) 
+        : Spherical(mole_weights, sigma, eps, is_idealgas, is_singlecomp), 
+        la{la}, lr{lr}
+        {set_C_alpha();};
 
 MieKinGas::MieKinGas(std::string comps, bool is_idealgas) 
     : Spherical(comps, is_idealgas)
@@ -28,7 +34,12 @@ MieKinGas::MieKinGas(std::string comps, bool is_idealgas)
     mix_exponents(la);
     mix_exponents(lr);
     set_C_alpha();
-    eos = std::make_unique<GenericEoS>(ThermoWrapper(Saftvrmie(comps)));
+    if (is_idealgas){
+        eos = std::make_unique<GenericEoS>(ThermoWrapper(Ideal(comps)));
+    }
+    else {
+        eos = std::make_unique<GenericEoS>(ThermoWrapper(Saftvrmie(comps)));
+    }
 }
 
 void MieKinGas::set_C_alpha(){

@@ -7,6 +7,7 @@
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 #include "pybind11/operators.h"
+#include "pybind11/eigen.h"
 #include <sstream>
 
 namespace py = pybind11;
@@ -27,10 +28,14 @@ using vector2d = std::vector<vector1d>;
         .def("soret_coefficient_tp", &Model::soret_coefficient_tp) \
         .def("interdiffusion", &Model::interdiffusion) \
         .def("interdiffusion_tp", &Model::interdiffusion_tp) \
+        .def("thermal_diffusion_ratio", &Model::thermal_diffusion_ratio) \
+        .def("thermal_diffusion_coeff", &Model::thermal_diffusion_coeff) \
+        .def("thermal_diffusion_factor", &Model::thermal_diffusion_factor) \
         .def("get_mtl", &Model::get_mtl) \
         .def("get_etl", &Model::get_etl) \
         .def("get_rdf", &Model::get_rdf) \
         .def("set_eos", py::overload_cast<py::object>(&Model::set_eos)) \
+        .def("frame_of_reference_map", &Model::frame_of_reference_map) \
         \
         .def("set_tl_model", &Model::set_transfer_length_model) \
         .def("get_tl_model", &Model::get_transfer_length_model) \
@@ -45,6 +50,7 @@ using vector2d = std::vector<vector1d>;
         .def("get_K_factors", &Model::get_K_factors) \
         .def("get_K_prime_factors", &Model::get_K_prime_factors) \
         .def("get_chemical_potential_factors", &Model::get_chemical_potential_factors) \
+        .def("get_ksi_factors", &Model::get_ksi_factors)
         \
         
 #define Spherical_potential_bindings(Model) \
@@ -81,7 +87,7 @@ PYBIND11_MODULE(libpykingas, handle){
             return strm.str();
         });
     
-    py::class_<Units>(handle, "Units")
+    py::class_<Units>(handle, "cppUnits")
         .def_readonly("T", &Units::T)           // Temperature (K)
         .def_readonly("L", &Units::L)           // Length (m)
         .def_readonly("m", &Units::m)           // Mass (kg)

@@ -229,7 +229,7 @@ class py_KineticGas:
         """
         x = self.check_valid_composition(x)
         N = self.default_N if (N is None) else N
-        frame_of_reference = self.cpp_kingas.frame_of_reference_map[frame_of_reference]
+        frame_of_reference = self.cpp_kingas.frame_of_reference_map(frame_of_reference)
         D = self.cpp_kingas.interdiffusion(T, Vm, x, N, frame_of_reference, dependent_idx, solvent_idx, use_independent)
         if (use_binary is True) and (self.ncomps == 2):
             return D[0][0]
@@ -304,7 +304,7 @@ class py_KineticGas:
         for i in range(self.ncomps):
             for j in range(self.ncomps):
                 for k in range(self.ncomps):
-                    Dij[i][j] += d[i][0][k] * E[k, j]
+                    Dij[i][j] += d[i][0][k] * E[k][j]
                 Dij[i][j] *= x[i] / (2 * particle_density)
         return Dij
 
@@ -345,7 +345,7 @@ class py_KineticGas:
         """
         x = self.check_valid_composition(x)
         N = self.default_N if (N is None) else N
-        frame_of_reference = self.cpp_kingas.frame_of_reference_map[frame_of_reference]
+        frame_of_reference = self.cpp_kingas.frame_of_reference_map(frame_of_reference)
         if N < 2:
             warnings.warn('Thermal diffusion is a 2nd order phenomena, cannot be computed for N < 2 (got N = '
                           + str(N) + ')', RuntimeWarning, stacklevel=2)
@@ -610,8 +610,8 @@ class py_KineticGas:
         x = self.check_valid_composition(x)
         N = self.default_N if (N is None) else N
         if (contributions != 'all'):
-            return self.cpp_kingas.thermal_conductivity(T, Vm, x, N)
-        return self.cpp_kingas.thermal_conductivity_contributions(T, Vm, x, N, contributions)
+            return self.cpp_kingas.thermal_conductivity_contributions(T, Vm, x, N, contributions)
+        return self.cpp_kingas.thermal_conductivity(T, Vm, x, N)
 
         if idealgas is None:
             idealgas = self.is_idealgas
@@ -704,7 +704,7 @@ class py_KineticGas:
         x = self.check_valid_composition(x)
         N = self.default_N if (N is None) else N
         Vm = Vm if (idealgas is False) else 1e12
-        return self.cpp_kingas.viscosity(T, Vm, x)
+        return self.cpp_kingas.viscosity(T, Vm, x, N)
         if N is None:
             N = self.default_N
         if idealgas is None:
@@ -1261,8 +1261,6 @@ class py_KineticGas:
         if N is None:
             N = self.default_N
         mole_fracs = self.check_valid_composition(mole_fracs)
-        if (T, particle_density, tuple(mole_fracs), N) in self.computed_d_points.keys():
-            return np.array(self.computed_d_points[(T, particle_density, tuple(mole_fracs), N)])
 
         diffusion_matr = self.cpp_kingas.get_diffusion_matrix(particle_density, T, mole_fracs, N)
         diffusion_vec = self.get_diffusion_vector(particle_density, T, mole_fracs, N=N)
@@ -1272,7 +1270,6 @@ class py_KineticGas:
         else:
             d = lin.solve(diffusion_matr, diffusion_vec)
 
-        self.computed_d_points[(T, particle_density, tuple(mole_fracs), N)] = tuple(d)
         return d
 
     def reshape_diffusion_coeff_vector(self, d):

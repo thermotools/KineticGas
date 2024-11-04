@@ -14,7 +14,7 @@ Usage:
 
     etc.
 """
-from .libpykingas import Units as cppUnits
+from .libpykingas import cppUnits
 
 class Units:
     # Dummy class used for type hinting
