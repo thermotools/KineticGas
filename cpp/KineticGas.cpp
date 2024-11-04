@@ -73,6 +73,17 @@ Units KineticGas::get_reducing_units(int i, int j){
     return Units(red_mass[i][j], sigma[i][j], eps[i][j]);
 }
 
+int frame_of_reference_map(std::string frame_of_ref){
+    if (frame_of_ref == "CoN") return FrameOfReference::CoN;
+    if (frame_of_ref == "CoM") return FrameOfReference::CoM;
+    if (frame_of_ref == "CoV") return FrameOfReference::CoV;
+    if (frame_of_ref == "solvent") return FrameOfReference::solvent;
+    if (frame_of_ref == "zarate") return FrameOfReference::zarate;
+    if (frame_of_ref == "zarate_x") return FrameOfReference::zarate_x;
+    if (frame_of_ref == "zarate_w") return FrameOfReference::zarate_w;
+    throw std::runtime_error("Invalid frame of reference : " + frame_of_ref);
+}
+
 KineticGas::KineticGas(std::string comps, bool is_idealgas) 
     : Ncomps{static_cast<size_t>(std::max(static_cast<int>(std::count_if(comps.begin(), comps.end(), [](char c) {return c == ',';})) + 1, 2))}, 
     is_idealgas{is_idealgas},

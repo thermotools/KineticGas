@@ -19,9 +19,14 @@ using vector2d = std::vector<vector1d>;
         .def("kinematic_viscosity", &Model::kinematic_viscosity) \
         .def("kinematic_viscosity_tp", &Model::kinematic_viscosity_tp) \
         .def("thermal_conductivity", &Model::thermal_conductivity) \
+        .def("thermal_conductivity_contributions", &Model::thermal_conductivity_contributions) \
         .def("thermal_conductivity_tp", &Model::thermal_conductivity_tp) \
         .def("thermal_diffusivity", &Model::thermal_diffusivity) \
         .def("thermal_diffusivity_tp", &Model::thermal_diffusivity_tp) \
+        .def("soret_coefficient", &Model::soret_coefficient) \
+        .def("soret_coefficient_tp", &Model::soret_coefficient_tp) \
+        .def("interdiffusion", &Model::interdiffusion) \
+        .def("interdiffusion_tp", &Model::interdiffusion_tp) \
         .def("get_mtl", &Model::get_mtl) \
         .def("get_etl", &Model::get_etl) \
         .def("get_rdf", &Model::get_rdf) \
@@ -39,6 +44,7 @@ using vector2d = std::vector<vector1d>;
         .def("get_viscosity_vector", &Model::get_viscosity_vector)\
         .def("get_K_factors", &Model::get_K_factors) \
         .def("get_K_prime_factors", &Model::get_K_prime_factors) \
+        .def("get_chemical_potential_factors", &Model::get_chemical_potential_factors) \
         \
         
 #define Spherical_potential_bindings(Model) \

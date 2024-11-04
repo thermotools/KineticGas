@@ -67,6 +67,11 @@ double KineticGas::kinematic_viscosity(double T, double Vm, const vector1d& x, i
 }
 
 double KineticGas::thermal_conductivity(double T, double Vm, const vector1d& x, int N){
+    std::map<std::string, double> contribs = thermal_conductivity_contributions(T, Vm, x, N, "tdi");
+    return contribs["t"] + contribs["d"] + contribs["i"];
+}
+
+std::map<std::string, double> KineticGas::thermal_conductivity_contributions(double T, double Vm, const std::vector<double>& x, int N, std::string contribs){
     #ifdef DEBUG
         if (!eos.get()) throw std::runtime_error("EoS is not set (in get_chemical_potential_factors)");
     #endif
@@ -78,52 +83,61 @@ double KineticGas::thermal_conductivity(double T, double Vm, const vector1d& x, 
     vector1d K = get_K_factors(rho, T, x);
     vector2d etl = get_etl(rho, T, x);
 
-    double lambda_dblprime = 0.;
-    if (!is_idealgas){ // lambda_dblprime is only nonzero when density corrections are present, and vanishes at infinite dilution
+    std::map<std::string, double> computed_contribs;
+    const auto contains = [&](std::string substr){return (contribs.find(substr) == std::string::npos) ? false : true;};
+    if (contains("d")){
+        double lambda_dblprime = 0.;
+        if (!is_idealgas){ // lambda_dblprime is only nonzero when density corrections are present, and vanishes at infinite dilution
+            for (size_t i = 0; i < Ncomps; i++){
+                for (size_t j = 0; j < Ncomps; j++){
+                    lambda_dblprime += pow(rho, 2) * sqrt(2 * PI * m[i] * m[j] * BOLTZMANN * T / (m[i] + m[j])) 
+                                        * (x[i] * x[j]) / (m[i] + m[j]) * pow(etl[i][j], 4) * rdf[i][j];
+                }
+            }
+            lambda_dblprime *= (4. * BOLTZMANN / 3.);
+        }
+        computed_contribs["d"] = lambda_dblprime;
+    }
+
+    if (contains("t")){
+        double lambda_prime = 0.;
+        Eigen::VectorXd dth = Eigen::VectorXd::Zero(Ncomps);
+        vector3d diff_expansion_coeff(N, vector2d(Ncomps, vector1d(Ncomps, 0.)));
+        if (!is_singlecomp){
+            diff_expansion_coeff = reshape_diffusive_expansion_vector(compute_diffusive_expansion_coeff(rho, T, x, N));
+            dth = compute_dth_vector(diff_expansion_coeff, th_expansion_coeff);
+        }
         for (size_t i = 0; i < Ncomps; i++){
-            for (size_t j = 0; j < Ncomps; j++){
-                lambda_dblprime += pow(rho, 2) * sqrt(2 * PI * m[i] * m[j] * BOLTZMANN * T / (m[i] + m[j])) 
-                                    * (x[i] * x[j]) / (m[i] + m[j]) * pow(etl[i][j], 4) * rdf[i][j];
+            double tmp = 0.;
+            if (!is_singlecomp){ // tmp is a Thermal diffusion related term, which is zero for a pure component
+                for (size_t k = 0; k < Ncomps; k++){
+                    tmp += diff_expansion_coeff[1][i][k] * dth(k);
+                }
+            }
+            lambda_prime += x[i] * K[i] * (th_expansion_coeff(Ncomps + i) - tmp);
+        }
+        lambda_prime *= (5. * BOLTZMANN / 4.);
+        computed_contribs["t"] = lambda_prime;
+    }
+
+    if (contains("i")){
+        double lamba_internal = 0.;
+        double lamb_int_f = 1.32e3;
+        double eta0 = viscosity(T, 1e6, x, N);
+        double avg_mol_weight = 0.;
+        for (size_t i = 0; i < Ncomps; i++) {avg_mol_weight += x[i] * m[i];}
+        avg_mol_weight *= AVOGADRO * 1e3;
+        double Cp_id = (is_singlecomp) ? eos->Cp_ideal(T, 1) : 0.;
+        if (!is_singlecomp){
+            for (size_t i = 0; i < Ncomps; i++){
+                Cp_id += x[i] * eos->Cp_ideal(T, i + 1);
             }
         }
-        lambda_dblprime *= (4. * BOLTZMANN / 3.);
+        double Cp_factor = (Cp_id - 5. * GAS_CONSTANT / 2.) / avg_mol_weight;
+        lamba_internal = lamb_int_f * eta0 * Cp_factor;
+        computed_contribs["i"] = lamba_internal;
     }
-
-    double lambda_prime = 0.;
-    Eigen::VectorXd dth = Eigen::VectorXd::Zero(Ncomps);
-    vector3d diff_expansion_coeff(N, vector2d(Ncomps, vector1d(Ncomps, 0.)));
-    if (!is_singlecomp){
-        diff_expansion_coeff = reshape_diffusive_expansion_vector(compute_diffusive_expansion_coeff(rho, T, x, N));
-        dth = compute_dth_vector(diff_expansion_coeff, th_expansion_coeff);
-    }
-    for (size_t i = 0; i < Ncomps; i++){
-        double tmp = 0.;
-        if (!is_singlecomp){ // tmp is a Thermal diffusion related term, which is zero for a pure component
-            for (size_t k = 0; k < Ncomps; k++){
-                tmp += diff_expansion_coeff[1][i][k] * dth(k);
-            }
-        }
-        lambda_prime += x[i] * K[i] * (th_expansion_coeff(Ncomps + i) - tmp);
-    }
-    lambda_prime *= (5. * BOLTZMANN / 4.);
-
-    double lamba_internal = 0.;
-    double lamb_int_f = 1.32e3;
-    double eta0 = viscosity(T, 1e6, x, N);
-    double avg_mol_weight = 0.;
-    for (size_t i = 0; i < Ncomps; i++) {avg_mol_weight += x[i] * m[i];}
-    avg_mol_weight *= AVOGADRO * 1e3;
-    double Cp_id = (is_singlecomp) ? eos->Cp_ideal(T, 1) : 0.;
-    if (!is_singlecomp){
-        for (size_t i = 0; i < Ncomps; i++){
-            Cp_id += x[i] * eos->Cp_ideal(T, i + 1);
-        }
-    }
-    double Cp_factor = (Cp_id - 5. * GAS_CONSTANT / 2.) / avg_mol_weight;
-    lamba_internal = lamb_int_f * eta0 * Cp_factor;
-
-    const double cond = lambda_prime + lambda_dblprime + lamba_internal;
-    return cond;
+    return computed_contribs;
 }
 
 double KineticGas::thermal_diffusivity(double T, double Vm, const vector1d& x, int N){
@@ -133,6 +147,7 @@ double KineticGas::thermal_diffusivity(double T, double Vm, const vector1d& x, i
 }
 
 Eigen::MatrixXd compress_diffusion_matrix(const Eigen::MatrixXd& D_in, int dependent_idx){
+    /* Remove the dependent row/col from a diffusion matrix */
     size_t N = D_in.cols();
     Eigen::MatrixXd D_out(N - 1, N - 1);
     size_t Mi = 0;
@@ -151,6 +166,14 @@ Eigen::MatrixXd compress_diffusion_matrix(const Eigen::MatrixXd& D_in, int depen
 
 Eigen::MatrixXd KineticGas::interdiffusion(double T, double Vm, const vector1d& x, int N, int frame_of_reference, 
                                     int dependent_idx, int solvent_idx, bool do_compress){
+    /*
+        Compute the (self- / inter-)diffusion coefficients 
+        T, Vm, x : State in SI units
+        frame_of_reference : See the FrameOfReference enum
+        dependent_idx : Index of dependent component (supports python-style negative indices)
+        solvent_idx : Index of the solvent component (only relevant for solvent FoR)
+        do_compress : If true, remove the row / col corresponding to the dependent component (recomended)
+    */
     if (dependent_idx < 0 && frame_of_reference == FrameOfReference::solvent) dependent_idx = solvent_idx;
     while (dependent_idx < 0) dependent_idx += Ncomps;
     
@@ -297,6 +320,12 @@ Eigen::MatrixXd KineticGas::thermal_diffusion_factor(double T, double Vm, const 
         }
     }
     return alpha;
+}
+
+Eigen::VectorXd KineticGas::soret_coefficient(double T, double Vm, const std::vector<double>& x, int N, int dependent_idx){
+    Eigen::MatrixXd D = interdiffusion(T, Vm, x, N, FrameOfReference::zarate, dependent_idx, dependent_idx, false);
+    Eigen::VectorXd DT = thermal_diffusion_coeff(T, Vm, x, N, FrameOfReference::zarate, dependent_idx);
+    return D.partialPivLu().solve(DT);
 }
 
 Eigen::MatrixXd KineticGas::interdiffusion_dependent_CoM(double T, double Vm, const std::vector<double>& x, int N){

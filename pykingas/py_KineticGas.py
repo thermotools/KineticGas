@@ -62,12 +62,6 @@ class py_KineticGas:
         self._is_singlecomp = False
         self.default_N = N
         self.is_idealgas = is_idealgas
-        self.computed_d_points = {} # dict of state points in which (d_1, d0, d1) have already been computed
-        self.computed_a_points = {}  # dict of state points in which (a_1, a1) have already been computed
-        self.computed_b_points = {}  # dict of state points in which (b_1, b1) have already been computed
-        self.computed_kT = {} # dict of state points in which thermal diffusion ratios have been computed
-        self.computed_cd = {} # dict of state points in which the collision diameters have been computed
-        self.computed_rdf = {}  # dict of state points in which the RDFs have been computed
 
         self.comps = comps.split(',')
         self.ncomps = len(self.comps)
@@ -90,13 +84,6 @@ class py_KineticGas:
 
         self.mole_weights = np.array(mole_weights) * 1e-3 / Avogadro
         self.m = np.array([m for m in self.mole_weights])
-
-        self.m0 = np.empty((self.ncomps, self.ncomps))
-        self.M = np.empty_like(self.m0)
-        for i in range(self.ncomps):
-            for j in range(self.ncomps):
-                self.m0[i][j] = self.m[i] + self.m[j]
-                self.M[i][j] = self.m[i] / self.m0[i][j]
 
         self.cpp_kingas = None
         if self.is_idealgas is True:
@@ -179,27 +166,7 @@ class py_KineticGas:
             (2D array) : The factors E[i][j] = $ ( n_i / k_B T ) (d \mu_i / d n_j)_{T, n_{k \neq j}}$, where $n_i$
                                 is the molar density of species $i$. Unit [1 / mol]
         """
-        if self._is_singlecomp is True:
-            _, dmudn_pure = self.eos.chemical_potential_tv(T, Vm, [1.], dmudn=True)
-            RT = Avogadro * Boltzmann * T
-            dmudrho_pure = Vm * dmudn_pure[0][0]
-            dmudrho = np.zeros((2, 2))
-            rho = 1 / Vm
-            dmudrho[0, 0] = dmudrho_pure + RT * x[1] / (rho * x[0])
-            dmudrho[0, 1] = dmudrho[1, 0] = dmudrho_pure - RT / rho
-            dmudrho[1, 1] = dmudrho_pure + RT * x[0] / (rho * x[1])
-            dmudrho /= Avogadro
-        else:
-            _, dmudn = self.eos.chemical_potential_tv(T, Vm, x, dmudn=True)
-            dmudrho = Vm * dmudn / Avogadro
-
-        n = np.array(x) / Vm
-        Eij = np.empty_like(dmudrho)
-        for i in range(self.ncomps):
-            for j in range(self.ncomps):
-                Eij[i][j] = (n[i] / (kB * T)) * dmudrho[i][j]
-
-        return Eij
+        return self.cpp_kingas.get_chemical_potential_factors(T, Vm, x)
 
     def get_P_factors(self, Vm, T, x):
         r"""Internal
@@ -213,20 +180,16 @@ class py_KineticGas:
         Returns:
             (1D array) : The factors $\Xi_i$, Unit [1 / mol]
         """
-        E = self.get_Eij(Vm, T, x)
-        P = np.zeros(self.ncomps)
-        for i in range(self.ncomps):
-            P[i] = sum(E[:, i])
-        return P
+        return self.cpp_kingas.get_ksi_factors(T, Vm, x)
 
     #####################################################
     #          Transport property computations          #
     #####################################################
 
     def interdiffusion(self, T, Vm, x, N=None,
-                       use_independent=True, dependent_idx=None,
+                       use_independent=True, dependent_idx=-1,
                         frame_of_reference='CoN', use_binary=True,
-                        solvent_idx=None):
+                        solvent_idx=-1):
         r"""TV-property
         Compute the interdiffusion coefficients [m^2 / s]. Default definition is
 
@@ -264,6 +227,14 @@ class py_KineticGas:
         Returns:
             (ndarray or float) : Diffusion coefficients, shape varies based on options and number of components. Unit [m^2 / s]
         """
+        x = self.check_valid_composition(x)
+        N = self.default_N if (N is None) else N
+        frame_of_reference = self.cpp_kingas.frame_of_reference_map[frame_of_reference]
+        D = self.cpp_kingas.interdiffusion(T, Vm, x, N, frame_of_reference, dependent_idx, solvent_idx, use_independent)
+        if (use_binary is True) and (self.ncomps == 2):
+            return D[0][0]
+        return D
+        # Old implementation below, not deleting it completely quite yet ...
         if dependent_idx is None:
             dependent_idx = self.ncomps - 1
         while dependent_idx < 0:
@@ -338,8 +309,8 @@ class py_KineticGas:
         return Dij
 
     def thermal_diffusion_coeff(self, T, Vm, x, N=None,
-                                use_independent=False, dependent_idx=None,
-                                frame_of_reference='CoN', solvent_idx=None):
+                                use_independent=False, dependent_idx=-1,
+                                frame_of_reference='CoN', solvent_idx=-1):
         r"""TV-Property
         Compute thermal diffusion coefficients, $D_{T,i}$ [mol / m^2 s]
         Default definition is
@@ -372,20 +343,14 @@ class py_KineticGas:
         Returns:
             (1D array) : Thermal diffusion coefficients. Unit [mol m^2 / s]
         """
-        if N is None:
-            N = self.default_N
-        if dependent_idx is None:
-            dependent_idx = self.ncomps - 1
-        while dependent_idx < 0:
-            dependent_idx += self.ncomps
-
         x = self.check_valid_composition(x)
-
+        N = self.default_N if (N is None) else N
+        frame_of_reference = self.cpp_kingas.frame_of_reference_map[frame_of_reference]
         if N < 2:
             warnings.warn('Thermal diffusion is a 2nd order phenomena, cannot be computed for N < 2 (got N = '
                           + str(N) + ')', RuntimeWarning, stacklevel=2)
             return np.full(self.ncomps, np.nan)
-
+        return self.cpp_kingas.thermal_diffusion_coeff(T, Vm, x, N, frame_of_reference, dependent_idx, solvent_idx)
         use_zarate = False
         if frame_of_reference.lower() == 'zarate':
             frame_of_reference = 'CoN'
@@ -484,18 +449,13 @@ class py_KineticGas:
         Returns:
             (1D array) : The thermal diffusion ratio of each component. Unit Dimensionless.
         """
-        if N is None:
-            N = self.default_N
-
-        key = tuple((T, Vm, tuple(x), N))
-        if key in self.computed_kT.keys():
-            return np.array(self.computed_kT[key])
-
+        x = self.check_valid_composition(x)
+        N = self.default_N if (N is None) else N
         if N < 2:
             warnings.warn('Thermal diffusion is a 2nd order phenomena, cannot be computed for N < 2 (got N = '
                           + str(N) + ')', RuntimeWarning, stacklevel=2)
             return np.full(self.ncomps, np.nan)
-
+        return self.cpp_kingas.thermal_diffusion_ratio(T, Vm, x, N)
         particle_density = Avogadro / Vm
         DT = self.thermal_diffusion_coeff(T, Vm, x, N=N, frame_of_reference='CoM',
                                           use_independent=True, dependent_idx=self.ncomps - 1)
@@ -550,14 +510,13 @@ class py_KineticGas:
         Returns:
             (2D array) : The thermal diffusion factors of the mixture. Dimensionless.
         """
-        if N is None:
-            N = self.default_N
-
+        x = self.check_valid_composition(x)
+        N = self.default_N if (N is None) else N
         if N < 2:
             warnings.warn('Thermal diffusion is a 2nd order phenomena, cannot be computed for N < 2 (got N = '
                           + str(N) + ')', RuntimeWarning, stacklevel=2)
             return np.full((self.ncomps, self.ncomps), np.nan)
-
+        return self.cpp_kingas.thermal_diffusion_factor(T, Vm, x, N)
         kT = self.thermal_diffusion_ratio(T, Vm, x, N=N)
         alpha = np.empty((self.ncomps, self.ncomps))
         for i in range(self.ncomps):
@@ -609,14 +568,15 @@ class py_KineticGas:
         Returns:
             (ndarray) : Soret coefficient matrix (K$^{-1}$)
         """
-        if N is None:
-            N = self.default_N
-
+        x = self.check_valid_composition(x)
+        N = self.default_N if (N is None) else N
         if N < 2:
             warnings.warn('Thermal diffusion is a 2nd order phenomena, cannot be computed for N < 2 (got N = '
                           + str(N) + ')', RuntimeWarning, stacklevel=2)
             return np.full((self.ncomps, self.ncomps), np.nan)
-
+        if use_zarate is True:
+            return self.cpp_kingas.soret_coefficient(T, Vm, x, N, dependent_idx)
+        return self.cpp_kingas.thermal_diffusion_factor(T, Vm, x, N) / T
         if use_zarate is True:
             D = self.interdiffusion(T, Vm, x, N=N, frame_of_reference='zarate', dependent_idx=dependent_idx, use_binary=False)
             DT = self.thermal_diffusion_coeff(T, Vm, x, N=N, frame_of_reference='zarate', dependent_idx=dependent_idx)
@@ -625,7 +585,7 @@ class py_KineticGas:
         alpha = self.thermal_diffusion_factor(T, Vm, x, N=N)
         return alpha / T
 
-    def thermal_conductivity(self, T, Vm, x, N=None, idealgas=None, include_internal=True, contributions='all'):
+    def thermal_conductivity(self, T, Vm, x, N=None, idealgas=None, contributions='all'):
         r"""TV-Property
         Compute the thermal conductivity, $\lambda$. For models initialized with `is_idealgas=True`, the thermal
         conductivity is not a function of density (i.e. $d \lambda / d V_m = 0$).
@@ -647,8 +607,12 @@ class py_KineticGas:
         Returns:
             (float) : The thermal conductivity of the mixture [W / m K].
         """
-        if N is None:
-            N = self.default_N
+        x = self.check_valid_composition(x)
+        N = self.default_N if (N is None) else N
+        if (contributions != 'all'):
+            return self.cpp_kingas.thermal_conductivity(T, Vm, x, N)
+        return self.cpp_kingas.thermal_conductivity_contributions(T, Vm, x, N, contributions)
+
         if idealgas is None:
             idealgas = self.is_idealgas
 
@@ -718,9 +682,8 @@ class py_KineticGas:
         Returns:
             (float) : Thermal diffusivity of the mixture [m2 / s].
         """
-        if N is None:
-            N = self.default_N
         x = self.check_valid_composition(x)
+        N = self.default_N if (N is None) else N
         return self.cpp_kingas.thermal_diffusivity(T, Vm, x, N)
 
     def viscosity(self, T, Vm, x, N=None, idealgas=None):
@@ -738,6 +701,10 @@ class py_KineticGas:
         Returns:
             (float) : The shear viscosity of the mixture [Pa s].
         """
+        x = self.check_valid_composition(x)
+        N = self.default_N if (N is None) else N
+        Vm = Vm if (idealgas is False) else 1e12
+        return self.cpp_kingas.viscosity(T, Vm, x)
         if N is None:
             N = self.default_N
         if idealgas is None:
@@ -776,9 +743,8 @@ class py_KineticGas:
         Returns:
             (float) : The kinematic viscosity of the mixture [m2 / s]
         """
-        if N is None:
-            N = self.default_N
         x = self.check_valid_composition(x)
+        N = self.default_N if (N is None) else N
         return self.cpp_kingas.kinematic_viscosity(T, Vm, x, N)
 
     def bulk_viscosity(self, T, Vm, x, N=None):
@@ -788,9 +754,8 @@ class py_KineticGas:
         Raises:
             NotImplementedError
         """
-        if N is None:
-            N = self.default_N
         x = self.check_valid_composition(x)
+        N = self.default_N if (N is None) else N
         raise NotImplementedError("Bulk viscosity is not implemented yet. See 'Multicomp docs' for more info.")
 
     def conductivity_matrix(self, T, Vm, x, N=2, formulation='T-psi', frame_of_reference='CoM', use_thermal_conductivity=None):
@@ -979,12 +944,13 @@ class py_KineticGas:
         Vm, = self.eos.specific_volume(T, p, x, self.eos.VAPPH)  # Assuming vapour phase
         return self.viscosity(T, Vm, x, N=N)
     
-    def kinematic_viscosity_tp(self, T, Vm, x, N=None):
+    def kinematic_viscosity_tp(self, T, p, x, N=None):
         """Tp-property
         Compute molar volume using the internal equation of state (`self.eos`), assuming vapour, and pass the call to
         `self.kinematic_viscosity`. See `self.kinematic_viscosity` for documentation.
         """
-        return self.cpp_kingas.kinematic_viscosity_tp(T, Vm, x, N)
+        Vm, = self.eos.specific_volume(T, Vm, x, self.eos.VAPPH)
+        return self.cpp_kingas.kinematic_viscosity(T, Vm, x, N)
 
     #####################################################
     #        Frame of Reference Transformations         #
