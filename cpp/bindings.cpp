@@ -36,6 +36,7 @@ using vector2d = std::vector<vector1d>;
         .def("get_rdf", &Model::get_rdf) \
         .def("set_eos", py::overload_cast<py::object>(&Model::set_eos)) \
         .def("frame_of_reference_map", &Model::frame_of_reference_map) \
+        .def("get_reducing_units", &Model::get_reducing_units) \
         \
         .def("set_tl_model", &Model::set_transfer_length_model) \
         .def("get_tl_model", &Model::get_transfer_length_model) \

@@ -318,15 +318,3 @@ class MieType(py_KineticGas):
         rdf = self.cpp_kingas.saft_rdf(particle_density, T, x, order, g2_correction)
         self.computed_rdf[key] = rdf
         return rdf
-
-    def get_reducing_units(self, comp_idx=0):
-        """Utility
-        Get reducing units for this model, as a `Units` struct. See `units.py`.
-        &&
-        Args:
-            comp_idx (int, optional) : Which component to use for reducing units, defaults to first component
-
-        Returns:
-            Units : Struct holding the reducing units
-        """
-        return Units(self.mole_weights[comp_idx], self.sigma[comp_idx][comp_idx], self.epsilon_ij[comp_idx][comp_idx] / Boltzmann)

@@ -124,6 +124,21 @@ class py_KineticGas:
         Returns:
             (dict) : Keys are the model identifiers (used with `set_tl_model`), values are model descriptions.
         """
+        return self.cpp_kingas.get_valid_tl_models()
+    
+    def get_reducing_units(self, ci=0, cj=None):
+        """Utility
+        Get reducing units for this model, as a `Units` struct. See `units.py`.
+        &&
+        Args:
+            ci (int, optional) : Which component to use for reducing units, defaults to first component
+            cj (int, optional) : Other species to use, if cross-interactions are used for reducing units. Defaults to `None`.
+
+        Returns:
+            Units : Struct holding the reducing units
+        """
+        cj = ci if (cj is None) else cj
+        return self.cpp_kingas.get_reducing_units(ci, cj)
 
     def check_valid_composition(self, x):
         """Internal

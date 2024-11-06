@@ -78,11 +78,11 @@ enum TransferLengthModel{
 };
 
 struct Units {
-    const double 
-     T      // Temperature (K)
+    const double // Take care when adding new units: Declaration order must match init order in initilizer list (-Wreorder)
+     m      // Mass (kg)
     ,L      // Length (m)
-    ,m      // Mass (kg)
     ,E      // Energy (J)
+    ,T      // Temperature (K)
     ,V      // Volume (m3)
     ,t      // Time (s)
     ,F      // Force (N)
@@ -96,11 +96,11 @@ struct Units {
     ,tcond  // Thermal conductivity
     ;
 
-    Units(double m_unit, double L_unit, double T_unit) 
-        : T{T_unit}
+    Units(double m_unit, double L_unit, double E_unit) 
+        : m{m_unit}
         , L{L_unit}
-        , m{m_unit}
-        , E{T * BOLTZMANN}
+        , E{E_unit}
+        , T{E_unit / BOLTZMANN}
         , V{pow(L, 3)}
         , t{sqrt(m / E) * L}
         , F{E / L}

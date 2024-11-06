@@ -70,7 +70,7 @@ std::vector<json> get_fluid_data(std::string comps){
 }
 
 Units KineticGas::get_reducing_units(int i, int j){
-    return Units(red_mass[i][j], sigma[i][j], eps[i][j]);
+    return Units(2. * red_mass[i][j], sigma[i][j], eps[i][j]);
 }
 
 int KineticGas::frame_of_reference_map(std::string frame_of_ref){
