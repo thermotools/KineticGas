@@ -484,8 +484,6 @@ class py_KineticGas:
                     DT[-1] += x[i] * (k_delta(i, j) + (4 * np.pi / 3) * particle_density * x[j] * etl[i][j]**3 * self.M[i, j] * rdf[i][j])
 
         kT = np.linalg.solve(A, DT)
-
-        self.computed_kT[key] = tuple(kT)
         return kT
 
     def thermal_diffusion_factor(self, T, Vm, x, N=None):
@@ -570,6 +568,7 @@ class py_KineticGas:
         """
         x = self.check_valid_composition(x)
         N = self.default_N if (N is None) else N
+        while dependent_idx < 0: dependent_idx += self.ncomps
         if N < 2:
             warnings.warn('Thermal diffusion is a 2nd order phenomena, cannot be computed for N < 2 (got N = '
                           + str(N) + ')', RuntimeWarning, stacklevel=2)
@@ -597,9 +596,7 @@ class py_KineticGas:
             x (array_like) : Molar composition [-]
             N (int, optional) : Enskog approximation order (>= 2)
             idealgas (bool, optional) : Return infinite dilution value? Defaults to model default (set on init).
-            include_internal (bool, optional) : Include contribution from internal degrees of freedom, computed using
-                                                Eucken equation (doi.org/10.6028/NIST.IR.8209). Defaults to True.
-            contributions (str, optional) : Return only specific contributions, can be ('all', '(i)nternal',
+            contributions (str, optional) : Return only specific contributions, can be ('all' (default), '(i)nternal',
                                             '(t)ranslational', '(d)ensity', or several of the above, such as 'tid' or 'td'.
                                             If several contributions are selected, these are returned in an array of
                                             contributions in the same order as indicated in the supplied flag.
@@ -618,17 +615,17 @@ class py_KineticGas:
 
         x = self.check_valid_composition(x)
         lambda_int = 0
-        if include_internal is True:
-            f_int = 1.32e3
-            eta_0 = self.viscosity(T, 1e10, x, N=N, idealgas=True)
-            Cp = 0
-            M = sum(self.mole_weights * x) * Avogadro * 1e3
-            for i in range(self.ncomps):
-                _, Cpi_id = self.eos.idealenthalpysingle(T, 1 if self._is_singlecomp else i + 1, dhdt=True)
-                Cp += x[i] * Cpi_id
 
-            Cp_factor = (Cp - 5 * gas_constant / 2) / M
-            lambda_int = f_int * eta_0 * Cp_factor
+        f_int = 1.32e3
+        eta_0 = self.viscosity(T, 1e10, x, N=N, idealgas=True)
+        Cp_factor = 0
+        for i in range(self.ncomps):
+            _, Cpi_id = self.eos.idealenthalpysingle(T, 1 if self._is_singlecomp else i + 1, dhdt=True)
+            Mi = self.mole_weights[i] * Avogadro * 1e3  # Mole weight in g / mol
+            Cp_factor += x[i] * (Cpi_id - 5 * gas_constant / 2) / Mi
+
+        print(f'eta0 (new): {eta_0}, Cp : {Cp_factor}')
+        lambda_int = f_int * eta_0 * Cp_factor
 
         if contributions == 'i':
             return lambda_int
@@ -1225,12 +1222,7 @@ class py_KineticGas:
             2d array : RDF at contact, indexed by component pair.
         """
         x = self.check_valid_composition(x)
-        key = tuple((particle_density, T, tuple(x)))
-        if key in self.computed_rdf.keys():
-            return self.computed_rdf[key]
-
         rdf = np.array(self.cpp_kingas.get_rdf(particle_density, T, x))
-        self.computed_rdf[key] = rdf
         return rdf
 
     #####################################################
@@ -1362,8 +1354,6 @@ class py_KineticGas:
         if N is None:
             N = self.default_N
         mole_fracs = self.check_valid_composition(mole_fracs)
-        if (T, particle_density, tuple(mole_fracs), N) in self.computed_a_points.keys():
-            return np.array(self.computed_a_points[(T, particle_density, tuple(mole_fracs), N)])
 
         L = self.cpp_kingas.get_conductivity_matrix(particle_density, T, mole_fracs, N)
         L = np.array(L)
@@ -1376,7 +1366,6 @@ class py_KineticGas:
         else:
             a = lin.solve(L, l)
 
-        self.computed_a_points[(T, particle_density, tuple(mole_fracs), N)] = tuple(a)
         return np.array(a)
     
     def compute_visc_vector(self, T, particle_density, mole_fracs, N=None):
@@ -1407,8 +1396,6 @@ class py_KineticGas:
         if N is None:
             N = self.default_N
         mole_fracs = self.check_valid_composition(mole_fracs)
-        if (T, particle_density, tuple(mole_fracs), N) in self.computed_b_points.keys():
-            return self.computed_b_points[(T, particle_density, tuple(mole_fracs), N)]
 
         B = self.cpp_kingas.get_viscosity_matrix(particle_density, T, mole_fracs, N)
         beta = self.cpp_kingas.get_viscosity_vector(particle_density, T, mole_fracs, N)
@@ -1419,5 +1406,4 @@ class py_KineticGas:
         else:
             b = lin.solve(B, beta)
 
-        self.computed_b_points[(T, particle_density, tuple(mole_fracs), N)] = tuple(b)
         return b

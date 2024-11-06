@@ -612,6 +612,7 @@ double KineticGas::L_ij(int p, int q, int i, int j, double T){
     val *= 16.0 / 3.0;
     return val;
 }
+
 double KineticGas::L_i(int p, int q, int i, int j, double T){
     double val{0.0}, M1{M[i][j]}, M2{M[j][i]};
     for (int l = 1; l <= std::min(p, q) + 2; l++){
