@@ -40,7 +40,6 @@ class Spherical : public KineticGas {
     virtual double potential_derivative_r(int i, int j, double r);
     virtual double potential_dblderivative_rr(int i, int j, double r);
 
-protected:
     double omega(int i, int j, int l, int r, double T) override;
     vector2d model_rdf(double rho, double T, const vector1d& mole_fracs) override = 0;
     vector2d model_mtl(double rho, double T, const vector1d& x) override; // Momentum transfer length
@@ -53,7 +52,9 @@ protected:
     double chi(int i, int j, double T, double g, double b); // Deflection angle at given temperature, dimensionless velocity and impact parameter
     double get_R(int i, int j, double T, double g, double b); // Distance of closest approach at given temperature, dimensionless velocity and impact parameter
     double theta_r(int i, int j, double r, double T, double g, double b); // Angular position at given particle separation (r). A plot of r * sin(theta_r) vs. r * cos(theta_r) will show the particle trajectory for a collision with given T, g, b.
+    double theta_r(int i, int j, double R, double r, double T, double g, double b); // Faster, if R is known.
 
+protected:
     // ------------------------------------------------------------------------------------------- //
     // --------------------------------  TRANSFER LENGTH CACHING --------------------------------- //
     /*  
@@ -104,7 +105,6 @@ private:
     double w_integral_tester(int i, int j, double T, int l, int r, IntegrationParam& param);
 
     double get_R0(int i, int j, double T, double g); // Solve get_R when b = 0
-    double theta_r(int i, int j, double R, double r, double T, double g, double b); // Faster, if R is known.
 
     double theta_integral(int i, int j, const double T, const double R, const double g, const double b); // Evaluate Eq. (49) in Ref. (II)
 

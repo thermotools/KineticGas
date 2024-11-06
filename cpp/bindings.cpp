@@ -88,6 +88,7 @@ PYBIND11_MODULE(libpykingas, handle){
         });
     
     py::class_<Units>(handle, "cppUnits")
+        .def(py::init<double, double, double>())
         .def_readonly("T", &Units::T)           // Temperature (K)
         .def_readonly("L", &Units::L)           // Length (m)
         .def_readonly("m", &Units::m)           // Mass (kg)
@@ -133,6 +134,11 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("a2", py::overload_cast<double, double, const vector1d&>(&MieKinGas::a2ij_func))
         .def("a2_div_chi", &MieKinGas::a2ij_div_chi_func)
         .def("da2_div_chi_drho", py::overload_cast<double, double, const vector1d&>(&MieKinGas::da2ij_div_chi_drho_func))
+
+        .def("chi", &MieKinGas::chi)
+        .def("get_R", &MieKinGas::get_R)
+        .def("theta_r", py::overload_cast<int, int, double, double, double, double>(&MieKinGas::theta_r))
+        .def("theta_r", py::overload_cast<int, int, double, double, double, double, double>(&MieKinGas::theta_r))
         ;
         // .def("da1_drho", py::overload_cast<double, double, const vector1d&>(&MieKinGas::da1ij_drho_func))
         // .def("da1s_drho", py::overload_cast<double, const vector1d&, const vector2d&, const vector2d&>(&MieKinGas::da1s_drho_func))
