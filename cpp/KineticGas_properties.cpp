@@ -84,7 +84,7 @@ std::map<std::string, double> KineticGas::thermal_conductivity_contributions(dou
     vector2d etl = get_etl(rho, T, x);
 
     std::map<std::string, double> computed_contribs;
-    const auto contains = [&](std::string substr){return (contribs.find(substr) == std::string::npos) ? false : true;};
+    const auto contains = [&](std::string substr){return (contribs.find(substr) != std::string::npos);};
     if (contains("d")){
         double lambda_dblprime = 0.;
         if (!is_idealgas){ // lambda_dblprime is only nonzero when density corrections are present, and vanishes at infinite dilution
@@ -123,17 +123,15 @@ std::map<std::string, double> KineticGas::thermal_conductivity_contributions(dou
     if (contains("i")){
         double lamba_internal = 0.;
         double lamb_int_f = 1.32e3;
-        double eta0 = viscosity(T, 1e6, x, N);
-        double avg_mol_weight = 0.;
-        for (size_t i = 0; i < Ncomps; i++) {avg_mol_weight += x[i] * m[i];}
-        avg_mol_weight *= AVOGADRO * 1e3;
-        double Cp_id = (is_singlecomp) ? eos->Cp_ideal(T, 1) : 0.;
+        double eta0 = viscosity(T, 1e12, x, N);
+        // double Cp_id = (is_singlecomp) ? eos->Cp_ideal(T, 1) : 0.;
+        double Cp_factor = (is_singlecomp) ? eos->Cp_ideal(T, 1) : 0.;;
         if (!is_singlecomp){
             for (size_t i = 0; i < Ncomps; i++){
-                Cp_id += x[i] * eos->Cp_ideal(T, i + 1);
+                double Mi = m[i] * AVOGADRO * 1e3;
+                Cp_factor += x[i] * (eos->Cp_ideal(T, i + 1) -  5. * GAS_CONSTANT / 2.) / Mi;
             }
         }
-        double Cp_factor = (Cp_id - 5. * GAS_CONSTANT / 2.) / avg_mol_weight;
         lamba_internal = lamb_int_f * eta0 * Cp_factor;
         computed_contribs["i"] = lamba_internal;
     }
@@ -393,7 +391,7 @@ Eigen::MatrixXd KineticGas::CoM_to_CoV_matr(double T, double Vm, const vector1d&
 }
 Eigen::MatrixXd KineticGas::get_zarate_X_matr(const vector1d& x, int dependent_idx){
     while (dependent_idx < 0) dependent_idx += Ncomps;
-    Eigen::MatrixXd X(Ncomps - 1, Ncomps - 1);
+    Eigen::MatrixXd X = Eigen::MatrixXd::Zero(Ncomps - 1, Ncomps - 1);
     size_t Mi = 0;
     for (size_t i = 0; i < Ncomps; i++){
         if (i == dependent_idx) continue;
@@ -408,6 +406,7 @@ Eigen::MatrixXd KineticGas::get_zarate_X_matr(const vector1d& x, int dependent_i
     }
     return X;
 }
+
 Eigen::MatrixXd KineticGas::get_zarate_W_matr(const vector1d& x, int dependent_idx){
     vector1d wt_fracs = get_wt_fracs(x);
     return get_zarate_X_matr(wt_fracs, dependent_idx);
@@ -418,6 +417,7 @@ Eigen::VectorXd KineticGas::compute_diffusive_expansion_coeff(double rho, double
     Eigen::VectorXd diff_vec{stdvector_to_EigenVector(get_diffusion_vector(rho, T, x, N))};
     return diff_matr.partialPivLu().solve(diff_vec);
 }
+
 vector3d KineticGas::reshape_diffusive_expansion_vector(const Eigen::VectorXd& d_ijq){
     unsigned long N{d_ijq.size() / (Ncomps * Ncomps)};
     vector3d d_qij_matr(N, vector2d(Ncomps, vector1d(Ncomps, 0.)));
