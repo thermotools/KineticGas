@@ -39,5 +39,5 @@ test = ["pytest", "matplotlib"]
 
 [tool.cibuildwheel]
 test-command = "pytest {project}/tests"
-test-requires = ["pytest", "matplotlib"]
+test-requires = ["pytest", "matplotlib", "pandas"]
 build-verbosity = 2

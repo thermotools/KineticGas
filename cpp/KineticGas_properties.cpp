@@ -129,7 +129,6 @@ std::map<std::string, double> KineticGas::thermal_conductivity_contributions(dou
         if (!is_singlecomp){
             for (size_t i = 0; i < Ncomps; i++){
                 double Mi = m[i] * AVOGADRO * 1e3;
-                std::cout << "Ideal Cp(" << i << ") : " << eos->Cp_ideal(T, i + 1) << " / " << 5. * GAS_CONSTANT / 2. << std::endl;
                 Cp_factor += x[i] * (eos->Cp_ideal(T, i + 1) -  5. * GAS_CONSTANT / 2.) / Mi;
             }
         }

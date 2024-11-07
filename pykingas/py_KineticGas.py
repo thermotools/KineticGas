@@ -890,9 +890,9 @@ class py_KineticGas:
     #####################################################
 
     def interdiffusion_tp(self, T, p, x, N=None,
-                            use_independent=True, dependent_idx=None,
+                            use_independent=True, dependent_idx=-1,
                             frame_of_reference='CoN', use_binary=True,
-                            solvent_idx=None
+                            solvent_idx=-1
                           ):
         """Tp-property
         Compute molar volume using the internal equation of state (`self.eos`), assuming vapour, and pass the call to

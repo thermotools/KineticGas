@@ -3,7 +3,7 @@ import numpy as np
 from pykingas.MieKinGas import MieKinGas
 from pykingas.HardSphere import HardSphere
 
-FLTEPS = 1e-10
+FLTEPS = 1e-8
 
 models = [MieKinGas, HardSphere]
 
