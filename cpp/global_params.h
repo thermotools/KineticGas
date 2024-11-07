@@ -1,6 +1,4 @@
 #pragma once
-#include <string>
-
 #include <vector>
 
 constexpr double BOLTZMANN = 1.38064852e-23;
