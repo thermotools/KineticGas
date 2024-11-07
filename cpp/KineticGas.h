@@ -52,6 +52,19 @@ References:
 
 using json = nlohmann::json;
 
+// --------------------------------------------------------------------------------------------------------------------------------- //
+// ---------------------------------------------       GENERAL COMMENT ON UNITS        --------------------------------------------- //
+// --- All transport property calculations require either temperature, molar volume, and mole fractions, or temperature, pressure -- //
+// --- and mole fractions. These are always given in SI units (K), (m3 / mol), (Pa), (–). The returned transport properties are  --- //
+// --- also given in SI units.
+// --- Internally, the particle density is used for density (1 / m^3, instead of (mol / m3)).
+// --- If you prefer working in reduced (i.e. Lennard-Jones) units. The KineticGas class has the method get_reducing_units, which -- //
+// --- returns a `Units` struct (see utils.h), which holds the reducing units of a model, such that you can do
+// --- Units unt = model.get_reducing_units();
+// --- double T_SI = 300; // Kelvin;
+// --- double T_reduced = 300 / unt.T; // Dimensionless (using model energy parameter, eps, and Boltzmanns constant)
+// --------------------------------------------------------------------------------------------------------------------------------- //
+
 class KineticGas{
 public:
     KineticGas(vector1d mole_weights, vector2d sigma, vector2d eps, bool is_idealgas, bool is_singlecomp);

@@ -1,4 +1,4 @@
-#include "global_params.h"
+#include "utils.h"
 #include <filesystem>
 
 #ifdef FLUID_DIR

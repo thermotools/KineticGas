@@ -76,37 +76,21 @@ std::map<std::string, double> KineticGas::thermal_conductivity_contributions(dou
         if (!eos.get()) throw std::runtime_error("EoS is not set (in get_chemical_potential_factors)");
     #endif
     double rho = AVOGADRO / Vm;
-    
-    Eigen::VectorXd th_expansion_coeff{compute_thermal_expansion_coeff(rho, T, x, N)};
-
-    vector2d rdf = get_rdf(rho, T, x);
-    vector1d K = get_K_factors(rho, T, x);
-    vector2d etl = get_etl(rho, T, x);
 
     std::map<std::string, double> computed_contribs;
     const auto contains = [&](std::string substr){return (contribs.find(substr) != std::string::npos);};
-    if (contains("d")){
-        double lambda_dblprime = 0.;
-        if (!is_idealgas){ // lambda_dblprime is only nonzero when density corrections are present, and vanishes at infinite dilution
-            for (size_t i = 0; i < Ncomps; i++){
-                for (size_t j = 0; j < Ncomps; j++){
-                    lambda_dblprime += pow(rho, 2) * sqrt(2 * PI * m[i] * m[j] * BOLTZMANN * T / (m[i] + m[j])) 
-                                        * (x[i] * x[j]) / (m[i] + m[j]) * pow(etl[i][j], 4) * rdf[i][j];
-                }
-            }
-            lambda_dblprime *= (4. * BOLTZMANN / 3.);
-        }
-        computed_contribs["d"] = lambda_dblprime;
-    }
 
     if (contains("t")){
-        double lambda_prime = 0.;
-        Eigen::VectorXd dth = Eigen::VectorXd::Zero(Ncomps);
+        Eigen::VectorXd th_expansion_coeff{compute_thermal_expansion_coeff(rho, T, x, N)};
+        vector1d K = get_K_factors(rho, T, x);
         vector3d diff_expansion_coeff(N, vector2d(Ncomps, vector1d(Ncomps, 0.)));
+        Eigen::VectorXd dth = Eigen::VectorXd::Zero(Ncomps);
         if (!is_singlecomp){
             diff_expansion_coeff = reshape_diffusive_expansion_vector(compute_diffusive_expansion_coeff(rho, T, x, N));
             dth = compute_dth_vector(diff_expansion_coeff, th_expansion_coeff);
         }
+
+        double lambda_prime = 0.;
         for (size_t i = 0; i < Ncomps; i++){
             double tmp = 0.;
             if (!is_singlecomp){ // tmp is a Thermal diffusion related term, which is zero for a pure component
@@ -120,15 +104,32 @@ std::map<std::string, double> KineticGas::thermal_conductivity_contributions(dou
         computed_contribs["t"] = lambda_prime;
     }
 
+    if (contains("d")){
+        vector2d rdf = get_rdf(rho, T, x);
+        vector2d etl = get_etl(rho, T, x);
+
+        double lambda_dblprime = 0.;
+        if (!is_idealgas){ // lambda_dblprime is only nonzero when density corrections are present, and vanishes at infinite dilution
+            for (size_t i = 0; i < Ncomps; i++){
+                for (size_t j = 0; j < Ncomps; j++){
+                    lambda_dblprime += pow(rho, 2) * sqrt(2 * PI * m[i] * m[j] * BOLTZMANN * T / (m[i] + m[j])) 
+                                        * (x[i] * x[j]) / (m[i] + m[j]) * pow(etl[i][j], 4) * rdf[i][j];
+                }
+            }
+            lambda_dblprime *= (4. * BOLTZMANN / 3.);
+        }
+        computed_contribs["d"] = lambda_dblprime;
+    }
+
     if (contains("i")){
         double lamba_internal = 0.;
         double lamb_int_f = 1.32e3;
         double eta0 = viscosity(T, 1e12, x, N);
-        // double Cp_id = (is_singlecomp) ? eos->Cp_ideal(T, 1) : 0.;
-        double Cp_factor = (is_singlecomp) ? eos->Cp_ideal(T, 1) : 0.;;
+        double Cp_factor = (is_singlecomp) ? (eos->Cp_ideal(T, 1) - 5. * GAS_CONSTANT / 2.) / (m[0] * AVOGADRO * 1e3) : 0.;
         if (!is_singlecomp){
             for (size_t i = 0; i < Ncomps; i++){
                 double Mi = m[i] * AVOGADRO * 1e3;
+                std::cout << "Ideal Cp(" << i << ") : " << eos->Cp_ideal(T, i + 1) << " / " << 5. * GAS_CONSTANT / 2. << std::endl;
                 Cp_factor += x[i] * (eos->Cp_ideal(T, i + 1) -  5. * GAS_CONSTANT / 2.) / Mi;
             }
         }

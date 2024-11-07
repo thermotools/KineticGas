@@ -114,3 +114,6 @@ struct Units {
         , tcond{E / (t * T * L)}
     {}
 };
+
+void set_fluid_dir(const std::string path);
+std::string get_fluid_dir();

@@ -23,7 +23,9 @@ The `Units` struct has the attributes
 * `D` : Diffusion coefficient (m$^2$ / s)
 * `p` : Pressure (Pa)
 * `visc` : Viscosity (Pa s)
+* `kvisc` : Kinematic viscosity (m$^2$ / s)
 * `tcond` : Thermal conductivity (W / K m)
+* `tdiff` : Thermal diffusivity (m$^2$ / s)
   
 Different models may use different scaling parameters to deduce the reducing factors. The `MieKinGas` model uses the Mie potential parameters, such that e.g. the dimensionless viscosity may be computed as
 

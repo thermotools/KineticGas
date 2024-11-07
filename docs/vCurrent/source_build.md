@@ -72,7 +72,7 @@ The dynamic library `libpykingas` will be built and installed to the `pykingas` 
 
 # C++
 
-The KineticGas C++ library is built using `cmake` and `make`. All dependencies are included as git submodules under `cpp/external`, and should be properly retrieved when you clone the `KineticGas` repository. *Note*: `KineticGas` depends on [`ThermoPack`](https://thermotools.github.io/thermopack/), and will compile `ThermoPack` as part of the build process. If you already have an installation of `ThermoPack`, setting the environment variable `THERMOPACK_DIR` to the root directory of `ThermoPack` (where `thermopack-config.cmake` is found), that installation of `ThermoPack` will be used istead of re-compiling.
+The KineticGas C++ library is built using `cmake` and `make`. All dependencies are included as git submodules under `cpp/external`, and should be properly retrieved when you clone the `KineticGas` repository. *Note*: `KineticGas` depends on [`ThermoPack`](https://thermotools.github.io/thermopack/), and will compile `ThermoPack` as part of the build process. If you already have an installation of `ThermoPack`, setting the environment variable `THERMOPACK_DIR` to the root directory of `ThermoPack` (where `thermopack-config.cmake` is found), that installation of `ThermoPack` will be used istead of re-compiling. You can also download a binary distribution of ThermoPack at the [ThermoPack repository](https://github.com/thermotools/thermopack/releases).
 
 ## Building and installing
 
@@ -96,7 +96,13 @@ By default, `KineticGas` will search for fluid files at the relative path `../fl
 ```bash
 cmake -DFLUID_DIR=<path/to/fluids> ..
 ```
-where supplying a relative path will result in the library searching for fluid files in the path relative to it's location (`KineticGas/lib`). Supplying absolute paths is also supported.
+where supplying a relative path will result in the library searching for fluid files in the path relative to it's location (`KineticGas/lib`). Supplying absolute paths is also supported. To check
+or change where your compiled `KineticGas` library is searching for fluid files, use the `[get/set]_fluid_dir` functions with signatures
+```C++
+// In utils.h
+void set_fluid_dir(const std::string path); // supports both absolute and relative paths (relative to dynamic library location).
+std::string get_fluid_dir(); // Current search path for fluid files
+```
 
 ## Linking to the KineticGas library
 
