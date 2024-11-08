@@ -40,7 +40,7 @@ jobs:
                 [System.Environment]::SetEnvironmentVariable("THERMOPACK_DIR", $THERMOPACK_DIR)
                 Invoke-WebRequest -Uri "${{ env.THERMOPACK_URL }}/wheel-v2-${{ matrix.os }}.zip" -OutFile "thermopack_whl.zip"
                 Expand-Archive -Path "thermopack_whl.zip" -DestinationPath "wheel-v2-${{ matrix.os }}"
-                Get-ChildItem wheel-v2-windows-latest -Recurse
+                cd wheel-v2-${{ matrix.os }}
                 pip install (Get-ChildItem wheel-v2-windows-latest\*.whl).FullName
 
             - name: Build KineticGas
