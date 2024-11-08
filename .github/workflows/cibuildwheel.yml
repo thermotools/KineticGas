@@ -22,7 +22,7 @@ jobs:
       - uses: actions/setup-python@v4
 
       - name: Fetch Thermopack
-        if: runner.os != 'windows-latest'
+        if: matrix.os != 'windows-latest'
         run: |
             curl -L -o thermopack.zip ${{ env.THERMOPACK_URL }}/thermopack-${{ matrix.os }}.zip
             unzip thermopack.zip
@@ -32,7 +32,7 @@ jobs:
             pip install wheel-v2-${{ matrix.os }}/*
 
       - name: Fetch Thermopack (Windows)
-        if: runner.os == 'windows-latest'
+        if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
           Invoke-WebRequest -Uri "${{ env.THERMOPACK_URL }}/thermopack-${{ matrix.os }}.zip" -OutFile "thermopack.zip"
@@ -50,8 +50,7 @@ jobs:
           CIBW_ARCHS: auto64
           CIBW_ARCHS_MACOS: "universal2"
           CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET=11.0 THERMOPACK_DIR=${PWD}/${{ env.THERMOPACK_DIR }}
-          CIBW_ENVIRONMENT_LINUX: CXXFLAGS='-fconcepts'
-          CIBW_ENVIRONMENT_PASS_LINUX: THERMOPACK_DIR=${PWD}/${{ env.THERMOPACK_DIR }}
+          CIBW_ENVIRONMENT_LINUX: CXXFLAGS='-fconcepts' THERMOPACK_DIR=${PWD}/${{ env.THERMOPACK_DIR }}
           CIBW_ENVIRONMENT_WINDOWS: THERMOPACK_DIR=${PWD}\${{ env.THERMOPACK_DIR }}\${{ env.THERMOPACK_DIR }}
           CIBW_BUILD_VERBOSITY_WINDOWS: 2
           CIBW_SKIP: "*pypy* *pp* *cp36* *cp37* *musl*"
