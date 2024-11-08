@@ -25,7 +25,7 @@ class HardSphere : public KineticGas {
     }
 
     double w_integral(int i, int j, double T, int l, int r){
-        int f = Fac(r + 1).eval();
+        long long f = Fac(r + 1).eval();
         if (l % 2 == 0){
             return 0.25 * (2 - ((1.0 / (l + 1)) * 2)) * f;
         }

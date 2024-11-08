@@ -419,7 +419,7 @@ Eigen::VectorXd KineticGas::compute_diffusive_expansion_coeff(double rho, double
 }
 
 vector3d KineticGas::reshape_diffusive_expansion_vector(const Eigen::VectorXd& d_ijq){
-    unsigned long N{d_ijq.size() / (Ncomps * Ncomps)};
+    size_t N{d_ijq.size() / (Ncomps * Ncomps)};
     vector3d d_qij_matr(N, vector2d(Ncomps, vector1d(Ncomps, 0.)));
     for (int i = 0; i < Ncomps; i++){
         for (int j = 0; j < Ncomps; j++){
