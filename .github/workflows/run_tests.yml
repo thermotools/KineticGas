@@ -45,10 +45,6 @@ jobs:
               if: matrix.os == 'windows-latest'
               shell: pwsh
               run: |
-                Invoke-WebRequest -Uri "${{ env.THERMOPACK_URL }}/thermopack-${{ matrix.os }}.zip" -OutFile "thermopack.zip"
-                Expand-Archive -Path "thermopack.zip" -DestinationPath "thermopack-${{ matrix.os }}"
-                $THERMOPACK_DIR = "$PWD/${{ env.THERMOPACK_DIR }}"
-                [System.Environment]::SetEnvironmentVariable("THERMOPACK_DIR", $THERMOPACK_DIR)
                 Invoke-WebRequest -Uri "${{ env.THERMOPACK_URL }}/wheel-v2-${{ matrix.os }}.zip" -OutFile "thermopack_whl.zip"
                 Expand-Archive -Path "thermopack_whl.zip" -DestinationPath "wheel-v2-${{ matrix.os }}"
                 cd wheel-v2-${{ matrix.os }}
@@ -56,14 +52,17 @@ jobs:
 
             - name: Build KineticGas Windows
               if: matrix.os == 'windows-latest'
+              shell: pwsh
               run: |
-                echo "THERMOPACK_DIR (GH_ENV) : ${{ env.THERMOPACK_DIR }} / (ENV) ${THERMOPACK_DIR}"
-                $THERMOPACK_DIR = $PWD/${{ env.THERMOPACK_DIR }}
+                Invoke-WebRequest -Uri "${{ env.THERMOPACK_URL }}/thermopack-${{ matrix.os }}.zip" -OutFile "thermopack.zip"
+                Expand-Archive -Path "thermopack.zip" -DestinationPath "thermopack-${{ matrix.os }}"
+                $THERMOPACK_DIR = "$PWD/${{ env.THERMOPACK_DIR }}"
+                [System.Environment]::SetEnvironmentVariable("THERMOPACK_DIR", $THERMOPACK_DIR)
                 ls -R ${THERMOPACK_DIR}
                 mkdir build
                 cd build
                 cmake ..
-                make -j4 install
+                cmake --build . --config=Release --target install
             
             - name: Build KineticGas Windows
               if: matrix.os == 'windows-latest'
