@@ -63,16 +63,22 @@ The dynamic library `libpykingas` will be built and installed to the `pykingas` 
 
 ### When something goes wrong
 
-*Note:* The build system has been changed relatively recently, and is less tested than the build system that was used in the `2.0.0` release. If you encounter issues, please don't hesitate to post an issue on github so that we can improve robustness. Also, the old build system should still work fine. So if you are having trouble, a workaround may be to download the build files in the `v2.0.0` tagged version on github and use those.
+*Note:* The build system has been changed relatively recently, and is less tested than the build system that was used in the `2.0.0` release. If you encounter issues, please don't hesitate to post an issue on github so that we can improve robustness.
 
 * Warning that thermopack is not installed
+  * The easiest way to obtain the `ThermoPack` dynamic library (which `KineticGas` needs) is likely to download the appropriate zip file [here](https://github.com/thermotools/thermopack/releases), unzip it, and set the environment variable `THERMOPACK_DIR` to the resulting directory (where `thermopack-config.cmake` is located).
+    * On Linux and macOS: `export THERMOPACK_DIR=/path/to/thermopack-<system>/`
+    * On Windows (powershell): `$THERMOPACK_DIR = C:\path\to\thermopack-<system>\thermopack-<system>`
+    * To check that it is set correctly: `ls ${THERMOPACK_DIR}` should give a list of files including `thermopack-config.cmake`.
   * The `KineticGas` library has a dependency on the `ThermoPack` C++ wrapper. If you have not installed thermopack, the build system will generate a target from the `thermopack` submodule. Running `make install` should build and install this target, re-running `cmake ..` after building and installing `thermopack` should then give output telling you that `thermopack` has been found and is installed.
   * If you have installed thermopack, run `export THERMOPACK_DIR=<path/to/thermopack>`, to help `cmake` find your installation.
 
 
 # C++
 
-The KineticGas C++ library is built using `cmake` and `make`. All dependencies are included as git submodules under `cpp/external`, and should be properly retrieved when you clone the `KineticGas` repository. *Note*: `KineticGas` depends on [`ThermoPack`](https://thermotools.github.io/thermopack/), and will compile `ThermoPack` as part of the build process. If you already have an installation of `ThermoPack`, setting the environment variable `THERMOPACK_DIR` to the root directory of `ThermoPack` (where `thermopack-config.cmake` is found), that installation of `ThermoPack` will be used istead of re-compiling. You can also download a binary distribution of ThermoPack at the [ThermoPack repository](https://github.com/thermotools/thermopack/releases).
+The KineticGas C++ library is built using `cmake` and `make`. All dependencies are included as git submodules under `cpp/external`, and should be properly retrieved when you clone the `KineticGas` repository and run `git submodule update --init --recursive`. 
+
+*Note*: `KineticGas` depends on [`ThermoPack`](https://thermotools.github.io/thermopack/). If an installation of `ThermoPack` is not found, the build system will attempt to compile it as part of the build process. If you already have an installation of `ThermoPack`, setting the environment variable `THERMOPACK_DIR` to the root directory of `ThermoPack` (where `thermopack-config.cmake` is found), that installation of `ThermoPack` will be used istead of re-compiling. You can also download a binary distribution of ThermoPack at the [ThermoPack repository](https://github.com/thermotools/thermopack/releases).
 
 ## Building and installing
 

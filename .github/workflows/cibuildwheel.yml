@@ -26,7 +26,7 @@ jobs:
         run: |
             curl -L -o thermopack.zip ${{ env.THERMOPACK_URL }}/thermopack-${{ matrix.os }}.zip
             unzip thermopack.zip
-            export THERMOPACK_DIR=${PWD}/thermopack-${{ matrix.os }}/
+            export THERMOPACK_DIR=${PWD}/${{ env.THERMOPACK_DIR }}/
             curl -L -o thermopack_whl.zip ${{ env.THERMOPACK_URL }}/wheel-v2-${{ matrix.os }}.zip
             unzip thermopack_whl.zip
             pip install wheel-v2-${{ matrix.os }}/*
@@ -37,7 +37,7 @@ jobs:
         run: |
           Invoke-WebRequest -Uri "${{ env.THERMOPACK_URL }}/thermopack-${{ matrix.os }}.zip" -OutFile "thermopack.zip"
           Expand-Archive -Path "thermopack.zip" -DestinationPath "${{ env.THERMOPACK_DIR }}"
-          $THERMOPACK_DIR = "$PWD\${{ env.THERMOPACK_DIR }}\thermopack-${{ matrix.os }}"
+          $THERMOPACK_DIR = "$PWD\${{ env.THERMOPACK_DIR }}\${{ env.THERMOPACK_DIR }}"
           [System.Environment]::SetEnvironmentVariable("THERMOPACK_DIR", $THERMOPACK_DIR)
           Invoke-WebRequest -Uri "${{ env.THERMOPACK_URL }}/wheel-v2-${{ matrix.os }}.zip" -OutFile "thermopack_whl.zip"
           Expand-Archive -Path "thermopack_whl.zip" -DestinationPath "wheel-v2-${{ matrix.os }}"
@@ -49,8 +49,10 @@ jobs:
         env:
           CIBW_ARCHS: auto64
           CIBW_ARCHS_MACOS: "universal2"
-          CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET=11.0
+          CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET=11.0 THERMOPACK_DIR=${PWD}/${{ env.THERMOPACK_DIR }}
           CIBW_ENVIRONMENT_LINUX: CXXFLAGS='-fconcepts'
+          CIBW_ENVIRONMENT_PASS_LINUX: THERMOPACK_DIR=${PWD}/${{ env.THERMOPACK_DIR }}
+          CIBW_ENVIRONMENT_WINDOWS: THERMOPACK_DIR=${PWD}\${{ env.THERMOPACK_DIR }}\${{ env.THERMOPACK_DIR }}
           CIBW_BUILD_VERBOSITY_WINDOWS: 2
           CIBW_SKIP: "*pypy* *pp* *cp36* *cp37* *musl*"
         with:
