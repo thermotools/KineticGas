@@ -12,6 +12,7 @@ jobs:
         os: [windows-latest, macOS-latest, ubuntu-latest] 
     env:
       THERMOPACK_DIR: thermopack-${{ matrix.os }}
+      THERMOPACK_DIR_WINDOWS: "D:\\a\\KineticGas\\KineticGas\\thermopack-windows-latest\\thermopack-windows-latest"
       THERMOPACK_URL: https://github.com/vegardjervell/thermopack/releases/download/Latest-beta
     steps:
       - uses: actions/checkout@v4
@@ -52,7 +53,7 @@ jobs:
           CIBW_ARCHS_MACOS: "universal2"
           CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET=11.0 THERMOPACK_DIR=${PWD}/${{ env.THERMOPACK_DIR }}
           CIBW_ENVIRONMENT_LINUX: CXXFLAGS='-fconcepts' THERMOPACK_DIR=${PWD}/${{ env.THERMOPACK_DIR }}
-          CIBW_ENVIRONMENT_WINDOWS: THERMOPACK_DIR=${{ env.THERMOPACK_FULL_PATH }}
+          CIBW_ENVIRONMENT_WINDOWS: THERMOPACK_DIR=${{ env.THERMOPACK_DIR_WINDOWS}}
           CIBW_BUILD_VERBOSITY_WINDOWS: 2
           CIBW_SKIP: "*pypy* *pp* *cp36* *cp37* *musl*"
         with:
