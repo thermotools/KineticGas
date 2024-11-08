@@ -55,9 +55,8 @@ jobs:
               shell: pwsh
               run: |
                 Invoke-WebRequest -Uri "${{ env.THERMOPACK_URL }}/thermopack-${{ matrix.os }}.zip" -OutFile "thermopack.zip"
-                Expand-Archive -Path "thermopack.zip" -DestinationPath "thermopack-${{ matrix.os }}"
-                $THERMOPACK_DIR = "$PWD/${{ env.THERMOPACK_DIR }}"
-                [System.Environment]::SetEnvironmentVariable("THERMOPACK_DIR", $THERMOPACK_DIR)
+                Expand-Archive -Path "thermopack.zip" -DestinationPath "${{ env.THERMOPACK_DIR }}"
+                $THERMOPACK_DIR = "$PWD/${{ env.THERMOPACK_DIR }}/thermopack-${{ matrix.os }}"
                 ls -R ${THERMOPACK_DIR}
                 mkdir build
                 cd build
