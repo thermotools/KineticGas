@@ -38,6 +38,7 @@ jobs:
           Invoke-WebRequest -Uri "${{ env.THERMOPACK_URL }}/thermopack-${{ matrix.os }}.zip" -OutFile "thermopack.zip"
           Expand-Archive -Path "thermopack.zip" -DestinationPath "${{ env.THERMOPACK_DIR }}"
           $THERMOPACK_DIR = "$PWD\${{ env.THERMOPACK_DIR }}\${{ env.THERMOPACK_DIR }}"
+          echo "THERMOPACK_FULL_PATH=${THERMOPACK_DIR}" >> $GITHUB_ENV 
           [System.Environment]::SetEnvironmentVariable("THERMOPACK_DIR", $THERMOPACK_DIR)
           Invoke-WebRequest -Uri "${{ env.THERMOPACK_URL }}/wheel-v2-${{ matrix.os }}.zip" -OutFile "thermopack_whl.zip"
           Expand-Archive -Path "thermopack_whl.zip" -DestinationPath "wheel-v2-${{ matrix.os }}"
@@ -51,7 +52,7 @@ jobs:
           CIBW_ARCHS_MACOS: "universal2"
           CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET=11.0 THERMOPACK_DIR=${PWD}/${{ env.THERMOPACK_DIR }}
           CIBW_ENVIRONMENT_LINUX: CXXFLAGS='-fconcepts' THERMOPACK_DIR=${PWD}/${{ env.THERMOPACK_DIR }}
-          CIBW_ENVIRONMENT_WINDOWS: THERMOPACK_DIR=${PWD}\${{ env.THERMOPACK_DIR }}\${{ env.THERMOPACK_DIR }}
+          CIBW_ENVIRONMENT_WINDOWS: THERMOPACK_DIR=${{ env.THERMOPACK_FULL_PATH }}
           CIBW_BUILD_VERBOSITY_WINDOWS: 2
           CIBW_SKIP: "*pypy* *pp* *cp36* *cp37* *musl*"
         with:
