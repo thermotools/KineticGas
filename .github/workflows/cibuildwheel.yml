@@ -37,9 +37,9 @@ jobs:
         run: |
           Invoke-WebRequest -Uri "${{ env.THERMOPACK_URL }}/thermopack-${{ matrix.os }}.zip" -OutFile "thermopack.zip"
           Expand-Archive -Path "thermopack.zip" -DestinationPath "${{ env.THERMOPACK_DIR }}"
-          $THERMOPACK_DIR = "$PWD\${{ env.THERMOPACK_DIR }}\${{ env.THERMOPACK_DIR }}"
-          echo "THERMOPACK_FULL_PATH=${THERMOPACK_DIR}" >> $GITHUB_ENV 
+          $THERMOPACK_DIR = "${PWD}/${{ env.THERMOPACK_DIR }}/${{ env.THERMOPACK_DIR }}"
           [System.Environment]::SetEnvironmentVariable("THERMOPACK_DIR", $THERMOPACK_DIR)
+          "$THERMOPACK_DIR=$THERMOPACK_DIR" | Out-File -FilePath $env:GITHUB_ENV -Append
           Invoke-WebRequest -Uri "${{ env.THERMOPACK_URL }}/wheel-v2-${{ matrix.os }}.zip" -OutFile "thermopack_whl.zip"
           Expand-Archive -Path "thermopack_whl.zip" -DestinationPath "wheel-v2-${{ matrix.os }}"
           cd wheel-v2-${{ matrix.os }}
