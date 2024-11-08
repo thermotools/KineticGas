@@ -57,6 +57,8 @@ Functionality making it simple to implement new potentials is at the core of `Ki
 
 ### Implementing the C++ side
 
+*NOTE* The method `get_contact_diameters` has been changed to `get_collision_diameters` in later versions.
+
 All classes that inherit from `KineticGas` must implement the methods `omega`, which returns the collision integrals, the method `model_rdf`, which returns the radial distribution function at contact, and the method `get_contact_diameters`, which returns the collision diameters. 
 
 Out of these, the `omega` method is implemented in the  `Spherical` class which instead requires that inheritting classes implement the methods `potential`, `potential_derivative_r` and `potential_dblderivative_rr`, corresponding to the pair potential, and its first and second derivative wrt. distance. 

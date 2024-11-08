@@ -488,7 +488,12 @@ The `frame_of_reference` kwarg works as normal when setting `use_independent=Fal
 
 A standalone C++ library, that does not depend upon the Python wrapper, is currently under development. See branches under `pure_cpp/` for the most up to date information on that.
 
-# Advanced usage
+---
+layout: default
+version: 
+title: Advanced usage
+permalink: /vcurrent/advanced.html
+---
 
 ## Modifying and adding fluids
 
@@ -542,7 +547,7 @@ Functionality making it simple to implement new potentials is at the core of `Ki
 
 ### Implementing the C++ side
 
-All classes that inherit from `KineticGas` must implement the methods `omega`, which returns the collision integrals, the method `model_rdf`, which returns the radial distribution function at contact, and the method `get_contact_diameters`, which returns the collision diameters. 
+All classes that inherit from `KineticGas` must implement the methods `omega`, which returns the collision integrals, the method `model_rdf`, which returns the radial distribution function at contact, and the method `get_collision_diameters`, which returns the collision diameters. 
 
 Out of these, the `omega` method is implemented in the  `Spherical` class which instead requires that inheritting classes implement the methods `potential`, `potential_derivative_r` and `potential_dblderivative_rr`, corresponding to the pair potential, and its first and second derivative wrt. distance. 
 
@@ -551,13 +556,13 @@ The options for implementing a new potential are then
  * Inherit `KineticGas`
    * Implement `omega` (The collision integrals)
    * Implement `model_rdf` (The radial distribution function at contact)
-   * Implement `get_contact_diameters` (The collision diameters)
+   * Implement `get_collision_diameters` (The collision diameters)
  * Inherit `Spherical`
    * Implement `potential` (The pair-potential)
    * Implement `potential_derivative_r` (Derivative of the pair-potential)
    * Implement `potential_dblderivative_rr` (Second derivative of the pair-potential)
    * Implement `model_rdf` (The radial distribution function at contact)
-   * Implement `get_contact_diameters` (The collision diameters)
+   * Implement `get_collision_diameters` (The collision diameters)
 
 ### Implementing the Python side
 
@@ -574,7 +579,12 @@ class MyNewPotential(py_KineticGas)
         self.eos = <Some ThermoPack EoS>(comps)
 ```
 
-# Structure
+---
+layout: default
+version: 
+title: Structure
+permalink: /vcurrent/structure.html
+---
 
 See the [structure docs](https://github.com/thermotools/KineticGas/blob/main/docs/structure/structure.pdf) for more information.
 
@@ -626,7 +636,12 @@ Stuff is illustrated here as well:
 
 `docs/` : Documentation
 
-# Fluid identifiers
+---
+layout: default
+version: 
+title: Fluid identifiers
+permalink: /vcurrent/fluid_identifiers.html
+---
 
 *Note* : Many of these fluid parameters have been pulled directly from the [ThermoPack](https://github.com/thermotools/thermopack) fluid database for SAFT-VR Mie parameters. In the cases where SAFT-VR Mie uses segment numbers $>1$ to describe the fluids, the parameter sets cannot be expected to be suitable for use with RET-Mie.
 

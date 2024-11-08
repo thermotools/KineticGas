@@ -43,7 +43,6 @@ class MieKinGas(MieType.MieType):
                     N=N, is_idealgas=is_idealgas,
                     parameter_ref=parameter_ref)
 
-        self.__update_cpp_kingas_param__()
         if use_default_eos_param is None:
             for param in (mole_weights, sigma, eps_div_k, la, lr):
                 if param is not None:
@@ -65,12 +64,15 @@ class MieKinGas(MieType.MieType):
             if isinstance(self.eos, saft) and (use_default_eos_param is False):
                 self.__update_eos_param__()
         
+        self.__update_cpp_kingas_param__()
+        
     def __update_cpp_kingas_param__(self):
         """Internal
         See MieType
         """
         self.cpp_kingas = cpp_MieKinGas(self.mole_weights, self.sigma_ij, self.epsilon_ij, self.la, self.lr,
-                                        self.is_idealgas)
+                                        self.is_idealgas, self._is_singlecomp)
+        self.cpp_kingas.set_eos(self.eos)
     
     def set_sigma(self, sigma, update_eos=True):
         """Utility
@@ -101,3 +103,17 @@ class MieKinGas(MieType.MieType):
         self.__update_cpp_kingas_param__()
             
     
+
+    def get_vdw_alpha(self):
+        r"""Utility
+        Compute potential $\alpha_{vdw}$ parameter, defined as
+
+        $$ \alpha_{vdw} = 2 \pi \int_{\sigma}^{\infty} \phi(r) r^2 dr $$
+
+        &&
+        Returns:
+             float : $\alpha_{vdw}$ of first component.
+        """
+        lr, la = self.lr[0][0], self.la[0][0]
+        C = (lr / (lr - la)) * (lr / la) ** (la / (lr - la))
+        return C * ((1 / (la - 3)) - (1 / (lr - 3)))

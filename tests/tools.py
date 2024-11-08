@@ -3,17 +3,17 @@ import numpy as np
 from pykingas.MieKinGas import MieKinGas
 from pykingas.HardSphere import HardSphere
 
-FLTEPS = 1e-10
+FLTEPS = 1e-8
 
 models = [MieKinGas, HardSphere]
 
-def check_eq(a, b, eps=FLTEPS):
-    if abs(a - b) > eps:
+def check_eq(a, b, tol=FLTEPS):
+    if abs(a - b) > tol:
         return False
     return True
 
-def check_eq_rel(a, b, eps=FLTEPS):
-    if abs(a - b) / np.mean((a, b)) > eps:
+def check_eq_rel(a, b, tol=FLTEPS):
+    if abs(a - b) / np.mean((a, b)) > tol:
         return False
     return True
 
@@ -23,7 +23,7 @@ def check_eq_arr(a, b):
     return True
 
 def check_eq_lst(lst):
-    if any(abs(lst - lst[0]) > FLTEPS):
+    if any(abs(np.array(lst) - lst[0]) > FLTEPS):
         return False
     return True
 

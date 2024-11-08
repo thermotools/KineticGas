@@ -38,10 +38,10 @@ The `py_KineticGas` class, found in `pykingas/py_KineticGas.py`, is the core of 
   * [Frame of Reference transformations](#frame-of-reference-transformations)
     * [get_com_2_con_matr](#get_com_2_con_matrself-x)
     * [get_com_2_cov_matr](#get_com_2_cov_matrself-t-vm-x)
-    * [get_com_2_for_matr](#get_com_2_for_matrself-t-vm-x-for-**kwargs)
+    * [get_com_2_for_matr](#get_com_2_for_matrself-t-vm-x-for-kwargs)
     * [get_com_2_solv_matr](#get_com_2_solv_matrself-x-solvent_idx)
     * [get_solv_2_solv_matr](#get_solv_2_solv_matrself-x-prev_solv_idx-new_solv_idx)
-  * [Interfaces to C++ methods](#interfaces-to-c++-methods)
+  * [Interfaces to C++ methods](#interfaces-to-c-methods)
     * [get_conductivity_matrix](#get_conductivity_matrixself-particle_density-t-mole_fracs-nnone)
     * [get_conductivity_vector](#get_conductivity_vectorself-particle_density-t-mole_fracs-n)
     * [get_contact_diameters](#get_contact_diametersself-particle_density-t-x)
@@ -588,7 +588,7 @@ Generate matrices for Frame of Reference transformations. See the supportingmate
   * [Frame of Reference transformations](#frame-of-reference-transformations)
     * [get_com_2_con_matr](#get_com_2_con_matrself-x)
     * [get_com_2_cov_matr](#get_com_2_cov_matrself-t-vm-x)
-    * [get_com_2_for_matr](#get_com_2_for_matrself-t-vm-x-for-**kwargs)
+    * [get_com_2_for_matr](#get_com_2_for_matrself-t-vm-x-for-kwargs)
     * [get_com_2_solv_matr](#get_com_2_solv_matrself-x-solvent_idx)
     * [get_solv_2_solv_matr](#get_solv_2_solv_matrself-x-prev_solv_idx-new_solv_idx)
 
@@ -714,7 +714,7 @@ Get solvent-to-solvent frame of reference transformation matrix
 Lightweight wrappers for the most commonly used C++ side methods.
 
 ### Table of contents
-  * [Interfaces to C++ methods](#interfaces-to-c++-methods)
+  * [Interfaces to C++ methods](#interfaces-to-c-methods)
     * [get_conductivity_matrix](#get_conductivity_matrixself-particle_density-t-mole_fracs-nnone)
     * [get_conductivity_vector](#get_conductivity_vectorself-particle_density-t-mole_fracs-n)
     * [get_contact_diameters](#get_contact_diametersself-particle_density-t-x)

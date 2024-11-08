@@ -1,13 +1,41 @@
 #include "Spherical.h"
+#include "Integration/Integration.h"
 
-Spherical::Spherical(std::vector<double> mole_weights,
-                    std::vector<std::vector<double>> sigmaij,
-                    bool is_idealgas) 
-                    : KineticGas(mole_weights, is_idealgas), sigma{sigmaij}
+Spherical::Spherical(vector1d mole_weights,
+                    vector2d sigma,
+                    vector2d eps,
+                    bool is_idealgas, bool is_singlecomp) 
+                    : KineticGas(mole_weights, sigma, eps, is_idealgas, is_singlecomp)
                     {}
 
+double Spherical::potential(int i, int j, double r){
+    return potential(i, j, static_cast<dual2>(r)).val.val;
+}
+
+double Spherical::potential_derivative_r(int i, int j, double r){
+    dual2 rd = r;
+    const auto func = [&](dual2 r_){return potential(i, j, r_);};
+    auto [u0, ur, urr] = autodiff::derivatives(func, autodiff::wrt(rd), autodiff::at(rd));
+    return ur;
+}
+
+double Spherical::potential_dblderivative_rr(int i, int j, double r){
+    dual2 rd = r;
+    const auto func = [&](dual2 r_){return potential(i, j, r_);};
+    auto [u0, ur, urr] = autodiff::derivatives(func, autodiff::wrt(rd, rd), autodiff::at(rd));
+    return urr;
+}
+
+StatePoint Spherical::get_transfer_length_point(double rho, double T, const vector1d& x){
+    if (transfer_length_model_id == 2){
+        return StatePoint(T, rho);
+    }
+    return StatePoint(T);
+}
+
 double Spherical::omega(int i, int j, int l, int r, double T){
-    OmegaPoint point{i, j, l, r, T}, sympoint{j, i, l, r, T};
+    OmegaPoint point = get_omega_point(i, j, l, r, T);
+    OmegaPoint sympoint = get_omega_point(j, i, l, r, T);
     const std::map<OmegaPoint, double>::iterator pos = omega_map.find(point);
     if (pos == omega_map.end()){
         double w = w_integral(i, j, T, l, r);
@@ -16,26 +44,18 @@ double Spherical::omega(int i, int j, int l, int r, double T){
         else val = 0.5 * pow(sigma[i][j], 2) * sqrt(2 * PI * BOLTZMANN * T / (m0[i][j] * M[i][j] * M[j][i])) * w;
         omega_map[point] = val;
         omega_map[sympoint] = val; // Collision integrals are symmetric wrt. particle indices.
+        if (is_singlecomp){
+            for (int ci = 0; ci < Ncomps; ci++){
+                for (int cj = 0; cj < Ncomps; cj++){
+                    if (((ci == i) && (cj == j)) || ((ci == j) && (cj == i))) continue;
+                    OmegaPoint purepoint = get_omega_point(ci, cj, l, r, T);
+                    omega_map[purepoint] = val;
+                }
+            }
+        }
         return val;
     }
     return pos->second;
-}
-
-double Spherical::omega_tester(int i, int j, int l, int r, double T, IntegrationParam& param){
-    double w = w_integral_tester(i, j, T, l, r, param);
-    if (i == j) return pow(sigma[i][j], 2) * sqrt((PI * BOLTZMANN * T) / m[i]) * w;
-    return 0.5 * pow(sigma[i][j], 2) * sqrt(2 * PI * BOLTZMANN * T / (m0[i][j] * M[i][j] * M[j][i])) * w;
-}
-
-double Spherical::w_integral_tester(int i, int j, double T, int l, int r, IntegrationParam& param){
-    const auto w_integrand_export = [&](double g, double b){return w_integrand(i, j, T, g, b, l, r);};
-    double I = integrate2d(param.origin, param.end,
-                        param.dg, param.db,
-                        param.refinement_levels_g, param.refinement_levels_b,
-                        param.subdomain_dblder_limit,
-                        w_integrand_export);
-
-    return I;
 }
 
 double Spherical::w_integral(int i, int j, double T, int l, int r){
@@ -70,79 +90,6 @@ double Spherical::w_integrand(int i, int j, double T,
     return 2 * exp(- pow(g, 2)) * pow(g, 2.0 * r + 3.0) * (1 - pow(cos(chi_val), l)) * b;
 };
 
-std::vector<std::vector<double>> Spherical::get_b_max(double T, std::vector<std::vector<int>>& ierr){
-        // bmax[i][j] in units of sigma[i][j]
-        // The maximum value of the impact parameter at which deflection angle (chi) is positive
-        const double g_avg = sqrt(4. / PI); // Average dimensionless relative velocity
-        std::vector<std::vector<double>> bmax(Ncomps, std::vector<double>(Ncomps, 0));
-        double b, db, chi_val;
-        for (int i = 0; i < Ncomps; i++){
-            for (int j = i; j < Ncomps; j++){
-                ierr[i][j] = ierr[j][i] = 0;
-                b = 0.5;
-                db = 0.1;
-                chi_val = chi(i, j, T, g_avg, b * sigma[i][j]);
-                while (abs(db) > 1e-5){
-                    if ((chi_val < 0 && db > 0) || (chi_val > 0 && db < 0)){
-                        db *= -0.5;
-                    }
-                    b += db;
-                    chi_val = chi(i, j, T, g_avg, b * sigma[i][j]);
-                    if (b > 10) { // Unable to converge, this failure should be handled in get_b_max(double T)
-                        ierr[i][j] = 1;
-                        break;
-                    }
-                }
-                bmax[j][i] = bmax[i][j] = b;
-            }
-        }
-        return bmax;
-    }
-
-std::vector<std::vector<double>> Spherical::get_b_max(double T){
-    std::vector<std::vector<int>> ierr(Ncomps, std::vector<int>(Ncomps, 1));
-    std::vector<std::vector<double>> b_max = get_b_max(T, ierr);
-    for (size_t i = 0; i < Ncomps; i++){
-        for (size_t j = i; j < Ncomps; j++){
-            if (ierr[i][j]) {
-                std::cout << "Could not compute upper integration limit for collision diameter (" << i << ", " << j
-                            << ") using sigma as fallback value." << std::endl;
-                b_max[j][i] = b_max[i][j] = sigma[i][j];
-            }
-        }
-    }
-    return b_max;
-}
-
-std::vector<std::vector<double>> Spherical::get_collision_diameters(double rho, double T, const std::vector<double>& x){
-    // Evaluate the integral of Eq. (40) in RET for Mie fluids (doi: 10.1063/5.0149865)
-    // Note: For models with is_idealgas==true, zeros are returned, as there is no excluded volume at infinite dilution.
-    // Weights and nodes for 6-point Gauss-Legendre quadrature
-    constexpr int n_gl_points = 6;
-    constexpr double gl_points[n_gl_points] = {-0.93246951, -0.66120939, -0.23861919, 0.23861919, 0.66120939, 0.93246951};
-    constexpr double gl_weights[n_gl_points] = {0.17132449, 0.36076157, 0.46791393, 0.46791393, 0.36076157, 0.17132449};
-
-    const double g_avg = sqrt(1. / PI); // Average dimensionless relative speed of collision
-    std::vector<std::vector<double>> avg_R(Ncomps, std::vector<double>(Ncomps, 0.));
-    if (is_idealgas) {
-        return avg_R;
-    }
-    std::vector<std::vector<double>> bmax = get_b_max(T);
-    double point, weight;
-
-    for (int i = 0; i < Ncomps; i++){
-        for (int j = i; j < Ncomps; j++){
-            for (int p = 0; p < n_gl_points; p++){
-                point = gl_points[p] * (bmax[i][j] / 2.) + bmax[i][j] / 2.;
-                weight = gl_weights[p] * bmax[i][j] / 2.;
-                avg_R[i][j] += get_R(i, j, T, g_avg, point * sigma[i][j]) * weight / bmax[i][j];
-            }
-            avg_R[j][i] = avg_R[i][j];
-        }
-    }
-    return avg_R;
-}
-
 /*
 Contains functions for computing the collision integrals
 Common variables are:
@@ -158,47 +105,54 @@ Common variables are:
     chi : Deflection angle, corresponds to pi - 2 * theta(R)
 */
 
-#include "KineticGas.h"
-#include "Integration/Integration.h"
-
 // Helper funcions for computing dimentionless collision integrals
 
 double Spherical::theta(int i, int j, const double T, const double g, const double b){
-    #ifdef DEBUG
-        std::printf("Calling theta!\n");
-    #endif
     // Compute deflection angle for a collision
-    if (b / sigma[i][j] > 10) return PI / 2;
+    if (b / sigma[i][j] > 100) return PI / 2;
     if (b / sigma[i][j] < 1e-3) return 0;
     double R = get_R(i, j, T, g, b);
-    return theta_integral(i, j, T, R, g, b); // - theta_lim(i, j, T, g) + PI / 2;
+    return theta_integral(i, j, T, R, g, b) - theta_lim(i, j, T, g) + PI / 2;
+}
+
+double Spherical::theta_r(int i, int j, double r, double T, double g, double b){
+    double R = get_R(i, j, T, g, b);
+    return theta_r(i, j, R, r, T, g, b);
+}
+
+double Spherical::theta_r(int i, int j, double R, double r, double T, double g, double b){
+    if (b / sigma[i][j] > 100) return PI / 2;
+    if (b / sigma[i][j] < 1e-3) return 0;
+    const double dh{7.5e-3};
+    const double tol{1e-6};
+
+    const auto integrand = [&](double r_prime){return theta_integrand(i, j, T, r_prime, g, b);};
+    const auto integrand1 = [&](double u){return (r / pow(u, 2)) * integrand(r / u);}; // Substitution u = r / r'
+    const double r_lim = (1 + 5e-2) * R + (1 / (5 * g + 1)) * R;
+
+    if (r < r_lim) {
+        const auto lim_integrand = [&](double u){return (r_lim / pow(u, 2)) * integrand(r_lim / u);};
+        const double correction = simpson(lim_integrand, 1e-12, 0.8, 100) + simpson(lim_integrand, 0.8, 1., 100);
+        const double cutoff_error = tanh_sinh(lim_integrand, dh, tol) - correction;
+        const double i1 = tanh_sinh(integrand1, dh, tol) - cutoff_error;
+        return i1;
+    }
+
+    const double i1 = simpson(integrand1, 1e-12, 0.8, 100);
+    const double i2 = simpson(integrand1, 0.8, 1., 100);
+    return i1 + i2;
 }
 
 double Spherical::theta_lim(int i, int j, const double T, const double g){
-    #ifdef DEBUG
-        std::printf("Calling theta lim!\n");
-    #endif
-    double b = 10 * sigma[i][j];
+    double b = 100 * sigma[i][j];
     double R = get_R(i, j, T, g, b);
     return theta_integral(i, j, T, R, g, b);
 }
 
 double Spherical::theta_integral(int i, int j, double T, double R, double g, double b){
-    constexpr double h{7.5e-3};
-    double I{0.0};
-    int k{1};
-    double u = tanh(PI * sinh(k * h) / 2.);
-    double w = (PI / 2.) * h * cosh(k * h) / pow(cosh(PI * sinh(k * h) / 2.), 2);
-    double f = transformed_theta_integrand(i, j, T, u, R, g, b);
-    while (abs(f * w) > 1e-8){
-        I += w * f;
-        k+=1;
-        u = tanh(PI * sinh(k * h) / 2.);
-        w = (PI / 2) * h * cosh(k * h) / pow(cosh(PI * sinh(k * h) / 2.), 2);
-        f = transformed_theta_integrand(i, j, T, u, R, g, b);
-        if (isnan(f) || isnan(w) || isinf(f) || isinf(w)) break;
-    }
-    return I;
+    constexpr double dh{1.0e-3};
+    const auto integrand = [&](double u){return (R / pow(u, 2)) * theta_integrand(i, j, T, R / u, g, b);};
+    return tanh_sinh(integrand, dh);
 }
 
 double Spherical::theta_integrand(int i, int j, double T, double r, double g, double b){
@@ -220,14 +174,7 @@ double Spherical::theta_integrand_dblderivative(int i, int j, double T, double r
     const double core_prime = 4 * pow(r, 3) / pow(b, 2) - a * (4 * pow(r, 3) * u + pow(r, 4) * u_prime) - 2 * r;
     const double core_dblprime = 12.0 * pow(r, 2) / pow(b, 2) - a * (12 * pow(r, 2) * u + 8 * pow(r, 3) * u_prime + pow(r, 4) * u_dblprime) - 2;
 
-    // std::printf("    %i%i %E %E %E %E \n", i, j, T, r/sigma[i][j], g, b);
     double val = (3.0 / 4.0) * pow(core, -2.5) * pow(core_prime, 2) - 0.5 * pow(core, - 1.5) * core_dblprime;
-    #ifdef DEBUG
-        if (val < 0){
-            std::printf("\nd3tdr3 at r = %E sigma\n", r / sigma[i][j]);
-            std::printf("val = %E\n\n", val);
-        }
-    #endif
     return val;
 }
 
@@ -240,8 +187,9 @@ double Spherical::get_R_rootfunc_derivative(int i, int j, double T, double g, do
 }
 
 double Spherical::get_R(int i, int j, double T, double g, double b){
+    if ((b / sigma[i][j] < 1e-5) || (g < 1e-6)) return get_R0(i, j, T, g); // Treat separately (set b = 0, and handle g = 0 case)
     // Newtons method
-    double tol = 1e-5; // Relative to sigma_map[ij]
+    double tol = 1e-5; // Relative to sigma[i][j]
     double init_guess_factor = 1.0;
     double r = init_guess_factor * b;
     double f = get_R_rootfunc(i, j, T, g, b, r);
@@ -251,16 +199,10 @@ double Spherical::get_R(int i, int j, double T, double g, double b){
         if (next_r < 0){
             init_guess_factor *= 0.95;
             r = init_guess_factor * b;
-            #ifdef DEBUG
-                std::printf("Initial guess for R failed (r < 0), reducing to %E sigma\n\n", r / sigma[i][j]);
-            #endif
         }
         else if (f < 0 && f / dfdr < 0){
             init_guess_factor *= 0.95;
             r = init_guess_factor * b;
-            #ifdef DEBUG
-                std::printf("Initial guess for R failed (df/dr < 0 && f < 0), reducing to %E sigma\n\n", r / sigma[i][j]);
-            #endif
         }
         else{
             r = next_r;
@@ -269,17 +211,49 @@ double Spherical::get_R(int i, int j, double T, double g, double b){
         dfdr = get_R_rootfunc_derivative(i, j, T, g, b, r);
         next_r = r - f / dfdr;
     }
-    #ifdef DEBUG
-        std::printf("For b = %E sigma, g = %E\n", b / sigma[i][j], g);
-        std::printf("Found R at %E sigma\n\n", next_r / sigma[i][j]);
-    #endif
     return next_r;
 }
 
+double Spherical::get_R0(int i, int j, double T, double g){
+    double tol = 1e-6;
+    double Ek = BOLTZMANN * T * pow(g, 2);
+    double r = 0.9 * sigma[i][j];
+    double f = potential(i, j, r) - Ek;
+    while (f < 0){
+        r *= 0.8;
+        f = potential(i, j, r) - Ek;
+    }
+    double dfdr = potential_derivative_r(i, j, r);
+    while (abs(f / (dfdr * sigma[i][j])) > tol){
+        r -= f / dfdr;
+        f = potential(i, j, r) - Ek;
+        dfdr = potential_derivative_r(i, j, r);
+    }
+    return r;
+}
+
 double Spherical::chi(int i, int j, double T, double g, double b){
-    if (b / sigma[i][j] > 10) return 0;
+    if (b / sigma[i][j] > 100) return 0;
     double t = theta(i, j, T, g, b);
     return PI - 2.0 * t;
 }
 
 
+// Testing functions
+
+double Spherical::omega_tester(int i, int j, int l, int r, double T, IntegrationParam& param){
+    double w = w_integral_tester(i, j, T, l, r, param);
+    if (i == j) return pow(sigma[i][j], 2) * sqrt((PI * BOLTZMANN * T) / m[i]) * w;
+    return 0.5 * pow(sigma[i][j], 2) * sqrt(2 * PI * BOLTZMANN * T / (m0[i][j] * M[i][j] * M[j][i])) * w;
+}
+
+double Spherical::w_integral_tester(int i, int j, double T, int l, int r, IntegrationParam& param){
+    const auto w_integrand_export = [&](double g, double b){return w_integrand(i, j, T, g, b, l, r);};
+    double I = integrate2d(param.origin, param.end,
+                        param.dg, param.db,
+                        param.refinement_levels_g, param.refinement_levels_b,
+                        param.subdomain_dblder_limit,
+                        w_integrand_export);
+
+    return I;
+}

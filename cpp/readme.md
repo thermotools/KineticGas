@@ -1,7 +1,35 @@
-# Factorial module
-Defines the types `Frac`, `Product` and `Fac`, representing exact fractions, products and factorials respectively. This is required to avoid overflow and float truncation issues when evaluating fractions containing factorials that largely cancel, but where the numerator and denominator cannot be evaluated separately. This is specifically the case in the `A_*` and `B_*` methods of `KineticGas`.
+# Kineticgas module
+Contains the abstract `KineticGas` class. This class defines functions that solve the neccesary equations to produce 
+the vectors and matrices required to determine diffusion coefficients and conductivities of dilute gas mixtures for an 
+arbitrary potential.
 
-In short, a factorial (`Fac`) is treated as an array of integers up until the `.eval()` method is called. Similarly, a `Product` is treated as an array of integers and a singular double. A fraction consists of two `Product`s, the numerator and the denominator. The `*` and `/` operators are overloaded by letting `Fac` and `Product` be implicitly converted to `Frac` (i.e. a fraction with a denominator of `Product(1)`). Thus you get the slightly unintuitive arithmatic of 
+The abstract class `Spherical` contains various utility methods that are used for evaluating the collision integrals,
+transfer lengths, etc. for arbitrary spherical potentials.
+
+Model classes such as `MieKinGas` implement a pair potential and, if they are to be used at non-infinite dilution,
+the function `model_rdf`, which returns the RDF at contact. Note that specifically `MieKinGas` also overrides the 
+collision integrals (`omega`) in `Spherical` to use a correlation when applicable.
+
+# Utility modules
+
+## Global parameters and utility structs
+
+The header `global_params.h` contains natural constants.
+
+The header `utils.h` contains various `enum`s and `struct`s that are used throughout the code base, as well as the `[get/set]_fluid_dir` functions to 
+manage the fetching of fluid files from the fluid database.
+
+## Factorial module
+Defines the types `Frac`, `Product` and `Fac`, representing exact fractions, products and factorials respectively. This
+is required to avoid overflow and float truncation issues when evaluating fractions containing factorials that largely
+cancel, but where the numerator and denominator cannot be evaluated separately. This is specifically the case in the
+`A_*` and `B_*` methods of `KineticGas`.
+
+In short, a factorial (`Fac`) is treated as a single integer (upper value) until the `.eval()` method is called. Similarly, 
+a `Product` is treated as an array of integers and a singular double. A fraction consists of two `Product`s, the 
+numerator and the denominator. The `*` and `/` operators are overloaded by letting `Fac` and `Product` be implicitly 
+converted to `Frac` (i.e. a fraction with a denominator of `Product(1)`). Thus you get the slightly unintuitive 
+arithmatic of 
 
 `Product * Product => Frac`
 
@@ -11,14 +39,15 @@ In short, a factorial (`Fac`) is treated as an array of integers up until the `.
 
 This is quite simply done to greatly reduce the number of neccesary operator overloads.
 
-When the `Frac::eval()` method is called, integers in the numerator and denominator that cancel are set to unity before the two are evaluated. This effectivly allows the evaluation of fractions such as `Fac(32) / Fac(28)` without getting overflow issues that would appear without this module.
+When the `Frac::eval()` method is called, integers in the numerator and denominator that cancel are set to unity 
+before the two are evaluated. This effectivly allows the evaluation of fractions such as `Fac(32) / Fac(28)` without 
+getting overflow issues that would appear without this module.
 
-# Kineticgas module
-Contains the abstract `KineticGas` class. This class defines functions that solve the neccesary equations to produce the vectors and matrices required to determine diffusion coefficients and conductivities of dilute gas mixtures for an arbitrary potential.
+The module also contains the function `Product ipow(int base, int power)`, which evaluates a power as a `Product`,
+such that we can do stuff like `(ipow(10, 500) / ipow(10, 499)).eval() == 10`, without ever worrying about overflow. 
 
-`KineticGas` is inherited by `HardSphere` and the abstract class `Spherical`. `HardSphere` implements the analytic collision integrals for hard sphere mixtures. `Spherical` implements the solvers neccesary to evaluate the collision integrals for an arbitrary spherical potential, and is in turn inherited by `MieKinGas` and `PseudoHardSphere`, which implement the respective potential models with first and second derivatives. 
-
-The model classes (`HardSphere`, `PseudoHardSphere` and `MieKinGas`) are initialized for a given binary mixture, by supplying the particle/potential parameters. The parameter database (`pykingas/XX.json`) is accessible through the python wrapper. Matrix inversion and evaluation of the transport coefficients is done on the python-side, because I didn't want to spend time learning to use `LAPACK`.
-
-# Integration module
-Functional module containing the primary functions `integrate2d()` and `mesh2d()`, used for adaptive refinement of an integration mesh. Module is used by `Spherical` to evaluate collision integrals. Mathematical description of the module can be found in [theory.pdf](https://github.com/vegardjervell/Kineticgas/blob/main/theory.pdf).
+## Integration module
+Contains various numerical algorithms. The only non-trivial of which may be the function `integrate2d`.
+and corresponding `mesh2d`, which are used to compute collision integrals.
+Mathematical description of the algorithm used by `integrate2d` function can be found in
+[The Kinetic Gas theory of Mie fluids](https://ntnuopen.ntnu.no/ntnu-xmlui/handle/11250/3029213).

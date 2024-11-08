@@ -144,4 +144,35 @@ double integrate2d(const Point& origin, const Point& end,
                     double subdomain_dblder_limit,
                     const std::function<double(double, double)>& func);
 
+/*
+    Standard Simpson-rule integration, with N_intervals between x0 and xN, where N_intervals >= 2
+*/
+double simpson(std::function<double(double)> func, double x0, double xN, int N_intervals);
+
+/*
+    Simpson integration of the function g(x) = w(x)f(x), and w(x) simultaneously.
+    Useful if w(x) is expensive to evaluate, and you want to evaluate the weighted average
+        a = I[w(x) * f(x)] / I[w(x)],
+    which is then evaluated as
+        std::pair<double, double> FW = weighted_simpson(func, wt, x0, xN, N);
+        double a = FW.first / FW.second;
+    Returns : {F, W}, where F is the integral of f(x) * w(x), and W is the integral of w(x)
+*/
+std::pair<double, double> weighted_simpson(std::function<double(double)> func, std::function<double(double)> wt, double x0, double xN, int N_intervals);
+
+/*
+    For use when nesting std::pair<double, double> weighted_simpson(double(double), double(double), double, double, int)
+    Takes the function "FW" as an argument, and integrates both outputs using Simpsons rule.
+
+    Returns : {F, W}, where F is the integral of the first output, and W is the integral of the second output.
+*/
+std::pair<double, double> weighted_simpson(std::function<std::pair<double, double>(double)> FW, double x0, double xN, int N_intervals);
+
+
+/*
+    One-sided tanh-sinh integration scheme.
+    Integrates func(u) from 0 to 1, with step size dh in tanh-space,
+    giving arbitrarily high resolution near u = 1
+*/
+double tanh_sinh(std::function<double(double)> func, double dh, double tol=1e-5);
 

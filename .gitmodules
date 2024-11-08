@@ -1,3 +1,15 @@
 [submodule "cpp/external/pybind11"]
 	path = cpp/external/pybind11
 	url = https://github.com/pybind/pybind11.git
+[submodule "cpp/external/json"]
+	path = cpp/external/json
+	url = https://github.com/nlohmann/json.git
+[submodule "cpp/external/eigen"]
+	path = cpp/external/eigen
+	url = https://gitlab.com/libeigen/eigen.git
+[submodule "cpp/external/autodiff"]
+	path = cpp/external/autodiff
+	url = https://github.com/autodiff/autodiff.git
+[submodule "cpp/external/thermopack"]
+	path = cpp/external/thermopack
+	url = https://github.com/thermotools/thermopack.git

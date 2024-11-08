@@ -5,6 +5,7 @@ Contains: Implementation of Integration.h
 */
 
 #include "Integration.h"
+#include "../global_params.h"
 #include <vector>
 #include <algorithm>
 #include <memory>
@@ -302,4 +303,80 @@ double integrate2d(const Point& origin, const Point& end,
                                      evaluated_points,
                                      func);
     return val;
+}
+
+
+double simpson(std::function<double(double)> func, double x0, double xN, int N_intervals){
+    double dx = (xN - x0) / N_intervals;
+    double val = func(x0) + func(xN);
+    for (size_t i = 1; i <= (N_intervals / 2) - 1; i++){
+        val += 4. * func(x0 + (2 * i - 1) * dx) + 2. * func(x0 + (2 * i) * dx);
+    }
+    val += 4. * func(xN - dx);
+    val *= dx / 3.;
+    return val;
+}
+
+std::pair<double, double> weighted_simpson(std::function<double(double)> func, std::function<double(double)> wt, double x0, double xN, int N_intervals){
+    double dx = (xN - x0) / N_intervals;
+    double F{0}, W{0}, w1{0}, w2{0};
+
+    w1 = wt(x0); w2 = wt(xN);
+    W += w1 + w2;
+    F += func(x0) * w1 + func(xN) * w2;
+    for (size_t i = 1; i <= (N_intervals / 2) - 1; i++){
+        w1 = wt(x0 + (2 * i - 1) * dx);
+        w2 = wt(x0 + (2 * i) * dx);
+        W += 4. * w1 + 2. * w2;
+        F += 4. * func(x0 + (2 * i - 1) * dx) * w1 + 2. * func(x0 + (2 * i) * dx) * w2;
+    }
+    w1 = wt(xN - dx);
+    W += 4. * w1;
+    F += 4. * func(xN - dx) * w1;
+    W *= dx / 3.;
+    F *= dx / 3.;
+    return std::pair<double, double>(F, W);
+}
+
+std::pair<double, double> weighted_simpson(std::function<std::pair<double, double>(double)> FW, double x0, double xN, int N_intervals){
+    double dx = (xN - x0) / N_intervals;
+    double F{0}, W{0};
+    std::pair<double, double> FW_1, FW_2;
+    FW_1 = FW(x0); FW_2 = FW(xN);
+    F += FW_1.first + FW_2.first;
+    W += FW_1.second + FW_2.second;
+    for (size_t i = 1; i <= (N_intervals / 2) - 1; i++){
+        FW_1 = FW(x0 + (2 * i - 1) * dx); 
+        FW_2 = FW(x0 + (2 * i) * dx);
+        F += 4. * FW_1.first + 2. * FW_2.first;
+        W += 4. * FW_1.second + 2. * FW_2.second;
+    }
+    FW_1 = FW(xN - dx);
+    F += 4. * FW_1.first;
+    W += 4. * FW_1.second;
+    F *= dx / 3;
+    W *= dx / 3;
+    return std::pair<double, double>(F, W);
+}
+
+double tanh_sinh(std::function<double(double)> func, double h, double tol){
+    constexpr int n_max_intervals = 10000;
+    double I{0.0};
+    int k{1};
+    double u = tanh(PI * sinh(k * h) / 2.);
+    double w = (PI / 2.) * h * cosh(k * h) / pow(cosh(PI * sinh(k * h * 1e-3) / 2.), 2);
+    double f = func(u);
+    do {
+        I += w * f;
+        k += 1;
+        u = tanh(PI * sinh(k * h) / 2.);
+        w = (PI / 2) * h * cosh(k * h) / pow(cosh(PI * sinh(k * h) / 2.), 2);
+        f = func(u);
+        if (isnan(f) || isnan(w) || isinf(f) || isinf(w)) break;
+    } while ((abs((f * w) / I) > tol) && (k < n_max_intervals));
+    if (k >= n_max_intervals){
+        std::cout << "INTEGRATION WARNING : tanh-sinh integration reached maximum number of intervals (" << n_max_intervals
+                    << "). Relative value of last integration step was " << abs((f * w) / I) << ", tolerance is : " << tol << std::endl;
+    }
+    return I;
 }

@@ -20,6 +20,21 @@ pypi_url: 'https://pypi.org/project/pykingas/'
 repository_url: 'https://github.com/thermotools/KineticGas'
 repository: 'thermotools/KineticGas'
 
+zip_url:
+  vcurrent: 'https://github.com/thermotools/KineticGas/archive/refs/heads/main.zip'
+  v200: 'https://github.com/thermotools/KineticGas/archive/refs/tags/v2.0.0.zip'
+  v21: 'https://github.com/thermotools/KineticGas/archive/refs/heads/main.zip'
+
+github_link:
+  vcurrent: 'https://github.com/thermotools/KineticGas/tree/main'
+  v200: 'https://github.com/thermotools/KineticGas/tree/v2.0.0'
+  v21: 'https://github.com/thermotools/KineticGas/tree/main'
+
+home_link:
+  vcurrent: '/KineticGas/index.html'
+  v200: '/KineticGas/v2.0.0/home.html'
+  v21: '/KineticGas/v2.1.0/home.html'
+
 defaults:
   -
     scope:

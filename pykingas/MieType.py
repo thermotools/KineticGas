@@ -3,9 +3,10 @@ Author : Vegard Gjeldvik Jervell
 Contains : Parent class for all 'Mie-Type' potentials, including MieKinGas ...
 '''
 import numpy as np
-from scipy.constants import Boltzmann
+from scipy.constants import Boltzmann, Avogadro
 from pykingas.py_KineticGas import py_KineticGas
 from warnings import warn
+from pykingas.units import Units
 from thermopack.saft import saft
 import abc
 
@@ -34,11 +35,24 @@ class MieType(py_KineticGas):
         self.lij = lij
         self.kij = kij
 
+        
+        if isinstance(potential, str):
+            potential = [potential for _ in range(self.ncomps)]
+        elif self._is_singlecomp is True:
+            potential = [potential[0], potential[0]]
+
+        if 'q-Mie' in potential:
+            for i, pot in enumerate(potential):
+                if pot == 'q-Mie':
+                    potential[i] = f'Mie-FH{self.fluids[i]["default_fh_order"]}'
+        
         try:
-            self.fluids = [self.fluids[i][potential][parameter_ref] for i in range(self.ncomps)]
+            self.fluids = [self.fluids[i][potential[i]][parameter_ref] for i in range(self.ncomps)]
         except KeyError:
             for i in range(self.ncomps):
-                if parameter_ref not in self.fluids[i][potential]:
+                if potential[i] not in self.fluids[i].keys():
+                    raise KeyError(f'Component {self.comps[i]} does not have parameters for {potential[i]}.')
+                if parameter_ref not in self.fluids[i][potential[i]]:
                     warn('Missing parameter_ref ' + parameter_ref + ' for component ' + self.fluids[i]['ident'],
                          stacklevel=2)
             raise KeyError('Missing parameters ' + parameter_ref + ' for compontents ' + comps)
@@ -233,3 +247,74 @@ class MieType(py_KineticGas):
         """
         l = np.array(lambdas)
         return 3 + (1 - lij) * np.sqrt((l - 3) * np.vstack(l - 3))
+
+    def get_BH_diameters(self, T):
+        """Utility
+        Compute Barker-Henderson diameters
+
+        Args:
+            T (float) : Temperature [K]
+
+        Returns:
+            2d array : Barker-Henderson Diameters, indexed by component pair [m]
+        """
+        return self.cpp_kingas.get_BH_diameters(T)
+
+    def potential(self, i, j, r):
+        """Utility
+        Evaluate the interaction potential between types i and j at distance r
+
+        Args:
+            i, j (int) : Component indices
+            r (float) : Distance [m]
+        Returns:
+            float : Interaction potential [J]
+        """
+        return self.cpp_kingas.potential(i, j, r)
+
+    def potential_r(self, i, j, r):
+        """Utility
+        Evaluate the derivative of the interaction potential between types i and j at distance r
+
+        Args:
+            i, j (int) : Component indices
+            r (float) : Distance [m]
+        Returns:
+            float : First derivative of interaction potential [N]
+        """
+        return self.cpp_kingas.potential_derivative_r(i, j, r)
+
+    def potential_rr(self, i, j, r):
+        """Utility
+        Evaluate the second derivative of the interaction potential between types i and j at distance r
+
+        Args:
+            i, j (int) : Component indices
+            r (float) : Distance [m]
+        Returns:
+            float : Second derivative of interaction potential [N / m]
+        """
+        return self.cpp_kingas.potential_dblderivative_rr(i, j, r)
+
+    def saft_rdf(self, T, Vm, x, order=2, g2_correction=True):
+        """cpp-interface
+        Compute the radial distribution function at contact
+        &&
+        Args:
+            T (float) : Temperature [K]
+            Vm (float) : Molar volume [m3/mol]
+            x (list[float]) : Molar composition [-]
+            order (int) : Pertubation order
+            g2_correction (bool) : Use correction factor for g2?
+
+        Returns:
+            2d array : RDF at contact, indexed by component pair.
+        """
+        particle_density = (1 / Vm) * Avogadro
+        key = tuple((particle_density, T, tuple(x)))
+        if key in self.computed_rdf.keys():
+            return self.computed_rdf[key]
+
+        rdf = self.cpp_kingas.saft_rdf(particle_density, T, x, order, g2_correction)
+        self.computed_rdf[key] = rdf
+        return rdf

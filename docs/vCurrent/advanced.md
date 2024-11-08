@@ -5,6 +5,16 @@ title: Advanced usage
 permalink: /vcurrent/advanced.html
 ---
 
+* [Selecting transfer length models](#selecting-transfer-length-models)
+* [Modifying and adding fluids](#modifying-and-adding-fluids)
+* [Implementing new potentials](#implementing-new-potentials)
+
+## Selecting transfer length models
+
+For the computation of transfer lengths, several models can be used. All classes inheritting from `py_KineticGas` support the `get_valid_tl_models()` method,
+which returns a `dict` with key-description pairs indicating the available transfer length models. Use the methods `get_tl_model()` and `set_tl_model(key)`
+to see the active transfer length model, and to select another model.
+
 ## Modifying and adding fluids
 
 All fluid parameters are accessed via the `.json` files in the `pykingas/fluids` directory. The structure of the files in the `pykingas/fluids` directory is
@@ -46,6 +56,20 @@ Other than the potential parameters, only the `"mol_weight"` field is strictly r
 
 The identifier used for a fluid in `KineticGas` is equivalent to the name of the corresponding `<name>.json` file.
 
+## Managing fluid file search path (only for C++)
+
+By default, `KineticGas` will search for fluid files at the relative path `../fluids` (relative to the location of the `libkineticgas` dynamic library). This default search path can be changed by building with 
+```bash
+cmake -DFLUID_DIR=<path/to/fluids> ..
+```
+where supplying a relative path will result in the library searching for fluid files in the path relative to it's location (`KineticGas/lib`). Supplying absolute paths is also supported. To check
+or change where your compiled `KineticGas` library is searching for fluid files, use the `[get/set]_fluid_dir` functions with signatures
+```C++
+// In utils.h
+void set_fluid_dir(const std::string path); // supports both absolute and relative paths (relative to dynamic library location).
+std::string get_fluid_dir(); // Current search path for fluid files
+```
+
 ## Implementing new potentials
 
 Functionality making it simple to implement new potentials is at the core of `KineticGas`. Broadly speaking, implementing a new potential consist of four steps: 
@@ -57,7 +81,7 @@ Functionality making it simple to implement new potentials is at the core of `Ki
 
 ### Implementing the C++ side
 
-All classes that inherit from `KineticGas` must implement the methods `omega`, which returns the collision integrals, the method `model_rdf`, which returns the radial distribution function at contact, and the method `get_contact_diameters`, which returns the collision diameters. 
+All classes that inherit from `KineticGas` must implement the methods `omega`, which returns the collision integrals, the method `model_rdf`, which returns the radial distribution function at contact, and the method `get_collision_diameters`, which returns the collision diameters. 
 
 Out of these, the `omega` method is implemented in the  `Spherical` class which instead requires that inheritting classes implement the methods `potential`, `potential_derivative_r` and `potential_dblderivative_rr`, corresponding to the pair potential, and its first and second derivative wrt. distance. 
 
@@ -66,13 +90,13 @@ The options for implementing a new potential are then
  * Inherit `KineticGas`
    * Implement `omega` (The collision integrals)
    * Implement `model_rdf` (The radial distribution function at contact)
-   * Implement `get_contact_diameters` (The collision diameters)
+   * Implement `get_collision_diameters` (The collision diameters)
  * Inherit `Spherical`
    * Implement `potential` (The pair-potential)
    * Implement `potential_derivative_r` (Derivative of the pair-potential)
    * Implement `potential_dblderivative_rr` (Second derivative of the pair-potential)
    * Implement `model_rdf` (The radial distribution function at contact)
-   * Implement `get_contact_diameters` (The collision diameters)
+   * Implement `get_collision_diameters` (The collision diameters)
 
 ### Implementing the Python side
 

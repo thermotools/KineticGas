@@ -12,6 +12,7 @@ Usage: To add new documentation, create a new markdown file in thermopoack/doc/m
 import os
 from datetime import datetime
 import re, warnings
+from tools import write_file
 
 MARKDOWN_DIR = os.path.dirname(__file__) + '/../docs/'
 KINETICGAS_ROOT = os.path.dirname(__file__) + '/..'
@@ -105,13 +106,9 @@ def write_pypi_readme():
              'vCurrent/getting_started_py', 'vCurrent/fluid_identifiers']
     header = get_header(files)
 
-    out_file_str = gen_file_str(files)
+    out_file_str = header + gen_file_str(files)
     out_file_path = KINETICGAS_ROOT + '/pykingas/README.md'
-    with open(out_file_path, 'w') as out_file:
-        out_file.write(repair_links(header))
-        out_file.write(out_file_str)
-
-    print_finished_report(header, out_file_path)
+    write_file(out_file_path, out_file_str)
 
 def write_github_readme():
     files = ['readme_parts/header', 'readme_parts/toc_github', 'metapages/cite_acknowl_licence', 'vCurrent/source_build',
@@ -119,13 +116,9 @@ def write_github_readme():
              'vCurrent/fluid_identifiers']
     header = get_header(files)
 
-    out_file_str = gen_file_str(files)
+    out_file_str = header + gen_file_str(files)
     out_file_path = KINETICGAS_ROOT + '/README.md'
-    with open(out_file_path, 'w') as out_file:
-        out_file.write(repair_links(header))
-        out_file.write(out_file_str)
-
-    print_finished_report(header, out_file_path)
+    write_file(out_file_path, out_file_str)
 
 if __name__ == '__main__':
     write_pypi_readme()

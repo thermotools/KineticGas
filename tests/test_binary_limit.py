@@ -116,3 +116,6 @@ def test_th_diffusion(model, N, silent=True):
         diff = copy.deepcopy(new_diff)
 
     assert all((diff / DT_b) < 1e-3)
+
+if __name__ == "__main__":
+    test_diffusion(models[0], 3)

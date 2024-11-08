@@ -3,9 +3,12 @@ requires = ["scikit-build-core"]
 build-backend = "scikit_build_core.build"
 
 [tool.scikit-build]
-sdist.include = ["libpykingas*"]
+sdist.include = ["libpykingas*", "fluids"]
 sdist.exclude = ["tests/"]
 wheel.expand-macos-universal-tags = true
+
+[tool.scikit-build.cmake.define]
+RECOMPILE_PYLIB = {env="RECOMPILE_PYLIB", default="OFF"}
 
 [project]
 name = "pykingas"
@@ -31,7 +34,10 @@ dependencies = ["numpy~=1.22",
                 "scipy~=1.7", 
                 "thermopack~=2.2"]
 
+[project.optional-dependencies]
+test = ["pytest", "matplotlib", "pandas"]
+
 [tool.cibuildwheel]
 test-command = "pytest {project}/tests"
-test-requires = ["pytest", "matplotlib"]
+test-requires = ["pytest", "matplotlib", "pandas"]
 build-verbosity = 2
