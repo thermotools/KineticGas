@@ -39,7 +39,7 @@ static void __set_fluid_dir() {
 
     std::string libPath = std::string(chr_path);
     std::filesystem::path path(libPath);
-    fluid_dir = std::string(path.parent_path() / rel_fluid_dir);
+    fluid_dir = std::wstring(path.parent_path() / rel_fluid_dir);
     }
 }
 
