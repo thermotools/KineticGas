@@ -30,6 +30,17 @@ jobs:
                 unzip thermopack_whl.zip
                 pip install wheel-v2-${{ matrix.os }}/*
             
+            - name: Build KineticGas
+              if: matrix.os != 'windows-latest'
+              run: |
+                echo "THERMOPACK_DIR (GH_ENV) : ${{ env.THERMOPACK_DIR }} / (ENV) ${THERMOPACK_DIR}"
+                export THERMOPACK_DIR=${PWD}/${{ env.THERMOPACK_DIR }}
+                ls -R ${THERMOPACK_DIR}
+                mkdir build
+                cd build
+                cmake ..
+                make -j4 install
+
             - name: Install thermopack Windows
               if: matrix.os == 'windows-latest'
               shell: pwsh
@@ -43,10 +54,11 @@ jobs:
                 cd wheel-v2-${{ matrix.os }}
                 pip install (Get-ChildItem wheel-v2-windows-latest\*.whl).FullName
 
-            - name: Build KineticGas
+            - name: Build KineticGas Windows
+              if: matrix.os == 'windows-latest'
               run: |
                 echo "THERMOPACK_DIR (GH_ENV) : ${{ env.THERMOPACK_DIR }} / (ENV) ${THERMOPACK_DIR}"
-                export THERMOPACK_DIR=${PWD}/${{ env.THERMOPACK_DIR }}
+                $THERMOPACK_DIR = $PWD/${{ env.THERMOPACK_DIR }}
                 ls -R ${THERMOPACK_DIR}
                 mkdir build
                 cd build

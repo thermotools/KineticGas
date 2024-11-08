@@ -56,7 +56,7 @@ jobs:
          pattern: wheels-*
   
   release_wheels: # Create or update the release tagged Latest-beta, and upload wheels to that release.
-    if: ${{ github.event.pull_request.merged }}
+    # if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: build_wheels
     runs-on: ubuntu-latest
     permissions:
@@ -91,7 +91,7 @@ jobs:
         tag: Latest-beta
         commit: main
         makeLatest: true
-        bodyFile: "release_bodyFile.md"
+        bodyFile: ".github/release_bodyFile.md"
         artifacts: "wheels-*.zip"
 
     
