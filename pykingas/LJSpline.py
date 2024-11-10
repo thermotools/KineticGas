@@ -24,3 +24,7 @@ class LJSpline(py_KineticGas):
         self.sigma = np.array([[sig,sig],[sig,sig]])
         self.epsilon = kB*np.array([[eps_div_k,eps_div_k],[eps_div_k,eps_div_k]])
         self.cpp_kingas = cpp_LJSpline(self.mole_weights, self.sigma, self.epsilon,self.is_idealgas,self._is_singlecomp)
+    def get_omega_star(self, T, r, l, i = 0, j = 0):
+        return self.cpp_kingas.omega_star(i,j,T,r,l)
+    def get_omega_star_approx(self, T, r, l, i = 0, j = 0):
+        return self.cpp_kingas.omega_star_approx(i,j,T,r,l)

@@ -4,6 +4,7 @@
 #pragma once
 #include "Spherical.h"
 #include "cppThermopack/ljs.h"
+#include "HardSphere.h"
 
 class IdealDummy{
     public:
@@ -156,6 +157,35 @@ class LJSpline : public Spherical {
 
     autodiff::dual K_HS(autodiff::dual rho_dual, autodiff::dual T);
     double dK_HS_drho(double rho, double T);
+
+    double omega(int i, int j, int l, int r, double T) override;
+    double omega_correlation(int i, int j, int l, int r, double T_star);
+    double omega_recursive_factor(int i, int j, int l, int r, double T);
+    // The hard sphere integrals are used as the reducing factor for the correlations.
+    // So we need to compute the hard-sphere integrals to convert the reduced collision integrals from 
+    // a modified version of the correlation by Fokin et. al. to the "real" collision integrals.
+    static constexpr double omega_correlation_factors[2][6] =
+        {
+         {0.12381066, -0.19473855, -0.12605004,  1.42026419, -1.14753069,  0.25563792},
+         {0.2525206,  -0.12502955, -1.02633768,  3.31321146, -2.58470784,  0.62745361}
+        };
+
+    inline double omega_hs(int i, int j, int l, int r, double T){
+        double w = PI * pow(sigma[i][j], 2) * 0.5 * (r + 1);
+        for (int ri = r; ri > 1; ri--) {w *= ri;}
+        if (l % 2 == 0){
+            w *= (1. - (1.0 / (l + 1.)));
+        }
+        if (i == j) return sqrt((BOLTZMANN * T) / (PI * m[i])) * w;
+        return sqrt(BOLTZMANN * T * (m[i] + m[j]) / (2. * PI * m[i] * m[j])) * w;
+    }
+    double omega_star(int i, int j, double T, int l, int r) {
+        //Useful for making/adjusting empirical correlations for the collision integrals. 
+        //Returns \Omega^{*(l,r)} = \Omega^{(l,r)} / \Omega^{(l,r)}_{HS}
+        return Spherical::omega(i,j,l,r,T) / omega_hs(i,j,l,r,T);}
+
+    double omega_star_approx(int i, int j, double T, int l, int r) {
+        return omega(i,j,l,r,T) / omega_hs(i,j,l,r,T);}
 };
 
 
