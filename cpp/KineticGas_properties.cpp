@@ -175,13 +175,14 @@ Eigen::MatrixXd KineticGas::interdiffusion(double T, double Vm, const vector1d& 
     if (dependent_idx < 0 && frame_of_reference == FrameOfReference::solvent) dependent_idx = solvent_idx;
     while (dependent_idx < 0) dependent_idx += Ncomps;
     if (frame_of_reference == FrameOfReference::zarate_x){
+        if (!is_idealgas) throw std::runtime_error("Zarate relation for diffusion only implemented for ideal gas!");
         Eigen::MatrixXd D = interdiffusion(T, Vm, x, N, FrameOfReference::CoN, dependent_idx, dependent_idx, true);
         return D;
     }
     else if (frame_of_reference == FrameOfReference::zarate){
         Eigen::MatrixXd X = get_zarate_X_matr(x, dependent_idx);
         Eigen::MatrixXd Dx = interdiffusion(T, Vm, x, N, FrameOfReference::zarate_x, dependent_idx);
-        return X * Dx * X.inverse();
+        return X.inverse() * Dx * X;
     }
     else if (frame_of_reference == FrameOfReference::zarate_w){
         Eigen::MatrixXd W = get_zarate_W_matr(x, dependent_idx);
@@ -257,6 +258,7 @@ Eigen::VectorXd KineticGas::thermal_diffusion_coeff(double T, double Vm, const v
     DT /= AVOGADRO;
 
     if (use_zarate){
+        if (!is_idealgas) throw std::runtime_error("Zarate relation for thermal diffusion only implemented for ideal gas!");
         Eigen::VectorXd DT_indep(Ncomps - 1);
         Eigen::MatrixXd D_indep = interdiffusion(T, Vm, x, N, frame_of_reference, dependent_idx, solvent_idx);
 
@@ -319,6 +321,7 @@ Eigen::MatrixXd KineticGas::thermal_diffusion_factor(double T, double Vm, const 
 }
 
 Eigen::VectorXd KineticGas::soret_coefficient(double T, double Vm, const std::vector<double>& x, int N, int dependent_idx){
+    if (!is_idealgas) throw std::runtime_error("Zarate relation for Soret coefficient only implemented for ideal gas!");
     Eigen::MatrixXd D = interdiffusion(T, Vm, x, N, FrameOfReference::zarate, dependent_idx, dependent_idx, false);
     Eigen::VectorXd DT = thermal_diffusion_coeff(T, Vm, x, N, FrameOfReference::zarate, dependent_idx);
     return D.partialPivLu().solve(DT);
