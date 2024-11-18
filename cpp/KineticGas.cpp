@@ -33,6 +33,7 @@ void KineticGas::set_masses(){
             red_mass[i][j] = M[i][j] * m[j];
         }
     }
+    clear_all_caches();
 }
 
 KineticGas::KineticGas(vector1d mole_weights, vector2d sigma, vector2d eps, bool is_idealgas, bool is_singlecomp)
@@ -174,6 +175,10 @@ std::map<int, std::string> KineticGas::get_valid_transfer_length_models(){
     }
     model_id_descr[default_tl_model_id].append(" (default)");
     return model_id_descr;
+}
+
+void KineticGas::clear_all_caches(){
+    omega_map.clear(); mtl_map.clear(); etl_map.clear();
 }
 
 // --------------------------------------------------------------------------------------------------- //

@@ -140,7 +140,7 @@ class py_KineticGas:
         cj = ci if (cj is None) else cj
         return self.cpp_kingas.get_reducing_units(ci, cj)
 
-    def check_valid_composition(self, x):
+    def validate_and_sanitize_composition(self, x):
         """Internal
         Check that enough mole fractions are supplied for the initialised model. Also check that they sum to unity.
         for single-component mixtures, returns [0.5, 0.5], such that [1] can be supplied, even though single-component
@@ -242,7 +242,7 @@ class py_KineticGas:
         Returns:
             (ndarray or float) : Diffusion coefficients, shape varies based on options and number of components. Unit [m^2 / s]
         """
-        x = self.check_valid_composition(x)
+        x = self.validate_and_sanitize_composition(x)
         N = self.default_N if (N is None) else N
         frame_of_reference = self.cpp_kingas.frame_of_reference_map(frame_of_reference)
         D = self.cpp_kingas.interdiffusion(T, Vm, x, N, frame_of_reference, dependent_idx, solvent_idx, use_independent)
@@ -254,7 +254,7 @@ class py_KineticGas:
             dependent_idx = self.ncomps - 1
         while dependent_idx < 0:
             dependent_idx += self.ncomps
-        x = self.check_valid_composition(x)
+        x = self.validate_and_sanitize_composition(x)
         D = self.interdiffusion_general(T, Vm, x, N=N)
         # psi = Transformation matrix from 'centre of mass' to 'frame_of_reference'
         # get_com_2_for_matr() dispatches the call to specific functions for different frames of reference.
@@ -309,7 +309,7 @@ class py_KineticGas:
         if N is None:
             N = self.default_N
 
-        x = self.check_valid_composition(x)
+        x = self.validate_and_sanitize_composition(x)
         particle_density = Avogadro / Vm
         d = self.compute_diffusion_coeff_vector(particle_density, T, x, N=N)
         d = self.reshape_diffusion_coeff_vector(d)
@@ -358,7 +358,7 @@ class py_KineticGas:
         Returns:
             (1D array) : Thermal diffusion coefficients. Unit [mol m^2 / s]
         """
-        x = self.check_valid_composition(x)
+        x = self.validate_and_sanitize_composition(x)
         N = self.default_N if (N is None) else N
         frame_of_reference = self.cpp_kingas.frame_of_reference_map(frame_of_reference)
         if N < 2:
@@ -464,7 +464,7 @@ class py_KineticGas:
         Returns:
             (1D array) : The thermal diffusion ratio of each component. Unit Dimensionless.
         """
-        x = self.check_valid_composition(x)
+        x = self.validate_and_sanitize_composition(x)
         N = self.default_N if (N is None) else N
         if N < 2:
             warnings.warn('Thermal diffusion is a 2nd order phenomena, cannot be computed for N < 2 (got N = '
@@ -523,7 +523,7 @@ class py_KineticGas:
         Returns:
             (2D array) : The thermal diffusion factors of the mixture. Dimensionless.
         """
-        x = self.check_valid_composition(x)
+        x = self.validate_and_sanitize_composition(x)
         N = self.default_N if (N is None) else N
         if N < 2:
             warnings.warn('Thermal diffusion is a 2nd order phenomena, cannot be computed for N < 2 (got N = '
@@ -581,7 +581,7 @@ class py_KineticGas:
         Returns:
             (ndarray) : Soret coefficient matrix (K$^{-1}$)
         """
-        x = self.check_valid_composition(x)
+        x = self.validate_and_sanitize_composition(x)
         N = self.default_N if (N is None) else N
         while dependent_idx < 0: dependent_idx += self.ncomps
         if N < 2:
@@ -619,7 +619,7 @@ class py_KineticGas:
         Returns:
             (float) : The thermal conductivity of the mixture [W / m K].
         """
-        x = self.check_valid_composition(x)
+        x = self.validate_and_sanitize_composition(x)
         N = self.default_N if (N is None) else N
         if (contributions != 'all'):
             return self.cpp_kingas.thermal_conductivity_contributions(T, Vm, x, N, contributions)
@@ -628,7 +628,7 @@ class py_KineticGas:
         if idealgas is None:
             idealgas = self.is_idealgas
 
-        x = self.check_valid_composition(x)
+        x = self.validate_and_sanitize_composition(x)
         lambda_int = 0
 
         f_int = 1.32e3
@@ -694,7 +694,7 @@ class py_KineticGas:
         Returns:
             (float) : Thermal diffusivity of the mixture [m2 / s].
         """
-        x = self.check_valid_composition(x)
+        x = self.validate_and_sanitize_composition(x)
         N = self.default_N if (N is None) else N
         return self.cpp_kingas.thermal_diffusivity(T, Vm, x, N)
 
@@ -713,7 +713,7 @@ class py_KineticGas:
         Returns:
             (float) : The shear viscosity of the mixture [Pa s].
         """
-        x = self.check_valid_composition(x)
+        x = self.validate_and_sanitize_composition(x)
         N = self.default_N if (N is None) else N
         Vm = Vm if (idealgas is False) else 1e12
         return self.cpp_kingas.viscosity(T, Vm, x, N)
@@ -721,7 +721,7 @@ class py_KineticGas:
             N = self.default_N
         if idealgas is None:
             idealgas = self.is_idealgas
-        x = self.check_valid_composition(x)
+        x = self.validate_and_sanitize_composition(x)
         particle_density = Avogadro / Vm
         b = self.compute_visc_vector(T, particle_density, x, N=N)
         K_prime = self.cpp_kingas.get_K_prime_factors(particle_density, T, x) if (idealgas is False) else np.ones(self.ncomps)
@@ -755,7 +755,7 @@ class py_KineticGas:
         Returns:
             (float) : The kinematic viscosity of the mixture [m2 / s]
         """
-        x = self.check_valid_composition(x)
+        x = self.validate_and_sanitize_composition(x)
         N = self.default_N if (N is None) else N
         return self.cpp_kingas.kinematic_viscosity(T, Vm, x, N)
 
@@ -766,7 +766,7 @@ class py_KineticGas:
         Raises:
             NotImplementedError
         """
-        x = self.check_valid_composition(x)
+        x = self.validate_and_sanitize_composition(x)
         N = self.default_N if (N is None) else N
         raise NotImplementedError("Bulk viscosity is not implemented yet. See 'Multicomp docs' for more info.")
 
@@ -1149,7 +1149,7 @@ class py_KineticGas:
         """
         if N is None:
             N = self.default_N
-        mole_fracs = self.check_valid_composition(mole_fracs)
+        mole_fracs = self.validate_and_sanitize_composition(mole_fracs)
         return self.cpp_kingas.get_conductivity_matrix(particle_density, T, mole_fracs, N)
 
     def get_conductivity_vector(self, particle_density, T, mole_fracs, N):
@@ -1170,7 +1170,7 @@ class py_KineticGas:
         """
         if N is None:
             N = self.default_N
-        mole_fracs = self.check_valid_composition(mole_fracs)
+        mole_fracs = self.validate_and_sanitize_composition(mole_fracs)
         return self.cpp_kingas.get_conductivity_vector(particle_density, T, mole_fracs, N)
 
     def get_diffusion_vector(self, particle_density, T, mole_fracs, N=None):
@@ -1191,7 +1191,7 @@ class py_KineticGas:
         """
         if N is None:
             N = self.default_N
-        mole_fracs = self.check_valid_composition(mole_fracs)
+        mole_fracs = self.validate_and_sanitize_composition(mole_fracs)
         return np.array(self.cpp_kingas.get_diffusion_vector(particle_density, T, mole_fracs, N))
 
     def get_etl(self, particle_density, T, x):
@@ -1206,7 +1206,7 @@ class py_KineticGas:
         Returns:
             2d array : Collision diameters [m], indexed by component pair.
         """
-        x = self.check_valid_composition(x)
+        x = self.validate_and_sanitize_composition(x)
         return self.cpp_kingas.get_etl(particle_density, T, x)
 
     def get_mtl(self, particle_density, T, x):
@@ -1221,7 +1221,7 @@ class py_KineticGas:
         Returns:
             2d array : Collision diameters [m], indexed by component pair.
         """
-        x = self.check_valid_composition(x)
+        x = self.validate_and_sanitize_composition(x)
         return self.cpp_kingas.get_mtl(particle_density, T, x)
 
     def get_rdf(self, particle_density, T, x):
@@ -1236,7 +1236,7 @@ class py_KineticGas:
         Returns:
             2d array : RDF at contact, indexed by component pair.
         """
-        x = self.check_valid_composition(x)
+        x = self.validate_and_sanitize_composition(x)
         rdf = np.array(self.cpp_kingas.get_rdf(particle_density, T, x))
         return rdf
 
@@ -1267,7 +1267,7 @@ class py_KineticGas:
         """
         if N is None:
             N = self.default_N
-        mole_fracs = self.check_valid_composition(mole_fracs)
+        mole_fracs = self.validate_and_sanitize_composition(mole_fracs)
 
         diffusion_matr = self.cpp_kingas.get_diffusion_matrix(particle_density, T, mole_fracs, N)
         diffusion_vec = self.get_diffusion_vector(particle_density, T, mole_fracs, N=N)
@@ -1320,7 +1320,7 @@ class py_KineticGas:
         """
         if N is None:
             N = self.default_N
-        mole_fracs = self.check_valid_composition(mole_fracs)
+        mole_fracs = self.validate_and_sanitize_composition(mole_fracs)
         a = self.compute_cond_vector(particle_density, T, mole_fracs, N=N)[:self.ncomps]
         d = self.compute_diffusion_coeff_vector(particle_density, T, mole_fracs, N=N)
         d = self.reshape_diffusion_coeff_vector(d)
@@ -1368,7 +1368,7 @@ class py_KineticGas:
 
         if N is None:
             N = self.default_N
-        mole_fracs = self.check_valid_composition(mole_fracs)
+        mole_fracs = self.validate_and_sanitize_composition(mole_fracs)
 
         L = self.cpp_kingas.get_conductivity_matrix(particle_density, T, mole_fracs, N)
         L = np.array(L)
@@ -1410,7 +1410,7 @@ class py_KineticGas:
         """
         if N is None:
             N = self.default_N
-        mole_fracs = self.check_valid_composition(mole_fracs)
+        mole_fracs = self.validate_and_sanitize_composition(mole_fracs)
 
         B = self.cpp_kingas.get_viscosity_matrix(particle_density, T, mole_fracs, N)
         beta = self.cpp_kingas.get_viscosity_vector(particle_density, T, mole_fracs, N)

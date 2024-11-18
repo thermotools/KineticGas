@@ -235,6 +235,8 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("get_de_boer", py::overload_cast<int>(&Quantum::get_de_boer))
         .def("set_de_boer_mass", &Quantum::set_de_boer_mass)
         .def("JKWB_upper_E_limit", &Quantum::JKWB_upper_E_limit)
+        .def("quantum_omega", &Quantum::quantum_omega)
+        .def("classical_omega", &Quantum::classical_omega)
         ;
     
     py::class_<HFD_B2, Quantum>(handle, "cpp_HFD_B2")

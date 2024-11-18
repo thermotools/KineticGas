@@ -58,7 +58,7 @@ double Quantum::get_de_boer(int i, int j){return PLANCK / (sigma[i][j] * sqrt(2.
 
 void Quantum::set_de_boer_mass(int i, double de_boer){
     m[i] = pow(PLANCK / (sigma[i][i] * de_boer), 2) / eps[i][i];
-    set_masses();
+    set_masses(); // Set- methods are responsible for clearing caches
 }
 
 dual2 Quantum::potential(int i, int j, dual2 r){
@@ -86,7 +86,6 @@ double Quantum::JKWB_phase_shift(int i, int j, int l, double E){
     double b = ((l + 0.5) / k) / sigma[i][j];
     
     double R = get_R(i, j, T, g, b * sigma[i][j]) / sigma[i][j];
-    std::cout << "JKWB (l, E, g, b, R) : " << l << ", " << E / eps[i][j] << ", " << g << ", " << b << ", " << R << std::endl;
     while (1 - pow(b / R, 2) - potential(i, j, R * sigma[i][j]) / E < 0) {
         R += 1e-3;
     }
@@ -95,30 +94,24 @@ double Quantum::JKWB_phase_shift(int i, int j, int l, double E){
     
     if (abs(R - b) < 1e-6){
         double lower_lim = (R > b) ? R : b;
-        std::cout << "R, b : " << R << ", " << b << " (" << lower_lim << ")" << std::endl; 
         double I = k * simpson_inf(integrand1, lower_lim, 1.5 * lower_lim) * sigma[i][j];
-        std::cout << "I : " << I << std::endl;
-        return I;
+       return I;
     }
 
     double I1, I2;
     if (b < R){
         const auto integrand2 = [&](double r){return sqrt(1 - pow(b / r, 2));};
         I1 = simpson_inf(integrand1, R, 1.5 * R);
-        std::cout << " b < R : " << b << " < " << R << std::endl; 
         I2 = - simpson(integrand2, b, R, 10);
     }
     else {
         const auto integrand2 = [&](double r){
             double I = sqrt(1 - pow(b / r, 2) - potential(i, j, r * sigma[i][j]) / E);
-            std::cout << "inside : " << b << ", " << r << " : " << I << std::endl;
             return I;
         };
         I1 = simpson_inf(integrand1, b, 1.5 * b);
-        std::cout << " b > R : " << b << " > " << R << std::endl; 
         I2 = simpson(integrand2, R, b, 10);
     }
-    std::cout << " I1, I2 : " << I1 << ", " << I2 << std::endl;
     return k * (I1 + I2) * sigma[i][j];
 }
 
@@ -294,29 +287,24 @@ double Quantum::cross_section_kernel(int i, int j, double n, double l, double E)
 }
 
 double Quantum::cross_section(int i, int j, int n, double E){
+    // std::cout << "Computing cross-section (" << E << ")" << std::endl;
     E *= eps[i][j];
     if (is_singlecomp) i = j;
     
     double even_prefactor, odd_prefactor;
     if (i != j) {
         even_prefactor = odd_prefactor = 1.;
-        std::cout << "Using Boltzmann! (" << i << ", " << j << ")" << std::endl;
     }
     else {
         double S = half_spin[i] / 2.;
         even_prefactor = (S + 1) / (2 * S + 1);
         odd_prefactor = S / (2 * S + 1);
         if (half_spin[i] % 2 != 0) { // Odd Half-Integer spin, Fermions: Swap prefactors
-            std::cout << "Using Fermi-Dirac! (" << i << ", " << j << ") : " << S << std::endl;
             double tmp = even_prefactor;
             even_prefactor = odd_prefactor;
             odd_prefactor = tmp;
         }
-        else {
-            std::cout << "Using Bose-Einstein! (" << i << ", " << j << ") : " << S << std::endl;
-        }
     }
-    std::cout << "Prefactors : " << even_prefactor << ", " << odd_prefactor << std::endl;
     double Q = 0;
     if (even_prefactor > 0.){
         double Q_even = 0;
@@ -343,6 +331,7 @@ double Quantum::cross_section(int i, int j, int n, double E){
 
     double k2 = 2. * red_mass[i][j] * E / pow(HBAR, 2);
     Q *= 4. * PI / k2;
+    // std::cout << "Returning cross section (" << E / eps[i][j] << ")" << std::endl;
     return Q;
 }
 
@@ -356,6 +345,34 @@ double Quantum::quantum_omega(int i, int j, int n, int s, double T){
     for (int si = 2; si <= s + 1; si++){
         sfac *= si;
     }
-    const auto kernel = [&](double E){return cross_section(i, j, n, E * eps[i][j]) * exp(- beta * E * eps[i][j]) * pow(beta * E * eps[i][j], s + 2);};
-    return simpson(kernel, 0, 10, 50) / sfac;
+    std::cout << "Computing omega : " << i << ", " << j << ", " << n << ", " << s << " : " << T << std::endl;
+    const auto kernel = [&](double E){return cross_section(i, j, n, E) * exp(- beta * E * eps[i][j]) * pow(beta * E * eps[i][j], s + 1);};
+    return beta * eps[i][j] * simpson(kernel, 1e-3, 10, 50) * (n + 1.) / (n * sfac);
 }
+
+double Quantum::classical_omega(int i, int j, int l, int r, double T){
+    return Spherical::omega(i, j, l, r, T);
+}
+
+double Quantum::omega(int i, int j, int l, int r, double T) {
+    OmegaPoint point = get_omega_point(i, j, l, r, T);
+    OmegaPoint sympoint = get_omega_point(j, i, l, r, T);
+    const std::map<OmegaPoint, double>::iterator pos = omega_map.find(point);
+    if (pos == omega_map.end()){
+        double val = quantum_omega(i, j, l, r, T);
+        omega_map[point] = val;
+        omega_map[sympoint] = val; // Collision integrals are symmetric wrt. particle indices.
+        if (is_singlecomp){
+            for (int ci = 0; ci < Ncomps; ci++){
+                for (int cj = 0; cj < Ncomps; cj++){
+                    if (((ci == i) && (cj == j)) || ((ci == j) && (cj == i))) continue;
+                    OmegaPoint purepoint = get_omega_point(ci, cj, l, r, T);
+                    omega_map[purepoint] = val;
+                }
+            }
+        }
+        return val;
+    }
+    return pos->second;
+}
+

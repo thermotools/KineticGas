@@ -198,6 +198,9 @@ protected:
     std::map<OmegaPoint, double> omega_map;
     std::map<StatePoint, vector2d> mtl_map;
     std::map<StatePoint, vector2d> etl_map;
+    // Any method that changes model parameters should use this to clear the caches to ensure that all caches are
+    // cleared, also if new caches are introduced in the future.
+    void clear_all_caches();
 
     // In the general case, sigma and eps are scaling parameters for the molecular interaction, 
     // with sigma being the length scale (m) and eps being the energy scale (J).

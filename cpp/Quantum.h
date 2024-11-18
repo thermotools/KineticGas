@@ -5,6 +5,8 @@ class Quantum : public Spherical {
 public:
     Quantum(std::string comps);
 
+    double omega(int i, int j, int l, int r, double T) override;
+
     using Spherical::potential;
     dual2 potential(int i, int j, dual2 r) override;
     double potential(int i, int j, double r) override;
@@ -23,13 +25,15 @@ public:
     double cross_section_kernel(int i, int j, double n, double l, double E);
     double cross_section(int i, int j, int n, double E) override;
     double quantum_omega(int i, int j, int n, int s, double T);
+    double classical_omega(int i, int j, int l, int r, double T);
 
     double classical_cross_section(int i, int j, int l, double E);
 
-    std::vector<unsigned int> half_spin; // Spin of each particle multiplied by two 
 protected:
     vector2d model_rdf(double rho, double T, const vector1d& mole_fracs) override {throw std::runtime_error("Method model_rdf not implemented for Quantum!");}
+
 private:
+    std::vector<unsigned int> half_spin; // Spin of each particle multiplied by two 
     
 
 };

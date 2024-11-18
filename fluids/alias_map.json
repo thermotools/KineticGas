@@ -1,0 +1,240 @@
+{
+    "LJF": {
+        "aliases": [
+            "LennardJonesFluid",
+            "6-12",
+            "12-6"
+        ],
+        "cas_number": "",
+        "name": "LENNARD-JONES_FLUID"
+    },
+    "P-H2": {
+        "aliases": [
+            "ParaHydrogen",
+            "P-Hydrogen",
+            "R702p"
+        ],
+        "cas_number": "1333-74-0",
+        "name": "PARA-HYDROGEN"
+    },
+    "NC8": {
+        "aliases": [
+            "n-Octane",
+            "Octane"
+        ],
+        "cas_number": "111-65-9",
+        "name": "N-OCTANE"
+    },
+    "HE3": {
+        "aliases": [
+            "Helium3",
+            "HE3"
+        ],
+        "cas_number": "14762-55-1",
+        "name": "HELIUM-3"
+    },
+    "NC4": {
+        "aliases": [
+            "n-Butane",
+            "Butane",
+            "R600"
+        ],
+        "cas_number": "106-97-8",
+        "name": "N-BUTANE"
+    },
+    "C3": {
+        "aliases": [
+            "Propane"
+        ],
+        "cas_number": "74-98-6",
+        "name": "PROPANE"
+    },
+    "C2": {
+        "aliases": [
+            "Ethane",
+            "R170"
+        ],
+        "cas_number": "74-84-0",
+        "name": "ETHANE"
+    },
+    "CO2": {
+        "aliases": [
+            "CarbonDioxide",
+            "R744"
+        ],
+        "cas_number": "124-38-9",
+        "name": "CARBON DIOXIDE"
+    },
+    "NC5": {
+        "aliases": [
+            "n-Pentane",
+            "Pentane"
+        ],
+        "cas_number": "109-66-0",
+        "name": "N-PENTAN"
+    },
+    "XE": {
+        "aliases": [
+            "Xenon"
+        ],
+        "cas_number": "7440-63-3",
+        "name": "XENON"
+    },
+    "KR": {
+        "aliases": [
+            "Krypton"
+        ],
+        "cas_number": "7439-90-9",
+        "name": "KRYPTON"
+    },
+    "NC9": {
+        "aliases": [
+            "n-Nonane",
+            "Nonane"
+        ],
+        "cas_number": "111-84-2",
+        "name": "N-NONANE"
+    },
+    "O-H2": {
+        "aliases": [
+            "OrthoHydrogen",
+            "O-Hydrogen",
+            "R702o"
+        ],
+        "cas_number": "1333-74-0",
+        "name": "ORTHO-HYDROGEN"
+    },
+    "NC15": {
+        "aliases": [
+            "n-Pentadecane",
+            "Pentadecane"
+        ],
+        "cas_number": "629-62-9",
+        "name": "N-PENTADECANE"
+    },
+    "D2": {
+        "aliases": [
+            "Deuterium",
+            "DiDeuterium"
+        ],
+        "cas_number": "7782-39-0",
+        "name": "DEUTERIUM"
+    },
+    "NC22": {
+        "aliases": [
+            "n-Docosane",
+            "Docosane"
+        ],
+        "cas_number": "629-97-0",
+        "name": "N-DOCOSANE"
+    },
+    "CO": {
+        "aliases": [
+            "CarbonMonoxide"
+        ],
+        "cas_number": "124-38-9",
+        "name": "CARBON MONOXIDE"
+    },
+    "PSEUDO": {
+        "aliases": [
+            "Pseudo"
+        ],
+        "cas_number": "0000-00-0",
+        "name": "Pseudo"
+    },
+    "N2": {
+        "aliases": [
+            "Nitrogen",
+            "R728"
+        ],
+        "cas_number": "7727-37-9",
+        "name": "NITROGEN"
+    },
+    "NE": {
+        "aliases": [
+            "Neon"
+        ],
+        "cas_number": "7440-01-9",
+        "name": "NEON"
+    },
+    "H2O": {
+        "aliases": [
+            "Water"
+        ],
+        "cas_number": "7732-18-5",
+        "name": "WATER"
+    },
+    "H2": {
+        "aliases": [
+            "Hydrogen",
+            "R702"
+        ],
+        "cas_number": "1333-74-0",
+        "name": "HYDROGEN"
+    },
+    "NC20": {
+        "aliases": [
+            "n-Eicosane",
+            "Eicosane"
+        ],
+        "cas_number": "112-95-8",
+        "name": "N-EICOSANE"
+    },
+    "HE": {
+        "aliases": [
+            "Helium",
+            "HE4",
+            "R704"
+        ],
+        "cas_number": "7440-59-7",
+        "name": "HELIUM-4"
+    },
+    "C1": {
+        "aliases": [
+            "Methane",
+            "CH4",
+            "R50"
+        ],
+        "cas_number": "74-82-8",
+        "name": "METHANE"
+    },
+    "NC6": {
+        "aliases": [
+            "n-Hexane",
+            "Hexane"
+        ],
+        "cas_number": "110-54-3",
+        "name": "N-HEXANE"
+    },
+    "O2": {
+        "aliases": [
+            "Oxygen",
+            "R732"
+        ],
+        "cas_number": "7782-44-7",
+        "name": "OXYGEN"
+    },
+    "NC7": {
+        "aliases": [
+            "n-Heptane",
+            "Heptane"
+        ],
+        "cas_number": "142-82-5",
+        "name": "N-HEPTANE"
+    },
+    "NC10": {
+        "aliases": [
+            "n-Decane",
+            "Decane"
+        ],
+        "cas_number": "124-18-5",
+        "name": "N-DECANE"
+    },
+    "AR": {
+        "aliases": [
+            "Argon"
+        ],
+        "cas_number": "7440-37-1",
+        "name": "ARGON"
+    }
+}

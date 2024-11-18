@@ -44,7 +44,6 @@ class Spherical : public KineticGas {
     double hs_cross_section(int i, int j, int l);
     double reduced_cross_section(int i, int j, int l, double E); // Reduced using corresponding Hard sphere value
 
-protected:
     double omega(int i, int j, int l, int r, double T) override;
     vector2d model_rdf(double rho, double T, const vector1d& mole_fracs) override = 0;
     vector2d model_mtl(double rho, double T, const vector1d& x) override; // Momentum transfer length
