@@ -7,13 +7,12 @@ References:
     viscosities and thermal conductivities, V. G. Jervell and Ø. Wilhelmsen, J. Chem. Phys. (2023)
 */
 
-/*
-   To avoid unneccesary evaluations of the collision integrals, this struct is used to represent a point in 
-   The five-dimensional (i, j, l, r, T)-space where the collision integral has been evaluated.
+#pragma once
+#include "global_params.h"
+#include "math.h"
+#include <string>
 
-   NB: Resolution along the T-axis is 0.1 K, as (by experience) the collision integrals are a weak enough
-   function of T to justify using T-values rounded to the nearest .1 K to improve speed, with little cost to precision.
-*/
+
 struct StatePoint{
     int T_dK;
     double rho;
@@ -29,6 +28,13 @@ struct StatePoint{
     }
 };
 
+/*
+   To avoid unneccesary evaluations of the collision integrals, this struct is used to represent a point in 
+   The five-dimensional (i, j, l, r, T)-space where the collision integral has been evaluated.
+
+   NB: Resolution along the T-axis is 0.1 K, as (by experience) the collision integrals are a weak enough
+   function of T to justify using T-values rounded to the nearest .1 K to improve speed, with little cost to precision.
+*/
 struct OmegaPoint{
     int i, j, l, r, T_dK;
     double rho;
@@ -114,3 +120,6 @@ struct Units {
         , tcond{E / (t * T * L)}
     {}
 };
+
+void set_fluid_dir(const std::string path);
+std::string get_fluid_dir();

@@ -2,7 +2,7 @@
 #include "Integration/Integration.h"
 
 Spherical::Spherical(vector1d mole_weights,
-                    vector2d sigmaij,
+                    vector2d sigma,
                     vector2d eps,
                     bool is_idealgas, bool is_singlecomp) 
                     : KineticGas(mole_weights, sigma, eps, is_idealgas, is_singlecomp)

@@ -8,6 +8,7 @@
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 #include "pybind11/operators.h"
+#include "pybind11/eigen.h"
 #include <sstream>
 
 namespace py = pybind11;
@@ -20,13 +21,23 @@ using vector2d = std::vector<vector1d>;
         .def("kinematic_viscosity", &Model::kinematic_viscosity) \
         .def("kinematic_viscosity_tp", &Model::kinematic_viscosity_tp) \
         .def("thermal_conductivity", &Model::thermal_conductivity) \
+        .def("thermal_conductivity_contributions", &Model::thermal_conductivity_contributions) \
         .def("thermal_conductivity_tp", &Model::thermal_conductivity_tp) \
         .def("thermal_diffusivity", &Model::thermal_diffusivity) \
         .def("thermal_diffusivity_tp", &Model::thermal_diffusivity_tp) \
+        .def("soret_coefficient", &Model::soret_coefficient) \
+        .def("soret_coefficient_tp", &Model::soret_coefficient_tp) \
+        .def("interdiffusion", &Model::interdiffusion) \
+        .def("interdiffusion_tp", &Model::interdiffusion_tp) \
+        .def("thermal_diffusion_ratio", &Model::thermal_diffusion_ratio) \
+        .def("thermal_diffusion_coeff", &Model::thermal_diffusion_coeff) \
+        .def("thermal_diffusion_factor", &Model::thermal_diffusion_factor) \
         .def("get_mtl", &Model::get_mtl) \
         .def("get_etl", &Model::get_etl) \
         .def("get_rdf", &Model::get_rdf) \
         .def("set_eos", py::overload_cast<py::object>(&Model::set_eos)) \
+        .def("frame_of_reference_map", &Model::frame_of_reference_map) \
+        .def("get_reducing_units", &Model::get_reducing_units) \
         \
         .def("set_tl_model", &Model::set_transfer_length_model) \
         .def("get_tl_model", &Model::get_transfer_length_model) \
@@ -40,6 +51,8 @@ using vector2d = std::vector<vector1d>;
         .def("get_viscosity_vector", &Model::get_viscosity_vector)\
         .def("get_K_factors", &Model::get_K_factors) \
         .def("get_K_prime_factors", &Model::get_K_prime_factors) \
+        .def("get_chemical_potential_factors", &Model::get_chemical_potential_factors) \
+        .def("get_ksi_factors", &Model::get_ksi_factors)
         \
         
 #define Spherical_potential_bindings(Model) \
@@ -78,7 +91,8 @@ PYBIND11_MODULE(libpykingas, handle){
             return strm.str();
         });
     
-    py::class_<Units>(handle, "Units")
+    py::class_<Units>(handle, "cppUnits")
+        .def(py::init<double, double, double>())
         .def_readonly("T", &Units::T)           // Temperature (K)
         .def_readonly("L", &Units::L)           // Length (m)
         .def_readonly("m", &Units::m)           // Mass (kg)
@@ -124,6 +138,11 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("a2", py::overload_cast<double, double, const vector1d&>(&MieKinGas::a2ij_func))
         .def("a2_div_chi", &MieKinGas::a2ij_div_chi_func)
         .def("da2_div_chi_drho", py::overload_cast<double, double, const vector1d&>(&MieKinGas::da2ij_div_chi_drho_func))
+
+        .def("chi", &MieKinGas::chi)
+        .def("get_R", &MieKinGas::get_R)
+        .def("theta_r", py::overload_cast<int, int, double, double, double, double>(&MieKinGas::theta_r))
+        .def("theta_r", py::overload_cast<int, int, double, double, double, double, double>(&MieKinGas::theta_r))
         ;
         // .def("da1_drho", py::overload_cast<double, double, const vector1d&>(&MieKinGas::da1ij_drho_func))
         // .def("da1s_drho", py::overload_cast<double, const vector1d&, const vector2d&, const vector2d&>(&MieKinGas::da1s_drho_func))

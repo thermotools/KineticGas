@@ -35,9 +35,9 @@ dependencies = ["numpy~=1.22",
                 "thermopack~=2.2"]
 
 [project.optional-dependencies]
-test = ["pytest", "matplotlib"]
+test = ["pytest", "matplotlib", "pandas"]
 
 [tool.cibuildwheel]
 test-command = "pytest {project}/tests"
-test-requires = ["pytest", "matplotlib"]
+test-requires = ["pytest", "matplotlib", "pandas"]
 build-verbosity = 2

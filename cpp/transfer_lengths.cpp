@@ -212,15 +212,11 @@ double Spherical::ewca_weight(int i, int j, double T, double g, double b, int pr
 
 double Spherical::momentum_transfer(int i, int j, double T, double g, double b){
     double chi_val = chi(i, j, T, g, b * sigma[i][j]);
-    double red_mass = m[i] * m[j] / (m[i] + m[j]);
-    double U = sqrt(2 * BOLTZMANN * T / red_mass) * g;
     return g * sqrt(2 * (1 - cos(chi_val))) * abs(sin(chi_val / 2.));
 }
 
 double Spherical::energy_transfer(int i, int j, double T, double g, double b){
     double chi_val = chi(i, j, T, g, b * sigma[i][j]);
-    double red_mass = m[i] * m[j] / (m[i] + m[j]);
-    double U = sqrt(2 * BOLTZMANN * T / red_mass) * g;
     return g * abs(cos(chi_val) - sin(chi_val) - 1);
 }
 

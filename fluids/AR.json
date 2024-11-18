@@ -8,8 +8,6 @@
     ],
     "mol_weight": 39.948,
     "default_fh_order": 0,
-    "polarizability": 1.6426e-30, 
-    "ionization_energy" : 2.5249E-18,
     "references": {
         "polarizability (m3)" : "2018 Table of static dipole polarizabilities of the neutral elements in the periodic table, Schwerdtfeger & Nagle, MOLECULAR PHYSICS (2019), https://doi.org/10.1080/00268976.2018.1535143",
         "ionization_energy (J)" : "https://webbook.nist.gov/cgi/inchi?ID=C7440371&Mask=20"
@@ -62,11 +60,6 @@
             "bib_reference": "Jäger, Hellmann, Bich, Mol. Phys 108 (2010)",
             "DOI": "https://doi.org/10.1080/00268976.2010.507557",
             "Note": "Potential parameters use kelvin for energies, and nm for lengths, with the exception of sigma, which uses meters."
-        }
-    },
-    "AxilrodTellerCorrection": {
-        "default" : {
-            "nu" : 7.3527e-108
         }
     }
 }

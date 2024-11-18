@@ -35,13 +35,13 @@ void KineticGas::set_masses(){
     }
 }
 
-KineticGas::KineticGas(vector1d mole_weights, vector2d sigma, vector2d eps, bool is_idealgas, bool is_singlecomp) 
-  : Ncomps{static_cast<unsigned long>(mole_weights.size())},
-    is_idealgas{is_idealgas},
-    is_singlecomp{is_singlecomp},
-    m{mole_weights},
-    sigma{sigma},
-    eps{eps}
+KineticGas::KineticGas(vector1d mole_weights, vector2d sigma, vector2d eps, bool is_idealgas, bool is_singlecomp)
+    : Ncomps{static_cast<size_t>(mole_weights.size())},
+     is_idealgas{is_idealgas},
+     is_singlecomp{is_singlecomp},
+     m{mole_weights},
+     sigma{sigma},
+     eps{eps}
     {set_masses();}
 
 std::vector<json> get_fluid_data(std::string comps){
@@ -70,7 +70,18 @@ std::vector<json> get_fluid_data(std::string comps){
 }
 
 Units KineticGas::get_reducing_units(int i, int j){
-    return Units(red_mass[i][j], sigma[i][j], eps[i][j]);
+    return Units(2. * red_mass[i][j], sigma[i][j], eps[i][j]);
+}
+
+int KineticGas::frame_of_reference_map(std::string frame_of_ref){
+    if (frame_of_ref == "CoN") return FrameOfReference::CoN;
+    if (frame_of_ref == "CoM") return FrameOfReference::CoM;
+    if (frame_of_ref == "CoV") return FrameOfReference::CoV;
+    if (frame_of_ref == "solvent") return FrameOfReference::solvent;
+    if (frame_of_ref == "zarate") return FrameOfReference::zarate;
+    if (frame_of_ref == "zarate_x") return FrameOfReference::zarate_x;
+    if (frame_of_ref == "zarate_w") return FrameOfReference::zarate_w;
+    throw std::runtime_error("Invalid frame of reference : " + frame_of_ref);
 }
 
 KineticGas::KineticGas(std::string comps, bool is_idealgas) 
@@ -601,6 +612,7 @@ double KineticGas::L_ij(int p, int q, int i, int j, double T){
     val *= 16.0 / 3.0;
     return val;
 }
+
 double KineticGas::L_i(int p, int q, int i, int j, double T){
     double val{0.0}, M1{M[i][j]}, M2{M[j][i]};
     for (int l = 1; l <= std::min(p, q) + 2; l++){

@@ -6,7 +6,7 @@ permalink: /vcurrent/mietype_methods.html
 ---
 
 <!--- 
-Generated at: 2024-10-16T17:34:53.824163
+Generated at: 2024-11-07T12:55:22.198946
 This is an auto-generated file, generated using the script at KineticGas/pyUtils/markdown_from_docstrings.py
 The file is created by parsing the docstrings of the methods in the 
 MieType class. For instructions on how to use the parser routines, see the
@@ -22,7 +22,6 @@ Mie-Type Model. This class implements utility methods to access mixing parameter
     * [get_BH_diameters](#get_bh_diametersself-t)
     * [get_epsilon_matrix](#get_epsilon_matrixself-eps_div_k-kij)
     * [get_lambda_matrix](#get_lambda_matrixself-lambdas-lij)
-    * [get_reducing_units](#get_reducing_unitsself-comp_idx0)
     * [get_sigma_matrix](#get_sigma_matrixself-sigma)
     * [potential](#potentialself-i-j-r)
     * [potential_r](#potential_rself-i-j-r)
@@ -90,7 +89,6 @@ Set- and get methods for interaction parameters, mixing parameters ...
     * [get_BH_diameters](#get_bh_diametersself-t)
     * [get_epsilon_matrix](#get_epsilon_matrixself-eps_div_k-kij)
     * [get_lambda_matrix](#get_lambda_matrixself-lambdas-lij)
-    * [get_reducing_units](#get_reducing_unitsself-comp_idx0)
     * [get_sigma_matrix](#get_sigma_matrixself-sigma)
     * [potential](#potentialself-i-j-r)
     * [potential_r](#potential_rself-i-j-r)
@@ -151,22 +149,6 @@ Compute pair-interaction $\lambda_r$ parameters, apply mixing parameter.
 &nbsp;&nbsp;&nbsp;&nbsp; **2d array :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Repulsive exponent for each pair-interaction. 
-
-### `get_reducing_units(self, comp_idx=0)`
-Get reducing units for this model, as a `Units` struct. See `units.py`.
- 
-
-#### Args:
-
-&nbsp;&nbsp;&nbsp;&nbsp; **comp_idx (int, optional) :** 
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Which component to use for reducing units, defaults to first component 
-
-#### Returns:
-
-&nbsp;&nbsp;&nbsp;&nbsp; **Units :** 
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Struct holding the reducing units 
 
 ### `get_sigma_matrix(self, sigma)`
 Compute interaction parameter $\sigma$ for each particle pair, applying mixing parameters given by `self.lij`.

@@ -1,4 +1,4 @@
-#include "global_params.h"
+#include "utils.h"
 #include <filesystem>
 
 #ifdef FLUID_DIR
@@ -32,15 +32,14 @@ static void __set_fluid_dir() {
         fluid_dir = rel_fluid_dir;
     }
     else {
-    char path[MAX_PATH];
+    char chr_path[MAX_PATH];
     HMODULE hModule = NULL;
-    GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-                      (LPCSTR)&get_fluid_dir, &hModule);
-    GetModuleFileName(hModule, path, sizeof(path));
+    GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, (LPCSTR)&get_fluid_dir, &hModule);
+    GetModuleFileName(hModule, chr_path, sizeof(chr_path));
 
-    std::string libPath = std::string(path);
+    std::string libPath = std::string(chr_path);
     std::filesystem::path path(libPath);
-    fluid_dir = std::string(path.parent_path() / rel_fluid_dir);
+    fluid_dir = (path.parent_path() / rel_fluid_dir).string();
     }
 }
 

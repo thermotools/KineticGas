@@ -13,25 +13,15 @@ Contains: The MieKinGas class. This class is the model used to evaluate the Ensk
 
 class MieKinGas : public Spherical {
     public:
-    std::vector<std::vector<double>> la, lr, C, alpha;
+    vector2d la, lr, C, alpha;
 
-    MieKinGas(std::vector<double> mole_weights,
-        std::vector<std::vector<double>> sigmaij,
-        std::vector<std::vector<double>> epsilon,
-        std::vector<std::vector<double>> la,
-        std::vector<std::vector<double>> lr,
-        bool is_idealgas, bool is_singlecomp)
-        : Spherical(mole_weights, sigmaij, epsilon, is_idealgas, is_singlecomp),
-        la{la},
-        lr{lr}
-        {eps = epsilon; set_C_alpha();}
-
+    MieKinGas(vector1d mole_weights, vector2d sigma, vector2d eps, vector2d la, vector2d lr, bool is_idealgas, bool is_singlecomp);
     MieKinGas(std::string comps, bool is_idealgas=false);
 
     void set_C_alpha();
     void mix_sigma();
     void mix_epsilon();
-    void mix_exponents(std::vector<std::vector<double>>& expo);
+    void mix_exponents(vector2d& expo);
 
     dual2 potential(int i, int j, dual2 r) override {
         return C[i][j] * eps[i][j] * (pow(sigma[i][j] / r, lr[i][j]) - pow(sigma[i][j] / r, la[i][j]));

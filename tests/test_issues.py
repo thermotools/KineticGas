@@ -19,15 +19,15 @@ def test_very_repulse(lr):
     mie = MieKinGas('LJF', mole_weights=[m, m], lr=[lr, lr])
     unt = mie.get_reducing_units()
 
-    test_visc_vals = {20 : 0.23884092835743448,
-                      30 : 0.24007300954596128,
-                      40 : 0.2406300010015899,
-                      50 : 0.24087368463484207}
+    test_visc_vals = {20: 0.2158860328573334, 
+                      30: 0.21695389791954947, 
+                      40: 0.21751138069457196, 
+                      50: 0.2178548098137264}
 
-    test_cond_vals = {20 : 1.0020393511139294,
-                      30 : 0.9989003303844379,
-                      40 : 0.9973619163028958,
-                      50 : 0.9964957391003143}
+    test_cond_vals = {20: 1.0020395956063672, 
+                      30: 0.9989005623538744, 
+                      40: 0.9973621421137406, 
+                      50: 0.9964959608177728}
 
     T_red = 2.0
     rho_red = 0.1
@@ -80,14 +80,22 @@ def test_singlecomp_binary(m, sigma, eps_div_k, la, lr):
     l2 = kin2.viscosity_tp(T, p, [x1, 1 - x1], N=2)
     assert check_eq_rel(l1, l2)
 
-    k1 = sum(kin1.thermal_conductivity(T, Vm, [x1, 1 - x1], N=2, contributions='td')) # Exclude internal (Cp-dependent) contribution
-    k2 = sum(kin2.thermal_conductivity(T, Vm, [x1, 1 - x1], N=2, contributions='td')) # Exclude internal (Cp-dependent) contribution
+    k1 = sum(kin1.thermal_conductivity(T, Vm, [x1, 1 - x1], N=2, contributions='td').values()) # Exclude internal (Cp-dependent) contribution
+    k2 = sum(kin2.thermal_conductivity(T, Vm, [x1, 1 - x1], N=2, contributions='td').values()) # Exclude internal (Cp-dependent) contribution
     assert check_eq_rel(k1, k2)
 
-    k1 = sum(kin1.thermal_conductivity_tp(T, p, [x1, 1 - x1], N=2, contributions='td')) # Exclude internal (Cp-dependent) contribution
-    k2 = sum(kin2.thermal_conductivity_tp(T, p, [x1, 1 - x1], N=2, contributions='td')) # Exclude internal (Cp-dependent) contribution
+    k1 = sum(kin1.thermal_conductivity_tp(T, p, [x1, 1 - x1], N=2, contributions='td').values()) # Exclude internal (Cp-dependent) contribution
+    k2 = sum(kin2.thermal_conductivity_tp(T, p, [x1, 1 - x1], N=2, contributions='td').values()) # Exclude internal (Cp-dependent) contribution
     assert check_eq_rel(k1, k2)
 
-    DT1 = kin1.thermal_diffusion_coeff(T, Vm, [x1, 1 - x1], N=2)
-    DT2 = kin2.thermal_diffusion_coeff(T, Vm, [x1, 1 - x1], N=2)
+    DT1 = kin1.thermal_diffusion_coeff(T, Vm, [0.5, 0.5], N=2)
+    DT2 = kin2.thermal_diffusion_coeff(T, Vm, [0.5, 0.5], N=2)
     assert check_eq_arr(DT1, DT2)
+
+if __name__ == '__main__':
+    cond_dat, visc_dat = {}, {}
+    for lr in [20, 30, 40, 50]:
+        visc_dat[lr], cond_dat[lr] = test_very_repulse(lr)
+    
+    print(visc_dat)
+    print(cond_dat)

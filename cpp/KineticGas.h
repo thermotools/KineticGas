@@ -52,8 +52,21 @@ References:
 
 using json = nlohmann::json;
 
+// --------------------------------------------------------------------------------------------------------------------------------- //
+// ---------------------------------------------       GENERAL COMMENT ON UNITS        --------------------------------------------- //
+// --- All transport property calculations require either temperature, molar volume, and mole fractions, or temperature, pressure -- //
+// --- and mole fractions. These are always given in SI units (K), (m3 / mol), (Pa), (–). The returned transport properties are  --- //
+// --- also given in SI units.
+// --- Internally, the particle density is used for density (1 / m^3, instead of (mol / m3)).
+// --- If you prefer working in reduced (i.e. Lennard-Jones) units. The KineticGas class has the method get_reducing_units, which -- //
+// --- returns a `Units` struct (see utils.h), which holds the reducing units of a model, such that you can do
+// --- Units unt = model.get_reducing_units();
+// --- double T_SI = 300; // Kelvin;
+// --- double T_reduced = 300 / unt.T; // Dimensionless (using model energy parameter, eps, and Boltzmanns constant)
+// --------------------------------------------------------------------------------------------------------------------------------- //
+
 class KineticGas{
-    public:
+public:
     KineticGas(vector1d mole_weights, vector2d sigma, vector2d eps, bool is_idealgas, bool is_singlecomp);
     KineticGas(std::string comps, bool is_idealgas);
 
@@ -82,11 +95,6 @@ class KineticGas{
         return model_rdf(rho, T, mole_fracs);
     }
 
-    // Different transfer length models, see Ref. (IV)
-    void set_transfer_length_model(int model_id);
-    std::pair<int, std::string> get_transfer_length_model(); // Return the current transfer length model
-    std::map<int, std::string> get_valid_transfer_length_models(); // Get a map of valid models with descriptions
-
 // ---------------------------------------------------------------------------------------------------------------------------------------------- //
 // --------------------------------------------- Interfaces to compute transport coefficients --------------------------------------------------- //
 // ---------------------------------------------------------------------------------------------------------------------------------------------- // 
@@ -100,6 +108,8 @@ class KineticGas{
     Eigen::VectorXd thermal_diffusion_ratio(double T, double Vm, const std::vector<double>& x, int N=2);
     Eigen::MatrixXd thermal_diffusion_factor(double T, double Vm, const std::vector<double>& x, int N=2);
     Eigen::MatrixXd interdiffusion_dependent_CoM(double T, double Vm, const std::vector<double>& x, int N=2);
+    Eigen::VectorXd soret_coefficient(double T, double Vm, const std::vector<double>& x, int N, int dependent_idx=-1);
+    std::map<std::string, double> thermal_conductivity_contributions(double T, double Vm, const std::vector<double>& x, int N=2, std::string contribs="tdi");
 
     // ------------------------------------------------------------------------------------------------------------------- //
     // ----------- TP-interface methods: These just compute molar volume and feed the call to the methods above ---------- //
@@ -112,6 +122,7 @@ class KineticGas{
     inline Eigen::VectorXd thermal_diffusion_coeff_tp(double T, double p, const std::vector<double>& x, int N=2, int frame_of_reference=FrameOfReference::CoN, int dependent_idx=-1, int solvent_idx=-1){return thermal_diffusion_coeff(T, eos->specific_volume(T, p, sanitize_mole_fracs_eos(x), eos->VAPPH), x, N, frame_of_reference, dependent_idx, solvent_idx);}
     inline Eigen::VectorXd thermal_diffusion_ratio_tp(double T, double p, const std::vector<double>& x, int N=2){return thermal_diffusion_ratio(T, eos->specific_volume(T, p, sanitize_mole_fracs_eos(x), eos->VAPPH), x, N);}
     inline Eigen::MatrixXd thermal_diffusion_factor_tp(double T, double p, const std::vector<double>& x, int N=2){return thermal_diffusion_factor(T, eos->specific_volume(T, p, sanitize_mole_fracs_eos(x), eos->VAPPH), x, N);}
+    inline Eigen::VectorXd soret_coefficient_tp(double T, double p, const std::vector<double>& x, int N, int dependent_idx=-1){return soret_coefficient(T, eos->specific_volume(T, p, sanitize_mole_fracs_eos(x), eos->VAPPH), x, N, dependent_idx);}
 
 // ------------------------------------------------------------------------------------------------------------------------------------- //
 // ----------------- Matrices and vectors for the sets of equations (6-10) in Ref. (III)  ---------------------------------------------- //
@@ -131,6 +142,9 @@ class KineticGas{
     std::vector<std::vector<double>> get_diffusion_matrix(double rho, double T, const std::vector<double>& x, int N);
     std::vector<std::vector<double>> get_viscosity_matrix(double rho, double T, const std::vector<double>&x, int N);
     std::vector<double> get_viscosity_vector(double rho, double T, const std::vector<double>& x, int N);
+
+    vector1d get_K_factors(double rho, double T, const vector1d& mole_fracs); // Eq. (1.2) of 'multicomponent docs'
+    vector1d get_K_prime_factors(double rho, double T, const vector1d& mole_fracs); // Eq. (5.4) of 'multicomponent docs'
 
 // ----------------------------------------------------------------------------------------------------------------------------------- //
 // -------------------------------------------------- Utility methods ---------------------------------------------------------------- //
@@ -162,8 +176,13 @@ class KineticGas{
     void set_eos(GenericEoS&& other){
         eos = std::make_unique<GenericEoS>(std::move(other));
     }
-    vector1d get_K_factors(double rho, double T, const vector1d& mole_fracs); // Eq. (1.2) of 'multicomponent docs'
-    vector1d get_K_prime_factors(double rho, double T, const vector1d& mole_fracs); // Eq. (5.4) of 'multicomponent docs'
+
+    // Different transfer length models, see Ref. (IV)
+    void set_transfer_length_model(int model_id);
+    std::pair<int, std::string> get_transfer_length_model(); // Return the current transfer length model
+    std::map<int, std::string> get_valid_transfer_length_models(); // Get a map of valid models with descriptions
+
+    int frame_of_reference_map(std::string frame_of_ref);
 
 // ------------------------------------------------------------------------------------------------------------------------ //
 // --------------------------------------- KineticGas internals are below here -------------------------------------------- //
@@ -175,7 +194,7 @@ protected:
     const bool is_singlecomp;
 
     vector1d m; // Particle masses (kg)
-    vector2d M, m0, red_mass;
+    vector2d M, m0, red_mass; // Various combinations of particle masses that show up often
     std::map<OmegaPoint, double> omega_map;
     std::map<StatePoint, vector2d> mtl_map;
     std::map<StatePoint, vector2d> etl_map;
@@ -183,15 +202,14 @@ protected:
     // In the general case, sigma and eps are scaling parameters for the molecular interaction, 
     // with sigma being the length scale (m) and eps being the energy scale (J).
     // In general, these are just used for convenience to make things non-dimensional. If your potential
-    // model does not use them (like HardSphere, which has no energy scale), just set them to dummy-values,
-    // they are not used in any computations, so can safely be ignored if you want to ignore them.
+    // model does not use them (like HardSphere, which has no energy scale), just set them to dummy-values.
     vector2d sigma, eps;
 
     std::unique_ptr<GenericEoS> eos;
     const std::vector<json> compdata; // Fluid data for each component, 
 
     const int default_tl_model_id = TransferLengthModel::EWCA; // Default transfer length model
-    int transfer_length_model_id = default_tl_model_id;
+    int transfer_length_model_id = default_tl_model_id; // Currently active transfer length model
 
     // set_internals is called at the start of all public methods. 
     // If a derived class needs to set any internals before running a computation,

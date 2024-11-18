@@ -29,7 +29,7 @@ class IntegrationParam;
 
 class Spherical : public KineticGas {
     public:
-    Spherical(vector1d mole_weights, vector2d sigmaij, vector2d eps, bool is_idealgas, bool is_singlecomp);
+    Spherical(vector1d mole_weights, vector2d sigma, vector2d eps, bool is_idealgas, bool is_singlecomp);
     Spherical(std::string comps, bool is_idealgas) : KineticGas(comps, is_idealgas) {}
     
     virtual ~Spherical(){};
@@ -57,7 +57,9 @@ protected:
     double chi(int i, int j, double T, double g, double b); // Deflection angle at given temperature, dimensionless velocity and impact parameter
     double get_R(int i, int j, double T, double g, double b); // Distance of closest approach at given temperature, dimensionless velocity and impact parameter
     double theta_r(int i, int j, double r, double T, double g, double b); // Angular position at given particle separation (r). A plot of r * sin(theta_r) vs. r * cos(theta_r) will show the particle trajectory for a collision with given T, g, b.
+    double theta_r(int i, int j, double R, double r, double T, double g, double b); // Faster, if R is known.
 
+protected:
     // ------------------------------------------------------------------------------------------- //
     // --------------------------------  TRANSFER LENGTH CACHING --------------------------------- //
     /*  
@@ -108,7 +110,6 @@ private:
     double w_integral_tester(int i, int j, double T, int l, int r, IntegrationParam& param);
 
     double get_R0(int i, int j, double T, double g); // Solve get_R when b = 0
-    double theta_r(int i, int j, double R, double r, double T, double g, double b); // Faster, if R is known.
 
     double theta_integral(int i, int j, const double T, const double R, const double g, const double b); // Evaluate Eq. (49) in Ref. (II)
 

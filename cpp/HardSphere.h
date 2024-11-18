@@ -10,10 +10,8 @@ Contains: The analytical collision integrals and deflection angle for a hard sph
 class HardSphere : public KineticGas {
     public: 
 
-    std::vector<std::vector<double>> sigma;
-
     HardSphere(std::vector<double> mole_weights,
-        std::vector<std::vector<double>> sigmaij,
+        std::vector<std::vector<double>> sigma,
         bool is_idealgas, bool is_singlecomp)
         : KineticGas(mole_weights, sigma, 
             vector2d(mole_weights.size(), vector1d(mole_weights.size(), 1)),  // Use dummy value for energy parameter
@@ -38,7 +36,7 @@ class HardSphere : public KineticGas {
     }
 
     double w_integral(int i, int j, double T, int l, int r){
-        int f = Fac(r + 1).eval();
+        long long f = Fac(r + 1).eval();
         if (l % 2 == 0){
             return 0.25 * (2 - ((1.0 / (l + 1)) * 2)) * f;
         }
@@ -51,7 +49,7 @@ class HardSphere : public KineticGas {
     }
     
     std::vector<std::vector<double>> model_rdf(double rho, double T, const std::vector<double>& xi) override {
-        std::vector<double> Zi(3);
+        std::vector<double> Zi(3, 0.);
         for (int i = 1; i < 4; i++){
             for (int j = 0; j < Ncomps; j++){
                 Zi[i - 1] += rho * xi[j] * pow(sigma[j][j], i);

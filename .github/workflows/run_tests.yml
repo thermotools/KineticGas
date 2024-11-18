@@ -11,6 +11,7 @@ jobs:
                 os: [macOS-latest, macOS-12, ubuntu-latest, windows-latest]
         env:
           THERMOPACK_DIR: thermopack-${{ matrix.os }}
+          THERMOPACK_URL: https://github.com/vegardjervell/thermopack/releases/download/Latest-beta
         steps:
             - uses: actions/checkout@v4
             - name: checkout submodules
@@ -22,26 +23,15 @@ jobs:
             - name: Install thermopack
               if: matrix.os != 'windows-latest'
               run: |
-                curl -L -o thermopack.zip https://github.com/vegardjervell/thermopack/releases/download/Latest-beta/thermopack-${{ matrix.os }}.zip
+                curl -L -o thermopack.zip ${{ env.THERMOPACK_URL }}/thermopack-${{ matrix.os }}.zip
                 unzip thermopack.zip
                 export THERMOPACK_DIR=${PWD}/thermopack-${{ matrix.os }}/
-                curl -L -o thermopack_whl.zip https://github.com/vegardjervell/thermopack/releases/download/Latest-beta/wheel-v2-${{ matrix.os }}.zip
+                curl -L -o thermopack_whl.zip ${{ env.THERMOPACK_URL }}/wheel-v2-${{ matrix.os }}.zip
                 unzip thermopack_whl.zip
                 pip install wheel-v2-${{ matrix.os }}/*
             
-            - name: Install thermopack Windows
-              if: matrix.os == 'windows-latest'
-              shell: pwsh
-              run: |
-                Invoke-WebRequest -Uri "https://github.com/vegardjervell/thermopack/releases/download/Latest-beta/thermopack-${{ matrix.os }}.zip" -OutFile "thermopack.zip"
-                Expand-Archive -Path "thermopack.zip" -DestinationPath "thermopack-${{ matrix.os }}"
-                $THERMOPACK_DIR = "$PWD/${{ env.THERMOPACK_DIR }}"
-                [System.Environment]::SetEnvironmentVariable("THERMOPACK_DIR", $THERMOPACK_DIR)
-                Invoke-WebRequest -Uri "https://github.com/vegardjervell/thermopack/releases/download/Latest-beta/wheel-v2-${{ matrix.os }}.zip" -OutFile "thermopack_whl.zip"
-                Expand-Archive -Path "thermopack_whl.zip" -DestinationPath "wheel-v2-${{ matrix.os }}"
-                pip install "wheel-v2-${{ matrix.os }}/*"
-
             - name: Build KineticGas
+              if: matrix.os != 'windows-latest'
               run: |
                 echo "THERMOPACK_DIR (GH_ENV) : ${{ env.THERMOPACK_DIR }} / (ENV) ${THERMOPACK_DIR}"
                 export THERMOPACK_DIR=${PWD}/${{ env.THERMOPACK_DIR }}
@@ -50,6 +40,29 @@ jobs:
                 cd build
                 cmake ..
                 make -j4 install
+
+            - name: Install thermopack Windows
+              if: matrix.os == 'windows-latest'
+              shell: pwsh
+              run: |
+                Invoke-WebRequest -Uri "${{ env.THERMOPACK_URL }}/wheel-v2-${{ matrix.os }}.zip" -OutFile "thermopack_whl.zip"
+                Expand-Archive -Path "thermopack_whl.zip" -DestinationPath "wheel-v2-${{ matrix.os }}"
+                cd wheel-v2-${{ matrix.os }}
+                pip install (Get-ChildItem wheel-v2-windows-latest\*.whl).FullName
+
+            - name: Build KineticGas Windows
+              if: matrix.os == 'windows-latest'
+              shell: pwsh
+              run: |
+                Invoke-WebRequest -Uri "${{ env.THERMOPACK_URL }}/thermopack-${{ matrix.os }}.zip" -OutFile "thermopack.zip"
+                Expand-Archive -Path "thermopack.zip" -DestinationPath "${{ env.THERMOPACK_DIR }}"
+                $THERMOPACK_DIR = "$PWD\${{ env.THERMOPACK_DIR }}\thermopack-${{ matrix.os }}"
+                [System.Environment]::SetEnvironmentVariable("THERMOPACK_DIR", $THERMOPACK_DIR)
+                ls -R ${THERMOPACK_DIR}
+                mkdir build
+                cd build
+                cmake ..
+                cmake --build . --config=Release --target install
             
             - name: Build KineticGas Windows
               if: matrix.os == 'windows-latest'
