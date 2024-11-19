@@ -54,11 +54,17 @@ vector2d Quantum::get_de_boer(){
     }
     return de_boer;
 }
-double Quantum::get_de_boer(int i, int j){return PLANCK / (sigma[i][j] * sqrt(2. * red_mass[i][j] * eps[i][j]));}
+double Quantum::get_de_boer(int i, int j){
+    return PLANCK / (sigma[i][j] * sqrt(2. * red_mass[i][j] * eps[i][j]));
+}
 
 void Quantum::set_de_boer_mass(int i, double de_boer){
     m[i] = pow(PLANCK / (sigma[i][i] * de_boer), 2) / eps[i][i];
     set_masses(); // Set- methods are responsible for clearing caches
+}
+
+double Quantum::de_broglie_wavelength(int i, double T){
+    return PLANCK / sqrt(2. * PI * m[i] * BOLTZMANN * T);
 }
 
 dual2 Quantum::potential(int i, int j, dual2 r){
@@ -287,7 +293,6 @@ double Quantum::cross_section_kernel(int i, int j, double n, double l, double E)
 }
 
 double Quantum::cross_section(int i, int j, int n, double E){
-    // std::cout << "Computing cross-section (" << E << ")" << std::endl;
     E *= eps[i][j];
     if (is_singlecomp) i = j;
     
@@ -331,7 +336,6 @@ double Quantum::cross_section(int i, int j, int n, double E){
 
     double k2 = 2. * red_mass[i][j] * E / pow(HBAR, 2);
     Q *= 4. * PI / k2;
-    // std::cout << "Returning cross section (" << E / eps[i][j] << ")" << std::endl;
     return Q;
 }
 
@@ -345,9 +349,8 @@ double Quantum::quantum_omega(int i, int j, int n, int s, double T){
     for (int si = 2; si <= s + 1; si++){
         sfac *= si;
     }
-    std::cout << "Computing omega : " << i << ", " << j << ", " << n << ", " << s << " : " << T << std::endl;
     const auto kernel = [&](double E){return cross_section(i, j, n, E) * exp(- beta * E * eps[i][j]) * pow(beta * E * eps[i][j], s + 1);};
-    return beta * eps[i][j] * simpson(kernel, 1e-3, 10, 50) * (n + 1.) / (n * sfac);
+    return 0.5 * sqrt(PI / (2. * BOLTZMANN * T * red_mass[i][j])) * eps[i][j] * simpson(kernel, 1e-3, 10, 50) * (n + 1.) / (n * sfac);
 }
 
 double Quantum::classical_omega(int i, int j, int l, int r, double T){

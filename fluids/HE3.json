@@ -25,12 +25,20 @@
             "lambda_r": 12.0,
             "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
         },
-        "default": {
+        "HYVA": {
             "sigma": 2.8525e-10,
             "eps_div_k": 4.5764,
             "lambda_a": 6.0,
             "lambda_r": 8.3471,
             "bib_reference": "HYVA parameters with non-integer repulsive exponent"
+        },
+        "default": {
+            "sigma": 2.549e-10,
+            "eps_div_k": 10.952,
+            "lambda_a": 6.0,
+            "lambda_r": 13.0,
+            "FH_order": 2,
+            "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
         }
     },
     "HardSphere": {

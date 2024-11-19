@@ -234,6 +234,7 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("get_de_boer", py::overload_cast<int, int>(&Quantum::get_de_boer))
         .def("get_de_boer", py::overload_cast<int>(&Quantum::get_de_boer))
         .def("set_de_boer_mass", &Quantum::set_de_boer_mass)
+        .def("de_broglie_wavelength", &Quantum::de_broglie_wavelength)
         .def("JKWB_upper_E_limit", &Quantum::JKWB_upper_E_limit)
         .def("quantum_omega", &Quantum::quantum_omega)
         .def("classical_omega", &Quantum::classical_omega)

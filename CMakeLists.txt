@@ -107,5 +107,6 @@ if (pylib)
   target_compile_definitions(${pyTARGET} PUBLIC "-DPYLIB -DFLUID_DIR=${pyFLUID_DIR}")
 
   install(TARGETS ${pyTARGET} DESTINATION ${pykingas_path})
-  file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/fluids DESTINATION ${pykingas_path})
+  install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/fluids DESTINATION ${pykingas_path})
+  # file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/fluids DESTINATION ${pykingas_path})
 endif()
