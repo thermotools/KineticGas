@@ -214,15 +214,15 @@ vector1d KineticGas::get_K_prime_factors(double rho, double T, const vector1d& m
     return K_prime;
 }
 
-std::vector<double> KineticGas::get_K_dblprime_factors(double rho, double T, double p, const std::vector<double>& mole_fracs){
+vector1d KineticGas::get_K_dblprime_factors(double rho, double T, double p, const vector1d& mole_fracs){
     if (is_idealgas) return std::vector<double>(Ncomps, 0.);
-    std::vector<std::vector<double>> rdf = get_rdf(rho, T, mole_fracs);
-    std::vector<double> K_dblprime(Ncomps, 0.);
-    std::vector<std::vector<double>> cd = get_contact_diameters(rho, T, mole_fracs);
+    vector2d rdf = get_rdf(rho, T, mole_fracs);
+    vector1d K_dblprime(Ncomps, 0.);
+    vector2d mtl = get_mtl(rho, T, mole_fracs);
 
     for (int i = 0; i < Ncomps; i++){
         for (int j = 0; j < Ncomps; j++){
-            K_dblprime[i] += mole_fracs[j] * M[j][i] * pow(cd[i][j], 3) * rdf[i][j];
+            K_dblprime[i] += mole_fracs[j] * M[j][i] * pow(mtl[i][j], 3) * rdf[i][j];
         }
         K_dblprime[i] *= rho * 4. * PI / 3.;
         K_dblprime[i] += 1. - (p / (rho * BOLTZMANN * T));

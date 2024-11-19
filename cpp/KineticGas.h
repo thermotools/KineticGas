@@ -142,9 +142,14 @@ public:
     std::vector<std::vector<double>> get_diffusion_matrix(double rho, double T, const std::vector<double>& x, int N);
     std::vector<std::vector<double>> get_viscosity_matrix(double rho, double T, const std::vector<double>&x, int N);
     std::vector<double> get_viscosity_vector(double rho, double T, const std::vector<double>& x, int N);
+    std::vector<std::vector<double>> get_bulk_viscosity_matrix(double rho, double T, const std::vector<double>&x, int N);
+    std::vector<double> get_bulk_viscosity_vector(double rho, double T, double p, const std::vector<double>& x, int N);
+
+
 
     vector1d get_K_factors(double rho, double T, const vector1d& mole_fracs); // Eq. (1.2) of 'multicomponent docs'
     vector1d get_K_prime_factors(double rho, double T, const vector1d& mole_fracs); // Eq. (5.4) of 'multicomponent docs'
+    vector1d get_K_dblprime_factors(double rho, double T, double p, const vector1d& mole_fracs);
 
 // ----------------------------------------------------------------------------------------------------------------------------------- //
 // -------------------------------------------------- Utility methods ---------------------------------------------------------------- //
@@ -289,6 +294,11 @@ private:
     double L_ij(int p, int q, int i, int j, double T); // [S^(p)_{5/2}(U^2_i), S^(q)_{5/2}(U^2_j)]_{ij}
     double L_i(int p, int q, int i, int j, double T);  // [S^(p)_{5/2}(U^2_i), S^(q)_{5/2}(U^2_i)]_{ij}
     double L_simple(int p, int q, int i, double T);    // [S^(p)_{5/2}(U^2_i), S^(q)_{5/2}(U^2_i)]_{i}
+
+    // Bulk viscosity
+    double Lb_ij(int p, int q, int i, int j, double T); // [S^(p)_{1/2}(U^2_i), S^(q)_{1/2}(U^2_j)]_{ij}
+    double Lb_i(int p, int q, int i, int j, double T);  // [S^(p)_{1/2}(U^2_i), S^(q)_{1/2}(U^2_i)]_{ij}
+
 };
 
 inline int delta(int i, int j) {return (i == j) ? 1 : 0;}

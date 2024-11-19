@@ -1,6 +1,7 @@
 #include "KineticGas.h"
 #include "Factorial.h"
 #include "MieKinGas.h"
+#include "QuantumMie.h"
 #include "HardSphere.h"
 #include "PseudoHardSphere.h"
 #include "ModTangToennis.h"
@@ -48,6 +49,8 @@ using vector2d = std::vector<vector1d>;
         .def("get_conductivity_matrix", &Model::get_conductivity_matrix) \
         .def("get_viscosity_matrix", &Model::get_viscosity_matrix)\
         .def("get_viscosity_vector", &Model::get_viscosity_vector)\
+        .def("get_bulk_viscosity_matrix", &Model::get_bulk_viscosity_matrix)\
+        .def("get_bulk_viscosity_vector", &Model::get_bulk_viscosity_vector)\
         .def("get_K_factors", &Model::get_K_factors) \
         .def("get_K_prime_factors", &Model::get_K_prime_factors) \
         .def("get_chemical_potential_factors", &Model::get_chemical_potential_factors) \
@@ -155,6 +158,20 @@ PYBIND11_MODULE(libpykingas, handle){
         // .def("da2_div_chi_drho", py::overload_cast<double, double, const vector1d&>(&MieKinGas::da2ij_div_chi_drho_func))
         // .def("gamma_corr", py::overload_cast<double, double, const vector1d&>(&MieKinGas::gamma_corr))
         // ;
+
+    py::class_<QuantumMie>(handle, "cpp_QuantumMie")
+        .def(py::init<vector1d, vector2d, vector2d, vector2d, vector2d, std::vector<int>, bool, bool>())
+        KineticGas_bindings(QuantumMie)
+        // .def("potential", py::overload_cast<int, int, double, double>(&QuantumMie::potential))
+        // .def("potential_derivative_r", py::overload_cast<int, int, double, double>(&QuantumMie::potential_derivative_r))
+        // .def("potential_dblderivative_rr", py::overload_cast<int, int, double, double>(&QuantumMie::potential_dblderivative_rr))
+        // .def("get_sigma_eff", py::overload_cast<double>(&QuantumMie::get_sigma_eff))
+        // .def("get_sigma_min", py::overload_cast<double>(&QuantumMie::get_sigma_min))
+        // .def("get_epsilon_eff", py::overload_cast<double>(&QuantumMie::get_epsilon_eff))
+        // .def("get_BH_diameters", &QuantumMie::get_BH_diameters)
+        .def("saft_rdf", &QuantumMie::saft_rdf)
+        .def("get_rdf_terms", &QuantumMie::get_rdf_terms)
+        ;
 
    py::class_<IntegrationParam>(handle, "IntegrationParam")
         .def(py::init<vector1d, vector1d, double, double, int, int, double>())

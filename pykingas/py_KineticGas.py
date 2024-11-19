@@ -775,13 +775,11 @@ class py_KineticGas:
 
         particle_density = Avogadro / Vm
         h = self.compute_bulk_visc_vector(T, particle_density, x, N=N)[self.ncomps : 2 * self.ncomps] # Extract first order coefficients
-        cd = self.get_contact_diameters(particle_density, T, x)
+        mtl = self.get_mtl(particle_density, T, x)
         rdf = self.get_rdf(particle_density, T, x)
         K_prime = self.cpp_kingas.get_K_prime_factors(particle_density, T, x)
         K = (np.array(K_prime) - 1) * (5 / 4)
         bvisc_prime = 0
-        print(f'h : {h}')
-        print(f'K : {K}, {sum(x * h)}')
         for i in range(self.ncomps):
             bvisc_prime += K[i] * x[i] * h[i]
         bvisc_prime *= 2 * Boltzmann * T
@@ -790,10 +788,10 @@ class py_KineticGas:
         if self.is_idealgas is False:
             for i in range(self.ncomps):
                 for j in range(self.ncomps):
-                    bvisc_dblprime += x[i] * x[j] * cd[i][j]**4 * rdf[i][j] * np.sqrt(self.m[i] * self.m[j] / (self.m[i] + self.m[j]))
+                    bvisc_dblprime += x[i] * x[j] * mtl[i][j]**4 * rdf[i][j] * np.sqrt(self.m[i] * self.m[j] / (self.m[i] + self.m[j]))
             bvisc_dblprime *= particle_density**2 * 4 * np.sqrt(2 * np.pi * Boltzmann * T) / 9
 
-        print(f'Contributions : {bvisc_prime}, {bvisc_dblprime}')
+        # print(f'Contributions : {bvisc_prime}, {bvisc_dblprime}')
         return bvisc_prime + bvisc_dblprime
 
     def conductivity_matrix(self, T, Vm, x, N=2, formulation='T-psi', frame_of_reference='CoM', use_thermal_conductivity=None):
