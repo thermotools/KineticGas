@@ -4,13 +4,11 @@
 #include "QuantumMie.h"
 #include "HardSphere.h"
 #include "PseudoHardSphere.h"
-#include "Sutherland.h"
-#include "ExtendedSutherland.h"
 #include "ModTangToennis.h"
-#include "AxilrodTeller.h"
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 #include "pybind11/operators.h"
+#include "pybind11/eigen.h"
 #include <sstream>
 
 namespace py = pybind11;
@@ -18,32 +16,52 @@ using vector1d = std::vector<double>;
 using vector2d = std::vector<vector1d>;
 
 #define KineticGas_bindings(Model) \
+        .def("viscosity", &Model::viscosity) \
+        .def("viscosity_tp", &Model::viscosity_tp) \
+        .def("kinematic_viscosity", &Model::kinematic_viscosity) \
+        .def("kinematic_viscosity_tp", &Model::kinematic_viscosity_tp) \
+        .def("thermal_conductivity", &Model::thermal_conductivity) \
+        .def("thermal_conductivity_contributions", &Model::thermal_conductivity_contributions) \
+        .def("thermal_conductivity_tp", &Model::thermal_conductivity_tp) \
+        .def("thermal_diffusivity", &Model::thermal_diffusivity) \
+        .def("thermal_diffusivity_tp", &Model::thermal_diffusivity_tp) \
+        .def("soret_coefficient", &Model::soret_coefficient) \
+        .def("soret_coefficient_tp", &Model::soret_coefficient_tp) \
+        .def("interdiffusion", &Model::interdiffusion) \
+        .def("interdiffusion_tp", &Model::interdiffusion_tp) \
+        .def("thermal_diffusion_ratio", &Model::thermal_diffusion_ratio) \
+        .def("thermal_diffusion_coeff", &Model::thermal_diffusion_coeff) \
+        .def("thermal_diffusion_factor", &Model::thermal_diffusion_factor) \
+        .def("get_mtl", &Model::get_mtl) \
+        .def("get_etl", &Model::get_etl) \
+        .def("get_rdf", &Model::get_rdf) \
+        .def("set_eos", py::overload_cast<py::object>(&Model::set_eos)) \
+        .def("frame_of_reference_map", &Model::frame_of_reference_map) \
+        .def("get_reducing_units", &Model::get_reducing_units) \
+        \
+        .def("set_tl_model", &Model::set_transfer_length_model) \
+        .def("get_tl_model", &Model::get_transfer_length_model) \
+        .def("get_valid_tl_models", &Model::get_valid_transfer_length_models) \
+        \
         .def("get_conductivity_vector", &Model::get_conductivity_vector) \
         .def("get_diffusion_vector", &Model::get_diffusion_vector) \
         .def("get_diffusion_matrix", &Model::get_diffusion_matrix) \
         .def("get_conductivity_matrix", &Model::get_conductivity_matrix) \
         .def("get_viscosity_matrix", &Model::get_viscosity_matrix)\
         .def("get_viscosity_vector", &Model::get_viscosity_vector)\
-        .def("get_mtl", &Model::get_mtl) \
-        .def("get_etl", &Model::get_etl) \
-        .def("get_rdf", &Model::get_rdf) \
+        .def("get_bulk_viscosity_matrix", &Model::get_bulk_viscosity_matrix)\
+        .def("get_bulk_viscosity_vector", &Model::get_bulk_viscosity_vector)\
         .def("get_K_factors", &Model::get_K_factors) \
         .def("get_K_prime_factors", &Model::get_K_prime_factors) \
-        .def("set_eos", &Model::set_eos) \
+        .def("get_chemical_potential_factors", &Model::get_chemical_potential_factors) \
+        .def("get_ksi_factors", &Model::get_ksi_factors)
         \
-        .def("thermal_conductivity", &Model::thermal_conductivity) \
-        .def("thermal_conductivity_tp", &Model::thermal_conductivity_tp) \
-
-
+        
 #define Spherical_potential_bindings(Model) \
         .def("potential", py::overload_cast<int, int, double>(&Model::potential)) \
         .def("potential_derivative_r", &Model::potential_derivative_r) \
         .def("potential_dblderivative_rr", &Model::potential_dblderivative_rr) \
-
-#define Spherical_bindings(Model) \
-       .def("set_tl_model", &Model::set_transfer_length_model) \
-       .def("get_tl_model", &Model::get_transfer_length_model)
-
+        .def("get_reducing_units", &Model::get_reducing_units) \
 
 PYBIND11_MODULE(libpykingas, handle){
     handle.doc() = "Is this documentation? This is documentation.";
@@ -72,21 +90,24 @@ PYBIND11_MODULE(libpykingas, handle){
             strm << "ij = " << p.i << p.j << ", l = " << p.l << ", r = " << p.r << " T = " << p.T_dK << " dK";
             return strm.str();
         });
-
-    py::class_<Sutherland>(handle, "cpp_Sutherland")
-        .def(py::init<vector1d, vector2d, vector2d, vector3d, vector3d, bool, bool>())
-        KineticGas_bindings(Sutherland)
-        Spherical_potential_bindings(Sutherland)
-        Spherical_bindings(Sutherland)
-        .def("set_active_LJ_rdf", &Sutherland::set_active_LJ_rdf)
-        .def("get_sigma_eff", &Sutherland::get_sigma_eff)
-        .def("get_sigma_min", &Sutherland::get_sigma_min)
-        .def("get_epsilon_eff", &Sutherland::get_epsilon_eff)
-        .def("get_vdw_alpha", &Sutherland::get_vdw_alpha)
-        .def("get_BH_diameters", &Sutherland::get_BH_diameters)
-        .def("rdf_g0", py::overload_cast<double, double, const vector1d&>(&Sutherland::rdf_g0_func))
-        .def("rdf_g1", py::overload_cast<double, double, const vector1d&>(&Sutherland::rdf_g1_func))
-        .def("rdf_g2", py::overload_cast<double, double, const vector1d&, bool>(&Sutherland::rdf_g2_func))
+    
+    py::class_<Units>(handle, "cppUnits")
+        .def(py::init<double, double, double>())
+        .def_readonly("T", &Units::T)           // Temperature (K)
+        .def_readonly("L", &Units::L)           // Length (m)
+        .def_readonly("m", &Units::m)           // Mass (kg)
+        .def_readonly("E", &Units::E)           // Energy (J)
+        .def_readonly("V", &Units::V)           // Volume (m3)
+        .def_readonly("t", &Units::t)           // Time (s)
+        .def_readonly("F", &Units::F)           // Force (N)
+        .def_readonly("speed", &Units::speed)   // Speed (m / s)
+        .def_readonly("rho", &Units::rho)       // Density (mol / m3)
+        .def_readonly("D", &Units::D)           // Diffusion (m^2 / s)
+        .def_readonly("p", &Units::p)           // Pressure (Pa)
+        .def_readonly("visc", &Units::visc)     // Shear viscosity (Pa s)
+        .def_readonly("kvisc", &Units::kvisc)   // Kinematic viscosity (m^2 / s)
+        .def_readonly("tdiff", &Units::tdiff)   // Thermal diffusivity (m^2 / s)
+        .def_readonly("tcond", &Units::tcond)   // Thermal conductivity
         ;
     
     py::class_<ExtSutherland>(handle, "cpp_ExtSutherland")
@@ -94,8 +115,6 @@ PYBIND11_MODULE(libpykingas, handle){
                         vector3d, vector3d, vector3d, vector3d,
                         bool, bool>())
         KineticGas_bindings(ExtSutherland)
-        // Spherical_potential_bindings(ExtSutherland)
-        Spherical_bindings(ExtSutherland)
         .def("saft_rdf", &ExtSutherland::saft_rdf)
         .def("get_rdf_terms", &ExtSutherland::get_rdf_terms)
         .def("get_sigma_eff", &ExtSutherland::get_sigma_eff)
@@ -118,7 +137,6 @@ PYBIND11_MODULE(libpykingas, handle){
         .def(py::init<std::string, bool>())
         KineticGas_bindings(MieKinGas)
         Spherical_potential_bindings(MieKinGas)
-        Spherical_bindings(MieKinGas)
         .def("get_BH_diameters", &MieKinGas::get_BH_diameters)
         .def("get_vdw_alpha", &MieKinGas::get_vdw_alpha)
         .def("saft_rdf", &MieKinGas::saft_rdf)
@@ -134,6 +152,11 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("a2", py::overload_cast<double, double, const vector1d&>(&MieKinGas::a2ij_func))
         .def("a2_div_chi", &MieKinGas::a2ij_div_chi_func)
         .def("da2_div_chi_drho", py::overload_cast<double, double, const vector1d&>(&MieKinGas::da2ij_div_chi_drho_func))
+
+        .def("chi", &MieKinGas::chi)
+        .def("get_R", &MieKinGas::get_R)
+        .def("theta_r", py::overload_cast<int, int, double, double, double, double>(&MieKinGas::theta_r))
+        .def("theta_r", py::overload_cast<int, int, double, double, double, double, double>(&MieKinGas::theta_r))
         ;
         // .def("da1_drho", py::overload_cast<double, double, const vector1d&>(&MieKinGas::da1ij_drho_func))
         // .def("da1s_drho", py::overload_cast<double, const vector1d&, const vector2d&, const vector2d&>(&MieKinGas::da1s_drho_func))
@@ -150,20 +173,9 @@ PYBIND11_MODULE(libpykingas, handle){
         // .def("gamma_corr", py::overload_cast<double, double, const vector1d&>(&MieKinGas::gamma_corr))
         // ;
 
-   py::class_<IntegrationParam>(handle, "IntegrationParam")
-        .def(py::init<vector1d, vector1d, double, double, int, int, double>())
-        .def("set_end", &IntegrationParam::set_end)
-        .def("set_dg", &IntegrationParam::set_dg)
-        .def("set_db", &IntegrationParam::set_db)
-        .def("set_rlg", &IntegrationParam::set_rlg)
-        .def("set_rlb", &IntegrationParam::set_rlb)
-        .def("set_dd_lim", &IntegrationParam::set_dd_lim)
-        ;
-
-   py::class_<QuantumMie>(handle, "cpp_QuantumMie")
+    py::class_<QuantumMie>(handle, "cpp_QuantumMie")
         .def(py::init<vector1d, vector2d, vector2d, vector2d, vector2d, std::vector<int>, bool, bool>())
         KineticGas_bindings(QuantumMie)
-        Spherical_bindings(QuantumMie)
         // .def("potential", py::overload_cast<int, int, double, double>(&QuantumMie::potential))
         // .def("potential_derivative_r", py::overload_cast<int, int, double, double>(&QuantumMie::potential_derivative_r))
         // .def("potential_dblderivative_rr", py::overload_cast<int, int, double, double>(&QuantumMie::potential_dblderivative_rr))
@@ -173,6 +185,16 @@ PYBIND11_MODULE(libpykingas, handle){
         // .def("get_BH_diameters", &QuantumMie::get_BH_diameters)
         .def("saft_rdf", &QuantumMie::saft_rdf)
         .def("get_rdf_terms", &QuantumMie::get_rdf_terms)
+        ;
+
+   py::class_<IntegrationParam>(handle, "IntegrationParam")
+        .def(py::init<vector1d, vector1d, double, double, int, int, double>())
+        .def("set_end", &IntegrationParam::set_end)
+        .def("set_dg", &IntegrationParam::set_dg)
+        .def("set_db", &IntegrationParam::set_db)
+        .def("set_rlg", &IntegrationParam::set_rlg)
+        .def("set_rlb", &IntegrationParam::set_rlb)
+        .def("set_dd_lim", &IntegrationParam::set_dd_lim)
         ;
 
     py::class_<TangToennisParam>(handle, "cpp_TangToennisParam")
@@ -205,32 +227,12 @@ PYBIND11_MODULE(libpykingas, handle){
         ;
 
     py::class_<ModTangToennis>(handle, "cpp_ModTangToennis")
-        .def(py::init<TangToennisParam,
-                        vector1d,
-                        vector2d,
-                        bool>()
-             )
+        .def(py::init<TangToennisParam, vector1d, bool>())
         KineticGas_bindings(ModTangToennis)
         .def("potential", py::overload_cast<int, int, double>(&ModTangToennis::potential))
         .def("potential_r", &ModTangToennis::potential_derivative_r)
         .def("potential_rr", &ModTangToennis::potential_dblderivative_rr)
         .def("set_tl_model", &ModTangToennis::set_transfer_length_model)
-        ;
-
-    py::class_<AT_TangToennies>(handle, "cpp_AT_TangToennies")
-        .def(py::init<std::string, bool, std::string>())
-        KineticGas_bindings(AT_TangToennies)
-        Spherical_bindings(AT_TangToennies)
-        .def("get_param", &AT_TangToennies::get_param)
-        .def("potential", py::overload_cast<int, int, double, double>(&AT_TangToennies::potential))
-        .def("potential_r", py::overload_cast<int, int, double, double>(&AT_TangToennies::potential_derivative_r))
-        .def("potential_rr", py::overload_cast<int, int, double, double>(&AT_TangToennies::potential_dblderivative_rr))
-        .def("get_sigma_eff", &AT_TangToennies::get_sigma_eff)
-        .def("get_rmin", &AT_TangToennies::get_rmin)
-        .def("get_epsilon_eff", &AT_TangToennies::get_epsilon_eff)
-        .def("get_dBH", &AT_TangToennies::get_dBH)
-        .def("get_vdw_alpha", &AT_TangToennies::get_vdw_alpha)
-        .def("get_vdw_alpha_eff", &AT_TangToennies::get_vdw_alpha_eff)
         ;
 
     py::class_<HardSphere>(handle, "cpp_HardSphere")
@@ -253,5 +255,5 @@ PYBIND11_MODULE(libpykingas, handle){
                     >()
             )
         KineticGas_bindings(PseudoHardSphere)
-        Spherical_bindings(PseudoHardSphere);
+        ;
 }

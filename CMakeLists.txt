@@ -5,8 +5,16 @@ project(KineticGas LANGUAGES C CXX)
 string(ASCII 27 Esc)
 set(ColorDefault "${Esc}[0m")
 set(ColorBlue "${Esc}[34m")
-set(ColorYellow "${Esc}[33m")
+set(ColorYellow "${Esc}[93m")
 set(ColorRed "${Esc}[31m")
+set(ColorDefault "${Esc}[0m")
+
+option(build "Recompile KineticGas?" ON) # If set to off, assumes that KineticGas is installed and does nothing. Useful in combination with pip
+if(NOT build)
+  message(STATUS "Assuming KineticGas is already built and installed. Exiting ...")
+  message(STATUS "${ColorBlue}To disable this behaviour, clear the CMakeCache and re-run cmake.${ColorDefault}")
+  return()
+endif()
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "No build type specified, defaulting to Release")
@@ -21,7 +29,7 @@ set(Python_FIND_VIRTUALENV ONLY)
 if(NOT MSVC)
   set(CMAKE_CXX_FLAGS "-Wfatal-errors -Wall -Wextra -Wno-unknown-pragmas -Wno-unused-parameter -Wno-sign-compare -pthread")
   set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wno-unused-parameter")
-  set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -D_GLIBCXX_DEBUG -Wno-unused-parameter -Wno-unused-const-variable")
+  set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -DDEBUG -Wno-unused-parameter -Wno-unused-const-variable")
 endif(NOT MSVC)
 
 list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cpp/external)
@@ -36,18 +44,29 @@ file(GLOB COMMON_SRC ${SRC_DIR}/*.cpp)
 list(REMOVE_ITEM COMMON_SRC ${SRC_DIR}/bindings.cpp ${SRC_DIR}/run_kineticgas.cpp)
 list(APPEND COMMON_SRC ${SRC_DIR}/Integration/Integration.cpp)
 
-if (NOT THERMOPACK_DIR)
+if (DEFINED ENV{THERMOPACK_DIR})
+  set(THERMOPACK_DIR $ENV{THERMOPACK_DIR})
+  message(STATUS "Searching for thermopack in THERMOPACK_DIR: $ENV{THERMOPACK_DIR}")
+else()
+  message(STATUS "THERMOPACK_DIR is not defined!")
   set(THERMOPACK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cpp/external/thermopack)
-endif()
-find_package(thermopack REQUIRED)
-if(NOT THERMOPACK_INSTALLED)
-  message("${ColorRed}ThermoPack was found, but is not installed. Resorting to building ThermoPack from source. If you have installed ThermoPack, 
-          set the environment variable 'THERMOPACK_DIR=</path/to/thermopack>' to help cmake find your installation.")
-  add_subdirectory(${THERMOPACK_ROOT}) # We need to build thermopack, because it has not been installed.
+  message(STATUS "Setting THERMOPACK_DIR: ${THERMOPACK_DIR}")
 endif()
 
-set(FLUID_DIR ${CMAKE_CURRENT_SOURCE_DIR}/fluids CACHE STRING "Default search path for fluid files")
-message(STATUS "Default search path for fluid files : ${FLUID_DIR}")
+find_package(THERMOPACK REQUIRED)
+if(NOT THERMOPACK_INSTALLED)
+  message(STATUS "${ColorRed}ThermoPack was found, but is not installed. If you have installed ThermoPack, 
+set the environment variable 'THERMOPACK_DIR=</path/to/thermopack>' to help cmake find your installation.${ColorDefault}")
+  message(STATUS "${ColorBlue}Target 'thermopack' created from the files found at ${THERMOPACK_ROOT}.${ColorDefault}")
+  message(STATUS "${ColorBlue}Try Running `make install` to build and install thermopack, before re-running `cmake .. && make install` to build KineticGas.${ColorDefault}")
+  add_subdirectory(${THERMOPACK_ROOT}) # We need to build thermopack, because it has not been installed.
+  return() # Hoping that thermopack target has been created by thermopack, exiting ...
+endif()
+
+if(NOT DEFINED(FLUID_DIR))
+  set(FLUID_DIR "../fluids" CACHE STRING "Default search path for fluid files")
+endif()
+message(STATUS "Default search path for fluid files (relative to dynamic library): ${FLUID_DIR}")
 
 option(purecpp "Build pure cpp lib" OFF)
 if (purecpp)
@@ -70,14 +89,23 @@ option(pylib "Build library for pykingas" ON)
 if (pylib)
   message(STATUS "${ColorBlue}Generating libpykingas target. Run `cmake -Dpylib=OFF ..` to skip this target (you will need to clear the CMakeCache first).${ColorDefault}")
   set(pyTARGET libpykingas)
+  set(pykingas_path ${CMAKE_CURRENT_SOURCE_DIR}/pykingas)
   add_subdirectory(${PYBIND11_ROOT})
   pybind11_add_module(${pyTARGET} ${COMMON_SRC} ${SRC_DIR}/bindings.cpp)
+
+  if(NOT MSVC)
+    set_target_properties(${pyTARGET} PROPERTIES 
+                          INSTALL_RPATH ${THERMOPACK_ROOT}/installed
+                          INSTALL_RPATH_USE_LINK_PATH TRUE)
+  endif()
+
+  set(pyFLUID_DIR "./fluids" CACHE STRING "Default search path for fluid files (pykingas)")
+  message(STATUS "pykingas search path for fluids (relative to pykingas directory): ${pyFLUID_DIR}")
+
   target_include_directories(${pyTARGET} PUBLIC ${JSON_INCLUDE} ${EIGEN_INCLUDE} ${AUTODIFF_INCLUDE})
   target_link_libraries(${pyTARGET} PRIVATE thermopack)
-  target_compile_definitions(${pyTARGET} PUBLIC "-DPYLIB -DFLUID_DIR=${FLUID_DIR}")
+  target_compile_definitions(${pyTARGET} PUBLIC "-DPYLIB -DFLUID_DIR=${pyFLUID_DIR}")
 
-  install(TARGETS ${pyTARGET} DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/pykingas)
-  file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/fluids DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/pykingas/)
-else()
-  message(STATUS "${ColorYellow}Not generating libpykingas target. Run `cmake [-Dpylib=ON] ..` to generate this targets (you will need to clear the CMakeCache first).${ColorDefault}")
+  install(TARGETS ${pyTARGET} DESTINATION ${pykingas_path})
+  file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/fluids DESTINATION ${pykingas_path})
 endif()

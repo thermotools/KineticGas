@@ -21,9 +21,9 @@ def test_diffusion(model, N, FoR, silent=True):
         D12_lst[i] = kin.interdiffusion(T, Vm, x, N=N, frame_of_reference=FoR, dependent_idx=i, solvent_idx=i,
                                         use_independent=True, use_binary=True)
 
-    assert check_eq_lst(D12_lst)
     if silent is False:
         report(check_eq_lst(D12_lst), [model, N, FoR, D12_lst])
+    assert check_eq_lst(D12_lst)
 
 @pytest.mark.parametrize('model', models)
 @pytest.mark.parametrize('N', [2, 3])
@@ -64,9 +64,10 @@ def test_conductivity(model, N, silent=True):
         kin = model(comps.get_comps(i))
         cond_lst[i] = kin.thermal_conductivity(T, Vm, x, N=N)
 
-    assert check_eq_lst(cond_lst)
+    print(cond_lst)
     if silent is False:
         report(check_eq_lst(cond_lst), [model, N, cond_lst])
+    assert check_eq_lst(cond_lst)
 
 @pytest.mark.parametrize('model', models)
 @pytest.mark.parametrize('N', [2, 3])
@@ -102,9 +103,9 @@ def test_thermal_diffusion_factor(model, N, silent=True):
         kin = model(comps.get_comps(i))
         alpha_lst[i] = kin.thermal_diffusion_factor(T, Vm, x, N=N)[i][1 - i]
 
-    assert check_eq_lst(alpha_lst)
     if silent is False:
         report(check_eq_lst(alpha_lst), [model, N, alpha_lst])
+    assert check_eq_lst(alpha_lst)
 
 @pytest.mark.parametrize('model', models)
 @pytest.mark.parametrize('N', [2, 3])
@@ -120,9 +121,9 @@ def test_th_diffusion_ratio(model, N, silent=True):
         kin = model(comps.get_comps(i))
         kT_lst[i] = comps.rollback_lst(kin.thermal_diffusion_ratio(T, Vm, x, N=N), i)
 
-    assert check_eq_arr(kT_lst[0], kT_lst[1])
     if silent is False:
         report(check_eq_lst(kT_lst), [model, N, kT_lst])
+    assert check_eq_arr(kT_lst[0], kT_lst[1])
 
 @pytest.mark.parametrize('model', models)
 @pytest.mark.parametrize('N', [2, 3])
@@ -143,4 +144,8 @@ def _test_soret(model, N, silent=True):
         report(check_eq_lst(ST_lst), [model, N, ST_lst])
 
 if __name__ == '__main__':
-    test_diffusion(models[0], 2, 'CoN', silent=False)
+    print(models)
+    for model in models:
+        for N in (2, 3):
+            print(model, N)
+            test_conductivity(model, N, silent=False)

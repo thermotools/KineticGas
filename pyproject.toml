@@ -32,9 +32,12 @@ classifiers = [
 ]
 dependencies = ["numpy~=1.22", 
                 "scipy~=1.7", 
-                "thermopack~=2.3"]
+                "thermopack~=2.2"]
+
+[project.optional-dependencies]
+test = ["pytest", "matplotlib", "pandas"]
 
 [tool.cibuildwheel]
 test-command = "pytest {project}/tests"
-test-requires = ["pytest", "matplotlib"]
+test-requires = ["pytest", "matplotlib", "pandas"]
 build-verbosity = 2

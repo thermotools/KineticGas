@@ -2,11 +2,11 @@
 layout: default
 version: 
 title: Methods in the MieKinGas class
-permalink: /vcurrent/MieKinGas_methods.html
+permalink: /vcurrent/miekingas_methods.html
 ---
 
 <!--- 
-Generated at: 2024-07-27T01:07:10.512275
+Generated at: 2024-10-16T17:34:53.825106
 This is an auto-generated file, generated using the script at KineticGas/pyUtils/markdown_from_docstrings.py
 The file is created by parsing the docstrings of the methods in the 
 MieKinGas class. For instructions on how to use the parser routines, see the
@@ -19,6 +19,7 @@ RET-Mie Model. This class implements utility methods to access mixing parameters
   * [Constructor](#constructor)
     * [\_\_init\_\_](#__init__self-comps-mole_weightsnone-sigmanone-eps_div_knone-lanone-lrnone-lij0-kij0-n4-is_idealgasfalse-use_eosnone-parameter_refdefault-use_default_eos_paramnone)
   * [Utility methods](#utility-methods)
+    * [get_vdw_alpha](#get_vdw_alphaself)
     * [set_eps_div_k](#set_eps_div_kself-eps_div_k-update_eostrue)
     * [set_la](#set_laself-la-update_eostrue)
     * [set_lr](#set_lrself-lr-update_eostrue)
@@ -85,11 +86,25 @@ Set- and get methods for interaction parameters, mixing parameters ...
 
 ### Table of contents
   * [Utility methods](#utility-methods)
+    * [get_vdw_alpha](#get_vdw_alphaself)
     * [set_eps_div_k](#set_eps_div_kself-eps_div_k-update_eostrue)
     * [set_la](#set_laself-la-update_eostrue)
     * [set_lr](#set_lrself-lr-update_eostrue)
     * [set_sigma](#set_sigmaself-sigma-update_eostrue)
 
+
+### `get_vdw_alpha(self)`
+Compute potential $\alpha_{vdw}$ parameter, defined as
+
+$$ \alpha_{vdw} = 2 \pi \int_{\sigma}^{\infty} \phi(r) r^2 dr $$
+
+ 
+
+#### Returns:
+
+&nbsp;&nbsp;&nbsp;&nbsp; **float :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  $\alpha_{vdw}$ of first component. 
 
 ### `set_eps_div_k(self, eps_div_k, update_eos=True)`
 See MieType

@@ -10,6 +10,8 @@ Similarly, diffusion matrices are superscripted with $(x)$ and $(w)$ to denote t
 
 The notation $D_{T,i}^{(z,tj)}$ denotes the thermal diffusion coefficient of species $i$ in a ternary mixture with species $j$ taken to be the dependent species, as defined in ref. \cite{ortiz2019definition} while $D_{T,i}^{(z,bj)}$ denotes the thermal diffusion coefficient of species $i$ in a binary mixture, with species $j$ taken to be the dependent species.
 
+Boldface roman font ($\Vec{v}$) is used to indicate vectors, and slanted underlined boldface figures ($\Mat{D}$) are used to indicate matrices. The notation $\nabla \Vec{v}$, should be understood not as a dot product, but as a vector of gradients (i.e. $\nabla \Vec{v} \equiv (\nabla v_1, \nabla v_2, ...)^\top$, in which case the equations should be understood to hold componentwise for these gradients.
+
 \subsection{Definitions of the thermal diffusion coefficient}
 
 The default definition of the thermal diffusion coefficient in a multicomponent mixture in the KineticGas package is
@@ -62,7 +64,7 @@ The superscripts $(x)$ and $(w)$ indicate diffusion matrices that apply in the c
 where $D_{T,1}^{(z,t)}$ is the thermal diffusion coefficient of species 1 in a ternary mixture, and $D_{T,1}^{(z,b3)}$ is the thermal diffusion coefficient of species 1 in a binary mixture with species 3, both as defined by Eq. \eqref{eq:zarate_def}.
 that is: For a ternary system (1, 2, 3), when the mole fraction of species 2 tends to zero, the thermal diffusion coefficient of species 1 approaches the thermal diffusion coefficient of species 1 in the binary mixture (1, 3). This relation follows from an argument analogous to that in section \ref{sec:diff_indep}.
 
-We can relate the thermal diffusion coefficients $\Vec{D}_T^{(n)}$ to the $\Vec{D}_T^{(z)}$, by rewriting Eq. \eqref{eq:DTn_def} as 
+For an ideal gas can relate the thermal diffusion coefficients $\Vec{D}_T^{(n)}$ to the $\Vec{D}_T^{(z)}$, by rewriting Eq. \eqref{eq:DTn_def} as 
 \begin{equation}
     \begin{split}
         \Vec{J}^{(n, n)} &= - \Mat{D}^{(n)} ( c \nabla \Vec{x} + \Vec{x} \nabla c) + \Vec{D}_T^{(n)} \nabla \ln T \\
@@ -72,11 +74,31 @@ We can relate the thermal diffusion coefficients $\Vec{D}_T^{(n)}$ to the $\Vec{
 \end{equation}
 such that $\Vec{D}_T^{(z)}$ is given by the solution to
 \begin{equation}
-    - c \Mat{X} \Vec{D}_T^{(z)} = \frac{1}{T} \left( \Vec{D}_T^{(n)} + c \Mat{D}^{(n)}\Vec{x}\right).
+    - c \Mat{X} \Vec{D}_T^{(z)} = \frac{1}{T} \left( \Vec{D}_T^{(n)} + c \Mat{D}^{(n)}\Vec{x}\right), \quad \text{Ideal gas}
     \label{eq:DTz_DTn_relate}
 \end{equation}
+where we have made use of $\nabla c = c \nabla \ln T$ for an ideal gas. For a non-ideal gas the corresponding expression is
+\begin{equation}
+    \begin{split}
+        \Vec{J}^{(n, n)} &= - \Mat{D}^{(n)} \left[\ppder{\vec{c}}{T}_{\vec{x}, p} \nabla T + \Mat{\Gamma}_c \nabla \vec{x}\right] + \frac{1}{T}\Vec{D}_T^{(n)} \nabla T \\
+        &= - \Mat{D}^{(n)} \Mat{\Gamma}_c \nabla \vec{x} + \left[\frac{1}{T}\Vec{D}_T^{(n)} - \Mat{D}^{(n)} \ppder{\vec{c}}{T}_{\vec{x}, p}\right] \nabla T,
+    \end{split}
+\end{equation}
+where 
+\begin{equation}
+    \left[\Mat{\Gamma}_c\right]_{ij} = \ppder{c_i}{x_j}_{T, p, x_{k \neq j}},
+\end{equation}
+and it can be useful to note that 
+\begin{equation}
+    \begin{split}
+        c_i &= \frac{x_i}{v} \implies \\
+        \ppder{c_i}{T}_{p, \vec{x}} &= - \frac{x_i}{v^2} \ppder{v}{T}_{p, \vec{x}}, \\
+        \ppder{c_i}{x_j}_{T, p, x_{k \neq j}} &= \frac{\delta_{ij}}{v} - \frac{c_i v_j}{v},
+    \end{split}
+\end{equation}
+and to keep in mind that these matrices and vectors are in $\mathbb{R}^{s - 1}$, because the dependent component is excluded. \textbf{Note:} At the time of writing, the expressions for non-ideal gas have not been implemented.
 
-By the same manipulation, and noting that we can write $\nabla \vec{x} = \Mat{T}^{x \leftmapsto w} \nabla \Vec{w}$, we can rewrite equation $\eqref{eq:Dtm_def}$ as 
+Returning to an ideal gas, using $\nabla c = c \nabla \ln T$, and noting that we can write $\nabla \vec{x} = \Mat{T}^{x \leftmapsto w} \nabla \Vec{w}$, we can rewrite equation $\eqref{eq:Dtm_def}$ as 
 \begin{equation}
     \begin{split}
         \Vec{J}^{(n, m)} &= - \Mat{D}^{(m)} \nabla \Vec{c} + \Vec{D}_T^{(m)} \nabla \ln T \\
@@ -96,24 +118,30 @@ Together, Eqs. \eqref{eq:DTz_DTn_relate} and \eqref{eq:DTz_DTm_relate} allow for
     \begin{split}
         \frac{1}{c} \Mat{X}^{-1}\left( \Vec{D}_T^{(n)} + c \Mat{D}^{(n)}\Vec{x}\right) &= \frac{1}{\rho} \Mat{W}^{-1} \diag(\Vec{M}) \left( \Vec{D}_T^{(m)} + c \Mat{D}^{(m)}\Vec{x}\right) \\
         &= \frac{1}{\rho} \Mat{W}^{-1} \diag(\Vec{M}) \Mat{\Psi}^{m \leftmapsto n} \left( \Vec{D}_T^{(n)} + c \Mat{D}^{(n)}\Vec{x}\right) \\
-        \frac{1}{c} \Mat{X}^{-1} \Mat{\Psi}^{n \leftmapsto m} \left( \Vec{D}_T^{(m)} + c \Mat{D}^{(m)}\Vec{x}\right) &= \frac{1}{\rho} \Mat{W}^{-1} \diag(\Vec{M}) \left( \Vec{D}_T^{(m)} + c \Mat{D}^{(m)}\Vec{x}\right)
+        \Mat{I} &= \frac{c}{\rho} \Mat{X} \Mat{W}^{-1} \diag(\Vec{M}) \Mat{\Psi}^{m \leftmapsto n}, \quad \text{and} \\
+        \frac{1}{c} \Mat{X}^{-1} \Mat{\Psi}^{n \leftmapsto m} \left( \Vec{D}_T^{(m)} + c \Mat{D}^{(m)}\Vec{x}\right) &= \frac{1}{\rho} \Mat{W}^{-1} \diag(\Vec{M}) \left( \Vec{D}_T^{(m)} + c \Mat{D}^{(m)}\Vec{x}\right) \\
+        \frac{\rho}{c} \diag(\Vec{M}^{-1}) \Mat{W} \Mat{X}^{-1} \Mat{\Psi}^{n \leftmapsto m} &= \Mat{I}
     \end{split}
 \end{equation}
 
-As a second side-effect of this procedure, we can relate the diffusion matrices, as defined by Eqs. \eqref{eq:zarate_def} to $\Mat{D}^{(m)}$ and $\Mat{D}^{(n)}$ as
+As a second side-effect of this procedure, we can relate the diffusion matrices (for an ideal gas), as defined by Eqs. \eqref{eq:zarate_def} to $\Mat{D}^{(m)}$ and $\Mat{D}^{(n)}$ as
 \begin{equation}
     \begin{split}
         \Mat{D}^{(x)} &= \Mat{D}^{(n)} \\
         \Mat{D}^{(w)} &= \frac{c}{\rho} \diag(\Vec{M}) \Mat{D}^{(m)} \Mat{T}^{x \leftmapsto w}
     \end{split}
+    \label{eq:zarate_D_impl}
 \end{equation}
 and remark that Ortiz de Zárate gives the relation
 \begin{equation}
-    \Mat{W}^{-1} \Mat{D}^{(w)} \Mat{W} = \Mat{X}^{-1} \Mat{D}^{(x)} \Mat{X},
+    \Mat{W}^{-1} \Mat{D}^{(w)} \Mat{W} = \Mat{X}^{-1} \Mat{D}^{(x)} \Mat{X} \equiv \Mat{D}^{(z)},
+    \label{eq:zarate_D_equiv}
 \end{equation}
 which can serve as a second consistency check.
 
-All the consistency checks mentioned above have been carried out numerically and been found to pass.
+All the consistency checks mentioned above have been carried out numerically and been found to pass. 
+
+In light of Eq. \eqref{eq:zarate_D_impl}, the simplest way to implement these diffusion matrices is likely to implement $\Mat{D}^{(n)}$, and to compute $\Mat{D}^{(w)}$ and $\Mat{D}^{(z)}$ using the relations in Eq. \eqref{eq:zarate_D_equiv}. This is the approach taken in the KineticGas package.
 
 \subsubsection{The binary case}
 

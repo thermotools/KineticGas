@@ -14,22 +14,25 @@ Usage:
 
     etc.
 """
-from scipy.constants import Boltzmann, Avogadro
-import numpy as np
+from .libpykingas import cppUnits
 
 class Units:
+    # Dummy class used for type hinting
     def __init__(self, m_unit, L_unit, T_unit):
-        self.T = T_unit
-        self.E = self.T * Boltzmann
-        self.L = L_unit
-        self.m = m_unit
-        self.V = self.L ** 3
-        self._time_unit = np.sqrt(self.m * self.L ** 2 / self.E)
-        self.t = self._time_unit
-        self.F = self.E / self.L
-        self.speed = self.L / self._time_unit
-        self.rho = 1 / (Avogadro * self.V)
-        self.D = L_unit ** 2 / self._time_unit
-        self.p = self.E / self.V
-        self.visc = self.p * self._time_unit
-        self.tcond = self.E / (self._time_unit * self.T * self.L)
+        self.T, # Temperature (K)
+        self.E, # Energy (J)
+        self.L, # Length (m)
+        self.m, # Mass (kg)
+        self.V, # Volume (m3)
+        self.t, # Time (s)
+        self.F, # Force (N)
+        self.speed, # Speed (m / s)
+        self.rho, # Density (mol / m3)
+        self.D, # Diffusion (m2 / s)
+        self.p, # Pressure (Pa)
+        self.visc, # Shear viscosity (Pa s)
+        self.kvisc, # Kinematic viscosity (m2 / s)
+        self.tdiff, # Thermal diffusivity (m2 / s)
+        self.tcond = [0 for _ in range(15)] # Thermal conductivity (W / K m)
+
+Units = cppUnits

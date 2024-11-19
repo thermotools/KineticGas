@@ -5,10 +5,10 @@ Contains: Transfer length models (see: <unpublished> 2024).
             - Use get_mtl and get_etl to compute the transfer lengths you need.
             
             - These forward the call to get_transfer_length, which handles dispatch to the appropriate 
-              transfer length model: collision diameters, (old) or transfer lengths (new)
+              transfer length model.
                 - Use set_transfer_length_model to select the model beforehand.
 
-            - In the case of the (new) models, all methods used in the computation are the same, except for the
+            - In the case of the EWCA models, all methods used in the computation are the same, except for the
               function computing the weight, so the parameter "property", which should be one of the values in the 
               enum "transfer_lengths", is passed through the call chain until the weight is computed, and used in
               tl_weight_integrand to select the correct weight function.
@@ -45,9 +45,9 @@ vector2d Spherical::model_etl(double rho, double T, const vector1d& x){
 
 vector2d Spherical::get_transfer_length(double rho, double T, const vector1d& x, int property){
     switch (transfer_length_model_id) {
-        case 0:
+        case TransferLengthModel::collision_diameter:
             return get_collision_diameters(rho, T, x);
-        case 1: {
+        case TransferLengthModel::EWCA: {
             if (is_singlecomp){
                 double tl = tl_ewca(0, 0, T, property);
                 return vector2d(Ncomps, vector1d(Ncomps, tl));
@@ -72,7 +72,7 @@ vector2d Spherical::get_transfer_length(double rho, double T, const vector1d& x,
             }
             return tl;
         }
-        case 2: {
+        case TransferLengthModel::correlation: {
             switch (property){
             case transfer_lengths::MTL:
                 return MTL_correlation(rho, T);

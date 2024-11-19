@@ -5,6 +5,16 @@ title: Advanced usage
 permalink: /vcurrent/advanced.html
 ---
 
+* [Selecting transfer length models](#selecting-transfer-length-models)
+* [Modifying and adding fluids](#modifying-and-adding-fluids)
+* [Implementing new potentials](#implementing-new-potentials)
+
+## Selecting transfer length models
+
+For the computation of transfer lengths, several models can be used. All classes inheritting from `py_KineticGas` support the `get_valid_tl_models()` method,
+which returns a `dict` with key-description pairs indicating the available transfer length models. Use the methods `get_tl_model()` and `set_tl_model(key)`
+to see the active transfer length model, and to select another model.
+
 ## Modifying and adding fluids
 
 All fluid parameters are accessed via the `.json` files in the `pykingas/fluids` directory. The structure of the files in the `pykingas/fluids` directory is
@@ -45,6 +55,20 @@ The currently supported `"<Potential identifier>"`'s are `"Mie"` (for RET-Mie) a
 Other than the potential parameters, only the `"mol_weight"` field is strictly required. Filling in the other fields is recommended for consistency with existing code, in case it at some point becomes desirable to use them.
 
 The identifier used for a fluid in `KineticGas` is equivalent to the name of the corresponding `<name>.json` file.
+
+## Managing fluid file search path (only for C++)
+
+By default, `KineticGas` will search for fluid files at the relative path `../fluids` (relative to the location of the `libkineticgas` dynamic library). This default search path can be changed by building with 
+```bash
+cmake -DFLUID_DIR=<path/to/fluids> ..
+```
+where supplying a relative path will result in the library searching for fluid files in the path relative to it's location (`KineticGas/lib`). Supplying absolute paths is also supported. To check
+or change where your compiled `KineticGas` library is searching for fluid files, use the `[get/set]_fluid_dir` functions with signatures
+```C++
+// In utils.h
+void set_fluid_dir(const std::string path); // supports both absolute and relative paths (relative to dynamic library location).
+std::string get_fluid_dir(); // Current search path for fluid files
+```
 
 ## Implementing new potentials
 

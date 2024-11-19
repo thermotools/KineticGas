@@ -9,7 +9,6 @@ References:
 #pragma once
 #include "KineticGas.h"
 #include "Spherical.h"
-#include "Sutherland.h"
 #include <vector>
 
 using vector1d = std::vector<double>;
@@ -31,6 +30,13 @@ inline void throw_notimplemented(){
 }
 
 vector2d dual_to_double(const vector2d2& vin);
+
+struct RDFConstants{
+    double gl_x[20]; // Gauss Legendre points for computing barker henderson diamenter
+    double gl_w[20]; // Gauss Legendre points for computing barker henderson diamenter
+    double C_coeff_matr[4][4]; // See Eq. (A18) in svrm (https://doi.org/10.1063/1.4819786)
+    double phi[7][3]; // Table II in svrm (https://doi.org/10.1063/1.4819786)
+};
 
 class ExtSutherland : public Spherical{
 public:

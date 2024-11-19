@@ -7,8 +7,14 @@ See : J. Chem. Phys. 139, 154504 (2013); https://doi.org/10.1063/1.4819786
 #include "MieKinGas.h"
 #include <nlohmann/json.hpp>
 #include <cppThermopack/saftvrmie.h>
+#include <cppThermopack/ideal.h>
 
 using namespace mie_rdf_constants;
+
+MieKinGas::MieKinGas(vector1d mole_weights, vector2d sigma, vector2d eps, vector2d la, vector2d lr, bool is_idealgas, bool is_singlecomp) 
+        : Spherical(mole_weights, sigma, eps, is_idealgas, is_singlecomp), 
+        la{la}, lr{lr}
+        {set_C_alpha();};
 
 MieKinGas::MieKinGas(std::string comps, bool is_idealgas) 
     : Spherical(comps, is_idealgas)
@@ -28,7 +34,12 @@ MieKinGas::MieKinGas(std::string comps, bool is_idealgas)
     mix_exponents(la);
     mix_exponents(lr);
     set_C_alpha();
-    eos = std::make_unique<GenericEoS>(ThermoWrapper(Saftvrmie(comps)));
+    if (is_idealgas){
+        eos = std::make_unique<GenericEoS>(ThermoWrapper(Ideal(comps)));
+    }
+    else {
+        eos = std::make_unique<GenericEoS>(ThermoWrapper(Saftvrmie(comps)));
+    }
 }
 
 void MieKinGas::set_C_alpha(){
@@ -112,15 +123,28 @@ double MieKinGas::omega_recursive_factor(int i, int j, int l, int r, double T_st
     // See also: Hirchfelder, Curtiss & Bird, Molecular Theory of Gases and Liquids.
     // For reduced integrals : omega(l, r + 1) / omega(l, r) = 1 + (d omega(l, r) / d lnT^*) / (r + 2)
     if ((l > 2) || (r > 3)) {throw std::runtime_error("No recursive factor available!");}
-    double dlnomega_dlnT = - (2 / lr[i][j]);
+    else if (l == r){
+        double dlnomega_dT = - (2 / (lr[i][j] * T_star));
+        double a_m;
+        for (int n = 2; n < 7; n++){
+            a_m = omega_correlation_factors[l - 1][n - 1][0] + (omega_correlation_factors[l - 1][n - 1][1] / lr[i][j])
+                    + pow(lr[i][j], -2.) * (omega_correlation_factors[l - 1][n - 1][2]
+                                            + omega_correlation_factors[l - 1][n - 1][3] * log(lr[i][j]));
+            dlnomega_dT += (1 / (r + 2)) * a_m * pow(T_star, (-1. - n) / 2.) * (1. - n) / 2.;
+        }
+        return 1. + (dlnomega_dT * omega_correlation(i, j, l, r, T_star)) / (r + 2);
+    }
+
     double a_m;
+    double Cr{0.0};
     for (int n = 2; n < 7; n++){
         a_m = omega_correlation_factors[l - 1][n - 1][0] + (omega_correlation_factors[l - 1][n - 1][1] / lr[i][j])
-                + pow(lr[i][j], -2.) * (omega_correlation_factors[l - 1][n - 1][2]
+                + pow(lr[i][j], -2) * (omega_correlation_factors[l - 1][n - 1][2]
                                         + omega_correlation_factors[l - 1][n - 1][3] * log(lr[i][j]));
-        dlnomega_dlnT += a_m * pow(T_star, - (n - 1.) / 2.) * (1. - n) / 2.;
+        Cr += (1 / (r + 2)) * a_m * pow(T_star, (-3. - n) / 2.) * ((1. - n) / 2.) * ((-1. - n) / 2.);
     }
-    return 1. + dlnomega_dlnT / (r + 2);
+    double C11 = omega_recursive_factor(i, j, l, r - 1, T_star);
+    return 1 + (Cr / ((r + 2) * C11)) + (C11 - 1) * (r + 1) / (r + 2);
 }
 
 std::vector<std::vector<double>> MieKinGas::saft_rdf(double rho, double T, const std::vector<double>& x, int order, bool g2_correction){

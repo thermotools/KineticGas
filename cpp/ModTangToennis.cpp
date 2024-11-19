@@ -10,12 +10,13 @@ double partialfactorial(int start, int stop){
     return fac;
 }
 
-ModTangToennis::ModTangToennis(TangToennisParam param, vector1d mole_weights, vector2d sigma, bool is_idealgas)
-    : Spherical(mole_weights, sigma, is_idealgas, true), param{param}
+ModTangToennis::ModTangToennis(TangToennisParam param, vector1d mole_weights, bool is_idealgas)
+    : Spherical(mole_weights, 
+                vector2d(Ncomps, vector1d(Ncomps, param.sigma)), 
+                vector2d(Ncomps, vector1d(Ncomps, param.eps_div_k * BOLTZMANN)), 
+                is_idealgas, true), param{param}
 {
     if (!is_idealgas) throw std::runtime_error("Modified Tang-Toennis only implemented for ideal gas!");
-    sigma = vector2d(Ncomps, vector1d(Ncomps, param.sigma));
-    eps = vector2d(Ncomps, vector1d(Ncomps, param.eps_div_k * BOLTZMANN));
 }
 
 ModTangToennis::ModTangToennis(std::string comps, bool is_idealgas, std::string parameter_ref)

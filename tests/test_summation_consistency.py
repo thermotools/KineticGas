@@ -47,7 +47,7 @@ def test_diffusion(model, N, FoR, silent=True):
 
     kin = model(comps)
     zerosum_scale = {'CoN': np.ones(kin.ncomps), 'CoM': kin.mole_weights, 'solvent': np.array([0, 0, 1])}
-    D = kin.interdiffusion(T, Vm, x, N=N, frame_of_reference=FoR, solvent_idx=2)
+    D = kin.interdiffusion(T, Vm, x, N=N, frame_of_reference=FoR, solvent_idx=2, use_independent=False)
     for i in range(3):
         assert check_eq(sum(D[:, i] * zerosum_scale[FoR]) / max(abs(D.flatten())), 0.0)
     if silent is False:

@@ -6,8 +6,12 @@ jobs:
         name: Test on ${{ matrix.os }}
         runs-on: ${{ matrix.os }}
         strategy:
+            fail-fast: false
             matrix:
-                os: [macOS-latest, windows-latest]
+                os: [macOS-latest, macOS-12, ubuntu-latest, windows-latest]
+        env:
+          THERMOPACK_DIR: thermopack-${{ matrix.os }}
+          THERMOPACK_URL: https://github.com/vegardjervell/thermopack/releases/download/Latest-beta
         steps:
             - uses: actions/checkout@v4
             - name: checkout submodules
@@ -16,29 +20,66 @@ jobs:
             # Used to host cibuildwheel
             - uses: actions/setup-python@v4
         
-            - name: Install cibuildwheel and other dependencies
-              run: python -m pip install cibuildwheel==2.17.0 build wheel setuptools
-        
-            - name: Build sdist
-              run: pipx run build --sdist --outdir wheelhouse
-              if: runner.os == 'Windows'
-        
-            - name: Build wheels
-              uses: pypa/cibuildwheel@v2.19.1 # run: python -m cibuildwheel --output-dir wheelhouse
-              env:
-                CIBW_ARCHS: auto64
-                CIBW_ARCHS_MACOS: "x86_64"
-                CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET=11.0
-                CIBW_ENVIRONMENT_LINUX: CXXFLAGS='-fconcepts'
-                CIBW_BUILD_VERBOSITY_WINDOWS: 2
-                CIBW_BUILD: "*cp310*"
-              with:
-                package-dir: .
-                output-dir: "./wheelhouse"
-                config-file: "{package}/pyproject.toml"
-        
-            - name: Upload Wheels
-              uses: actions/upload-artifact@v4
-              with:
-                name: wheels-${{ matrix.os }}
-                path: ./wheelhouse/*.whl
+            - name: Install thermopack
+              if: matrix.os != 'windows-latest'
+              run: |
+                curl -L -o thermopack.zip ${{ env.THERMOPACK_URL }}/thermopack-${{ matrix.os }}.zip
+                unzip thermopack.zip
+                export THERMOPACK_DIR=${PWD}/thermopack-${{ matrix.os }}/
+                curl -L -o thermopack_whl.zip ${{ env.THERMOPACK_URL }}/wheel-v2-${{ matrix.os }}.zip
+                unzip thermopack_whl.zip
+                pip install wheel-v2-${{ matrix.os }}/*
+            
+            - name: Build KineticGas
+              if: matrix.os != 'windows-latest'
+              run: |
+                echo "THERMOPACK_DIR (GH_ENV) : ${{ env.THERMOPACK_DIR }} / (ENV) ${THERMOPACK_DIR}"
+                export THERMOPACK_DIR=${PWD}/${{ env.THERMOPACK_DIR }}
+                ls -R ${THERMOPACK_DIR}
+                mkdir build
+                cd build
+                cmake ..
+                make -j4 install
+
+            - name: Install thermopack Windows
+              if: matrix.os == 'windows-latest'
+              shell: pwsh
+              run: |
+                Invoke-WebRequest -Uri "${{ env.THERMOPACK_URL }}/wheel-v2-${{ matrix.os }}.zip" -OutFile "thermopack_whl.zip"
+                Expand-Archive -Path "thermopack_whl.zip" -DestinationPath "wheel-v2-${{ matrix.os }}"
+                cd wheel-v2-${{ matrix.os }}
+                pip install (Get-ChildItem wheel-v2-windows-latest\*.whl).FullName
+
+            - name: Build KineticGas Windows
+              if: matrix.os == 'windows-latest'
+              shell: pwsh
+              run: |
+                Invoke-WebRequest -Uri "${{ env.THERMOPACK_URL }}/thermopack-${{ matrix.os }}.zip" -OutFile "thermopack.zip"
+                Expand-Archive -Path "thermopack.zip" -DestinationPath "${{ env.THERMOPACK_DIR }}"
+                $THERMOPACK_DIR = "$PWD\${{ env.THERMOPACK_DIR }}\thermopack-${{ matrix.os }}"
+                [System.Environment]::SetEnvironmentVariable("THERMOPACK_DIR", $THERMOPACK_DIR)
+                ls -R ${THERMOPACK_DIR}
+                mkdir build
+                cd build
+                cmake ..
+                cmake --build . --config=Release --target install
+            
+            - name: Build KineticGas Windows
+              if: matrix.os == 'windows-latest'
+              shell: pwsh
+              run: |
+                pip install .
+                $THERMOPACK_DIR = "$PWD/${{ env.THERMOPACK_DIR }}"
+                mkdir build
+                cd build
+                cmake ..
+                cmake --build . --config=Release --target install
+
+            - name: Inspect libpykingas
+              if: matrix.os != 'ubuntu-latest' && matrix.os != 'windows-latest'
+              run: otool -L pykingas/libpykingas.*
+            
+            - name: Run pytests
+              run: |
+                pip install .[test]
+                pytest tests/

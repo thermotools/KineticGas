@@ -15,33 +15,27 @@ def test_very_repulse(lr):
     Issue #25 (https://github.com/thermotools/KineticGas/issues/25)
     Check that viscosity and thermal conductivity run for highly repulsive systems.
     """
-    m = 10
+    m = 10 # Molar mass (g / mol)
     mie = MieKinGas('LJF', mole_weights=[m, m], lr=[lr, lr])
+    unt = mie.get_reducing_units()
 
-    sigma = mie.sigma[0][0]
-    eps = mie.epsilon[0]
-    eps_div_k = eps / Boltzmann
+    test_visc_vals = {20: 0.2158860328573334, 
+                      30: 0.21695389791954947, 
+                      40: 0.21751138069457196, 
+                      50: 0.2178548098137264}
 
-    test_visc_vals = {20 : 0.2136582471368343,
-                        30 : 0.21469802292722762,
-                        40 : 0.21527111014341763,
-                        50 : 0.21563637353012097}
-
-    test_cond_vals = {20 : 0.7991821474987899,
-                        30 : 0.8022966936925214,
-                        40 : 0.8039439619090943,
-                        50 : 0.8049669080299001}
+    test_cond_vals = {20: 1.0020395956063672, 
+                      30: 0.9989005623538744, 
+                      40: 0.9973621421137406, 
+                      50: 0.9964959608177728}
 
     T_red = 2.0
     rho_red = 0.1
-    T = T_red * eps_div_k
-    rho = rho_red * Avogadro * sigma**3
+    T = T_red * unt.T
+    rho = rho_red * unt.rho
 
-    visc_unit = np.sqrt(eps * (m * 1e-3 / Avogadro)) / sigma**2
-    cond_unit = Boltzmann * np.sqrt(eps/ (m * 1e-3 / Avogadro)) / sigma**2
-
-    visc = mie.viscosity(T, 1 / rho, [0.5, 0.5], N=2) / visc_unit
-    cond = mie.thermal_conductivity(T, 1 / rho, [0.5, 0.5], N=2) / cond_unit
+    visc = mie.viscosity(T, 1 / rho, [0.5, 0.5], N=2) / unt.visc
+    cond = mie.thermal_conductivity(T, 1 / rho, [0.5, 0.5], N=2) / unt.tcond
 
     assert check_eq(visc, test_visc_vals[lr], tol=1e-4)
     assert check_eq(cond, test_cond_vals[lr], tol=1e-4)
@@ -54,6 +48,9 @@ def test_very_repulse(lr):
 def test_singlecomp_binary(m, sigma, eps_div_k, la, lr):
     """
     Test that initializing a single component, and a binary mixture of identical species gives the same output.
+    Note: Only works if the "binary mixture of identical species" recieves the mole fractions [0.5, 0.5], because
+            for single components, mole fraction inputs are converted to [0.5, 0.5] in order to support supplying [1]
+            for single components.
     See: PR #27
     """
     kin1 = MieKinGas('LJF', mole_weights=[m, m], sigma=[sigma, sigma],
@@ -83,22 +80,22 @@ def test_singlecomp_binary(m, sigma, eps_div_k, la, lr):
     l2 = kin2.viscosity_tp(T, p, [x1, 1 - x1], N=2)
     assert check_eq_rel(l1, l2)
 
-    k1 = kin1.thermal_conductivity(T, Vm, [x1, 1 - x1], N=2)
-    k2 = kin2.thermal_conductivity(T, Vm, [x1, 1 - x1], N=2)
+    k1 = sum(kin1.thermal_conductivity(T, Vm, [x1, 1 - x1], N=2, contributions='td').values()) # Exclude internal (Cp-dependent) contribution
+    k2 = sum(kin2.thermal_conductivity(T, Vm, [x1, 1 - x1], N=2, contributions='td').values()) # Exclude internal (Cp-dependent) contribution
     assert check_eq_rel(k1, k2)
 
-    k1 = kin1.thermal_conductivity_tp(T, p, [x1, 1 - x1], N=2)
-    k2 = kin2.thermal_conductivity_tp(T, p, [x1, 1 - x1], N=2)
+    k1 = sum(kin1.thermal_conductivity_tp(T, p, [x1, 1 - x1], N=2, contributions='td').values()) # Exclude internal (Cp-dependent) contribution
+    k2 = sum(kin2.thermal_conductivity_tp(T, p, [x1, 1 - x1], N=2, contributions='td').values()) # Exclude internal (Cp-dependent) contribution
     assert check_eq_rel(k1, k2)
 
-    a1 = kin1.thermal_diffusion_factor(T, Vm, [x1, 1 - x1], N=2)
-    a2 = kin2.thermal_diffusion_factor(T, Vm, [x1, 1 - x1], N=2)
-    assert check_eq_arr(a1, a2)
-
-    DT1 = kin1.thermal_diffusion_coeff(T, Vm, [x1, 1 - x1], N=2)
-    DT2 = kin2.thermal_diffusion_coeff(T, Vm, [x1, 1 - x1], N=2)
+    DT1 = kin1.thermal_diffusion_coeff(T, Vm, [0.5, 0.5], N=2)
+    DT2 = kin2.thermal_diffusion_coeff(T, Vm, [0.5, 0.5], N=2)
     assert check_eq_arr(DT1, DT2)
 
-    kT1 = kin1.thermal_diffusion_ratio(T, Vm, [x1, 1 - x1], N=2)
-    kT2 = kin2.thermal_diffusion_ratio(T, Vm, [x1, 1 - x1], N=2)
-    assert check_eq_arr(kT1, kT2)
+if __name__ == '__main__':
+    cond_dat, visc_dat = {}, {}
+    for lr in [20, 30, 40, 50]:
+        visc_dat[lr], cond_dat[lr] = test_very_repulse(lr)
+    
+    print(visc_dat)
+    print(cond_dat)

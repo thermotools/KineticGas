@@ -1,19 +1,37 @@
 #include "Spherical.h"
-#include "KineticGas.h"
 #include "Integration/Integration.h"
 
-Spherical::Spherical(std::vector<double> mole_weights,
-                    std::vector<std::vector<double>> sigmaij,
+Spherical::Spherical(vector1d mole_weights,
+                    vector2d sigma,
+                    vector2d eps,
                     bool is_idealgas, bool is_singlecomp) 
-                    : KineticGas(mole_weights, is_idealgas, is_singlecomp), sigma{sigmaij}
+                    : KineticGas(mole_weights, sigma, eps, is_idealgas, is_singlecomp)
                     {}
 
-Spherical::Spherical(std::vector<double> mole_weights,
-                    std::vector<std::vector<double>> sigmaij,
-                    std::vector<std::vector<double>> eps,
-                    bool is_idealgas, bool is_singlecomp) 
-                    : KineticGas(mole_weights, is_idealgas, is_singlecomp), sigma{sigmaij}, eps{eps}
-                    {}
+double Spherical::potential(int i, int j, double r){
+    return potential(i, j, static_cast<dual2>(r)).val.val;
+}
+
+double Spherical::potential_derivative_r(int i, int j, double r){
+    dual2 rd = r;
+    const auto func = [&](dual2 r_){return potential(i, j, r_);};
+    auto [u0, ur, urr] = autodiff::derivatives(func, autodiff::wrt(rd), autodiff::at(rd));
+    return ur;
+}
+
+double Spherical::potential_dblderivative_rr(int i, int j, double r){
+    dual2 rd = r;
+    const auto func = [&](dual2 r_){return potential(i, j, r_);};
+    auto [u0, ur, urr] = autodiff::derivatives(func, autodiff::wrt(rd, rd), autodiff::at(rd));
+    return urr;
+}
+
+StatePoint Spherical::get_transfer_length_point(double rho, double T, const vector1d& x){
+    if (transfer_length_model_id == 2){
+        return StatePoint(T, rho);
+    }
+    return StatePoint(T);
+}
 
 double Spherical::omega(int i, int j, int l, int r, double T){
     OmegaPoint point = get_omega_point(i, j, l, r, T);
@@ -38,23 +56,6 @@ double Spherical::omega(int i, int j, int l, int r, double T){
         return val;
     }
     return pos->second;
-}
-
-double Spherical::omega_tester(int i, int j, int l, int r, double T, IntegrationParam& param){
-    double w = w_integral_tester(i, j, T, l, r, param);
-    if (i == j) return pow(sigma[i][j], 2) * sqrt((PI * BOLTZMANN * T) / m[i]) * w;
-    return 0.5 * pow(sigma[i][j], 2) * sqrt(2 * PI * BOLTZMANN * T / (m0[i][j] * M[i][j] * M[j][i])) * w;
-}
-
-double Spherical::w_integral_tester(int i, int j, double T, int l, int r, IntegrationParam& param){
-    const auto w_integrand_export = [&](double g, double b){return w_integrand(i, j, T, g, b, l, r);};
-    double I = integrate2d(param.origin, param.end,
-                        param.dg, param.db,
-                        param.refinement_levels_g, param.refinement_levels_b,
-                        param.subdomain_dblder_limit,
-                        w_integrand_export);
-
-    return I;
 }
 
 double Spherical::w_integral(int i, int j, double T, int l, int r){
@@ -235,4 +236,24 @@ double Spherical::chi(int i, int j, double T, double g, double b){
     if (b / sigma[i][j] > 100) return 0;
     double t = theta(i, j, T, g, b);
     return PI - 2.0 * t;
+}
+
+
+// Testing functions
+
+double Spherical::omega_tester(int i, int j, int l, int r, double T, IntegrationParam& param){
+    double w = w_integral_tester(i, j, T, l, r, param);
+    if (i == j) return pow(sigma[i][j], 2) * sqrt((PI * BOLTZMANN * T) / m[i]) * w;
+    return 0.5 * pow(sigma[i][j], 2) * sqrt(2 * PI * BOLTZMANN * T / (m0[i][j] * M[i][j] * M[j][i])) * w;
+}
+
+double Spherical::w_integral_tester(int i, int j, double T, int l, int r, IntegrationParam& param){
+    const auto w_integrand_export = [&](double g, double b){return w_integrand(i, j, T, g, b, l, r);};
+    double I = integrate2d(param.origin, param.end,
+                        param.dg, param.db,
+                        param.refinement_levels_g, param.refinement_levels_b,
+                        param.subdomain_dblder_limit,
+                        w_integrand_export);
+
+    return I;
 }

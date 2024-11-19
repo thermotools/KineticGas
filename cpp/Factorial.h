@@ -34,6 +34,7 @@ Note: The max number of integers in a Product or a factorial (Fac) is 1000. Exce
 #include "global_params.h"
 #include "math.h"
 #include "cmath"
+#include <array>
 #include <cstdio>
 
 class Fac{
@@ -47,7 +48,7 @@ class Fac{
 class Product{
     public:
     int isize;
-    int ilist[1000];
+    std::array<int, 1000> ilist{};
     double d;
 
     Product();
