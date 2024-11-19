@@ -1,18 +1,17 @@
 <!--- 
-Generated at: 2023-06-09T08:35:40.152677
+Generated at: 2024-07-27T01:07:15.694796
 This is an auto-generated file, generated using the script at KineticGas/docs/join_docs.py
 The file is created by joining the contents of the files
     KineticGas/docs/markdown/
-        header.md
-        toc_github.md
-        cite_acknowl_licence.md
-        dependencies.md
-        source_build.md
-        getting_started_py.md
-        getting_started_cpp.md
-        advanced.md
-        structure.md
-        fluid_identifiers.md
+        readme_parts/header.md
+        readme_parts/toc_github.md
+        metapages/cite_acknowl_licence.md
+        vCurrent/source_build.md
+        vCurrent/getting_started_py.md
+        vCurrent/getting_started_cpp.md
+        vCurrent/advanced.md
+        vCurrent/structure.md
+        vCurrent/fluid_identifiers.md
 --->
 # KineticGas
 
@@ -22,7 +21,10 @@ The package is implemented mostly in C++ to handle the numerical computations in
 
 KineticGas can be used to predict diffusion coefficients, thermal diffusion coefficients, viscosities and thermal conductivities in gas mixtures, and is reliable over a large range of temperatures and pressures. The package also contains an extensive database of fluid parameters collected from the open literature.
 
-For the full documentation, check out the [KineticGas homepage.](https://thermotools.github.io/KineticGas)
+# [KineticGas homepage](https://thermotools.github.io/KineticGas)
+The full documentation, with installation- and getting started-guides can be found on the [KineticGas homepage](https://thermotools.github.io/KineticGas).
+This readme is only intended to provide a minimal introduction, and may be out-of-sync with the `pykingas` version currently
+on `PyPI`.
 
 ![](https://thermotools.github.io/KineticGas/v2.0.0/graphics/all.gif?raw=true)
 
@@ -43,12 +45,15 @@ For the full documentation, check out the [KineticGas homepage.](https://thermot
    * [File system](#file-system)
    * [Fluid indentifiers](#fluid-identifiers)
 
-## Please cite
+# Please Cite
 
-KineticGas has been developed throughout a series of two works. If you are referencing the package, please cite the works
+KineticGas has been developed throughout several works. If you are referencing the package, please cite the works
 
+* General usage
    * [Revised Enskog theory for Mie fluids: Prediction of diffusion coefficients, thermal diffusion coefficients, viscosities and thermal conductivities](https://doi.org/10.1063/5.0149865) (Vegard G. Jervell and Øivind Wilhelmsen, 2023)
    * [The Kinetic Gas theory of Mie fluids](https://ntnuopen.ntnu.no/ntnu-xmlui/handle/11250/3029213) (Vegard G. Jervell, 2022)
+* Connection to Non-Equilibrium thermodynamics (Onsager coefficients)
+   * [The influence of thermal diffusion on water migration through a porous insulation material](10.1016/j.ijheatmasstransfer.2024.125576) (V. G. Jervell, M. Aa. Gjennestad, T. T. Trinh, Ø. Wilhelmsen, 2024)
 
 ## Acknowledgments and sources
 This implementation of the Revised Enskog solutions is build upon the work presented by M. López de Haro, E. D. G. Cohen, and J. Kincaid in the series of papers *The Enskog Theory for multicomponent mixtures I - IV*, J. Chem. Phys. (1983 - 1987) ([I](https://doi.org/10.1063/1.444985), [II](https://doi.org/10.1063/1.446388), [III](https://doi.org/10.1063/1.446463), [IV](https://doi.org/10.1063/1.452243)).
@@ -61,36 +66,43 @@ The work by T. Lafitte, A. Apostolakou, C. Avendaño, A. Galindo, C. Adjiman, E.
 
 The KineticGas package is distributed as free software under the MIT licence.
 
-## Dependencies
-
-The Python package dependencies are listed in the `setup.py` file in the root directory of the package.
-
-To compile the binary that is called from the python wrapper, [pybind11](https://pybind11.readthedocs.io/en/stable/) is required.
-
-A standalone C++ module, that works without the python wrapper is currently under development. See branches under `pure_cpp/` for the most up-to-date version there.
-
-
 # Installing KineticGas
 
 KineticGas is available on PyPi as the [`pykingas`](https://pypi.org/project/pykingas/) package, for python versions 3.8-3.11, compiled for MacOS running on Apple Silicon, Linux and Windows.
 
-For MacOS running on Intel, or other operating systems, KineticGas must currently be built from source.
+In addition, wheels versions of `KineticGas > 2.0.0` for macOS, Linux and Windows, as well as wheels for the latest version on GitHub can be downloaded [here](https://github.com/thermotools/KineticGas/releases). Instructions for installing with `pip` directly from a downloaded wheel are provided at the linked page.
+
+For MacOS running on Intel, or other operating systems, KineticGas must currently be built from source or installed from one of the distributed wheels linked above.
+
+## Dependencies
+
+The Python package dependencies are listed in the `pyproject.toml` file in the root directory of the package.
+
+To compile the binary that is called from the python wrapper, [pybind11](https://pybind11.readthedocs.io/en/stable/) is required. `pybind11` is included in `cpp/external` as a git submodule, so cloning the `KineticGas` repository should provide you with the files you need.
+
+A standalone C++ module, that works without the python wrapper is currently under development. See the branch `pure_cpp/` for the most up-to-date version there.
+
 
 ## Building from source
 
-A build system using `cmake` and `make` is set up to support Mac, Linux and Windows. For Mac machines running on intel chips, one compiler flag must be modified.
+Python wheels for the latest version of KineticGas on `main` are built for macOS and Windows using `cibuildwheels`, and distributed [here](https://github.com/thermotools/KineticGas/releases/tag/Latest-beta).
 
-### First Try - For Mac/Linux
+A build system using `cmake` and `make` is set up to support Mac, Linux and Windows.
+
+### First Try
 If all goes well, running
 
 ```
-bash cpp/build.sh
-pip install .
+git clone https://github.com/thermotools/KineticGas.git
+cd KineticGas
+mkdir build
+cd build
+cmake ..
+make install
+pip install ..
 ```
 
-From the top level directory should provide you with an installation of the `KineticGas` python package `pykingas`.
-
-For Mac's running on an intel chip, the compiler flag `-arch arm64` which is set in `cpp/CMakeLists.txt` must be removed or changed to `-arch x86_64`.
+make sure to activate a virtual environment first if you want to avoid doing system-level installs.
 
 #### Short explanation
 
@@ -98,25 +110,42 @@ The `bash` script `cpp/build_kingas.sh` uses `cmake` and `make` to compile the b
 
 ### When something goes wrong
 
- * The variable `PYBIND11_ROOT`, set in `cpp/CMakeLists.txt` must contain the path to the root directory of your [`pybind11`](https://github.com/pybind/pybind11) installation.
-   * If you don't have `pybind11`:
-     * Run `git clone https://github.com/pybind/pybind11.git`
-     * Set `PYBIND11_ROOT` in `cpp/CMakeLists.txt` to the resulting directory.
- * The system arcitecture to compile for, and the python version, are specified in `cpp/CMakeLists.txt`, modify these as needed.
- * The bash script `cpp/build.sh` sets the environment variables `CC` and `CXX`, these may also need to be modified for your system.
- * The python installation to build against can be specified with
-   * `bash cpp/build.sh -DPYTHON_EXECUTABLE=<path/to/python>`
-   * Where `<path/to/python>` can (usually) be replaced by `$(which python)`.
-   * Alternatively, add the line `set(PYBIND11_PYTHON_VERSION 3)` to the top of the file `cpp/CMakeLists.txt`
-   * Or: add the line `set(PYTHON_EXECUTABLE "<path/to/python>"`
- * If none of the above works, please feel free to leave an issue.
+*Note:* The build system has been changed relatively recently, and is less tested than the build system that was used in the `2.0.0` release. If you encounter issues, please don't hesitate to post an issue on github so that we can improve robustness. Also, the old build system should still work fine. So if you are having trouble, a workaround may be to download the build files in the `v2.0.0` tagged version on github and use those.
 
-### For Windows
+* Error when importing `pykingas`: If you get an error of the type
+```
+ImportError: dlopen(/.../venv/lib/python3.11/site-packages/pykingas/libpykingas.cpython-311-darwin.so, 0x0002): tried: '/.../venv/lib/python3.11/site-packages/pykingas/libpykingas.cpython-311-darwin.so' (mach-o file, but is an incompatible architecture (have (x86_64), need (arm64e)))
+```
+ * set the environment variables `CC` and `CXX` with
+```
+export CC=/opt/homebrew/bin/gcc-13
+export CXX=/opt/homebrew/bin/g++-13
+```
+  * This can help force compilation for `arm64`
+* If you get an error message when the file `bindings.cpp` is compiling, that originates from the `pybind11` headers:
+  * You are likely getting an error of the type
+```
+ error: address of overloaded function '<some_func>' does not match required type 'pybind11::overload_cast<some stuff>'
+```
+and 
+```
+error: static_assert failed due to requirement 'detail::integral_constant<bool, false>::value' "pybind11::overload_cast<...> requires compiling in C++14 mode"
+```
+  * and you are likely using `clang` compiled for the C++-11 standard. (The compiler located in `/usr/...` on Mac is likely `clang`, even though it is called `gcc`)
+  * To fix the issue: 
+    * Install `gcc` with [homebrew](https://formulae.brew.sh/formula/gcc).
+    * Locate the compilers you've installed (`which gcc-13` and `which g++-13` should work if you installed gcc version 13.x.x)
+    * Set the environment variables `CC` and `CXX` in `cpp/build.sh` to the path to these compilers by modifying the `export` statements. For example
+```
+export CC=/opt/homebrew/bin/gcc-13
+export CXX=/opt/homebrew/bin/g++-13
+```
+  * **NOTE**: You may need to delete the file `cpp/release/CMakeCache.txt` for changes to take effect.
+  * See also: [This stackoverflow question](https://stackoverflow.com/questions/73758291/is-there-a-way-to-specify-the-c-standard-of-clangd-without-recompiling-it) for info
+* If none of the above works, please feel free to leave an issue.
 
-Running `cmake` from the `cpp` directory should produce an MSVC solution file. Building this solution should generate the file `KineticGas_r.cp<python-version>-win_amd64.pyd` which will be displayed as a "python extension module". Copy this file to the `pykingas` directory, and run `pip install .` from the top-level directory (where `setup.py`) is found.
 
-
-# Getting started: In Python
+# Getting started - In Python
 
 In addition to this explanation, some examples may be found in the [pyExamples directory](https://github.com/thermotools/KineticGas_private/tree/main/pyExamples).
 
@@ -216,7 +245,7 @@ from pykingas.MieKinGas import MieKinGas
 
 kin = MieKinGas('O2,N2,CO2,C1') # Mixture of air with carbon dioxide and methane, modeled with RET-Mie
 T = 800 # Kelvin
-Vm = 66.5 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
+Vm = 0.0665 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
 x = [0.05, 0.25, 0.5, 0.2] # Molar composition
 
 cond = kin.thermal_conductivity(T, Vm, x, N=2) # Thermal conductivity [W / m K]
@@ -233,7 +262,7 @@ from pykingas.MieKinGas import MieKinGas
 
 kin = MieKinGas('O2,N2,CO2,C1') # Mixture of air with carbon dioxide and methane, modeled with RET-Mie
 T = 800 # Kelvin
-Vm = 66.5 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
+Vm = 0.0665 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
 x = [0.05, 0.25, 0.5, 0.2] # Molar composition
 
 visc = kin.viscosity(T, Vm, x, N=2) # Shear viscosity [Pa s]
@@ -241,7 +270,10 @@ visc = kin.viscosity(T, Vm, x, N=2) # Shear viscosity [Pa s]
 
 ### Diffusion coefficients
 
-Diffusion coefficients may be defined in many different ways, and depend upon the frame of reference (FoR). For a more in-depth discussion on this see the supporting information of [Revised Enskog Theory for Mie fluids: Prediction of diffusion coefficients, thermal diffusion coefficients, viscosities and thermal conductivities.]()
+Diffusion coefficients may be defined in many different ways, and depend upon the frame of reference (FoR). For a more in-depth 
+discussion on this see the supporting information of [Revised Enskog Theory for Mie fluids: Prediction of diffusion coefficients, 
+thermal diffusion coefficients, viscosities and thermal conductivities.](https://pubs.aip.org/aip/jcp/article/158/22/224101/2895227/Revised-Enskog-theory-for-Mie-fluids-Prediction-of) For more details on the definitions available in the KineticGas package, see the [memo on definitions of the diffusion 
+coefficient.](/KineticGas/memo/diffusion/diffusion_definitions.pdf)
 
 The interface to all diffusion coefficients is the method `interdiffusion(self, T, Vm, x, N)`, where `T` is the temperature, `Vm` is the molar volume, `x` is the molar composition and `N` is the Enskog approximation order.
 
@@ -260,7 +292,7 @@ from pykingas.MieKinGas import MieKinGas
 
 kin = MieKinGas('AR,KR') # RET-Mie for a mixture of argon and krypton
 T = 300 # Kelvin
-Vm = 25 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
+Vm = 0.025 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
 x = [0.3, 0.7] # Molar composition
 
 D = kin.interdiffusion(T, Vm, x, N=2) # Binary diffusion coefficient [m^2 / s]
@@ -279,7 +311,7 @@ from pykingas.MieKinGas import MieKinGas
 
 kin = MieKinGas('AR,KR') # RET-Mie for a mixture of argon and krypton
 T = 300 # Kelvin
-Vm = 25 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
+Vm = 0.025 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
 x = [0.3, 0.7] # Molar composition
 
 D_CoN = kin.interdiffusion(T, Vm, x, N=2, frame_of_reference='CoN') # Diffusion coefficient in the CoN FoR
@@ -344,7 +376,9 @@ The `frame_of_reference` kwarg works as normal when `use_independet=False`.
 
 Thermal diffusion is characterised by several common coefficients, the thermal diffusion coefficients $D_{T,i}^{(FoR)}$, the thermal diffusion factor $\alpha_{ij}$, the thermal diffusion ratios $k_{T, i}$ and the Soret coefficients $S_{T,i}$.
 
-Of these, the thermal diffusion coefficients, $D_{T,i}^{(FoR)}$, carry the same ambiguity as the diffusion coefficients in their dependency on the frame of reference (FoR) and choice of dependent gradient.
+Of these, the thermal diffusion coefficients, $D_{T,i}^{(FoR)}$, carry the same ambiguity as the diffusion coefficients 
+in their dependency on the frame of reference (FoR) and choice of dependent gradient. For more details on the definitions 
+available in the KineticGas package, see the [memo on definitions of the diffusion coefficient.](/KineticGas/memo/diffusion/diffusion_definitions.pdf)
 
 #### The Thermal diffusion factors
 
@@ -359,7 +393,7 @@ from pykingas.MieKinGas import MieKinGas
 
 kin = MieKinGas('C1,C3,CO2') # RET-Mie for a mixture of methane, propane and CO2
 T = 300 # Kelvin
-Vm = 25 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
+Vm = 0.025 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
 x = [0.3, 0.6, 0.1] # Molar composition
 
 alpha = kin.thermal_diffusion_factor(T, Vm, x, N=2) # Thermal diffusion factors [dimensionless]
@@ -391,7 +425,7 @@ from pykingas.MieKinGas import MieKinGas
 
 kin = MieKinGas('C1,O2,CO2') # RET-Mie for a mixture of methane, oxygen and CO2
 T = 300 # Kelvin
-Vm = 25 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
+Vm = 0.025 # cubic meter per mole, approximately equivalent to a pressure of 1 bar
 x = [0.3, 0.6, 0.1] # Molar composition
 
 DT = kin.thermal_diffusion_coeff(T, Vm, x, N=2) # Thermal diffusion coefficients in the CoN FoR [mol / m s]
@@ -448,11 +482,18 @@ $$J_{CO2} = D_{T}[2] \nabla \ln T - D[2, 0] \nabla n_{C1} - D[2, 1] \nabla n_{O2
 
 The `frame_of_reference` kwarg works as normal when setting `use_independent=False`.
 
+# Getting started - In C++
+
 ## Getting started: In C++
 
 A standalone C++ library, that does not depend upon the Python wrapper, is currently under development. See branches under `pure_cpp/` for the most up to date information on that.
 
-# Advanced usage
+---
+layout: default
+version: 
+title: Advanced usage
+permalink: /vcurrent/advanced.html
+---
 
 ## Modifying and adding fluids
 
@@ -506,7 +547,7 @@ Functionality making it simple to implement new potentials is at the core of `Ki
 
 ### Implementing the C++ side
 
-All classes that inherit from `KineticGas` must implement the methods `omega`, which returns the collision integrals, the method `model_rdf`, which returns the radial distribution function at contact, and the method `get_contact_diameters`, which returns the collision diameters. 
+All classes that inherit from `KineticGas` must implement the methods `omega`, which returns the collision integrals, the method `model_rdf`, which returns the radial distribution function at contact, and the method `get_collision_diameters`, which returns the collision diameters. 
 
 Out of these, the `omega` method is implemented in the  `Spherical` class which instead requires that inheritting classes implement the methods `potential`, `potential_derivative_r` and `potential_dblderivative_rr`, corresponding to the pair potential, and its first and second derivative wrt. distance. 
 
@@ -515,13 +556,13 @@ The options for implementing a new potential are then
  * Inherit `KineticGas`
    * Implement `omega` (The collision integrals)
    * Implement `model_rdf` (The radial distribution function at contact)
-   * Implement `get_contact_diameters` (The collision diameters)
+   * Implement `get_collision_diameters` (The collision diameters)
  * Inherit `Spherical`
    * Implement `potential` (The pair-potential)
    * Implement `potential_derivative_r` (Derivative of the pair-potential)
    * Implement `potential_dblderivative_rr` (Second derivative of the pair-potential)
    * Implement `model_rdf` (The radial distribution function at contact)
-   * Implement `get_contact_diameters` (The collision diameters)
+   * Implement `get_collision_diameters` (The collision diameters)
 
 ### Implementing the Python side
 
@@ -538,7 +579,12 @@ class MyNewPotential(py_KineticGas)
         self.eos = <Some ThermoPack EoS>(comps)
 ```
 
-# Structure
+---
+layout: default
+version: 
+title: Structure
+permalink: /vcurrent/structure.html
+---
 
 See the [structure docs](https://github.com/thermotools/KineticGas/blob/main/docs/structure/structure.pdf) for more information.
 
@@ -590,38 +636,43 @@ Stuff is illustrated here as well:
 
 `docs/` : Documentation
 
-# Fluid identifiers
+---
+layout: default
+version: 
+title: Fluid identifiers
+permalink: /vcurrent/fluid_identifiers.html
+---
 
 *Note* : Many of these fluid parameters have been pulled directly from the [ThermoPack](https://github.com/thermotools/thermopack) fluid database for SAFT-VR Mie parameters. In the cases where SAFT-VR Mie uses segment numbers $>1$ to describe the fluids, the parameter sets cannot be expected to be suitable for use with RET-Mie.
 
-| Fluid name | Fluid identifyer | CAS |
-| ---------- | ---------------- | --- |
-| Argon | AR | 7440-37-1 |
-| Methane | C1 | 74-82-8 |
-| Ethane | C2 | 74-84-0 |
-| Propane | C3 | 74-98-6 |
-| Carbon dioxide | CO2 | 124-38-9 |
-| Deuterium | D2 | 7782-39-0 |
-| Hydrogen | H2 | 1333-74-0 |
-| Water | H2O | 7732-18-5 |
-| Helium-4 | HE | 7440-59-7 |
-| Krypton | KR | 7439-90-9 |
-| Lennard-jones_fluid | LJF |  |
-| Nitrogen | N2 | 7727-37-9 |
-| N-decane | NC10 | 124-18-5 |
-| N-pentadecane | NC15 | 629-62-9 |
-| N-eicosane | NC20 | 112-95-8 |
-| N-docosane | NC22 | 629-97-0 |
-| N-butane | NC4 | 106-97-8 |
-| N-pentan | NC5 | 109-66-0 |
-| N-hexane | NC6 | 110-54-3 |
-| N-heptane | NC7 | 142-82-5 |
-| N-octane | NC8 | 111-65-9 |
-| N-nonane | NC9 | 111-84-2 |
-| Neon | NE | 7440-01-9 |
-| Ortho-hydrogen | O-H2 | 1333-74-0 |
-| Oxygen | O2 | 7782-44-7 |
-| Para-hydrogen | P-H2 | 1333-74-0 |
-| Xenon | XE | 7440-63-3 |
+| Fluid name | Fluid identifier | CAS |
+| ---------- |------------------| --- |
+| Argon | AR               | 7440-37-1 |
+| Methane | C1               | 74-82-8 |
+| Ethane | C2               | 74-84-0 |
+| Propane | C3               | 74-98-6 |
+| Carbon dioxide | CO2              | 124-38-9 |
+| Deuterium | D2               | 7782-39-0 |
+| Hydrogen | H2               | 1333-74-0 |
+| Water | H2O              | 7732-18-5 |
+| Helium-4 | HE               | 7440-59-7 |
+| Krypton | KR               | 7439-90-9 |
+| Lennard-jones_fluid | LJF              |  |
+| Nitrogen | N2               | 7727-37-9 |
+| N-decane | NC10             | 124-18-5 |
+| N-pentadecane | NC15             | 629-62-9 |
+| N-eicosane | NC20             | 112-95-8 |
+| N-docosane | NC22             | 629-97-0 |
+| N-butane | NC4              | 106-97-8 |
+| N-pentan | NC5              | 109-66-0 |
+| N-hexane | NC6              | 110-54-3 |
+| N-heptane | NC7              | 142-82-5 |
+| N-octane | NC8              | 111-65-9 |
+| N-nonane | NC9              | 111-84-2 |
+| Neon | NE               | 7440-01-9 |
+| Ortho-hydrogen | O-H2             | 1333-74-0 |
+| Oxygen | O2               | 7782-44-7 |
+| Para-hydrogen | P-H2             | 1333-74-0 |
+| Xenon | XE               | 7440-63-3 |
 
 

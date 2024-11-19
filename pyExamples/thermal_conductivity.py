@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from pykingas.HardSphere import HardSphere
 from pykingas.MieKinGas import MieKinGas
 
@@ -47,13 +46,40 @@ for i, Vm in enumerate(Vm_list):
     # Subsequent iterations are fast.
     cond_list[i] = mie.thermal_conductivity(T, Vm, x, N=N)
 
-plt.plot((1 / Vm_list) * 1e3, cond_list)
-plt.xlabel(r'$\rho$ [kmol m$^{-3}$]')
-plt.ylabel(r'$\lambda$ [W m$^{-1}$ K$^{-1}$]')
-plt.show()
-
 T = 310 # New temperature
 cond = mie.thermal_conductivity(T, Vm, x, N=N) # First computation at new temperature is slow
 T = 300 # Resetting to old temperature
 cond = mie.thermal_conductivity(T, Vm, x, N=N) # Still remembers tabulated collision integrals from before (is fast)
 
+
+try:
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import Normalize
+    from matplotlib import colormaps
+    import numpy as np
+    import os
+except ImportError:
+    print('You need pandas and matplotlib if you want to see the figure examples.')
+    exit(0)
+
+data = pd.read_csv(f'{os.path.dirname(__file__)}/data/ArKr_cond.csv')
+
+T = 35 + 273.15
+isocomps = sorted(set(data['x1']))
+norm = Normalize(min(isocomps), max(isocomps))
+cmap = colormaps['winter']
+mie = MieKinGas('AR,KR')
+print(mie.sigma)
+for x1 in isocomps:
+    isodata = data[data['x1'] == x1].sort_values('p')
+    cond_ret = np.array([mie.thermal_conductivity_tp(T, p * 1e6, [x1, 1 - x1], N=3) for p in isodata['p']])
+    
+    plt.plot(isodata['p'], cond_ret * 1e3, color=cmap(norm(x1)), label=f'{x1 * 100:.1f}')
+    plt.scatter(isodata['p'], isodata['cond'], color=cmap(norm(x1)))
+
+plt.legend(title=r'$x_{Ar}$ (%)')
+plt.xlabel(r'$p$ (MPa)')
+plt.ylabel(r'$\lambda$ (mW m$^{-1}$K$^{-1}$)')
+plt.title('Thermal conductivity of Argon/Krypton mixtures at 35$^o$C')
+plt.show()

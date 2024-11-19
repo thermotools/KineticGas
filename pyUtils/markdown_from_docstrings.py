@@ -88,6 +88,7 @@ from pykingas.py_KineticGas import py_KineticGas
 from pykingas.MieType import MieType
 from pykingas.MieKinGas import MieKinGas
 from pykingas.HardSphere import HardSphere
+from pykingas.multiparam import ModTangToennis
 
 DOC_VERSION = 'Current'
 KINETICGAS_ROOT, MARKDOWN_DIR = get_root_and_markdown_dir(DOC_VERSION)
@@ -102,7 +103,7 @@ def get_autogen_header(classname):
 layout: default
 version: {version_tag}
 title: Methods in the {classname} class
-permalink: /v{DOC_VERSION.lower()}/{classname}_methods.html
+permalink: /v{DOC_VERSION.lower()}/{classname.lower()}_methods.html
 ---\n\n'''
     header += '<!--- \n'
     header += 'Generated at: ' + datetime.today().isoformat() + '\n'
@@ -175,13 +176,19 @@ def split_methods_by_section(sections, methods):
 
     if 'deprecated' not in [s.lower() for s in sections]:
         sections.append('Deprecated')
+        sections.append('Internal')
 
     method_dict = {}
     for name, meth in methods:
         # A method can be added to several sections, by giving it the header
         # def myfunc():
         #   """Section1 & Section2 & Section5 ... """
-        method_sections = [m.strip() for m in meth.__doc__.split('\n')[0].lower().split('&')] # extracting the section names as described above
+        try:
+            method_sections = [m.strip() for m in meth.__doc__.split('\n')[0].lower().split('&')] # extracting the section names as described above
+        except AttributeError:
+            if meth.__doc__ is None:
+                raise SyntaxError(f'Method {name} has no docstring!')
+            raise Exception(f"Unable to split docstring for method {name}")
         method_has_section = False
         for sec in sections:
             if sec.lower() in method_sections:
@@ -223,6 +230,14 @@ def get_automatic_sections(sections, section_headers, section_intro, method_dict
             section_headers['Deprecated'] = 'Deprecated methods'
         if 'Deprecated' not in section_intro.keys():
             section_intro['Deprecated'] = 'Deprecated methods are not maintained, and may be removed in the future.'
+
+    if 'Internal' in method_dict.keys():
+        if 'Internal' not in sections:
+            sections.append('Internal')
+        if 'Internal' not in section_headers.keys():
+            section_headers['Internal'] = 'Internal methods'
+        if 'Internal' not in section_intro.keys():
+            section_intro['Internal'] = 'Internal methods are not intended for use by end-users.'
 
     return sections, section_headers, section_intro
 
@@ -292,29 +307,33 @@ def get_markdown_contents(sections, section_headers, section_intro, method_dict)
 
     return md_text
 
-def basic_class_to_markdown(classname, eosname, methods, intro_text=None, inherits=None):
+def basic_class_to_markdown(classname, eosname, methods, intro_text=None, inherits=None, filename=None):
     """
     Generate markdown documentation file for a class that implements only Constructor and unility methods.
     """
-
+    if filename is None:
+        filename = classname
     sections = ['Constructor',
-                'Utility']
+                'Utility',
+                'cpp-interface']
 
     section_headers = {'Constructor': 'Constructor',
-                       'Utility': 'Utility methods'}
+                       'Utility': 'Utility methods',
+                       'cpp-interface' : 'Interfaces to C++ methods'}
 
     section_intro = {'Constructor': f'Methods to initialise {eosname} model.',
-                     'Utility': 'Set- and get methods for interaction parameters, mixing parameters ...'}
+                     'Utility': 'Set- and get methods for interaction parameters, mixing parameters ...',
+                     'cpp-interface': 'Lightweight wrappers for the most commonly used C++ side methods.'}
 
     method_dict = split_methods_by_section(sections, methods)
 
     ofile_text = get_autogen_header(classname)
     if intro_text is None:
         if inherits is None:
-            ofile_text += f'The `{classname}` class, found in `pykingas/{classname}.py`, is the interface to the \n' \
+            ofile_text += f'The `{classname}` class, found in `pykingas/{filename}.py`, is the interface to the \n' \
                           f'{eosname} Model. This class implements utility methods to access parameters etc.\n\n'
         else:
-            ofile_text += f'The `{classname}` class, found in `pykingas/{classname}.py`, inherrits ' \
+            ofile_text += f'The `{classname}` class, found in `pykingas/{filename}.py`, inherrits ' \
                           f'from the {inherits} class, and  is the interface to the \n' \
                           f'{eosname} Model. This class implements utility methods to access mixing parameters etc.\n\n'
     else:
@@ -387,8 +406,16 @@ def miekingas_to_markdown():
     class_methods = inspect.getmembers(MieKinGas, predicate=inspect.isfunction)
     parent_methods = inspect.getmembers(MieType, predicate=inspect.isfunction)
     specific_methods = sorted(list(set(class_methods) - set(parent_methods)))
-
     basic_class_to_markdown(classname, eosname, specific_methods, inherits='MieType')
+
+def modtangtoennies_to_markdown():
+    classname = 'ModTangToennies'
+    eosname = 'Modified Tang-Toennies'
+
+    class_methods = inspect.getmembers(ModTangToennis, predicate=inspect.isfunction)
+    parent_methods = inspect.getmembers(py_KineticGas, predicate=inspect.isfunction)
+    specific_methods = sorted(list(set(class_methods) - set(parent_methods)))
+    basic_class_to_markdown(classname, eosname, specific_methods, inherits='py_KineticGas', filename='multiparam')
 
 def hardsphere_to_markdown():
     classname = 'HardSphere'
@@ -406,3 +433,4 @@ if __name__ == '__main__':
     mietype_to_markdown()
     miekingas_to_markdown()
     hardsphere_to_markdown()
+    modtangtoennies_to_markdown()

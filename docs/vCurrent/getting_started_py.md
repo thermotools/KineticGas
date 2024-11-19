@@ -7,9 +7,9 @@ permalink: /vcurrent/getting_started_py.html
 
 In addition to this explanation, some examples may be found in the [pyExamples directory](https://github.com/thermotools/KineticGas_private/tree/main/pyExamples).
 
-## Initializing a model
+## Initialising a model
 
-The available models are `HardSphere` - The RET for Hard Spheres, `MieKinGas` - The RET-Mie. They are initialized by passing the appropriate component identifiers to the class constructors.
+The available models are `HardSphere` - The RET for Hard Spheres, `MieKinGas` - The RET-Mie. They are initialised by passing the appropriate component identifiers to the class constructors.
 
 ```Python
 from pykingas.HardSphere import HardSphere
@@ -19,17 +19,7 @@ mie = MieKinGas('CO2,C1') # RET-Mie for CO2/CH4 mixture
 hs = HardSphere('AR,KR,XE') # RET-HS for Ar/Kr/He mixture
 ```
 
-The component identifiers are equivalent to the file names in the `pykingas/fluids` directory, and are consistent with the identifiers used by `ThermoPack`. A list of all available fluids and their identifiers can be found in the [Fluid identifiers](#fluid-identifiers) section.
-
-### Note on pure components
-
-*When doing computations for a single component, two mole fractions must be supplied.*
-
-Internally pure components are treated as binary mixtures of equivalent species, such that a model initialized with e.g. `MieKinGas('H2')` will treat pure hydrogen as a mixture of "Hydrogen with hydrogen". This allows computation of the self-diffusion coefficient through the normal `interdiffusion` method, but carries the caveat mentioned above.
-
-Properties are not dependent on the supplied mole fractions, but it has been found that for numerical stability, the choice `x = [0.5, 0.5]` is best.
-
-This may be changed in future versions, such that no mole fraction needs to be supplied when working with pure fluids.
+The component identifiers are equivalent to the file names in the `pykingas/fluids` directory, and are consistent with the identifiers used by `ThermoPack`. A list of all available fluids and their identifiers can be found in the [Fluid identifiers](fluid_identifiers.html) section.
 
 ### Specifying parameters
 
@@ -86,6 +76,10 @@ from pykingas.MieKinGas import MieKinGas
 mie = MieKinGas('H2', is_idealgas=True) # Properties of hydrogen at infinite dilution
 ```
 
+## Working in reduced units
+
+When working in reduced (Lennard-Jones) units
+
 ## Making predictions
 
 In addition to the methods here, a Tp-interface exists for the same methods, consisting of the methods `thermal_conductivity_tp`, `viscosity_tp`, `interdiffusion_tp`, `theramal_diffusion_coeff_tp` and `thermal_diffusion_factor_tp`. These methods are only wrappers for ease of use, that use the internal equation of state of the object (`self.eos`) to compute the molar volume at given (T, p, x) (assuming vapour phase), and passes the call to the methods documented here. Those methods have signatures equivalent to these, but with molar volume swapped out for pressure.
@@ -128,7 +122,10 @@ visc = kin.viscosity(T, Vm, x, N=2) # Shear viscosity [Pa s]
 
 ### Diffusion coefficients
 
-Diffusion coefficients may be defined in many different ways, and depend upon the frame of reference (FoR). For a more in-depth discussion on this see the supporting information of [Revised Enskog Theory for Mie fluids: Prediction of diffusion coefficients, thermal diffusion coefficients, viscosities and thermal conductivities.](https://pubs.aip.org/aip/jcp/article/158/22/224101/2895227/Revised-Enskog-theory-for-Mie-fluids-Prediction-of)
+Diffusion coefficients may be defined in many different ways, and depend upon the frame of reference (FoR). For a more in-depth 
+discussion on this see the supporting information of [Revised Enskog Theory for Mie fluids: Prediction of diffusion coefficients, 
+thermal diffusion coefficients, viscosities and thermal conductivities.](https://pubs.aip.org/aip/jcp/article/158/22/224101/2895227/Revised-Enskog-theory-for-Mie-fluids-Prediction-of) For more details on the definitions available in the KineticGas package, see the [memo on definitions of the diffusion 
+coefficient.](/KineticGas/memo/diffusion/diffusion_definitions.pdf)
 
 The interface to all diffusion coefficients is the method `interdiffusion(self, T, Vm, x, N)`, where `T` is the temperature, `Vm` is the molar volume, `x` is the molar composition and `N` is the Enskog approximation order.
 
@@ -231,7 +228,9 @@ The `frame_of_reference` kwarg works as normal when `use_independet=False`.
 
 Thermal diffusion is characterised by several common coefficients, the thermal diffusion coefficients $D_{T,i}^{(FoR)}$, the thermal diffusion factor $\alpha_{ij}$, the thermal diffusion ratios $k_{T, i}$ and the Soret coefficients $S_{T,i}$.
 
-Of these, the thermal diffusion coefficients, $D_{T,i}^{(FoR)}$, carry the same ambiguity as the diffusion coefficients in their dependency on the frame of reference (FoR) and choice of dependent gradient.
+Of these, the thermal diffusion coefficients, $D_{T,i}^{(FoR)}$, carry the same ambiguity as the diffusion coefficients 
+in their dependency on the frame of reference (FoR) and choice of dependent gradient. For more details on the definitions 
+available in the KineticGas package, see the [memo on definitions of the diffusion coefficient.](/KineticGas/memo/diffusion/diffusion_definitions.pdf)
 
 #### The Thermal diffusion factors
 

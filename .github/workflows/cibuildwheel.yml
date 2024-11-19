@@ -1,0 +1,119 @@
+name: cibuildwheel
+
+on: [pull_request]
+
+jobs:
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macOS-latest, ubuntu-latest] 
+    env:
+      THERMOPACK_DIR: thermopack-${{ matrix.os }}
+      THERMOPACK_DIR_WINDOWS: "D:/a/KineticGas/KineticGas/thermopack-windows-latest/thermopack-windows-latest"
+      THERMOPACK_URL: https://github.com/vegardjervell/thermopack/releases/download/Latest-beta
+    steps:
+      - uses: actions/checkout@v4
+      - name: checkout submodules
+        run: git submodule update --init --recursive
+
+      # Used to host cibuildwheel
+      - uses: actions/setup-python@v4
+
+      - name: Fetch Thermopack
+        if: matrix.os != 'windows-latest'
+        run: |
+            curl -L -o thermopack.zip ${{ env.THERMOPACK_URL }}/thermopack-${{ matrix.os }}.zip
+            unzip thermopack.zip
+            export THERMOPACK_DIR=${PWD}/${{ env.THERMOPACK_DIR }}/
+            curl -L -o thermopack_whl.zip ${{ env.THERMOPACK_URL }}/wheel-v2-${{ matrix.os }}.zip
+            unzip thermopack_whl.zip
+            pip install wheel-v2-${{ matrix.os }}/*
+
+      - name: Fetch Thermopack (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "${{ env.THERMOPACK_URL }}/thermopack-${{ matrix.os }}.zip" -OutFile "thermopack.zip"
+          Expand-Archive -Path "thermopack.zip" -DestinationPath "${{ env.THERMOPACK_DIR }}"
+          $THERMOPACK_DIR = "${PWD}/${{ env.THERMOPACK_DIR }}/${{ env.THERMOPACK_DIR }}"
+          [System.Environment]::SetEnvironmentVariable("THERMOPACK_DIR", $THERMOPACK_DIR)
+          "$THERMOPACK_DIR=$THERMOPACK_DIR" | Out-File -FilePath $env:GITHUB_ENV -Append
+          Invoke-WebRequest -Uri "${{ env.THERMOPACK_URL }}/wheel-v2-${{ matrix.os }}.zip" -OutFile "thermopack_whl.zip"
+          Expand-Archive -Path "thermopack_whl.zip" -DestinationPath "wheel-v2-${{ matrix.os }}"
+          cd wheel-v2-${{ matrix.os }}
+          pip install (Get-ChildItem wheel-v2-windows-latest\*.whl).FullName
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.19.1 # run: python -m cibuildwheel --output-dir wheelhouse
+        env:
+          CIBW_ARCHS: auto64
+          CIBW_ARCHS_MACOS: "universal2"
+          CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET=11.0 THERMOPACK_DIR=${PWD}/${{ env.THERMOPACK_DIR }}
+          CIBW_ENVIRONMENT_LINUX: CXXFLAGS='-fconcepts' THERMOPACK_DIR=${PWD}/${{ env.THERMOPACK_DIR }}
+          CIBW_ENVIRONMENT_WINDOWS: THERMOPACK_DIR=${{ env.THERMOPACK_DIR_WINDOWS}}
+          CIBW_BUILD_VERBOSITY_WINDOWS: 2
+          CIBW_SKIP: "*pypy* *pp* *cp36* *cp37* *musl*"
+        with:
+          package-dir: .
+          output-dir: "./wheelhouse"
+          config-file: "{package}/pyproject.toml"
+
+      - name: Upload Wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.os }}
+          path: ./wheelhouse/*.whl
+  
+  merge_wheels:
+   runs-on: ubuntu-latest
+   needs: build_wheels
+   steps:
+     - name: Merge Artifacts
+       uses: actions/upload-artifact/merge@v4
+       with:
+         name: artifact
+         pattern: wheels-*
+  
+  release_wheels: # Create or update the release tagged Latest-beta, and upload wheels to that release.
+    # if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: build_wheels
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Download created wheels
+      uses: actions/download-artifact@v4
+      with:
+        pattern: wheels-*
+    
+    - name: Display full directory status
+      run: ls -R .
+    
+    - name: zip wheels
+      run: |
+        for dir in wheels-*; do
+        zip -r "${dir}.zip" ${dir}
+        done
+    
+    - name: Display current directory status
+      run: ls
+    
+    - uses: ncipollo/release-action@v1
+      with:
+        allowUpdates: true
+        prerelease: true
+        updateOnlyUnreleased: true
+        removeArtifacts: true
+        name: "Latest (beta)"
+        tag: Latest-beta
+        commit: main
+        makeLatest: true
+        bodyFile: ".github/release_bodyFile.md"
+        artifacts: "wheels-*.zip"
+
+    

@@ -3,7 +3,7 @@ Author: Vegard Gjeldvik Jervell
 Purpose: Wrapper for the PseudoHardSphere class.
 '''
 
-from pykingas import cpp_PseudoHardSphere
+from .libpykingas import cpp_PseudoHardSphere
 from pykingas.py_KineticGas import py_KineticGas
 import numpy as np
 from scipy.constants import Boltzmann as kB, pi, Avogadro
@@ -51,7 +51,7 @@ class PseudoHardSphere(py_KineticGas):
             sigma = np.array(sigma)
 
         self.sigma_ij =  0.5 * (np.vstack((sigma, sigma)) + np.vstack((sigma, sigma)).transpose())
-        self.cpp_kingas = cpp_PseudoHardSphere(self.mole_weights, self.sigma_ij, is_idealgas)
+        self.cpp_kingas = cpp_PseudoHardSphere(self.mole_weights, self.sigma_ij, is_idealgas, False)
 
     def get_Eij(self, Vm, T, x):
         x = np.array(x)

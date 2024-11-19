@@ -1,5 +1,16 @@
 import os
 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 def get_root_and_markdown_dir(version):
     root = os.path.dirname(__file__) + '/../'
     md_dir = root + 'docs/v' + version + '/'
@@ -10,7 +21,7 @@ def remove_illegal_link_chars(link_str):
     Remove characters that are illegal in url-links from the string 'link_str', and return the new string.
     """
     return (link_str.replace(' ', '-').replace('(', '').replace(')', '').replace('=', '').replace(',', '').replace(
-             "'", '').replace('.','')).lower()
+             "'", '').replace('.','')).replace(':', '').replace('*', '').replace('+', '').lower()
 
 def check_is_changed(old_file, new_file_str):
     """
@@ -57,6 +68,6 @@ def write_file(ofile_path, ofile_text):
     if check_is_changed(ofile_path, ofile_text):
         with open(ofile_path, 'w') as ofile:
             ofile.write(ofile_text)
-            print('** Wrote', filename, 'to', ofile_path)
+            print(f'{bcolors.OKGREEN}** Wrote {filename} to {ofile_path}{bcolors.ENDC}')
     else:
-        print('* File at', ofile_path, 'is unchanged.')
+        print(f'{bcolors.OKCYAN}* File at {ofile_path} is unchanged.{bcolors.ENDC}')

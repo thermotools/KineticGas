@@ -30,24 +30,19 @@ The primary responsibilities of the python-side and C++ side of the package are
      * Implements RDF at contact
      * Implements collision diameter
  
-
-Stuff is illustrated here as well:
-
-![](https://github.com/thermotools/KineticGas/blob/main/docs/structure/kineticgas_classes.svg?raw=true)
-
-![](https://github.com/thermotools/KineticGas/blob/main/docs/structure/who_does_what.svg?raw=true)
-
 # File system
 
 `cpp/` : The C++ source code and headers for `KineticGas`
 
 `cpp/Integration/` : The C++ source code and headers for the integration module used to evaluate the collision integrals.
 
-`pyExamples` : Example files for doing computations
+`pyExamples/` : Example files for doing computations in python
 
-`pykingas/` : Python source code for the package
+`cppExamples/`: Example files for C++
 
-`pykingas/tests/` : Tests that are run after compiling
+`pykingas/` : Python source code for the `pykingas` package
+
+`pykingas/tests/` : Python-side test suite
 
 `pykingas/fluids/` : Fluid parameter database
 

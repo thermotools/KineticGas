@@ -1,7 +1,10 @@
 /*
 Author: Vegard Gjeldvik Jervell
 Contains: The PseudoHardSphere class. This class implements a potential with continious first and second derivatives
-            That rises steeply at r = sigma, and goes to zero at r > sigma.
+            That rises steeply at r = sigma, and goes to zero at r > sigma, while holding continious first and second 
+            derivatives.
+
+            Primarily (only?) used for testing purposes.
 */
 #pragma once
 #include "Spherical.h"
@@ -11,9 +14,16 @@ class PseudoHardSphere : public Spherical {
 
     PseudoHardSphere(std::vector<double> mole_weights,
         std::vector<std::vector<double>> sigmaij,
-        bool is_idealgas)
-        : Spherical(mole_weights, sigmaij, is_idealgas) {}
+        bool is_idealgas, bool is_singlecomp)
+        : Spherical(mole_weights, sigmaij, vector2d(mole_weights.size(), vector1d(mole_weights.size(), 1)), is_idealgas, is_singlecomp) {}
     
+    dual2 potential(int i, int j, dual2 r) override {
+        if (r > sigma[i][j]){
+            return 0.0;
+        }
+        return (pow(sigma[i][j] / (r), 20) - (20.0 * 21.0 / 2) * pow(r / sigma[i][j], 2) + 20.0 * 22.0 * (r / sigma[i][j]) + 20.0 * ((21.0 / 2.0) - 22.0) - 1.0) / BOLTZMANN;
+    }
+
     double potential(int i, int j, double r) override {
         // To get this, start with a potential that has a second derivative f''(r) = (sigma / r)^22 + A
         // Then integrate the function and require that f''(sigma) = f'(sigma) = f(sigma) = 0
@@ -59,5 +69,6 @@ class PseudoHardSphere : public Spherical {
         return rdf;
     }
 
-    std::vector<std::vector<double>> get_contact_diameters(double rho, double T, const std::vector<double>& x) override {return sigma;}
+    std::vector<std::vector<double>> model_etl(double rho, double T, const std::vector<double>& x) override {return sigma;}
+    std::vector<std::vector<double>> model_mtl(double rho, double T, const std::vector<double>& x) override {return sigma;}
 };

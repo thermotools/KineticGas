@@ -5,10 +5,15 @@ title: Please Cite
 permalink: /please_cite.html
 ---
 
-KineticGas has been developed throughout a series of two works. If you are referencing the package, please cite the works
+KineticGas has been developed throughout several works. If you are referencing the package, please cite the works
 
+* General usage
    * [Revised Enskog theory for Mie fluids: Prediction of diffusion coefficients, thermal diffusion coefficients, viscosities and thermal conductivities](https://doi.org/10.1063/5.0149865) (Vegard G. Jervell and Øivind Wilhelmsen, 2023)
    * [The Kinetic Gas theory of Mie fluids](https://ntnuopen.ntnu.no/ntnu-xmlui/handle/11250/3029213) (Vegard G. Jervell, 2022)
+* Connection to Non-Equilibrium thermodynamics (Onsager coefficients)
+   * [The influence of thermal diffusion on water migration through a porous insulation material](https://doi.org/10.1016/j.ijheatmasstransfer.2024.125576) (V. G. Jervell, M. Aa. Gjennestad, T. T. Trinh, Ø. Wilhelmsen, 2024)
+* Transfer Lengths
+  * [Predicting viscosities and thermal conductivities from dilute gas to dense liquid: Deriving fundamental transfer lengths for momentum and energy exchange in revised Enskog theory]() (V. G. Jervell and Ø. Wilhelmsen, In publishing)
 
 ## Acknowledgments and sources
 This implementation of the Revised Enskog solutions is build upon the work presented by M. López de Haro, E. D. G. Cohen, and J. Kincaid in the series of papers *The Enskog Theory for multicomponent mixtures I - IV*, J. Chem. Phys. (1983 - 1987) ([I](https://doi.org/10.1063/1.444985), [II](https://doi.org/10.1063/1.446388), [III](https://doi.org/10.1063/1.446463), [IV](https://doi.org/10.1063/1.452243)).

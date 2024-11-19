@@ -5,6 +5,7 @@ Contains: Implementation of Integration.h
 */
 
 #include "Integration.h"
+#include "../global_params.h"
 #include <vector>
 #include <algorithm>
 #include <memory>
@@ -111,13 +112,12 @@ double integrate_plane(std::shared_ptr<const Point> p1, std::shared_ptr<const Po
 
 // Checks the map to see if the function has already been evaluated, in which case value is retrieved from the map.
 // Returns the function value, and also stores the value in the z-component of the point.
-double eval_function(std::shared_ptr<Point> p, const int& Nx, const int& Ny,
-                        const int& arg_i, const int& arg_j, const double& arg_T, const int& arg_l, const int& arg_r,
-                        std::function<double(int, int, double, double, double, int, int)> func,
+double eval_function(std::shared_ptr<Point> p, int Nx, int Ny,
+                        const std::function<double(double, double)>& func,
                         std::map<std::pair<int, int>, const double>& evaluated_points){
         std::pair<int, int> pos{Nx, Ny};
         if (evaluated_points.find(pos) == evaluated_points.end()){
-            double val = func(arg_i, arg_j, arg_T, p->x, p->y, arg_l, arg_r);
+            double val = func(p->x, p->y);
             evaluated_points.insert(std::pair<std::pair<int, int>, const double>(pos, val));
             p->z = val;
             return val;
@@ -127,13 +127,12 @@ double eval_function(std::shared_ptr<Point> p, const int& Nx, const int& Ny,
 }
 
 // Evaluate function without storing in point
-double eval_function(Point p, const int& Nx, const int& Ny,
-                        const int& arg_i, const int& arg_j, const double& arg_T, const int& arg_l, const int& arg_r,
-                        std::function<double(int, int, double, double, double, int, int)> func,
+double eval_function(Point p, int Nx, int Ny,
+                        const std::function<double(double, double)>& func,
                         std::map<std::pair<int, int>, const double>& evaluated_points){
         std::pair<int, int> pos{Nx, Ny};
         if (evaluated_points.find(pos) == evaluated_points.end()){
-            double val = func(arg_i, arg_j, arg_T, p.x, p.y, arg_l, arg_r);
+            double val = func(p.x, p.y);
             evaluated_points.insert(std::pair<std::pair<int, int>, const double>(pos, val));
             return val;
         }
@@ -144,12 +143,11 @@ double eval_function(Point p, const int& Nx, const int& Ny,
 // integrate_adaptive() is called on the subdomain (x, x + dx)X(y, y + dy) with increased refinement
 void integration_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, std::shared_ptr<Point>& p3,
                         int& Nx, int& Ny, double& integral,
-                        const double& dx, const double& dy,
-                        int& Nxsteps, const int& Nysteps,
-                        const double subdomain_dblder_limit,
+                        double dx, double dy,
+                        int& Nxsteps, int Nysteps,
+                        double subdomain_dblder_limit,
                         std::map<std::pair<int, int>, const double>& evaluated_points,
-                        const int& arg_i, const int& arg_j, const double& arg_T, const int& arg_l, const int& arg_r,
-                        std::function<double(int, int, double, double, double, int, int)> func){
+                        const std::function<double(double, double)>& func){
 
     Point ystep{0, dy * Nysteps};
     Point xstep{dx * Nxsteps, - dy * Nysteps};
@@ -157,13 +155,13 @@ void integration_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, st
     double hx = abs(dx * Nxsteps);
     double hy = abs(dy * Nysteps);
 
-    double f = eval_function(*p3, Nx, Ny, arg_i, arg_j, arg_T, arg_l, arg_r, func, evaluated_points);
-    double f1x = eval_function(*p3 + Point{hx, 0}, Nx + abs(Nxsteps), Ny, arg_i, arg_j, arg_T, arg_l, arg_r, func, evaluated_points);
-    double f2x = eval_function(*p3 + Point{2 * hx, 0}, Nx + 2 * abs(Nxsteps), Ny, arg_i, arg_j, arg_T, arg_l, arg_r, func, evaluated_points);
-    double f1y = eval_function(*p3 + Point{0, hy}, Nx, Ny + abs(Nysteps), arg_i, arg_j, arg_T, arg_l, arg_r, func, evaluated_points);
-    double f2y = eval_function(*p3 + Point{0, 2 * hy}, Nx, Ny + 2 * abs(Nysteps), arg_i, arg_j, arg_T, arg_l, arg_r, func, evaluated_points);
-    double f1x1y = eval_function(*p3 + Point{hx, hy}, Nx + abs(Nxsteps), Ny + abs(Nysteps), arg_i, arg_j, arg_T, arg_l, arg_r, func, evaluated_points);
-    double f2x2y = eval_function(*p3 + Point{2 * hx, 2 * hy}, Nx + 2 * abs(Nxsteps), Ny + 2 * abs(Nysteps), arg_i, arg_j, arg_T, arg_l, arg_r, func, evaluated_points);
+    double f = eval_function(*p3, Nx, Ny, func, evaluated_points);
+    double f1x = eval_function(*p3 + Point{hx, 0}, Nx + abs(Nxsteps), Ny,  func, evaluated_points);
+    double f2x = eval_function(*p3 + Point{2 * hx, 0}, Nx + 2 * abs(Nxsteps), Ny, func, evaluated_points);
+    double f1y = eval_function(*p3 + Point{0, hy}, Nx, Ny + abs(Nysteps), func, evaluated_points);
+    double f2y = eval_function(*p3 + Point{0, 2 * hy}, Nx, Ny + 2 * abs(Nysteps), func, evaluated_points);
+    double f1x1y = eval_function(*p3 + Point{hx, hy}, Nx + abs(Nxsteps), Ny + abs(Nysteps), func, evaluated_points);
+    double f2x2y = eval_function(*p3 + Point{2 * hx, 2 * hy}, Nx + 2 * abs(Nxsteps), Ny + 2 * abs(Nysteps), func, evaluated_points);
     double fxx = (f - 2 * f1x + f2x) / pow(dx * Nxsteps, 2);
     double fyy = (f - 2 * f1y + f2y) / pow(dy * Nysteps, 2);
     double fxy = (f2x2y - 2 * f1x1y + f - pow(hx, 2) * fxx - pow(hy, 2) * fyy) / (2 * hx * hy);
@@ -200,14 +198,13 @@ void integration_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, st
                                        sub_Nxsteps, sub_Nysteps,
                                        sub_subdomain_dblder_limit,
                                        evaluated_points,
-                                       arg_i, arg_j, arg_T, arg_l, arg_r,
                                        func);
         // Set all points to the gridpoint at the lower right corner of the subdomain that was just integrated (if Nxsteps is positive, otherwise to the lower left corner)
         p1 = std::move(p2);
         p2 = std::move(p3);
         p3 = std::shared_ptr<Point>{new Point(*p2 + ystep)};
         Ny += Nysteps;
-        eval_function(p3, Nx, Ny, arg_i, arg_j, arg_T, arg_l, arg_r, func, evaluated_points);
+        eval_function(p3, Nx, Ny, func, evaluated_points);
         integral += integrate_plane(p1, p2, p3);
 
         p1 = p3;
@@ -215,23 +212,23 @@ void integration_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, st
         *p3 += xstep; // Set all points to the point following the refined region
         Nx += Nxsteps;
         Ny -= Nysteps;
-        eval_function(p3, Nx, Ny, arg_i, arg_j, arg_T, arg_l, arg_r, func, evaluated_points);
+        eval_function(p3, Nx, Ny, func, evaluated_points);
     }
     else{
         p1 = std::move(p2);
         p2 = std::move(p3);
-        p3 = std::shared_ptr<Point>{new Point(*p2 + ystep)};
+        p3 = std::make_shared<Point>(*p2 + ystep);
         Ny += Nysteps;
-        eval_function(p3, Nx, Ny, arg_i, arg_j, arg_T, arg_l, arg_r, func, evaluated_points);
+        eval_function(p3, Nx, Ny, func, evaluated_points);
 
         integral += integrate_plane(p1, p2, p3);
 
         p1 = std::move(p2);
         p2 = std::move(p3);
-        p3 = std::shared_ptr<Point>{new Point(*p2 + xstep)};
+        p3 = std::make_shared<Point>(*p2 + xstep);
         Nx += Nxsteps;
         Ny -= Nysteps;
-        eval_function(p3, Nx, Ny, arg_i, arg_j, arg_T, arg_l, arg_r, func, evaluated_points);
+        eval_function(p3, Nx, Ny, func, evaluated_points);
         integral += integrate_plane(p1, p2, p3);
     }
 
@@ -240,14 +237,13 @@ void integration_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, st
 // Integrates the square domain bounded by (origin, end) in the xy-plane by calling integration_step()
 // until the end of the domain is reached.
 double integrate_adaptive(const Point& origin,
-                            const int& Nx_origin, const int& Ny_origin,
-                            const int& Nx_end, const int& Ny_end,
-                            const double& dx, const double& dy,
-                            int& Nxsteps, const int& Nysteps,
-                            const double& subdomain_dblder_limit,
+                            int Nx_origin, int Ny_origin,
+                            int Nx_end, int Ny_end,
+                            double dx, double dy,
+                            int& Nxsteps, int Nysteps,
+                            double subdomain_dblder_limit,
                             std::map<std::pair<int, int>, const double>& evaluated_points,
-                            const int& arg_i, const int& arg_j, const double& arg_T, const int& arg_l, const int& arg_r,
-                            std::function<double(int, int, double, double, double, int, int)> func){
+                            const std::function<double(double, double)>& func){
 
     double integral = 0;
     Point ystep{0, dy * Nysteps};
@@ -260,22 +256,22 @@ double integrate_adaptive(const Point& origin,
     int Nx, Ny;
     Nx = Nx_origin;
     Ny = Ny_origin;
-    eval_function(p3, Nx, Ny, arg_i, arg_j, arg_T, arg_l, arg_r, func, evaluated_points);
+    eval_function(p3, Nx, Ny, func, evaluated_points);
 
-    integration_step(p1, p2, p3, Nx, Ny, integral, dx, dy, Nxsteps, Nysteps, subdomain_dblder_limit, evaluated_points, arg_i, arg_j, arg_T, arg_l, arg_r, func);
+    integration_step(p1, p2, p3, Nx, Ny, integral, dx, dy, Nxsteps, Nysteps, subdomain_dblder_limit, evaluated_points, func);
     while (Ny < Ny_end){
         while (std::min(Nx_origin, Nx_end) < Nx && Nx < std::max(Nx_origin, Nx_end)){
-            integration_step(p1, p2, p3, Nx, Ny, integral, dx, dy, Nxsteps, Nysteps, subdomain_dblder_limit, evaluated_points, arg_i, arg_j, arg_T, arg_l, arg_r, func);
+            integration_step(p1, p2, p3, Nx, Ny, integral, dx, dy, Nxsteps, Nysteps, subdomain_dblder_limit, evaluated_points, func);
         }
         p1 = std::move(p2);
         p2 = std::move(p3);
         p3 = std::make_shared<Point>(*p2 + ystep);
         Ny += Nysteps;
-        eval_function(p3, Nx, Ny, arg_i, arg_j, arg_T, arg_l, arg_r, func, evaluated_points);
+        eval_function(p3, Nx, Ny, func, evaluated_points);
         integral += integrate_plane(p1, p2, p3);
         if (Ny < Ny_end){
             Nxsteps *= -1;
-            integration_step(p1, p2, p3, Nx, Ny, integral, dx, dy, Nxsteps, Nysteps, subdomain_dblder_limit, evaluated_points, arg_i, arg_j, arg_T, arg_l, arg_r, func);
+            integration_step(p1, p2, p3, Nx, Ny, integral, dx, dy, Nxsteps, Nysteps, subdomain_dblder_limit, evaluated_points, func);
         }
     }
 
@@ -284,11 +280,10 @@ double integrate_adaptive(const Point& origin,
 
 // Interface to integrate_adaptive() for more simple use
 double integrate2d(const Point& origin, const Point& end,
-                    const double& dx, const double& dy,
-                    const int& refinement_levels_x, const int& refinement_levels_y,
-                    const double& subdomain_dblder_limit,
-                    const int& arg_i, const int& arg_j, const double& arg_T, const int& arg_l, const int& arg_r,
-                    std::function<double(int, int, double, double, double, int, int)> func){
+                    double dx, double dy,
+                    int refinement_levels_x, int refinement_levels_y,
+                    double subdomain_dblder_limit,
+                    const std::function<double(double, double)>& func){
 
     int Nx_origin{0}, Ny_origin{0};
     double delta_x = end.x - origin.x;
@@ -299,11 +294,6 @@ double integrate2d(const Point& origin, const Point& end,
     int Nysteps = refinement_levels_y;
     std::map<std::pair<int, int>, const double> evaluated_points;
 
-    #ifdef DEBUG
-        std::printf("Calling integrator with:\nOrigin : %E %E, End : %E, %E \ndx, dy : %E, %E\nRefinement : %i, %i\nArgs : %i, %E, %i, %i\n\n",
-                    origin.x, origin.y, end.x, end.y, dx, dy, refinement_levels_x, refinement_levels_y, arg_i, arg_j, arg_T, arg_l, arg_r);
-    #endif
-
     double val = integrate_adaptive(origin,
                                      Nx_origin, Ny_origin,
                                      Nx_end, Ny_end,
@@ -311,7 +301,82 @@ double integrate2d(const Point& origin, const Point& end,
                                      Nxsteps, Nysteps,
                                      subdomain_dblder_limit,
                                      evaluated_points,
-                                     arg_i, arg_j, arg_T, arg_l, arg_r,
                                      func);
     return val;
+}
+
+
+double simpson(std::function<double(double)> func, double x0, double xN, int N_intervals){
+    double dx = (xN - x0) / N_intervals;
+    double val = func(x0) + func(xN);
+    for (size_t i = 1; i <= (N_intervals / 2) - 1; i++){
+        val += 4. * func(x0 + (2 * i - 1) * dx) + 2. * func(x0 + (2 * i) * dx);
+    }
+    val += 4. * func(xN - dx);
+    val *= dx / 3.;
+    return val;
+}
+
+std::pair<double, double> weighted_simpson(std::function<double(double)> func, std::function<double(double)> wt, double x0, double xN, int N_intervals){
+    double dx = (xN - x0) / N_intervals;
+    double F{0}, W{0}, w1{0}, w2{0};
+
+    w1 = wt(x0); w2 = wt(xN);
+    W += w1 + w2;
+    F += func(x0) * w1 + func(xN) * w2;
+    for (size_t i = 1; i <= (N_intervals / 2) - 1; i++){
+        w1 = wt(x0 + (2 * i - 1) * dx);
+        w2 = wt(x0 + (2 * i) * dx);
+        W += 4. * w1 + 2. * w2;
+        F += 4. * func(x0 + (2 * i - 1) * dx) * w1 + 2. * func(x0 + (2 * i) * dx) * w2;
+    }
+    w1 = wt(xN - dx);
+    W += 4. * w1;
+    F += 4. * func(xN - dx) * w1;
+    W *= dx / 3.;
+    F *= dx / 3.;
+    return std::pair<double, double>(F, W);
+}
+
+std::pair<double, double> weighted_simpson(std::function<std::pair<double, double>(double)> FW, double x0, double xN, int N_intervals){
+    double dx = (xN - x0) / N_intervals;
+    double F{0}, W{0};
+    std::pair<double, double> FW_1, FW_2;
+    FW_1 = FW(x0); FW_2 = FW(xN);
+    F += FW_1.first + FW_2.first;
+    W += FW_1.second + FW_2.second;
+    for (size_t i = 1; i <= (N_intervals / 2) - 1; i++){
+        FW_1 = FW(x0 + (2 * i - 1) * dx); 
+        FW_2 = FW(x0 + (2 * i) * dx);
+        F += 4. * FW_1.first + 2. * FW_2.first;
+        W += 4. * FW_1.second + 2. * FW_2.second;
+    }
+    FW_1 = FW(xN - dx);
+    F += 4. * FW_1.first;
+    W += 4. * FW_1.second;
+    F *= dx / 3;
+    W *= dx / 3;
+    return std::pair<double, double>(F, W);
+}
+
+double tanh_sinh(std::function<double(double)> func, double h, double tol){
+    constexpr int n_max_intervals = 10000;
+    double I{0.0};
+    int k{1};
+    double u = tanh(PI * sinh(k * h) / 2.);
+    double w = (PI / 2.) * h * cosh(k * h) / pow(cosh(PI * sinh(k * h * 1e-3) / 2.), 2);
+    double f = func(u);
+    do {
+        I += w * f;
+        k += 1;
+        u = tanh(PI * sinh(k * h) / 2.);
+        w = (PI / 2) * h * cosh(k * h) / pow(cosh(PI * sinh(k * h) / 2.), 2);
+        f = func(u);
+        if (isnan(f) || isnan(w) || isinf(f) || isinf(w)) break;
+    } while ((abs((f * w) / I) > tol) && (k < n_max_intervals));
+    if (k >= n_max_intervals){
+        std::cout << "INTEGRATION WARNING : tanh-sinh integration reached maximum number of intervals (" << n_max_intervals
+                    << "). Relative value of last integration step was " << abs((f * w) / I) << ", tolerance is : " << tol << std::endl;
+    }
+    return I;
 }

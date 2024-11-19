@@ -9,7 +9,7 @@ When defining the diffusion coefficients we must make a set of choices:
     \item If we are using an independent set: What is the dependent driving force?
 \end{itemize}
 
-In this memo, the notation $J_i^{(x, f)}$ is used to denote a flux on the $x$ basis, in the $f$ frame of reference, such that a molar flux in the mole-centre frame of reference is denoted $J_i^{(n, n)}$, and the corresponding mass flux is $J_i^{(m, n)} ) = m_i J_i^{(n, n)}$, where $m_i$ is the molar mass of species $i$. Diffusion coefficients are denoted $D_{ij}^{(f,l)}$, where the indices indicate 
+In this memo, the notation $J_i^{(x, f)}$ is used to denote a flux on the $x$ basis, in the $f$ frame of reference, such that a molar flux in the mole-centre frame of reference is denoted $J_i^{(n, n)}$, and the corresponding mass flux is $J_i^{(m, n)}  = m_i J_i^{(n, n)}$, where $m_i$ is the molar mass of species $i$. Diffusion coefficients are denoted $D_{ij}^{(f,l)}$, where the indices indicate 
 
 \begin{itemize}
     \item $i$ : The flux the diffusion coefficient applies to.
@@ -22,12 +22,12 @@ This indexing may at first seem excessive, but it is required in order to accura
 \begin{equation}
     J_i^{(n,n)} = - \sum_{j \neq l} D_{ij}^{(n,l)} \nabla c_j
 \end{equation}
-where we have used the molar concentrations as driving forces, and chosen to use an independent set of driving forces, as the dependent gradient $\nabla c_l$ is given by
+where we have used the molar concentrations as driving forces, and chosen to use an independent set of driving forces, as the dependent gradient $\nabla c_l$ is constrained by the Gibbs-Duhem equation
 \begin{equation}
-    \nabla c_l = - \sum_{j \neq l} \nabla c_j.
+    \sum_{j} x_j \nabla \mu_j = 0.
 \end{equation}
 
-For a binary mixture, taking $l = 2$, this reduces to
+For a binary ideal gas mixture, taking $l = 2$, this reduces to
 \begin{equation}
     \begin{split}
         J_1^{(n, n)} = - D_{11}^{(n, 2)} \nabla c_1, &\quad J_2^{(n, n)} = - D_{21}^{(n, 2)} \nabla c_1, \\
@@ -36,7 +36,7 @@ For a binary mixture, taking $l = 2$, this reduces to
 \end{equation}
 a commonly known formulation of Ficks' law in binary mixtures.
 
-To most easily expand our formulation of Ficks' law from binary to multicomponent mixtures, and to facilitate keeping track of indices, the KineticGas always\footnote{See note on the option \code{use\_binary=True}.} returns an $N \times N$ diffusion matrix, defined through
+To most easily expand our formulation of Ficks' law from binary to multicomponent mixtures, and to facilitate keeping track of indices, the KineticGas package always\footnote{See note on the option \code{use\_binary=True}.} returns an $N \times N$ diffusion matrix, defined through
 \begin{equation}
     \begin{pmatrix}J_1 \\ J_2 \\ \vdots \\ J_N \end{pmatrix}^{(n, f)} = -
     \begin{bmatrix}
@@ -58,7 +58,7 @@ where the dependent species, $l$, is selected with the \code{dependent\_idx} opt
     \begin{pmatrix}\nabla c_1 \\ \nabla c_2\end{pmatrix}
 \end{equation}
 
-where, as described above, the coefficients fulfill $D_{11}^{(n, 2)} = - D_{21}^{(n, 2)}$. If we select species 1 as the dependent component, the resulting matrix is
+where, as described above, the coefficients fulfil $D_{11}^{(n, 2)} = - D_{21}^{(n, 2)}$. If we select species 1 as the dependent component, the resulting matrix is
 \begin{equation}
     \begin{pmatrix}J_1 \\ J_2\end{pmatrix}^{(n, n)} = -
     \begin{bmatrix}
@@ -67,11 +67,15 @@ where, as described above, the coefficients fulfill $D_{11}^{(n, 2)} = - D_{21}^
     \end{bmatrix}^{(n, 1)}
     \begin{pmatrix}\nabla c_1 \\ \nabla c_2\end{pmatrix}
 \end{equation}
-where, because for a binary mixture at isothermal, isobaric conditions, $\nabla c_1 = - \nabla c_2$, and in the CoN FoR, $J_1^{(n, n)} = - J_2^{(n, n)}$, we have $D_{12}^{(n, 1)} = - D_{11}^{(n, 2)}$ and $D_{22}^{(n, 1)} = - D_{12}^{(n, 1)} = D_{11}^{(n, 2)}$. Because the binary system is often of interest, and we only need on diffusion coefficient to describe the system, using the option \code{use\_binary=True} with the \code{interdiffusion} method, will return the diffusion coefficient
+where, because for an ideal binary mixture at isothermal, isobaric conditions, $\nabla c_1 = - \nabla c_2$, and in the CoN FoR, $J_1^{(n, n)} = - J_2^{(n, n)}$, we have $D_{12}^{(n, 1)} = - D_{11}^{(n, 2)}$ and $D_{22}^{(n, 1)} = - D_{12}^{(n, 1)} = D_{11}^{(n, 2)}$. A similar, but slightly more intricate relation, holds also for non-ideal mixtures.\cite{retmie} Because the binary system is often of interest, and we only need one diffusion coefficient to describe the system, using the option \code{use\_binary=True}\footnote{The default for binary systems is \code{use\_binary=True}.} with the \code{interdiffusion} method, will return the diffusion coefficient
 \begin{equation}
-    D^{(f)} = D_{11}^{(f, 2)} = D_{22}^{(f, 1)} = - D_{12}^{(f, 1)} = - D_{21}^{(f, 2)}
+    D^{(f)} = 
+    \begin{cases}
+        D_{11}^{(f, 2)} (= - D_{21}^{(f, 2)}), & \text{if} \quad \code{\text{dependent\_idx}} = 2 \quad \text{(default)}\\
+        D_{22}^{(f, 1)} (= - D_{12}^{(f, 1)}), & \text{if} \quad \code{\text{dependent\_idx}} = 1 
+    \end{cases}
 \end{equation}
-where $f$ indicates the frame of reference, such that
+where $f$ indicates the frame of reference, such that the diffusion coefficient returned by default for a binary system is the one fulfilling
 \begin{equation}
     J_1^{(n, n)} = - D^{(n)} \nabla c_1,
 \end{equation}
@@ -96,7 +100,7 @@ and in the binary case reduce to
         J_2^{(n, f)} &= - D_{21}^{(f)} \nabla c_1 - D_{22}^{(f)} \nabla c_2.
     \end{split}
 \end{equation}
-Note that this diffusion matrix is not unique, and not invertible. It is primarily of interest because it gives easy access to the coefficients given in Eq. (19) of Ref. \cite{retmie}. For practical calculations it is recommended to always use an independent set of driving forces.
+Note that this diffusion matrix is not unique, and not necessarily invertible. It is primarily of interest because it gives easy access to the coefficients given in Eq. (19) of Ref. \cite{retmie}. For practical calculations it is recommended to always use an independent set of driving forces.
 
 \subsection{Frames of Reference}
 
@@ -108,7 +112,7 @@ in e.g. CFD calculations, we are typically more interested in fluxes in the cent
 \begin{equation}
     \sum_i J_i^{(m, m)} = \sum_i m_i J_i^{(n, m)} = 0.
 \end{equation}
-We compute diffusion coefficients that apply in the CoM FoR by using the option \code{frame\_of\_reference='CoM'} with the \code{interdiffusion} method, which returns the matrix of diffusion coefficients corresponding to the equation
+We compute diffusion coefficients that apply in the CoM FoR by using the option \code{frame\_of\_reference='CoM'} with the \code{interdiffusion} method, which then returns the matrix of diffusion coefficients corresponding to the equation
 \begin{equation}
     \begin{pmatrix}J_1 \\ J_2 \\ \vdots \\ J_N \end{pmatrix}^{(n, m)} = -
     \begin{bmatrix}

@@ -26,9 +26,7 @@ Product ipow(int base, int expo){
     }
     return r;
 }
-#pragma endregion
 
-#pragma region // Fac definition
 Fac::Fac(int v) : val{v} {}
 
 long long Fac::eval(){    
@@ -43,9 +41,7 @@ long long Fac::eval(){
         return r;
     }
 }
-#pragma endregion
 
-#pragma region // Product definition
 Product::Product(){
     isize = 0;
     d = 0.0;
@@ -84,9 +80,7 @@ Product Product::operator*=(const Product& rhs){
     d *= rhs.d;
     return *this;
 }
-#pragma endregion
 
-#pragma region // Frac definition
 Frac::Frac(Product num, Product den) : numerator{num}, denominator{den} {}
 Frac::Frac(Product num) : numerator{num}, denominator{1} {}
 Frac::Frac(int i) : numerator{i}, denominator{1} {}
@@ -110,7 +104,6 @@ double Frac::eval(){
                 denominator.ilist[di] = 1;
                 if (++ni == numerator.isize) break;
             }
-
         }
     }
     return numerator.eval() / denominator.eval();
@@ -129,9 +122,6 @@ Frac& Frac::operator/=(const Frac& rhs){
     return *this;
 }
 
-#pragma endregion
-
-#pragma region // Operators
 Frac operator*(const Frac& lhs, const Frac& rhs){
     Frac r{lhs};
     return r *= rhs;
@@ -151,7 +141,6 @@ double operator+=(double& lhs, const Frac& rhs){
     lhs += r.eval();
     return lhs;
 }
-#pragma endregion
 
 int factorial_tests(){
     int ia{1}, ib{2}, ic{3}, id{4};
