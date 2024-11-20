@@ -11,6 +11,91 @@ vector2d dual_to_double(const vector2d2& vin){
     return vout;
 }
 
+// ------------------------------------------------------------------------------ //
+// -------------------------- Constructors and helpers -------------------------- // 
+// ------------------------------------------------------------------------------ //
+
+ExtSutherland::ExtSutherland(std::string comps, size_t nterms, bool is_idealgas)
+    : Spherical(comps, is_idealgas),
+    C(nterms, vector2d(Ncomps, vector1d(Ncomps))), 
+    lambda(nterms, vector2d(Ncomps, vector1d(Ncomps, 0.))), 
+    beta_exp(nterms, vector2d(Ncomps, vector1d(Ncomps, 0.))), 
+    rho_exp(nterms, vector2d(Ncomps, vector1d(Ncomps, 0.))), 
+    nterms{nterms},
+    sigma_eff(Ncomps, vector1d2(Ncomps)), 
+    r_min(Ncomps, vector1d2(Ncomps)), 
+    eps_eff(Ncomps, vector1d2(Ncomps)), 
+    vdw_alpha(Ncomps, vector1d2(Ncomps)),
+    C_eff(nterms, vector2d2(Ncomps, vector1d2(Ncomps)))
+{}
+
+ExtSutherland::ExtSutherland(vector1d mole_weights, vector2d sigma, vector2d eps, 
+            vector3d C, vector3d lambda, vector3d beta_exp, vector3d rho_exp, 
+            bool is_idealgas, bool is_singlecomp)
+    : Spherical(mole_weights, sigma, eps, is_idealgas, is_singlecomp), 
+    C{C}, 
+    lambda{lambda}, 
+    beta_exp(beta_exp), 
+    rho_exp{rho_exp}, nterms{C.size()},
+    sigma_eff(Ncomps, vector1d2(Ncomps)), 
+    r_min(Ncomps, vector1d2(Ncomps)), 
+    eps_eff(Ncomps, vector1d2(Ncomps)), 
+    vdw_alpha(Ncomps, vector1d2(Ncomps)),
+    C_eff(C.size(), vector2d2(Ncomps, vector1d2(Ncomps)))
+{init_effective_params();}
+    
+ExtSutherland::ExtSutherland(vector1d mole_weights, vector2d sigma, vector2d eps, 
+                        size_t nterms, bool is_idealgas, bool is_singlecomp)
+    : Spherical(mole_weights, sigma, eps, is_idealgas, is_singlecomp), 
+    C(nterms, vector2d(Ncomps, vector1d(Ncomps))), 
+    lambda(nterms, vector2d(Ncomps, vector1d(Ncomps, 0.))), 
+    beta_exp(nterms, vector2d(Ncomps, vector1d(Ncomps, 0.))), 
+    rho_exp(nterms, vector2d(Ncomps, vector1d(Ncomps, 0.))), 
+    nterms{nterms},
+    sigma_eff(Ncomps, vector1d2(Ncomps)), 
+    r_min(Ncomps, vector1d2(Ncomps)), 
+    eps_eff(Ncomps, vector1d2(Ncomps)), 
+    vdw_alpha(Ncomps, vector1d2(Ncomps)),
+    C_eff(nterms, vector2d2(Ncomps, vector1d2(Ncomps)))
+{init_effective_params();}
+
+void ExtSutherland::init_effective_params(){
+    for (size_t i = 0; i < Ncomps; i++){
+        for (size_t j = 0; j < Ncomps; j++){
+            sigma_eff[i][j] = sigma_eff[j][i] = r_min[i][j] = r_min[j][i] = sigma[i][j];
+            eps_eff[i][j] = eps_eff[j][i] = eps[i][j];
+        }
+    }
+}
+
+void ExtSutherland::mix_sigma(){
+    for (size_t i = 0; i < Ncomps; i++){
+        for (size_t j = i; j < Ncomps; j++){
+            sigma[i][j] = sigma[j][i] = 0.5 * (sigma[i][i] + sigma[j][j]);
+        }
+    }
+}
+
+void ExtSutherland::mix_epsilon(){
+    for (size_t i = 0; i < Ncomps; i++){
+        for (size_t j = i; j < Ncomps; j++){
+            eps[i][j] = eps[j][i] = sqrt(eps[i][i] * eps[j][j]);
+        }
+    }
+}
+
+void ExtSutherland::mix_exponents(std::vector<std::vector<double>>& expo){
+    for (size_t i = 0; i < Ncomps; i++){
+        for (size_t j = i; j < Ncomps; j++){
+            expo[i][j] = expo[j][i] = 3. + sqrt((expo[i][i] - 3.) * (expo[j][j] - 3.));
+        }
+    }
+}
+
+// ----------------------------------------------------------------------- //
+// -------------------------- Potential Methods -------------------------- // 
+// ----------------------------------------------------------------------- //
+
 dual2 ExtSutherland::potential(int i, int j, dual2 r, dual2 T, dual2 rho){
     if (T > 1e4) throw std::runtime_error("Using density instead of T?");
     dual2 p{0.0};
@@ -72,6 +157,10 @@ dual2 ExtSutherland::potential_r(int i, int j, dual2 r){
 dual2 ExtSutherland::potential_rr(int i, int j, dual2 r){
     return potential_rr(i, j, r, current_T, current_rho);
 }
+
+// -------------------------------------------------------------------------------------- //
+// -------------------------- Handling of effective parameters -------------------------- // 
+// -------------------------------------------------------------------------------------- //
 
 void ExtSutherland::set_effective_params(dual2 rho, dual2 T){
     if ((rho == current_rho) && (T == current_T)) return;
@@ -157,6 +246,10 @@ vector2d ExtSutherland::get_b_max(double T){
     }
     return b_max;
 }
+
+// ---------------------------------------------------------------------------------- //
+// -------------------------- Radial distribution function -------------------------- // 
+// ---------------------------------------------------------------------------------- //
 
 vector2d2 ExtSutherland::get_BH_diameters(dual2 rho, dual2 T){
     // 20-point Gauss-Legendre from 0.5 sigma to 1 sigma. Using constant value of 1 for integrand within (0, 0.5) sigma.

@@ -15,13 +15,13 @@ Note : This class also overrides the methods of Spherical that call the potentia
 #include <mutex>
 
 class QuantumMie : public ExtSutherland {
-    public:
+public:
     const std::vector<int> FH_order; // Feynman-Hibbs correction order
-    vector3d Q_factors;
     vector1d computed_T;
     vector3d sigma_eff_cache;
     vector3d sigma_min_cache;
 
+    QuantumMie(std::string comps, int FH_order, bool is_idealgas=false);
     QuantumMie(vector1d mole_weights, vector2d sigma, vector2d eps, vector2d la, vector2d lr, std::vector<int> FH_order,
                 bool is_idealgas, bool is_singlecomp);
 
@@ -43,16 +43,15 @@ class QuantumMie : public ExtSutherland {
     vector2d get_sigma_eff(double T){return ExtSutherland::get_sigma_eff(current_rho, T);}
     vector2d get_sigma_min(double T){return ExtSutherland::get_sigma_min(current_rho, T);}
     vector2d get_epsilon_eff(double T){return ExtSutherland::get_epsilon_eff(current_rho, T);}
-    
-    StatePoint get_transfer_length_point(double rho, double T, const vector1d& x) override {
-        return StatePoint(current_rho, T);
-    }
 
 private:
     using ExtSutherland::potential;
     using ExtSutherland::potential_derivative_r;
     using ExtSutherland::potential_dblderivative_rr;
 
+    void init_FH_terms();
+    void set_effective_params(dual2 rho, dual2 T) override {ExtSutherland::set_effective_params(current_rho, T);}
+    StatePoint get_transfer_length_point(double rho, double T, const vector1d& x) override {return Spherical::get_transfer_length_point(rho, T, x);}
     inline double Q1(size_t i, size_t j, const vector2d& lamb){
         return lamb[i][j] * (lamb[i][j] - 1);
     }

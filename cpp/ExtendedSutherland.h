@@ -5,6 +5,30 @@ References:
         Thomas Lafitte; Anastasia Apostolakou; Carlos Avendaño; Amparo Galindo; Claire S. Adjiman; Erich A. Müller; George Jackson
         J. Chem. Phys. 139, 154504 (2013)
         https://doi.org/10.1063/1.4819786
+
+-------      TAKE HEED YE WHO COMETH HERE AND DESIRES TO INHERIT THIS CLASS      --------
+
+Because this class implements a potential that is in general dependent on both temperature 
+and density, we need to use set_internals actively. Additionally, we want to use hyperduals,
+so the class implements `set_effective_params` which is used to propagate derivatives.
+
+Essentially, the class holds a bunch of "effective parameters" that are valid only at the current
+density and temperature, in order to not need to re-compute these parameters in every call in a given
+call-chain. The setting of these parameters is handled by `set_effective_params`.
+
+If you override this class, and want to implement a potential that is either only temperature 
+dependent, or only density dependent, still want to take advantage of caching of collision integrals
+and transfer lengths, you will need to override `set_effective_params` as appropriate.
+
+Further, the effective parameters from the previous calculation are used as initial guesses for the 
+next calculation. This gives a huge speedup when doing e.g calculations along an isoline, without
+a notable cost at other times. The caveat is that you need to initialize the effective parameters
+to something reasonable in the constructor. If you are inheriting this class, you should call
+the `init_effective_params` method after setting all potential parameters in your constructor.
+    - Note: This is not neccesary if you forward the construction call to one of the ExtSutherland
+            constructors that takes the potential parameters as input.
+
+----------------------------     YE HATH NOW TAKEN HEED      ----------------------------
 */
 #pragma once
 #include "KineticGas.h"
@@ -40,31 +64,12 @@ struct RDFConstants{
 
 class ExtSutherland : public Spherical{
 public:
+    ExtSutherland(std::string comps, size_t nterms, bool is_idealgas=false);
+    ExtSutherland(vector1d mole_weights, vector2d sigma, vector2d eps, 
+                size_t nterms, bool is_idealgas=false, bool is_singlecomp=false);
     ExtSutherland(vector1d mole_weights, vector2d sigma, vector2d eps, 
                 vector3d C, vector3d lambda, vector3d beta_exp, vector3d rho_exp, 
-                bool is_idealgas=false, bool is_singlecomp=false)
-        : Spherical(mole_weights, sigma, eps, is_idealgas, is_singlecomp), C{C}, 
-        lambda{lambda}, beta_exp(beta_exp), rho_exp{rho_exp}, nterms{C.size()},
-        sigma_eff(Ncomps, vector1d2(Ncomps)), r_min(Ncomps, vector1d2(Ncomps)), 
-        eps_eff(Ncomps, vector1d2(Ncomps)), vdw_alpha(Ncomps, vector1d2(Ncomps)),
-        C_eff(C.size(), vector2d2(Ncomps, vector1d2(Ncomps)))
-        {}
-    
-    ExtSutherland(vector1d mole_weights, vector2d sigma, vector2d eps, size_t nterms, bool is_idealgas=false, bool is_singlecomp=false)
-        : Spherical(mole_weights, sigma, eps, is_idealgas, is_singlecomp), 
-        C(nterms, vector2d(Ncomps, vector1d(Ncomps))), lambda(nterms, vector2d(Ncomps, vector1d(Ncomps, 0.))), 
-        beta_exp(nterms, vector2d(Ncomps, vector1d(Ncomps, 0.))), rho_exp(nterms, vector2d(Ncomps, vector1d(Ncomps, 0.))), nterms{nterms},
-        sigma_eff(Ncomps, vector1d2(Ncomps)), r_min(Ncomps, vector1d2(Ncomps)), 
-        eps_eff(Ncomps, vector1d2(Ncomps)), vdw_alpha(Ncomps, vector1d2(Ncomps)),
-        C_eff(nterms, vector2d2(Ncomps, vector1d2(Ncomps)))
-        {
-            for (size_t i = 0; i < Ncomps; i++){
-                for (size_t j = 0; j < Ncomps; j++){
-                    sigma_eff[i][j] = sigma_eff[j][i] = r_min[i][j] = r_min[j][i] = sigma[i][j];
-                    eps_eff[i][j] = eps_eff[j][i] = eps[i][j];
-                }
-            }
-        }
+                bool is_idealgas=false, bool is_singlecomp=false);
 
     dual2 potential(int i, int j, dual2 r, dual2 T, dual2 rho);
     dual2 potential_r(int i, int j, dual2 r, dual2 T, dual2 rho);
@@ -76,6 +81,17 @@ public:
     vector3d get_rdf_terms(double rho, double T, const vector1d& x); // Return g0, g1, g2 (no correction), g2 (with correction)
     virtual vector2d2 get_BH_diameters(dual2 rho, dual2 T);
     vector2d get_BH_diameters(double rho, double T);
+
+    std::string potential_params_to_string(size_t i){return potential_params_to_string(i, i);}
+    std::string potential_params_to_string(size_t i, size_t j){
+        std::stringstream strm;
+        strm << "Sigma : " << sigma[i][j] << "\nEpsilon : " << eps[i][j] << "\n";
+        strm << "Term   |   C   |  beta_exp   |  rho_exp   |   lambda   \n";
+        for (size_t ti = 0; ti < nterms; ti++){
+            strm << ti << " | " << C[ti][i][j] << " | " << beta_exp[ti][i][j] << " | " << rho_exp[ti][i][j] << " | " << lambda[ti][i][j] << "\n";
+        }
+        return strm.str();
+    }
 
     vector2d get_sigma_eff(double rho, double T){
         set_sigma_eff(rho, T);
@@ -109,7 +125,16 @@ protected:
     vector3d rho_exp;
     size_t nterms;
 
-    void set_effective_params(dual2 rho, dual2 T);
+    // Because effective parameters from previous calculation are used as initial guesses in next calculation,
+    // we need to set them to some value at init. We just set them to the potential parameters.
+    // NOTE: Inheriting classes that set their potential parameters after calling the ExtSutherland constructor
+    //      must call the init_effective_params method to ensure that effective parameters are initialised to something reasonable.
+    void init_effective_params();
+    void mix_sigma();
+    void mix_epsilon();
+    void mix_exponents(vector2d& expo);
+
+    virtual void set_effective_params(dual2 rho, dual2 T);
     void set_internals(double rho, double T, const vector1d& x) override {set_effective_params(rho, T);}
     double current_T{-1.}, current_rho{-1.};
     bool C_set{false}, sigma_set{false}, eps_set{false}, alpha_set{false};
@@ -121,16 +146,16 @@ protected:
 
     OmegaPoint get_omega_point(int i, int j, int l, int r, double T) override {
         if (T != current_T){
-            throw std::runtime_error("Something is very wrong ...");
+            throw std::runtime_error("Something is very wrong ... (in ExtSutherland::get_omega_point)");
         }
         return OmegaPoint(i, j, l, r, T, current_rho);
     }
 
     StatePoint get_transfer_length_point(double rho, double T, const vector1d& x) override {
         if (T != current_T){
-            throw std::runtime_error("Something is even more wrong ...");
+            throw std::runtime_error("Something is even more wrong ... (in ExtSutherland::get_transfer_length_point)");
         }
-        return StatePoint(rho, T);
+        return StatePoint(T, rho);
     }
 
     inline vector2d model_rdf(double rho, double T, const std::vector<double>& x) override {

@@ -23,9 +23,6 @@
 // -------------------------------Constructor and helper functions------------------------------------ //
 
 void KineticGas::set_masses(){
-    m0 = vector2d(Ncomps, vector1d(Ncomps));
-    M = vector2d(Ncomps, vector1d(Ncomps));
-    red_mass = vector2d(Ncomps, vector1d(Ncomps));
     for (int i = 0; i < Ncomps; i++){
         for (int j = 0; j < Ncomps; j++){
             M[i][j] = (m[i] / (m[i] + m[j]));
@@ -39,7 +36,7 @@ KineticGas::KineticGas(vector1d mole_weights, vector2d sigma, vector2d eps, bool
     : Ncomps{static_cast<size_t>(mole_weights.size())},
      is_idealgas{is_idealgas},
      is_singlecomp{is_singlecomp},
-     m{mole_weights},
+     m{mole_weights}, M(Ncomps, vector1d(Ncomps, 0.)), m0(Ncomps, vector1d(Ncomps, 0.)), red_mass(Ncomps, vector1d(Ncomps, 0)),
      sigma{sigma},
      eps{eps}
     {set_masses();}
@@ -88,9 +85,10 @@ KineticGas::KineticGas(std::string comps, bool is_idealgas)
     : Ncomps{static_cast<size_t>(std::max(static_cast<int>(std::count_if(comps.begin(), comps.end(), [](char c) {return c == ',';})) + 1, 2))}, 
     is_idealgas{is_idealgas},
     is_singlecomp{std::count_if(comps.begin(), comps.end(), [](char c) {return c == ',';}) == 0},
+    m(Ncomps, 0.), M(Ncomps, vector1d(Ncomps, 0.)), m0(Ncomps, vector1d(Ncomps, 0.)), red_mass(Ncomps, vector1d(Ncomps, 0)),
+    sigma(Ncomps, vector1d(Ncomps, 0.)), eps(Ncomps, vector1d(Ncomps, 0)),
     compdata(get_fluid_data(comps))
     {
-        m = std::vector<double>(Ncomps, 0.);
         for (size_t i = 0; i < Ncomps; i++){
             m[i] = static_cast<double>(compdata[i]["mol_weight"]) * 1e-3 / AVOGADRO;
         }
@@ -464,11 +462,9 @@ std::vector<double> KineticGas::get_bulk_viscosity_vector(double rho, double T, 
     std::vector<double> K_dprime = get_K_dblprime_factors(rho, T, p, x);
     std::vector<double> viscosity_vec(N * Ncomps, 0.);
     for (int i = 0; i < Ncomps; i++){
-        std::cout << K_dprime[i] << ", ";
         viscosity_vec[Ncomps + i] = x[i] * K_dprime[i]; // only non-zero for p = 1 (the p-index, not the pressure)
     }
     viscosity_vec[Ncomps] = 0.;
-    std::cout << "\n";
     return viscosity_vec;
 }
 

@@ -63,14 +63,15 @@ set the environment variable 'THERMOPACK_DIR=</path/to/thermopack>' to help cmak
   return() # Hoping that thermopack target has been created by thermopack, exiting ...
 endif()
 
-if(NOT DEFINED(FLUID_DIR))
-  set(FLUID_DIR "../fluids" CACHE STRING "Default search path for fluid files")
-endif()
-message(STATUS "Default search path for fluid files (relative to dynamic library): ${FLUID_DIR}")
-
 option(purecpp "Build pure cpp lib" OFF)
 if (purecpp)
   message(STATUS "${ColorBlue}Generating C++ library targets. Run `cmake [-Dpurecpp=OFF] ..` to skip this target (you will need to clear the CMakeCache first).${ColorDefault}")
+  
+  if(NOT DEFINED(FLUID_DIR))
+    set(FLUID_DIR "../fluids" CACHE STRING "Default search path for fluid files")
+  endif()
+  message(STATUS "Default search path for fluid files (relative to dynamic library): ${FLUID_DIR}")
+
   set(libTARGET kineticgas)
   add_library(${libTARGET} SHARED ${COMMON_SRC})
   target_include_directories(${libTARGET} PUBLIC ${JSON_INCLUDE} ${EIGEN_INCLUDE} ${AUTODIFF_INCLUDE})

@@ -698,7 +698,7 @@ class py_KineticGas:
         N = self.default_N if (N is None) else N
         return self.cpp_kingas.thermal_diffusivity(T, Vm, x, N)
 
-    def viscosity(self, T, Vm, x, N=None, idealgas=None):
+    def viscosity(self, T, Vm, x, N=None):
         r"""TV-Property
         Compute the shear viscosity, $\eta$. For models initialized with `is_idealgas=True`, the shear viscosity
         is not a function of density (i.e. $d \eta / d V_m = 0). See Eq. (12) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
@@ -708,14 +708,12 @@ class py_KineticGas:
             Vm (float) : Molar volume [m3 / mol]
             x (array_like) : Molar composition [-]
             N (int, optional) : Enskog approximation order
-            idealgas (bool, optional) : Use infinite dilution value? Defaults to model default value (set on init)
 
         Returns:
             (float) : The shear viscosity of the mixture [Pa s].
         """
         x = self.check_valid_composition(x)
         N = self.default_N if (N is None) else N
-        Vm = Vm if (idealgas is False) else 1e12
         return self.cpp_kingas.viscosity(T, Vm, x, N)
         if N is None:
             N = self.default_N
@@ -768,7 +766,7 @@ class py_KineticGas:
         """
         if N is None:
             N = self.default_N
-        self.check_valid_composition(x)
+        x = self.check_valid_composition(x)
         if N < 2:
             warnings.warn(f'Bulk viscosity is a second order phemomenon, got Enskog order N = {N}', Warning)
             return 0. # Bulk viscosity is a second order phenomenon
@@ -1477,21 +1475,16 @@ class py_KineticGas:
         """
         if N is None:
             N = self.default_N
-        self.check_valid_composition(mole_fracs)
-        if (T, particle_density, tuple(mole_fracs), N) in self.computed_h_points.keys():
-            return self.computed_h_points[(T, particle_density, tuple(mole_fracs), N)]
+        mole_fracs = self.check_valid_composition(mole_fracs)
 
         p, = self.eos.pressure_tv(T, Avogadro / particle_density, mole_fracs)
         gamma = self.cpp_kingas.get_bulk_viscosity_matrix(particle_density, T, mole_fracs, N)
         h_rhs = self.cpp_kingas.get_bulk_viscosity_vector(particle_density, T, p, mole_fracs, N)
 
-        print(gamma)
-        print(h_rhs)
         if any(np.isnan(np.array(gamma).flatten())):
             warnings.warn('Viscosity matrix contained NAN elements!')
             h = np.array([np.nan for _ in h_rhs])
         else:
             h = lin.solve(gamma, h_rhs)
 
-        self.computed_b_points[(T, particle_density, tuple(mole_fracs), N)] = tuple(h)
         return h

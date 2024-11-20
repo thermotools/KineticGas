@@ -51,6 +51,8 @@ class QuantumMie(MieType.MieType):
                     self.eos.init(comps, parameter_reference=parameter_ref)
             else:
                 self.eos = use_eos
+                
+        self.cpp_kingas.set_eos(self.eos)
 
     def get_fh_order(self, ci=None):
         return self.__FH_orders[ci] if (ci is not None) else copy.deepcopy(self.__FH_orders)
