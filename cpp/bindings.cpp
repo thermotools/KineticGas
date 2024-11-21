@@ -176,7 +176,7 @@ PYBIND11_MODULE(libpykingas, handle){
     py::class_<QuantumMie>(handle, "cpp_QuantumMie")
         .def(py::init<vector1d, vector2d, vector2d, vector2d, vector2d, std::vector<int>, bool, bool>())
         KineticGas_bindings(QuantumMie)
-        // .def("potential", py::overload_cast<int, int, double, double>(&QuantumMie::potential))
+        .def("potential", py::overload_cast<int, int, double, double>(&QuantumMie::potential))
         // .def("potential_derivative_r", py::overload_cast<int, int, double, double>(&QuantumMie::potential_derivative_r))
         // .def("potential_dblderivative_rr", py::overload_cast<int, int, double, double>(&QuantumMie::potential_dblderivative_rr))
         // .def("get_sigma_eff", py::overload_cast<double>(&QuantumMie::get_sigma_eff))
