@@ -1,7 +1,9 @@
 #include "multiparam.h"
+#include "Factorial.h"
 #include <algorithm>
 
 double partialfactorial(int start, int stop){
+    // Evaluate (stop! / start!)
     double fac = 1.;
     start = (start == 0) ? 1 : start;
     for (int i = start; i <= stop; i++){
@@ -50,10 +52,13 @@ dual2 ModTangToennis::potential(int i, int j, dual2 r){
     for (int n = 3; n <= 8; n++){
         dual2 tmp = 0.;
         int k = 0;
+        // Prevent factorial overflow: Compute (power / factorial) in several steps, so that each individual fraction 
+        // can be computed without overflow, before multiplying the fractions. Otherwise we get issues with either the
+        // numerator, denominator, or both, overflowing, even though the evaluated fraction is a reasonable number.
         for (; k <= std::min(2 * n, 10); k++){
             tmp += pow(param.b * r, k) / partialfactorial(1, k);
         }
-        for (; k <= 2 * n; k++){ // Prevent factorial overflow
+        for (; k <= 2 * n; k++){
             tmp += (pow(param.b * r, 10) / partialfactorial(1, 10)) * (pow(param.b * r, k - 10) / partialfactorial(11, k));
         }
         u -= (param.C[n - 3] / pow(r, 2 * n)) * (1 - exp_prefactor * tmp);
@@ -142,4 +147,56 @@ double HFD_B2::potential(int i, int j, double r){
     }
     V -= F * C;
     return V * param.eps_div_k * BOLTZMANN;
+}
+
+Patowski::Patowski(std::string comps)
+    : Quantum(comps)
+{
+    const auto cdata = compdata[0]["Patowski"]["default"];
+    param.Cex1 = cdata["Cex1"];
+    param.Cex2 = cdata["Cex2"];
+    param.Csp1 = cdata["Csp1"];
+    param.Csp2 = cdata["Csp2"];
+    param.Csp3 = cdata["Csp3"];
+    param.Csp4 = cdata["Csp4"];
+    param.delta = cdata["delta"];
+    param.C6 = cdata["C6"];
+    param.C8 = cdata["C8"];
+    param.C10 = cdata["C10"];
+    param.Cn[0] = param.C6; param.Cn[1] = param.C8; param.Cn[2] = param.C10;
+    param.sigma = cdata["sigma"];
+    param.r_min = cdata["r_min"];
+    param.eps_div_k = cdata["eps_div_k"];
+    for (size_t i = 0; i < Ncomps; i++){
+        for (size_t j = 0; j < Ncomps; j++){
+            sigma[i][j] = param.sigma;
+            eps[i][j] = param.eps_div_k * BOLTZMANN;
+        }
+    }
+}
+
+dual2 Patowski::potential(int i, int j, dual2 r){
+    r *= 1e10; // Working in Å internally
+    dual2 p = (param.Csp1 + r * param.Csp2 + pow(r, 2) * param.Csp3 + pow(r, 3) * param.Csp4) * exp(param.Cex1 + param.Cex2 * r);
+    for (size_t n = 3; n <= 5; n++){
+        dual2 tmp = 0;
+        for (int k = 0; k <= 2 * n; k++){
+            tmp += pow(param.delta * r, k) / Fac(k).eval_d();
+        }
+        p += (param.Cn[n - 3] / pow(r, 2 * n)) * (1 - tmp * exp(- param.delta * r));
+    }
+    return p * BOLTZMANN;
+}
+
+double Patowski::potential(int i, int j, double r){
+    r *= 1e10; // Working in Å internally
+    double p = (param.Csp1 + r * param.Csp2 + pow(r, 2) * param.Csp3 + pow(r, 3) * param.Csp4) * exp(param.Cex1 + param.Cex2 * r);
+    for (size_t n = 3; n <= 5; n++){
+        double tmp = 0;
+        for (int k = 0; k <= 2 * n; k++){
+            tmp += pow(param.delta * r, k) / Fac(k).eval_d();
+        }
+        p += (param.Cn[n - 3] / pow(r, 2 * n)) * (1 - tmp * exp(- param.delta * r));
+    }
+    return p * BOLTZMANN;
 }

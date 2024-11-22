@@ -57,3 +57,21 @@ public:
 private:
     HFD_B2_Param param;
 };
+
+struct PatowskiParam{
+    double Cex1, Cex2, Csp1, Csp2, Csp3, Csp4, delta, C6, C8, C10, sigma, eps_div_k, r_min;
+    std::array<double, 3> Cn;     
+};
+
+class Patowski : public Quantum {
+public:
+    Patowski(std::string comps);
+    Patowski(PatowskiParam param);
+
+    dual2 potential(int i, int j, dual2 r) override;
+    double potential(int i, int j, double r) override;
+
+    PatowskiParam get_param(){return param;}
+private:
+    PatowskiParam param;
+};

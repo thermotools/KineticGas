@@ -43,6 +43,7 @@ class Fac{
 
     Fac(int v);
     long long eval();
+    double eval_d();
 };
 
 class Product{

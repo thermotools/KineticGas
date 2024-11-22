@@ -1,14 +1,14 @@
 from pykingas.py_KineticGas import py_KineticGas
 from pykingas.Quantum import Quantum
-from .libpykingas import cpp_ModTangToennis, cpp_TangToennisParam, cpp_HFD_B2
+from .libpykingas import cpp_ModTangToennis, cpp_TangToennisParam, cpp_HFD_B2, cpp_Patowski
 from scipy.constants import Boltzmann, Avogadro
 import numpy as np
 from scipy.integrate import quad
 from scipy.optimize import root
 
-class ModTangToennis(py_KineticGas):
+class MultiParam(py_KineticGas):
 
-    def __init__(self, comps, parameter_ref='default'):
+    def __init__(self, comps):
         """Constructor
         Initialize modified Tang-Toennies potential
         &&
@@ -17,17 +17,6 @@ class ModTangToennis(py_KineticGas):
             parameter_ref (str, optional) : Identifier for parameter set to use
         """
         super().__init__(comps, is_idealgas=True)
-
-        potential = self.fluids[0]['ModTangToennis'][parameter_ref]
-        param = cpp_TangToennisParam(potential['A_div_k'], potential['b'],
-                                     potential['A_tilde_div_k'], potential['a'],
-                                     potential['a_tilde'], potential['eps_div_k'], potential['Re'],
-                                     potential['sigma'], potential['C']
-                                     )
-        self.eps_div_k = potential['eps_div_k']
-        self.sigma = potential['sigma']
-        self.Re = potential['Re'] * 1e-9
-        self.cpp_kingas = cpp_ModTangToennis(param, self.mole_weights, np.ones((2, 2)) * self.sigma, self.is_idealgas)
 
     def potential(self, r):
         """Utility
@@ -94,9 +83,39 @@ class ModTangToennis(py_KineticGas):
         E += quad(integrand, 1.5 * self.sigma * 1e10, np.inf)[0]
         E *= 1e-30
         return - E / ((self.eps_div_k * Boltzmann) * self.sigma ** 3)
+
+class ModTangToennies(MultiParam):
     
+    def __init__(self, comps, parameter_ref='default'):
+        """Constructor
+        Initialize modified Tang-Toennies potential
+        &&
+        Args:
+            comps (str) : Single component identifier
+            parameter_ref (str, optional) : Identifier for parameter set to use
+        """
+        super().__init__(comps, is_idealgas=True)
+
+        potential = self.fluids[0]['ModTangToennis'][parameter_ref]
+        param = cpp_TangToennisParam(potential['A_div_k'], potential['b'],
+                                     potential['A_tilde_div_k'], potential['a'],
+                                     potential['a_tilde'], potential['eps_div_k'], potential['Re'],
+                                     potential['sigma'], potential['C']
+                                     )
+        self.eps_div_k = potential['eps_div_k']
+        self.sigma = potential['sigma']
+        self.Re = potential['Re'] * 1e-9
+        self.cpp_kingas = cpp_ModTangToennis(param, self.mole_weights, np.ones((2, 2)) * self.sigma, self.is_idealgas)
+
 class HFD_B2(Quantum):
 
     def __init__(self, comps):
         super().__init__(comps)
         self.cpp_kingas = cpp_HFD_B2(comps)
+
+class Patowski(MultiParam, Quantum):
+
+    def __init__(self, comps):
+        super().__init__(comps)
+        self.cpp_kingas = cpp_Patowski(comps)
+        self.param = self.cpp_kingas.get_param()

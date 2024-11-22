@@ -246,6 +246,32 @@ PYBIND11_MODULE(libpykingas, handle){
         Spherical_potential_bindings(HFD_B2)
         ;
 
+    py::class_<PatowskiParam>(handle, "cpp_PatowskiParam")
+        .def_readonly("sigma", &PatowskiParam::sigma)
+        .def_readonly("eps_div_k", &PatowskiParam::eps_div_k)
+        .def_readonly("r_min", &PatowskiParam::r_min)
+        .def("__repr__",
+        [](const PatowskiParam &t) {
+            std::stringstream strm;
+            strm << "PatowskiParam\n"
+                 << "\tCex       : " << t.Cex1 << ", " << t.Cex2 << "\n"
+                 << "\tCsp       : " << t.Csp1 << ", " << t.Csp2 << ", " << t.Csp3 << ", " << t.Csp4 << "\n"
+                 << "\tCn        : " << t.C6 << ", " << t.C8 << ", " << t.C10 << "\n"
+                 << "\t----------\n"
+                 << "\tsigma     : " << t.sigma << "\n"
+                 << "\teps_div_k : " << t.eps_div_k << "\n"
+                 << "\tr_min     : " << t.r_min << std::endl;
+            return strm.str();
+        })
+        ;
+
+    py::class_<Patowski, Quantum>(handle, "cpp_Patowski")
+        .def(py::init<std::string>())
+        KineticGas_bindings(Patowski)
+        Spherical_potential_bindings(Patowski)
+        .def("get_param", &Patowski::get_param)
+        ;
+
     py::class_<PseudoHardSphere>(handle, "cpp_PseudoHardSphere")
         .def(py::init<
                         vector1d,

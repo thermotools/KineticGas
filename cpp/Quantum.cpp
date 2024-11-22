@@ -34,14 +34,8 @@ double bessel_deriv(int n, double r, size_t kind){
 
 Quantum::Quantum(std::string comps) : Spherical(comps, true) {
     half_spin = std::vector<unsigned int>(Ncomps, 0);
-    sigma = vector2d(Ncomps, vector1d(Ncomps, 0.));
-    eps = vector2d(Ncomps, vector1d(Ncomps, 0.));
     for (size_t i = 0; i < Ncomps; i++){
         half_spin[i] = static_cast<size_t>(static_cast<double>(compdata[i]["spin"]) * 2 + 0.5);
-        for (size_t j = 0; j < Ncomps; j++){
-            sigma[i][j] = 3e-10;
-            eps[i][j] = 150 * BOLTZMANN;
-        }
     }
 }
 

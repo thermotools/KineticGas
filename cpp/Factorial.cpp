@@ -42,6 +42,17 @@ long long Fac::eval(){
     }
 }
 
+double Fac::eval_d(){
+    if (val == 0 || val == 1){
+        return 1;
+    }
+    double r = 1;
+    for (int x = 1; x <= val; x++){
+        r *= x;
+    }
+    return r;
+}
+
 Product::Product(){
     isize = 0;
     d = 0.0;

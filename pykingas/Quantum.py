@@ -3,9 +3,9 @@ from .py_KineticGas import py_KineticGas
 
 class Quantum(py_KineticGas):
 
-    def __init__(self, comps):
-        super().__init__(comps)
-        self.cpp_kingas = cpp_Quantum(comps)
+    def __init__(self, comps, is_idealgas=True):
+        super().__init__(comps, is_idealgas=True)
+        self.cpp_kingas = None
         self.eos = None
     
     def potential(self, i, j, r):
