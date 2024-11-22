@@ -609,6 +609,7 @@ double KineticGas::L_ij(int p, int q, int i, int j, double T){
     double M2{M[j][i]};
     for (int l = 1; l <= std::min(p, q) + 2; l++){
         for (int r = l; r <= p + q + 4 - l; r++){
+            std::cout << "You're wasting time on unnessecary collision integrals! Plz Fix! (check conditions for B = 0 before computing omega)" << std::endl;
             val += B_dblprime(p, q, r, l, M1, M2) * omega(i, j, l, r, T);
         }
     }
@@ -620,6 +621,7 @@ double KineticGas::L_i(int p, int q, int i, int j, double T){
     double val{0.0}, M1{M[i][j]}, M2{M[j][i]};
     for (int l = 1; l <= std::min(p, q) + 2; l++){
         for (int r = l; r <= p + q + 4 - l; r++){
+            std::cout << "You're wasting time on unnessecary collision integrals! Plz Fix! (check conditions for B = 0 before computing omega)" << std::endl;
             val += B_prime(p, q, r, l, M1, M2) * omega(i, j, l, r, T);
         }
     }
