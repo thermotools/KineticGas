@@ -238,6 +238,8 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("JKWB_upper_E_limit", &Quantum::JKWB_upper_E_limit)
         .def("quantum_omega", &Quantum::quantum_omega)
         .def("classical_omega", &Quantum::classical_omega)
+        .def("set_quantum_active", &Quantum::set_quantum_active)
+        .def("get_quantum_active", &Quantum::get_quantum_active)
         ;
     
     py::class_<HFD_B2, Quantum>(handle, "cpp_HFD_B2")

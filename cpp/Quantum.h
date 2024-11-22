@@ -30,10 +30,14 @@ public:
 
     double classical_cross_section(int i, int j, int l, double E);
 
+    void set_quantum_active(bool active);
+    bool get_quantum_active(){return quantum_is_active;}
+
 protected:
     vector2d model_rdf(double rho, double T, const vector1d& mole_fracs) override {throw std::runtime_error("Method model_rdf not implemented for Quantum!");}
 
 private:
+    bool quantum_is_active = true;
     std::vector<unsigned int> half_spin; // Spin of each particle multiplied by two 
     
 

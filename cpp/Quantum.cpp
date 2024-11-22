@@ -166,7 +166,8 @@ vector2d Quantum::wave_function(int i, int j, int l, double E, double r_end, dou
 }
 
 double Quantum::phase_shift(int i, int j, int l, double E){
-    const double step_size = ((E < 1e-3) ? 1e-4 : 1e-3 * pow(E, 1. / 3.))* sigma[i][j];
+    // Input is reduced energy (E = E(Joule) / eps[i][j])
+    const double step_size = ((E < 1e-3) ? 1e-4 : 1e-3 * pow(E, 1. / 3.)) * sigma[i][j];
     E *= eps[i][j];
     const double s2 = pow(step_size, 2) / 12.;
     double k2 = (2. * red_mass[i][j] / pow(HBAR, 2));
@@ -268,6 +269,7 @@ double Quantum::cross_section_A(int n, int l, size_t k){
 }
 
 double Quantum::cross_section_kernel(int i, int j, double n, double l, double E){
+    // Input is reduced energy (E = E(Joule) / eps[i][j])
     if (n == 0){
         return (2 * l + 1) * pow(sin(phase_shift(i, j, l, E)), 2);
     }
@@ -287,7 +289,7 @@ double Quantum::cross_section_kernel(int i, int j, double n, double l, double E)
 }
 
 double Quantum::cross_section(int i, int j, int n, double E){
-    E *= eps[i][j];
+    // Input is reduced energy (E = E(Joule) / eps[i][j])
     if (is_singlecomp) i = j;
     
     double even_prefactor, odd_prefactor;
@@ -296,8 +298,8 @@ double Quantum::cross_section(int i, int j, int n, double E){
     }
     else {
         double S = half_spin[i] / 2.;
-        even_prefactor = (S + 1) / (2 * S + 1);
-        odd_prefactor = S / (2 * S + 1);
+        even_prefactor = 1; // (S + 1) / (2 * S + 1);
+        odd_prefactor = 0; // S / (2 * S + 1);
         if (half_spin[i] % 2 != 0) { // Odd Half-Integer spin, Fermions: Swap prefactors
             double tmp = even_prefactor;
             even_prefactor = odd_prefactor;
@@ -310,7 +312,7 @@ double Quantum::cross_section(int i, int j, int n, double E){
         int l_even = 0;
         double q_even;
         do {
-            q_even = cross_section_kernel(i, j, n, l_even, E / eps[i][j]);
+            q_even = cross_section_kernel(i, j, n, l_even, E);
             Q_even += q_even;
             l_even += 2;
         } while (abs(q_even) > 1e-6 * Q_even);
@@ -321,14 +323,14 @@ double Quantum::cross_section(int i, int j, int n, double E){
         int l_odd = 1;
         double q_odd;
         do {
-            q_odd = cross_section_kernel(i, j, n, l_odd, E / eps[i][j]);
+            q_odd = cross_section_kernel(i, j, n, l_odd, E);
             Q_odd += q_odd;
             l_odd += 2;
         } while (abs(q_odd) > 1e-6 * Q_odd);
         Q += odd_prefactor * Q_odd;
     } 
 
-    double k2 = 2. * red_mass[i][j] * E / pow(HBAR, 2);
+    double k2 = 2. * red_mass[i][j] * E * eps[i][j] / pow(HBAR, 2);
     Q *= 4. * PI / k2;
     return Q;
 }
@@ -339,12 +341,13 @@ double Quantum::classical_cross_section(int i, int j, int l, double E){
 
 double Quantum::quantum_omega(int i, int j, int n, int s, double T){
     double beta = 1. / (T * BOLTZMANN);
-    double sfac = 1;
-    for (int si = 2; si <= s + 1; si++){
-        sfac *= si;
-    }
+    // double sfac = 1;
+    // for (int si = 2; si <= s + 1; si++){
+    //     sfac *= si;
+    // }
+    std::cout << "Computing : " << n << ", " << s << std::endl;
     const auto kernel = [&](double E){return cross_section(i, j, n, E) * exp(- beta * E * eps[i][j]) * pow(beta * E * eps[i][j], s + 1);};
-    return 0.5 * sqrt(PI / (2. * BOLTZMANN * T * red_mass[i][j])) * eps[i][j] * simpson(kernel, 1e-3, 10, 50) * (n + 1.) / (n * sfac);
+    return sqrt(beta * PI / (2. * red_mass[i][j])) * eps[i][j] * simpson(kernel, 1e-3, 10, 50); // Need to fix integration limits, and appropriately use simpson_inf
 }
 
 double Quantum::classical_omega(int i, int j, int l, int r, double T){
@@ -356,7 +359,7 @@ double Quantum::omega(int i, int j, int l, int r, double T) {
     OmegaPoint sympoint = get_omega_point(j, i, l, r, T);
     const std::map<OmegaPoint, double>::iterator pos = omega_map.find(point);
     if (pos == omega_map.end()){
-        double val = quantum_omega(i, j, l, r, T);
+        double val = (quantum_is_active) ? quantum_omega(i, j, l, r, T) : classical_omega(i, j, l, r, T);
         omega_map[point] = val;
         omega_map[sympoint] = val; // Collision integrals are symmetric wrt. particle indices.
         if (is_singlecomp){
@@ -373,3 +376,9 @@ double Quantum::omega(int i, int j, int l, int r, double T) {
     return pos->second;
 }
 
+void Quantum::set_quantum_active(bool active){
+    if (active != quantum_is_active){
+        clear_all_caches();
+    }
+    quantum_is_active = active;
+}

@@ -51,3 +51,9 @@ class Quantum(py_KineticGas):
         j = i if (j is None) else j
         return self.cpp_kingas.JKWB_upper_E_limit(i, j)
     
+    def set_quantum_active(self, active):
+        self.cpp_kingas.set_quantum_active(active)
+
+    def get_quantum_active(self):
+        return self.cpp_kingas.get_quantum_active()
+    
