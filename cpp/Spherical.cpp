@@ -95,7 +95,7 @@ double Spherical::cross_section(int i, int j, int l, double E){
         Collision cross-sections, \int_0^{\infty} (1 - \cos^{l}(\chi)) b \d b
         - i, j : Component indices
         - l : Cross section moment
-        - E : Dinemsionless collision energy (E / (k_B T) = 0.5 * red_mass[i][j] * g_{ij}^2)
+        - E : Dinemsionless collision energy (E / (k_B T) = g_{ij}^2)
 
         Note: Because other internal functions work with dimensionless velocity, rather than collision energy,
               we must set a dummy temperature to convert the energy to a collision velocity.
@@ -103,7 +103,7 @@ double Spherical::cross_section(int i, int j, int l, double E){
     if (l == 0) return 0;
     E *= eps[i][j];
     const double T = 300;
-    const double g = sqrt(2. * E / (red_mass[i][j] * BOLTZMANN * T));
+    const double g = sqrt(E / (BOLTZMANN * T));
     const auto integrand = [&](double b){
         double chi_val = chi(i, j, T, g, b * sigma[i][j]);
         return (1. - pow(cos(chi_val), l)) * b;
