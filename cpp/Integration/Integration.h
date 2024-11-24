@@ -148,6 +148,17 @@ double integrate2d(const Point& origin, const Point& end,
     Standard Simpson-rule integration, with N_intervals between x0 and xN, where N_intervals >= 2
 */
 double simpson(std::function<double(double)> func, double x0, double xN, int N_intervals);
+/*
+    Simpson rule, starting with 10 points between x0 and init_end, then continuing outwards from init_end until infinite integral has converged
+    For users: This method is intended to integrate the "long tail" of some function. You likely want to handle integration close to the origin
+                yourself, before using this method to capture the tail.
+
+    Example:
+    auto func = [](double r){return r * sin(2 * PI * r) * exp(-r);}; // Want to integrate this from 0 to inf
+    double I1 = simpson(func, 0, 2, 50); // High resolution at start to capture details
+    double I2 = simpson_inf(func, 2, 3); // This will continue outward to capture the tail of the function
+    double I = I1 + I2; // Total integral
+*/
 double simpson_inf(std::function<double(double)> func, double x0, double init_end, double tol=1e-8);
 
 

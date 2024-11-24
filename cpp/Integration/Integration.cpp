@@ -318,18 +318,29 @@ double simpson(std::function<double(double)> func, double x0, double xN, int N_i
 }
 
 double simpson_inf(std::function<double(double)> func, double x0, double init_end, double tol){
+    /*
+        For evaluating infinite integrals using Simpsons rule:
+        To start: Integrate from x0 to init_end with 10 subintervals 
+        Then: Progressively increase the integration interval while integrating outwards
+        Return once the change over an interval is small enough.
+    */
     double I = simpson(func, x0, init_end, 10);
     // std::cout << "start : " << I << std::endl;
     double dx = (init_end - x0) / 10.;
     double I_part = 0;
     double part_tol = tol * 1e6;
     do {
+        #ifdef DEBUG
+            if (isnan(I)) throw std::runtime_error("Encountered NAN in simpson_inf");
+        #endif
         x0 = init_end;
         init_end += 10 * dx;
         I_part = simpson(func, x0, init_end, 10);
         I += I_part;
         // std::cout << "simpson : " << x0 << " => " << init_end << " : " << I << ", " << I_part << ", " << part_tol << std::endl;
-        if (abs(I_part / I) < part_tol) {
+        double conv_frac = abs(I_part / I);
+        if (conv_frac < tol) break;
+        if (conv_frac < part_tol) {
             dx *= 2; part_tol *= 0.1;
         }
     } while ( part_tol > tol );
