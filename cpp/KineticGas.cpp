@@ -384,7 +384,6 @@ vector2d KineticGas::get_viscosity_matrix(double rho, double T, const vector1d&x
     vector2d viscosity_mat(Ncomps * N, vector1d(Ncomps * N, 0.));
 
     precompute_viscosity(N, T, rho); // Compute all the collision integrals and transfer lengths required for this viscosity
-    get_omega_point(0, 0, 1, 1, T);
     for (int p = 0; p < N; p++){
         for (int i = 0; i < Ncomps; i++){
             for (int q = 0; q < N; q++){
@@ -609,8 +608,9 @@ double KineticGas::L_ij(int p, int q, int i, int j, double T){
     double M2{M[j][i]};
     for (int l = 1; l <= std::min(p, q) + 2; l++){
         for (int r = l; r <= p + q + 4 - l; r++){
-            std::cout << "You're wasting time on unnessecary collision integrals! Plz Fix! (check conditions for B = 0 before computing omega)" << std::endl;
-            val += B_dblprime(p, q, r, l, M1, M2) * omega(i, j, l, r, T);
+            double B_dblprime_val = B_dblprime(p, q, r, l, M1, M2);
+            if (B_dblprime_val == 0) continue;
+            val += B_dblprime_val * omega(i, j, l, r, T);
         }
     }
     val *= 16.0 / 3.0;
@@ -621,8 +621,9 @@ double KineticGas::L_i(int p, int q, int i, int j, double T){
     double val{0.0}, M1{M[i][j]}, M2{M[j][i]};
     for (int l = 1; l <= std::min(p, q) + 2; l++){
         for (int r = l; r <= p + q + 4 - l; r++){
-            std::cout << "You're wasting time on unnessecary collision integrals! Plz Fix! (check conditions for B = 0 before computing omega)" << std::endl;
-            val += B_prime(p, q, r, l, M1, M2) * omega(i, j, l, r, T);
+            double B_prime_val = B_prime(p, q, r, l, M1, M2);
+            if (B_prime_val == 0) continue;
+            val += B_prime_val * omega(i, j, l, r, T);
         }
     }
     val *= 16.0 / 3.0;
