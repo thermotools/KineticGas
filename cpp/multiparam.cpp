@@ -176,6 +176,11 @@ Patowski::Patowski(std::string comps)
 }
 
 dual2 Patowski::potential(int i, int j, dual2 r){
+    if (r < 0.5 * sigma[i][j]){
+        double r0 = 0.51 * sigma[i][j];
+        double u0 = potential(i, j, r0);
+        return u0 * exp(param.Cex2 * (r - r0));
+    }
     r *= 1e10; // Working in Å internally
     dual2 p = (param.Csp1 + r * param.Csp2 + pow(r, 2) * param.Csp3 + pow(r, 3) * param.Csp4) * exp(param.Cex1 + param.Cex2 * r);
     for (size_t n = 3; n <= 5; n++){
@@ -189,6 +194,11 @@ dual2 Patowski::potential(int i, int j, dual2 r){
 }
 
 double Patowski::potential(int i, int j, double r){
+    if (r < 0.5 * sigma[i][j]){
+        double r0 = 0.51 * sigma[i][j];
+        double u0 = potential(i, j, r0);
+        return u0 * exp(param.Cex2 * (r - r0));
+    }
     r *= 1e10; // Working in Å internally
     double p = (param.Csp1 + r * param.Csp2 + pow(r, 2) * param.Csp3 + pow(r, 3) * param.Csp4) * exp(param.Cex1 + param.Cex2 * r);
     for (size_t n = 3; n <= 5; n++){
