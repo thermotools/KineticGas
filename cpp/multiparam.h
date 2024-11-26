@@ -68,6 +68,7 @@ public:
     Patowski(std::string comps);
     Patowski(PatowskiParam param);
 
+    using Spherical::potential;
     dual2 potential(int i, int j, dual2 r) override;
     double potential(int i, int j, double r) override;
 

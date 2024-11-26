@@ -19,14 +19,24 @@ double nested_sum(const std::function<double(size_t)>& term, const size_t upper,
     return tot;
 }
 
+double sph_bessel(int n, double r){
+    if (r < 2000) return std::sph_bessel(n, r);
+    return sin(r - n * PI / 2) / r;
+}
+
+double sph_neumann(int n, double r){
+    if (r < 2000) return std::sph_neumann(n, r);
+    return - cos(r - n * PI / 2) / r;
+}
+
 double bessel_deriv(int n, double r, size_t kind){
     switch (kind) {
     case 1:
-        if (n == 0) return - std::sph_bessel(1, r);
-        return std::sph_bessel(n - 1, r) - (n + 1) * std::sph_bessel(n, r) / r;
+        if (n == 0) return - sph_bessel(1, r);
+        return sph_bessel(n - 1, r) - (n + 1) * sph_bessel(n, r) / r;
     case 2:
-        if (n == 0) return - std::sph_neumann(1, r);
-        return std::sph_neumann(n - 1, r) - (n + 1) * std::sph_neumann(n, r) / r;
+        if (n == 0) return - sph_neumann(1, r);
+        return sph_neumann(n - 1, r) - (n + 1) * sph_neumann(n, r) / r;
     default:
         throw std::runtime_error("Invalid spherical_bessel derivative kind!\n");
     }
@@ -61,16 +71,6 @@ double Quantum::de_broglie_wavelength(int i, double T){
     return PLANCK / sqrt(2. * PI * m[i] * BOLTZMANN * T);
 }
 
-dual2 Quantum::potential(int i, int j, dual2 r){
-    return 4 * eps[i][j] * (pow(sigma[i][j] / r, 12) - pow(sigma[i][j] / r, 6));
-}
-double Quantum::potential(int i, int j, double r){
-    return 4 * eps[i][j] * (pow(sigma[i][j] / r, 12) - pow(sigma[i][j] / r, 6));
-}
-double Quantum::potential_derivative_r(int i, int j, double r){
-    return 4 * eps[i][j] * (6 * pow(sigma[i][j] / r, 6) - 12 * pow(sigma[i][j] / r, 12)) * (1. / r);
-}
-
 double Quantum::JKWB_upper_E_limit(int i, int j){
     double deBoer = get_de_boer(i, j);
     double margin = 5; // Some suitably large number ...
@@ -91,11 +91,10 @@ double Quantum::JKWB_phase_shift(int i, int j, int l, double E){
     }
     
     const auto integrand1 = [&](double r){return sqrt(1 - pow(b / r, 2) - potential(i, j, r * sigma[i][j]) / E) - sqrt(1 - pow(b / r, 2));};
-    
     if (abs(R - b) < 1e-6){
         double lower_lim = (R > b) ? R : b;
         double I = k * simpson_inf(integrand1, lower_lim, 1.5 * lower_lim) * sigma[i][j];
-       return I;
+        return I;
     }
 
     double I1, I2;
@@ -141,9 +140,9 @@ vector2d Quantum::wave_function(int i, int j, int l, double E, double r_end, dou
 
         double gamma = (dpsi / psi[n_step]) - (1. / r[n_step]);
 
-        double jl = std::sph_bessel(l, k * r[n_step]);
+        double jl = sph_bessel(l, k * r[n_step]);
         double djl = bessel_deriv(l, k * r[n_step], 1);
-        double yl = std::sph_neumann(l, k * r[n_step]);
+        double yl = sph_neumann(l, k * r[n_step]);
         double dyl = bessel_deriv(l, k * r[n_step], 2);
 
         return atan((k * djl - gamma * jl) / (k * dyl - gamma * yl)); // local phase shift
@@ -165,7 +164,7 @@ vector2d Quantum::wave_function(int i, int j, int l, double E, double r_end, dou
     return out;
 }
 
-double Quantum::phase_shift(int i, int j, int l, double E){
+double Quantum::quantum_phase_shift(int i, int j, int l, double E){
     // Input is reduced energy (E = E(Joule) / eps[i][j])
     const double step_size = ((E < 1e-3) ? 1e-4 : 1e-3 * pow(E, 1. / 3.)) * sigma[i][j];
     E *= eps[i][j];
@@ -199,9 +198,9 @@ double Quantum::phase_shift(int i, int j, int l, double E){
 
         double gamma = (dpsi / psi[n_step]) - (1. / r[n_step]);
 
-        double jl = std::sph_bessel(l, k * r[n_step]);
+        double jl = sph_bessel(l, k * r[n_step]);
         double djl = bessel_deriv(l, k * r[n_step], 1);
-        double yl = std::sph_neumann(l, k * r[n_step]);
+        double yl = sph_neumann(l, k * r[n_step]);
         double dyl = bessel_deriv(l, k * r[n_step], 2);
 
         return atan((k * djl - gamma * jl) / (k * dyl - gamma * yl)); // local phase shift
@@ -250,6 +249,11 @@ double Quantum::phase_shift(int i, int j, int l, double E){
     return new_delta;
 }
 
+double Quantum::phase_shift(int i, int j, int l, double E){
+    if (E > 50) return JKWB_phase_shift(i, j, l, E);
+    return quantum_phase_shift(i, j, l, E);
+}
+
 double Quantum::cross_section_A(int n, int l, size_t k){
     switch (k) {
     case 0:
@@ -288,7 +292,7 @@ double Quantum::cross_section_kernel(int i, int j, double n, double l, double E)
     return q;
 }
 
-double Quantum::cross_section(int i, int j, int n, double E){
+double Quantum::cross_section(int i, int j, const int n, const double E){
     // Input is reduced energy (E = E(Joule) / eps[i][j])
     if (is_singlecomp) i = j;
     
@@ -345,13 +349,21 @@ double Quantum::quantum_omega(int i, int j, int n, int s, double T){
     // for (int si = 2; si <= s + 1; si++){
     //     sfac *= si;
     // }
-    std::cout << "Computing : " << n << ", " << s << std::endl;
-    const auto kernel = [&](double E){return cross_section(i, j, n, E) * exp(- beta * E * eps[i][j]) * pow(beta * E * eps[i][j], s + 1);};
-    return sqrt(beta * PI / (2. * red_mass[i][j])) * eps[i][j] * simpson(kernel, 1e-3, 10, 50); // Need to fix integration limits, and appropriately use simpson_inf
+    std::cout << "Computing : " << n << ", " << s << ", " << T << std::endl;
+    const auto kernel = [&](double Eb){
+        return exp(- Eb) * pow(Eb, s + 1) * cross_section(i, j, n, Eb / (beta * eps[i][j]));
+    };
+    double maxpoint = s + 1.;
+    double I = simpson_inf(kernel, 1e-3, maxpoint / 2);
+    std::cout << "Final (" << n << ", " << s << ", " << T << ") : " << I << std::endl;
+    return sqrt(PI / (2. * beta * red_mass[i][j])) * I;
 }
 
 double Quantum::classical_omega(int i, int j, int l, int r, double T){
-    return Spherical::omega(i, j, l, r, T);
+    std::cout << "Classical omega ..." << std::endl;
+    double val = Spherical::omega(i, j, l, r, T);
+    std::cout << "Finished " << l << ", " << r << ", " << T << std::endl;
+    return val;
 }
 
 double Quantum::omega(int i, int j, int l, int r, double T) {

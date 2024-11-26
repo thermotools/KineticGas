@@ -253,6 +253,9 @@ double Spherical::get_R(int i, int j, double T, double g, double b){
     double f = get_R_rootfunc(i, j, T, g, b, r);
     double dfdr = get_R_rootfunc_derivative(i, j, T, g, b, r);
     double next_r = r - f / dfdr;
+    #ifdef DEBUG
+        int niter = 0;
+    #endif
     while (abs((r - next_r) / sigma[i][j]) > tol){
         if (next_r < 0){
             init_guess_factor *= 0.95;
@@ -268,6 +271,12 @@ double Spherical::get_R(int i, int j, double T, double g, double b){
         f = get_R_rootfunc(i, j, T, g, b, r);
         dfdr = get_R_rootfunc_derivative(i, j, T, g, b, r);
         next_r = r - f / dfdr;
+        #ifdef DEBUG
+            if (niter++ > 10000) throw std::runtime_error("get_R exceeded 10000 iterations! (T, g, b) : " 
+                                                        + std::to_string(T) + ", " + std::to_string(g) + ", " + std::to_string(b / sigma[i][j]) + " : " + std::to_string(next_r / sigma[i][j]));
+            if (isnan(next_r)) throw std::runtime_error("Encountered NAN in get_R! (T, g, b) : " 
+                                                        + std::to_string(T) + ", " + std::to_string(g) + ", " + std::to_string(b));
+        #endif
     }
     return next_r;
 }
