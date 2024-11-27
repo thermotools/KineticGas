@@ -330,9 +330,9 @@ double simpson_inf(std::function<double(double)> func, double x0, double init_en
     double I_part = 0;
     double part_tol = tol * 1e6;
     do {
-        #ifdef DEBUG
+        // #ifdef DEBUG
             if (isnan(I)) throw std::runtime_error("Encountered NAN in simpson_inf");
-        #endif
+        // #endif
         x0 = init_end;
         init_end += 10 * dx;
         I_part = simpson(func, x0, init_end, 10);

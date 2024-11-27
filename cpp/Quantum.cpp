@@ -296,22 +296,36 @@ double Quantum::cross_section(int i, int j, const int n, const double E){
     // Input is reduced energy (E = E(Joule) / eps[i][j])
     if (is_singlecomp) i = j;
     
-    double even_prefactor, odd_prefactor;
-    if (i != j) {
-        even_prefactor = odd_prefactor = 1.;
+    double sym_prefactor, anti_prefactor;
+    if ((i != j) && (!is_singlecomp)) {
+        sym_prefactor = anti_prefactor = 1.;
     }
     else {
         double S = half_spin[i] / 2.;
-        even_prefactor = 1; // (S + 1) / (2 * S + 1);
-        odd_prefactor = 0; // S / (2 * S + 1);
+        switch (half_spin[i]){
+        case 0:
+            sym_prefactor = 1;
+            anti_prefactor = 0;
+            break;
+        case 1:
+            sym_prefactor = 3. / 4.;
+            anti_prefactor = 1. / 4.;
+            break;
+        case 2:
+            sym_prefactor = 5. / 9.; // (S + 1) / (2 * S + 1);
+            anti_prefactor = 4. / 9.; // S / (2 * S + 1);
+            break;
+        default:
+            throw std::runtime_error("Invalid half-spin!");
+        }
         if (half_spin[i] % 2 != 0) { // Odd Half-Integer spin, Fermions: Swap prefactors
-            double tmp = even_prefactor;
-            even_prefactor = odd_prefactor;
-            odd_prefactor = tmp;
+            double tmp = sym_prefactor;
+            sym_prefactor = anti_prefactor;
+            anti_prefactor = tmp;
         }
     }
     double Q = 0;
-    if (even_prefactor > 0.){
+    if (sym_prefactor > 0.){
         double Q_even = 0;
         int l_even = 0;
         double q_even;
@@ -320,9 +334,9 @@ double Quantum::cross_section(int i, int j, const int n, const double E){
             Q_even += q_even;
             l_even += 2;
         } while (abs(q_even) > 1e-6 * Q_even);
-        Q += even_prefactor * Q_even;
+        Q += sym_prefactor * Q_even;
     } 
-    if (odd_prefactor > 0.){
+    if (anti_prefactor > 0.){
         double Q_odd = 0;
         int l_odd = 1;
         double q_odd;
@@ -331,10 +345,10 @@ double Quantum::cross_section(int i, int j, const int n, const double E){
             Q_odd += q_odd;
             l_odd += 2;
         } while (abs(q_odd) > 1e-6 * Q_odd);
-        Q += odd_prefactor * Q_odd;
+        Q += anti_prefactor * Q_odd;
     } 
 
-    double k2 = 2. * red_mass[i][j] * E * eps[i][j] / pow(HBAR, 2);
+    double k2 = 4. * red_mass[i][j] * E * eps[i][j] / pow(HBAR, 2);
     Q *= 4. * PI / k2;
     return Q;
 }
@@ -345,28 +359,26 @@ double Quantum::classical_cross_section(int i, int j, int l, double E){
 
 double Quantum::quantum_omega(int i, int j, int n, int s, double T){
     double beta = 1. / (T * BOLTZMANN);
-    // double sfac = 1;
-    // for (int si = 2; si <= s + 1; si++){
-    //     sfac *= si;
-    // }
-    std::cout << "Computing : " << n << ", " << s << ", " << T << std::endl;
+    std::cout << "Computing (Q) : " << n << ", " << s << ", " << T << std::endl;
     const auto kernel = [&](double Eb){
         return exp(- Eb) * pow(Eb, s + 1) * cross_section(i, j, n, Eb / (beta * eps[i][j]));
     };
     double maxpoint = s + 1.;
     double I = simpson_inf(kernel, 1e-3, maxpoint / 2);
-    std::cout << "Final (" << n << ", " << s << ", " << T << ") : " << I << std::endl;
-    return sqrt(PI / (2. * beta * red_mass[i][j])) * I;
+    double val = I / sqrt(8 * PI * beta * red_mass[i][j]);
+    std::cout << "Quantum omega (" << n << ", " << s << ", " << T << ") : " << I << std::endl;
+    return ;
 }
 
 double Quantum::classical_omega(int i, int j, int l, int r, double T){
-    std::cout << "Classical omega ..." << std::endl;
+    std::cout << "Computing (C) : " << l << ", " << r << ", " << T << std::endl;
     double val = Spherical::omega(i, j, l, r, T);
-    std::cout << "Finished " << l << ", " << r << ", " << T << std::endl;
+    std::cout << "Classical omega (" << l << ", " << r << ", " << T << ") : " << val << std::endl;
     return val;
 }
 
 double Quantum::omega(int i, int j, int l, int r, double T) {
+    if (l % 2 != 0) return 0;
     OmegaPoint point = get_omega_point(i, j, l, r, T);
     OmegaPoint sympoint = get_omega_point(j, i, l, r, T);
     const std::map<OmegaPoint, double>::iterator pos = omega_map.find(point);

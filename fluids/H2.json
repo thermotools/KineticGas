@@ -180,6 +180,9 @@
     },
     "Patowski": {
         "default": {
+            "Rc" : 1.5875316000000002,
+            "Ac" : 13163.006387928035,
+            "Bc" : -2.9743503851130892,
             "Cex1" : 15.8362221077622,
             "Cex2" : -3.277863589578727,
             "Csp1" : -0.27517157146222365,
@@ -194,6 +197,7 @@
             "r_min" : 3.4623174303039526e-10,
             "eps_div_k" : 35.45197264678177,
             "Note" : "Internal units are Å and J. Converted from the paper, which uses Hartree and Bohr. sigma, r_min, and eps_div_k are given in (m) and (K).",
+            "Note2" : "The parameters Ac, Bc, and Rc are not reported in the paper, but have been introduced for numerical convenience.",
             "bib_reference" : "Ab Initio Transport Coefficients of Gaseous Hydrogen, James B. Mehl, Marcia L. Huber and Allan H. Harvey, Int J Thermophys (2010). DOI: 10.1007/s10765-009-0697-9"
         }
     }

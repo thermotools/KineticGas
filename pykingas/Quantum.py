@@ -20,6 +20,9 @@ class Quantum(py_KineticGas):
     def cross_section(self, i, j, l, E, reduced=False):
         return self.cpp_kingas.reduced_cross_section(i, j, l, E) if (reduced is True) else self.cpp_kingas.cross_section(i, j, l, E)
 
+    def omega(self, i, j, n, s, T):
+        return self.cpp_kingas.omega(i, j, n, s, T)
+
     def quantum_omega(self, i, j, n, s, T):
         return self.cpp_kingas.quantum_omega(i, j, n, s, T)
 

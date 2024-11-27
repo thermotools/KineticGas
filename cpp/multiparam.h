@@ -59,7 +59,7 @@ private:
 };
 
 struct PatowskiParam{
-    double Cex1, Cex2, Csp1, Csp2, Csp3, Csp4, delta, C6, C8, C10, sigma, eps_div_k, r_min;
+    double Rc, Ac, Bc, Cex1, Cex2, Csp1, Csp2, Csp3, Csp4, delta, C6, C8, C10, sigma, eps_div_k, r_min;
     std::array<double, 3> Cn;     
 };
 

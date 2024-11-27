@@ -24,17 +24,16 @@ ModTangToennis::ModTangToennis(TangToennisParam param, vector1d mole_weights, bo
 ModTangToennis::ModTangToennis(std::string comps, bool is_idealgas, std::string parameter_ref)
     : Spherical(comps, is_idealgas), param()
 {
-
     const auto cdata = compdata[0]["ModTangToennis"][parameter_ref];
-    const double A_div_k = compdata[0]["ModTangToennis"][parameter_ref]["A_div_k"];
-    const double b = compdata[0]["ModTangToennis"][parameter_ref]["b"];
-    const double A_tilde = compdata[0]["ModTangToennis"][parameter_ref]["A_tilde_div_k"];
-    const vector1d a = compdata[0]["ModTangToennis"][parameter_ref]["a"];
-    const double a_tilde = compdata[0]["ModTangToennis"][parameter_ref]["a_tilde"];
-    const double eps_div_k = compdata[0]["ModTangToennis"][parameter_ref]["eps_div_k"];
-    const double Re = compdata[0]["ModTangToennis"][parameter_ref]["Re"];
-    const double sigma_ = compdata[0]["ModTangToennis"][parameter_ref]["sigma"];
-    vector1d C = compdata[0]["ModTangToennis"][parameter_ref]["C"];
+    const double A_div_k = cdata["A_div_k"];
+    const double b = cdata["b"];
+    const double A_tilde = cdata["A_tilde_div_k"];
+    const vector1d a = cdata["a"];
+    const double a_tilde = cdata["a_tilde"];
+    const double eps_div_k = cdata["eps_div_k"];
+    const double Re = cdata["Re"];
+    const double sigma_ = cdata["sigma"];
+    vector1d C = cdata["C"];
 
     param = TangToennisParam(A_div_k, b, A_tilde, a, a_tilde, eps_div_k, Re, sigma_, C);
     
@@ -153,6 +152,9 @@ Patowski::Patowski(std::string comps)
     : Quantum(comps)
 {
     const auto cdata = compdata[0]["Patowski"]["default"];
+    param.Rc = cdata["Rc"];
+    param.Ac = cdata["Ac"];
+    param.Bc = cdata["Bc"];
     param.Cex1 = cdata["Cex1"];
     param.Cex2 = cdata["Cex2"];
     param.Csp1 = cdata["Csp1"];
@@ -176,12 +178,13 @@ Patowski::Patowski(std::string comps)
 }
 
 dual2 Patowski::potential(int i, int j, dual2 r){
-    if (r < 0.5 * sigma[i][j]){
-        double r0 = 0.51 * sigma[i][j];
-        double u0 = potential(i, j, r0);
-        return u0 * exp(param.Cex2 * (r - r0) * 1e10);
-    }
     r *= 1e10; // Working in Å internally
+    if (r < param.Rc){
+        // Potential is only valid for r > Rc, but we need a continuous extrapolation that is well behaved for numerical purposes.
+        // In practice, something is probably very wrong if we are ever at distances r < Rc, except when iterating some solver.
+        // This extension is made by requiring a contiuous potential and first derivative at r = Rc.
+        return param.Ac * exp(param.Bc * (r - param.Rc)) * BOLTZMANN;
+    }
     dual2 p = (param.Csp1 + r * param.Csp2 + pow(r, 2) * param.Csp3 + pow(r, 3) * param.Csp4) * exp(param.Cex1 + param.Cex2 * r);
     for (size_t n = 3; n <= 5; n++){
         dual2 tmp = 0;
@@ -194,12 +197,13 @@ dual2 Patowski::potential(int i, int j, dual2 r){
 }
 
 double Patowski::potential(int i, int j, double r){
-    if (r < 0.5 * sigma[i][j]){
-        double r0 = 0.51 * sigma[i][j];
-        double u0 = potential(i, j, r0);
-        return u0 * exp(param.Cex2 * (r - r0) * 1e10);
-    }
     r *= 1e10; // Working in Å internally
+    if (r < param.Rc){ 
+        // Potential is only valid for r > Rc, but we need a continuous extrapolation that is well behaved for numerical purposes.
+        // In practice, something is probably very wrong if we are ever at distances r < Rc, except when iterating some solver.
+        // This extension is made by requiring a contiuous potential and first derivative at r = Rc.
+        return param.Ac * exp(param.Bc * (r - param.Rc)) * BOLTZMANN;
+    }
     double p = (param.Csp1 + r * param.Csp2 + pow(r, 2) * param.Csp3 + pow(r, 3) * param.Csp4) * exp(param.Cex1 + param.Cex2 * r);
     for (size_t n = 3; n <= 5; n++){
         double tmp = 0;

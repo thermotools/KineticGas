@@ -221,7 +221,7 @@ PYBIND11_MODULE(libpykingas, handle){
         ;
     
     py::class_<Quantum>(handle, "cpp_Quantum")
-        .def(py::init<std::string>())
+        // .def(py::init<std::string>())
         KineticGas_bindings(Quantum)
         Spherical_potential_bindings(Quantum)
         .def("cross_section", &Quantum::cross_section)
@@ -236,6 +236,7 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("set_de_boer_mass", &Quantum::set_de_boer_mass)
         .def("de_broglie_wavelength", &Quantum::de_broglie_wavelength)
         .def("JKWB_upper_E_limit", &Quantum::JKWB_upper_E_limit)
+        .def("omega", &Quantum::omega)
         .def("quantum_omega", &Quantum::quantum_omega)
         .def("classical_omega", &Quantum::classical_omega)
         .def("set_quantum_active", &Quantum::set_quantum_active)
