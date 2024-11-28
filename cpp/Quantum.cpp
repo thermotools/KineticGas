@@ -250,7 +250,7 @@ double Quantum::quantum_phase_shift(int i, int j, int l, double E){
 }
 
 double Quantum::phase_shift(int i, int j, int l, double E){
-    if (E > 50) return JKWB_phase_shift(i, j, l, E);
+    if ((E > JKWB_E_limit) || (l > JKWB_l_limit)) return JKWB_phase_shift(i, j, l, E);
     return quantum_phase_shift(i, j, l, E);
 }
 
@@ -272,28 +272,32 @@ double Quantum::cross_section_A(int n, int l, size_t k){
     }
 }
 
-double Quantum::cross_section_kernel(int i, int j, double n, double l, double E){
+double Quantum::cross_section_kernel(int i, int j, int n, int l, double E){
     // Input is reduced energy (E = E(Joule) / eps[i][j])
-    if (n == 0){
-        return (2 * l + 1) * pow(sin(phase_shift(i, j, l, E)), 2);
-    }
-    double A, B;
-    double q = 0;;
-    for (size_t k = 0; (k < 3) && (2 * k + 1 <= n); k++){
-        B = (2 * l + 1) * pow(sin(phase_shift(i, j, l, E) - phase_shift(i, j, l + n - 2 * k, E)), 2);
-        double B_tmp = 0;
-        for (size_t p = 1; p <= n - 2 * k; p++){
-            B_tmp += (l + p) / (2 * (l + p) - 1);
+    switch (n){
+    case 0: return (2 * l + 1) * pow(sin(phase_shift(i, j, l, E)), 2);
+    case 1: return (l + 1) * pow(sin(phase_shift(i, j, l, E) - phase_shift(i, j, l + 1, E)), 2);
+    case 2: return (l + 1) * (l + 2) * pow(sin(phase_shift(i, j, l, E) - phase_shift(i, j, l + 2, E)), 2) / (2 * l + 3);
+    default:
+        double A, B;
+        double q = 0;;
+        for (size_t k = 0; (k < 3) && (2 * k + 1 <= n); k++){
+            B = (2 * l + 1) * pow(sin(phase_shift(i, j, l, E) - phase_shift(i, j, l + n - 2 * k, E)), 2);
+            double B_tmp = 0;
+            for (size_t p = 1; p <= n - 2 * k; p++){
+                B_tmp += (l + p) / (2 * (l + p) - 1);
+            }
+            B *= B_tmp;
+            A = cross_section_A(n, l, k);
+            q += A * B;
         }
-        B *= B_tmp;
-        A = cross_section_A(n, l, k);
-        q += A * B;
+        return q;
     }
-    return q;
 }
 
 double Quantum::cross_section(int i, int j, const int n, const double E){
     // Input is reduced energy (E = E(Joule) / eps[i][j])
+    if (E < 5e-4) return cross_section(i, j, n, 5e-4); // Cross section approach constant value at small E, but numerical solver fails for very small E
     if (is_singlecomp) i = j;
     
     double sym_prefactor, anti_prefactor;
@@ -364,10 +368,10 @@ double Quantum::quantum_omega(int i, int j, int n, int s, double T){
         return exp(- Eb) * pow(Eb, s + 1) * cross_section(i, j, n, Eb / (beta * eps[i][j]));
     };
     double maxpoint = s + 1.;
-    double I = simpson_inf(kernel, 1e-3, maxpoint / 2);
-    double val = I / sqrt(8 * PI * beta * red_mass[i][j]);
-    std::cout << "Quantum omega (" << n << ", " << s << ", " << T << ") : " << I << std::endl;
-    return ;
+    double I = simpson_inf(kernel, 0, maxpoint / 3);
+    double val = I * sqrt(2. / (PI * beta * red_mass[i][j]));
+    std::cout << "Quantum omega (" << n << ", " << s << ", " << T << ") : " << val << std::endl;
+    return val;
 }
 
 double Quantum::classical_omega(int i, int j, int l, int r, double T){

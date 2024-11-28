@@ -68,6 +68,9 @@ PYBIND11_MODULE(libpykingas, handle){
     handle.def("ipow", &ipow);
     handle.def("factorial_tests", &factorial_tests);
 
+    handle.def("simpson", [](double ulim, int N){return simpson([](double x){return exp(- x) * pow(x, 2);}, 0, ulim, N);});
+    handle.def("simpson_inf", [](double ulim){return simpson_inf([](double x){return exp(- x) * pow(x, 2);}, 0, ulim);});
+
     py::class_<Product>(handle, "Product")
         .def(py::init<int>())
         .def(py::init<double>())
@@ -241,6 +244,8 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("classical_omega", &Quantum::classical_omega)
         .def("set_quantum_active", &Quantum::set_quantum_active)
         .def("get_quantum_active", &Quantum::get_quantum_active)
+        .def("set_JKWB_limits", &Quantum::set_JKWB_limits)
+        .def("get_JKWB_limits", &Quantum::get_JKWB_limits)
         ;
     
     py::class_<HFD_B2, Quantum>(handle, "cpp_HFD_B2")

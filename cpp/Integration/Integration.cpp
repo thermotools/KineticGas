@@ -306,8 +306,33 @@ double integrate2d(const Point& origin, const Point& end,
 }
 
 
+double simpson_38(std::function<double(double)> func, double x0, double xN){
+    double dx = (xN - x0) / 3;
+    return (3 * dx / 8) * (func(x0) + 3 * (func(x0 + dx) + func(x0 + 2 * dx)) + func(xN));
+}
+
+double simpson_38(std::function<double(double)> func, double x0, double xN, int N_intervals){
+    if (N_intervals % 3 != 0) throw std::runtime_error("simpson_38 must have number of subintervals divisible by 3!");
+    if (N_intervals == 3) return simpson_38(func, x0, xN);
+    double dx = (xN - x0) / N_intervals;
+    double val = func(x0) + func(xN);
+    for (int i = 1; i <= N_intervals - 2; i+=3){
+        val += 3 * (func(x0 + i * dx));
+    }
+    for (int i = 2; i <= N_intervals - 1; i+=3){
+        val += 3 * (func(x0 + i * dx));
+    }
+    for (int i = 3; i <= N_intervals - 3; i+=3){
+        val += 2 * (func(x0 + i * dx));
+    }
+    return 3 * dx * val / 8;
+}
+
 double simpson(std::function<double(double)> func, double x0, double xN, int N_intervals){
     double dx = (xN - x0) / N_intervals;
+    if (N_intervals % 2 != 0){
+        return simpson(func, x0, xN - 3 * dx, N_intervals - 3) + simpson_38(func, xN - 3 * dx, xN, 3);
+    }
     double val = func(x0) + func(xN);
     for (size_t i = 1; i <= (N_intervals / 2) - 1; i++){
         val += 4. * func(x0 + (2 * i - 1) * dx) + 2. * func(x0 + (2 * i) * dx);
