@@ -9,6 +9,7 @@
 */
 
 #include "KineticGas.h"
+#include <cppThermopack/ideal.h>
 #include <vector>
 #include <algorithm>
 #include <thread>
@@ -22,16 +23,24 @@
 // --------------------------------------------------------------------------------------------------- //
 // -------------------------------Constructor and helper functions------------------------------------ //
 
-void KineticGas::set_masses(){
-    for (int i = 0; i < Ncomps; i++){
-        for (int j = 0; j < Ncomps; j++){
-            M[i][j] = (m[i] / (m[i] + m[j]));
-            m0[i][j] = (m[i] + m[j]);
-            red_mass[i][j] = M[i][j] * m[j];
+std::vector<json> get_fluid_data(std::string comps);
+
+KineticGas::KineticGas(std::string comps, bool is_idealgas) 
+    : Ncomps{static_cast<size_t>(std::max(static_cast<int>(std::count_if(comps.begin(), comps.end(), [](char c) {return c == ',';})) + 1, 2))}, 
+    is_idealgas{is_idealgas},
+    is_singlecomp{std::count_if(comps.begin(), comps.end(), [](char c) {return c == ',';}) == 0},
+    m(Ncomps, 0.), M(Ncomps, vector1d(Ncomps, 0.)), m0(Ncomps, vector1d(Ncomps, 0.)), red_mass(Ncomps, vector1d(Ncomps, 0.)),
+    sigma(Ncomps, vector1d(Ncomps, 0.)), eps(Ncomps, vector1d(Ncomps, 0.)),
+    compdata(get_fluid_data(comps))
+    {
+        for (size_t i = 0; i < Ncomps; i++){
+            m[i] = static_cast<double>(compdata[i]["mol_weight"]) * 1e-3 / AVOGADRO;
+        }
+        set_masses();
+        if (is_idealgas){
+            eos = std::make_unique<GenericEoS>(ThermoWrapper(Ideal(comps)));
         }
     }
-    clear_all_caches();
-}
 
 KineticGas::KineticGas(vector1d mole_weights, vector2d sigma, vector2d eps, bool is_idealgas, bool is_singlecomp)
     : Ncomps{static_cast<size_t>(mole_weights.size())},
@@ -67,6 +76,17 @@ std::vector<json> get_fluid_data(std::string comps){
     return fluids;
 }
 
+void KineticGas::set_masses(){
+    for (int i = 0; i < Ncomps; i++){
+        for (int j = 0; j < Ncomps; j++){
+            M[i][j] = (m[i] / (m[i] + m[j]));
+            m0[i][j] = (m[i] + m[j]);
+            red_mass[i][j] = M[i][j] * m[j];
+        }
+    }
+    clear_all_caches();
+}
+
 Units KineticGas::get_reducing_units(int i, int j){
     return Units(2. * red_mass[i][j], sigma[i][j], eps[i][j]);
 }
@@ -81,20 +101,6 @@ int KineticGas::frame_of_reference_map(std::string frame_of_ref){
     if (frame_of_ref == "zarate_w") return FrameOfReference::zarate_w;
     throw std::runtime_error("Invalid frame of reference : " + frame_of_ref);
 }
-
-KineticGas::KineticGas(std::string comps, bool is_idealgas) 
-    : Ncomps{static_cast<size_t>(std::max(static_cast<int>(std::count_if(comps.begin(), comps.end(), [](char c) {return c == ',';})) + 1, 2))}, 
-    is_idealgas{is_idealgas},
-    is_singlecomp{std::count_if(comps.begin(), comps.end(), [](char c) {return c == ',';}) == 0},
-    m(Ncomps, 0.), M(Ncomps, vector1d(Ncomps, 0.)), m0(Ncomps, vector1d(Ncomps, 0.)), red_mass(Ncomps, vector1d(Ncomps, 0.)),
-    sigma(Ncomps, vector1d(Ncomps, 0.)), eps(Ncomps, vector1d(Ncomps, 0.)),
-    compdata(get_fluid_data(comps))
-    {
-        for (size_t i = 0; i < Ncomps; i++){
-            m[i] = static_cast<double>(compdata[i]["mol_weight"]) * 1e-3 / AVOGADRO;
-        }
-        set_masses();
-    }
 
 std::vector<double> KineticGas::get_wt_fracs(const std::vector<double> mole_fracs){
     std::vector<double> wt_fracs(Ncomps, 0.);

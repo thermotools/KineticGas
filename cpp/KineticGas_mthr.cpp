@@ -62,7 +62,6 @@ void KineticGas::precompute_conductivity(int N, double T, double rho, bool preco
     for (int i = 0; i < true_Ncomps; i++){
         for (int j = i; j < true_Ncomps; j++){
             for (int l = 1; l <= N; l++){
-                if ((l % 2 == 1) && (is_singlecomp)) continue;
                 for (int r = l; r <= 2 * (N - 1) + 2 - l; r++){
                     i_vec.push_back(i);
                     j_vec.push_back(j);

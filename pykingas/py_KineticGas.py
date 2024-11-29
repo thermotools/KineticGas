@@ -609,15 +609,14 @@ class py_KineticGas:
             T (float) : Temperature [K]
             Vm (float) : Molar volume [m3 / mol]
             x (array_like) : Molar composition [-]
-            N (int, optional) : Enskog approximation order (>= 2)
+            N (int, optional) : Enskog approximation order
             idealgas (bool, optional) : Return infinite dilution value? Defaults to model default (set on init).
-            contributions (str, optional) : Return only specific contributions, can be ('all' (default), '(i)nternal',
+            contributions (str, optional) : Return specific contributions, can be ('all' (default), '(i)nternal',
                                             '(t)ranslational', '(d)ensity', or several of the above, such as 'tid' or 'td'.
-                                            If several contributions are selected, these are returned in an array of
-                                            contributions in the same order as indicated in the supplied flag.
+                                            If anything other than 'all' is used, the contriutions are returned as a `dict`
 
         Returns:
-            (float) : The thermal conductivity of the mixture [W / m K].
+            (float or dict) : The thermal conductivity of the mixture [W / m K].
         """
         x = self.validate_and_sanitize_composition(x)
         N = self.default_N if (N is None) else N

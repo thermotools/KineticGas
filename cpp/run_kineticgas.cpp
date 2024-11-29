@@ -1,11 +1,11 @@
-#include "Quantum.h"
+#include "multiparam.h"
 #include <iostream>
 #include <vector>
 
 int main(){
-    Quantum he3("HE3");
+    Patowski kin("HE3");
     std::cout << "Finished HE3 init, computing viscosity ..." << std::endl;
-    double visc = he3.viscosity(10., 0.08, {0.5, 0.5}, 2);
+    double visc = kin.thermal_conductivity(10., 0.08, {0.5, 0.5}, 1);
     std::cout << "At 10 K : " << visc << std::endl;
     return 0;
     

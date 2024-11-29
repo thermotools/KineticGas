@@ -122,6 +122,16 @@ double Spherical::reduced_cross_section(int i, int j, int l, double E){
     return Q / Q_hs; 
 }
 
+double Spherical::second_virial(int i, int j, double T){
+    set_internals(0, T, {1.});
+    const auto integrand = [&](double r){return pow(r, 2) * (exp(- potential(i, j, r * sigma[i][j]) / (BOLTZMANN * T)) - 1);}; // Integration variable is r / sigma[i][j];
+    const double r0 = 0.1;
+    const double r1 = 2;
+    double I = (pow(r0, 3) / 3) + simpson(integrand, r0, r1, 100);
+    I += simpson_inf(integrand, r1, 3);
+    return - 0.5 * 4 * PI * pow(sigma[i][j], 3) * AVOGADRO * I;
+}
+
 /*
 Contains functions for computing the collision integrals
 Common variables are:
