@@ -21,6 +21,8 @@ public:
     double JKWB_upper_E_limit(int i, int j);
     double quantum_phase_shift(int i, int j, int l, double E);
     double phase_shift(int i, int j, int l, double E);
+    double absolute_phase_shift(int i, int j, int l, double E, double prev_delta);
+    
     double cross_section_A(int n, int l, size_t k);
     double cross_section_kernel(int i, int j, int n, int l, double E);
     double JKWB_cross_section(int i, int j, int n, double E);

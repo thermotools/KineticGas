@@ -233,6 +233,7 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("wave_function", &Quantum::wave_function)
         .def("phase_shift", &Quantum::phase_shift)
         .def("JKWB_phase_shift", &Quantum::JKWB_phase_shift)
+        .def("absolute_phase_shift", &Quantum::absolute_phase_shift)
         .def("get_de_boer", py::overload_cast<>(&Quantum::get_de_boer))
         .def("get_de_boer", py::overload_cast<int, int>(&Quantum::get_de_boer))
         .def("get_de_boer", py::overload_cast<int>(&Quantum::get_de_boer))

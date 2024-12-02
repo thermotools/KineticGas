@@ -250,15 +250,22 @@ double Quantum::quantum_phase_shift(int i, int j, int l, double E){
         prev_delta = new_delta;
         for (size_t i = 0; i < nsteps_period; i++) numerov_step(r, psi, g_vals);
         new_delta = local_phase_shift(r, psi, g_vals);
-        std::cout << "shift (" << E / eps[i][j] << ") : " << prev_delta / PI << ", " << new_delta / PI << std::endl;
+        // std::cout << "shift (" << E / eps[i][j] << ") : " << prev_delta / PI << ", " << new_delta / PI << std::endl;
     } while (abs(new_delta - prev_delta) > 1e-5);
     return new_delta - n_shift * PI;
 }
 
 double Quantum::phase_shift(int i, int j, int l, double E){
-    if (E < 5e-4) return (l == 0) ? PI : 0;
+    if (E < 5e-4) return 0;
     if ((E > JKWB_E_limit) || (l > JKWB_l_limit)) return JKWB_phase_shift(i, j, l, E);
     return quantum_phase_shift(i, j, l, E);
+}
+
+double Quantum::absolute_phase_shift(int i, int j, int l, double E, double prev_delta){
+    double delta = phase_shift(i, j, l, E);
+    if (l == 0) delta += PI;
+    while (delta > prev_delta) delta -= PI;
+    return delta;
 }
 
 double Quantum::cross_section_A(int n, int l, size_t k){
@@ -304,12 +311,12 @@ double Quantum::cross_section_kernel(int i, int j, int n, int l, double E){
 
 double Quantum::cross_section(int i, int j, const int n, const double E){
     // Input is reduced energy (E = E(Joule) / eps[i][j])
-    if (E < 5e-4) return cross_section(i, j, n, 5e-4); // Cross section approach constant value at small E, but numerical solver fails for very small E
+    if (E < 5e-4) return cross_section(i, j, n, 5e-4); // Cross sections approach constant value at small E, but numerical solver fails for very small E
     if (is_singlecomp) i = j;
     
     double sym_prefactor, anti_prefactor;
     if ((i != j) && (!is_singlecomp)) {
-        sym_prefactor = anti_prefactor = 1.;
+        sym_prefactor = anti_prefactor = .5;
     }
     else {
         double S = half_spin[i] / 2.;
@@ -426,8 +433,11 @@ double Quantum::scattering_volume(int i, int j, double E){
 
     double S = 0;
     double S_term = 0;
+    double prev_delta = (l == 0) ? PI : 0.;
     do {
-        S_term = (2 * l + 2) * phase_shift(i, j, l, E);
+        double delta = absolute_phase_shift(i, j, l, E, prev_delta);
+        prev_delta = delta;
+        S_term = (2 * l + 2) * delta;        
         S += S_term;
         l += l_step;
         std::cout << "Converging (" << l << ", " << E << ") :" << S << " / " << S_term << std::endl;
