@@ -49,6 +49,11 @@ Quantum::Quantum(std::string comps) : Spherical(comps, true) {
     }
 }
 
+void Quantum::clear_all_caches(){
+    Spherical::clear_all_caches();
+    phase_shift_map.clear();
+}
+
 vector2d Quantum::get_de_boer(){
     vector2d de_boer(Ncomps, vector1d(Ncomps));
     for (size_t i = 0; i < Ncomps; i++){
@@ -257,6 +262,11 @@ double Quantum::quantum_phase_shift(int i, int j, int l, double E){
 
 double Quantum::phase_shift(int i, int j, int l, double E){
     if (E < 5e-4) return 0;
+    
+    const std::pair<int, double> point(l, E);
+    const auto pos = phase_shift_map.find(point);
+    if (pos != phase_shift_map.end()) return pos->second;
+
     if ((E > JKWB_E_limit) || (l > JKWB_l_limit)) return JKWB_phase_shift(i, j, l, E);
     return quantum_phase_shift(i, j, l, E);
 }
@@ -450,7 +460,7 @@ double Quantum::scattering_volume(int i, int j, double E){
     else {
         switch (half_spin[i]){
         case 0: l = 0; break;
-        case 1: l = 1; break;
+        case 2: l = 1; break;
         default: throw std::runtime_error("Invalid half-spin!");
         }
     }

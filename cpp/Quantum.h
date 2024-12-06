@@ -36,7 +36,7 @@ public:
     double second_virial(int i, int j, double T) override;
     double classical_second_virial(int i, int j, double T){return Spherical::second_virial(i, j, T);};
     double semiclassical_second_virial(int i, int j, double T);
-    
+
     double scattering_volume(int i, int j, double E);
     double quantum_second_virial(int i, int j, double T);
 
@@ -45,6 +45,7 @@ public:
 
     void set_JKWB_limits(double E, int l){
         JKWB_E_limit = E; JKWB_l_limit = l;
+        phase_shift_map.clear();
     }
 
     std::pair<double, int> get_JKWB_limits(){
@@ -53,12 +54,15 @@ public:
 
 protected:
     vector2d model_rdf(double rho, double T, const vector1d& mole_fracs) override {throw std::runtime_error("Method model_rdf not implemented for Quantum!");}
+    void clear_all_caches() override;
 
 private:
     bool quantum_is_active = true;
     double JKWB_E_limit = 50.;
     int JKWB_l_limit = 20;
     std::vector<unsigned int> half_spin; // Spin of each particle multiplied by two 
+
+    std::map<std::pair<int, double>, double> phase_shift_map;
     
 
 };
