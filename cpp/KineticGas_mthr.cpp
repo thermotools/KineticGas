@@ -10,7 +10,7 @@ Usage: Set the constexpr int Ncores to the desired number of threads to split th
 
 #include "KineticGas.h"
 
-constexpr int Ncores{8}; // Number of cores to use for multithreading collision integrals (save one for the transfer lengths)
+constexpr size_t Ncores{8}; // Number of cores to use for multithreading collision integrals (save one for the transfer lengths)
 
 // Function to distribute the nvals values of vec as evenly as possible among Ncores different vectors
 inline std::vector<std::vector<int>> slice_by_ncores(const std::vector<int>& vec, int n_vals){
@@ -129,4 +129,21 @@ void KineticGas::precompute_viscosity(int N, double T, double rho){
         if (i_slices[core_idx].size() == 0) continue;
         threads[core_idx].join();
     }
+}
+
+void KineticGas::precompute_ideal_diffusion(vector1d T){
+    double rho = AVOGADRO;
+    int N = 1;
+    std::vector<std::thread> threads;
+    size_t ti = 0;
+    size_t tj = 0;
+    do {
+        for (; ti < std::max(Ncores, T.size()); ti++){
+            threads.push_back(std::thread(&KineticGas::precompute_diffusion, this, std::ref(N), std::ref(T[ti]), std::ref(rho)));
+        }
+        for (; tj < std::max(Ncores, T.size()); tj++){
+            threads[tj].join();
+        }
+    } while (ti < T.size());
+
 }
