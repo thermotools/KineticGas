@@ -22,7 +22,8 @@ public:
     double quantum_phase_shift(int i, int j, int l, double E);
     double phase_shift(int i, int j, int l, double E);
     double absolute_phase_shift(int i, int j, int l, double E, double prev_delta);
-    
+    double absolute_phase_shift(int i, int j, int l, double E);
+
     double cross_section_A(int n, int l, size_t k);
     double cross_section_kernel(int i, int j, int n, int l, double E);
     double JKWB_cross_section(int i, int j, int n, double E);
@@ -34,6 +35,8 @@ public:
 
     double second_virial(int i, int j, double T) override;
     double classical_second_virial(int i, int j, double T){return Spherical::second_virial(i, j, T);};
+    double semiclassical_second_virial(int i, int j, double T);
+    
     double scattering_volume(int i, int j, double E);
     double quantum_second_virial(int i, int j, double T);
 
@@ -54,7 +57,7 @@ protected:
 private:
     bool quantum_is_active = true;
     double JKWB_E_limit = 50.;
-    int JKWB_l_limit = 10000;
+    int JKWB_l_limit = 20;
     std::vector<unsigned int> half_spin; // Spin of each particle multiplied by two 
     
 

@@ -72,6 +72,25 @@ double Spherical::w_integral(int i, int j, double T, int l, int r){
     int refinement_levels_g{4};
     int refinement_levels_b{16};
     double subdomain_dblder_limit{1e-5};
+    if (T < 70){
+        dg /= 4.; 
+        end = Point(6, 3.5);
+    }
+    if (T < 50){
+        refinement_levels_b /= 2;
+    }
+    if (T < 35){
+        dg /= 2;
+        refinement_levels_g *= 2;
+        db /= 2;
+        end = Point(3.5, 3.5);
+    }
+    if (T < 20){
+        dg /= 2;
+        refinement_levels_g *= 2;
+        db /= 2;
+        refinement_levels_b *= 2;
+    }
 
     const auto w_integrand_export = [&](double g, double b){return w_integrand(i, j, T, g, b, l, r);};
     double I = integrate2d(origin, end,
@@ -86,6 +105,7 @@ double Spherical::w_integral(int i, int j, double T, int l, int r){
 double Spherical::w_integrand(int i, int j, double T, 
                                         double g, double b,
                                         int l, int r){ // Using b = b / sigma to better scale the axes. Multiply the final integral by sigma.
+    if ((b > 2.5) && (g > 1.5)) return 0;
     const double chi_val = chi(i, j, T, g, b * sigma[i][j]);
     return 2 * exp(- pow(g, 2)) * pow(g, 2.0 * r + 3.0) * (1 - pow(cos(chi_val), l)) * b;
 };

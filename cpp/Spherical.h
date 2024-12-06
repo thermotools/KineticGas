@@ -60,6 +60,11 @@ class Spherical : public KineticGas {
     double theta_r(int i, int j, double r, double T, double g, double b); // Angular position at given particle separation (r). A plot of r * sin(theta_r) vs. r * cos(theta_r) will show the particle trajectory for a collision with given T, g, b.
     double theta_r(int i, int j, double R, double r, double T, double g, double b); // Faster, if R is known.
 
+
+    double omega_tester(int i, int j, int l, int r, double T, IntegrationParam& param);
+    double w_integral_tester(int i, int j, double T, int l, int r, IntegrationParam& param);
+    double w_integrand(int i, int j, double T, double g, double b, int l, int r);
+
 protected:
     // ------------------------------------------------------------------------------------------- //
     // --------------------------------  TRANSFER LENGTH CACHING --------------------------------- //
@@ -107,8 +112,6 @@ private:
     // -------------------------------- Spherical Internals are below here ----------------------------------------------- //
     // ---------------------- End users should not need to care about anything below ------------------------------------- //
     // ------------------------------------------------------------------------------------------------------------------- //
-    double omega_tester(int i, int j, int l, int r, double T, IntegrationParam& param);
-    double w_integral_tester(int i, int j, double T, int l, int r, IntegrationParam& param);
 
     double get_R0(int i, int j, double T, double g); // Solve get_R when b = 0
 
@@ -122,7 +125,6 @@ private:
     double get_R_rootfunc_derivative(int i, int j, double T, double g, double b, double& r);
 
     double w_integral(int i, int j, double T, int l, int r); // Dimentionless collision integral for spherical potentials
-    double w_integrand(int i, int j, double T, double g, double b, int l, int r);
 };
 
 class IntegrationParam{

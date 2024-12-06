@@ -83,6 +83,7 @@ double Quantum::JKWB_upper_E_limit(int i, int j){
 }
 
 double Quantum::JKWB_phase_shift(int i, int j, int l, double E){
+    if (E < 1e-10) return 0.;
     E *= eps[i][j];
     double k = sqrt(2. * red_mass[i][j] * E) / HBAR;
     double T = 50;
@@ -244,7 +245,6 @@ double Quantum::quantum_phase_shift(int i, int j, int l, double E){
     } while (abs(new_delta - prev_delta) > current_err);
 
     // Find distance where change is below tolerance, only check once per period.
-    size_t n_shift = 0;
     do {
         size_t nsteps_period = static_cast<size_t>(PI / (k * step_size));
         prev_delta = new_delta;
@@ -252,7 +252,7 @@ double Quantum::quantum_phase_shift(int i, int j, int l, double E){
         new_delta = local_phase_shift(r, psi, g_vals);
         // std::cout << "shift (" << E / eps[i][j] << ") : " << prev_delta / PI << ", " << new_delta / PI << std::endl;
     } while (abs(new_delta - prev_delta) > 1e-5);
-    return new_delta - n_shift * PI;
+    return new_delta;
 }
 
 double Quantum::phase_shift(int i, int j, int l, double E){
@@ -263,8 +263,32 @@ double Quantum::phase_shift(int i, int j, int l, double E){
 
 double Quantum::absolute_phase_shift(int i, int j, int l, double E, double prev_delta){
     double delta = phase_shift(i, j, l, E);
+    if ((E > JKWB_E_limit) || (l > JKWB_l_limit)) return delta;
+
     if (l == 0) delta += PI;
-    while (delta > prev_delta) delta -= PI;
+    
+    while (abs(delta - PI - prev_delta) < abs(delta - prev_delta)) delta -= PI;
+    while (abs(delta + PI - prev_delta) < abs(delta - prev_delta)) delta += PI;
+    return delta;
+}
+
+double Quantum::absolute_phase_shift(int i, int j, int l, double E){
+    if ((E > JKWB_E_limit) || (l > JKWB_l_limit)) return JKWB_phase_shift(i, j, l, E);
+    double delta = (l == 0) ? PI : 0;
+    double Ei = 1e-1;
+    if (l <= 2) {
+        Ei = 1e-2;
+    }
+    else if (l > 10) {
+        Ei = 1.;
+    }
+    double dlnE = .25;
+    double dE = 1.15; // exp(dlnE);
+    while (Ei < E){
+        delta = absolute_phase_shift(i, j, l, Ei, delta);
+        Ei *= dE;
+    }
+    delta = absolute_phase_shift(i, j, l, E, delta);
     return delta;
 }
 
@@ -384,14 +408,14 @@ double Quantum::quantum_omega(int i, int j, int n, int s, double T){
     double maxpoint = s + 1.;
     double I = simpson_inf(kernel, 0, maxpoint / 3);
     double val = I * sqrt(2. / (PI * beta * red_mass[i][j]));
-    std::cout << "Quantum omega (" << n << ", " << s << ", " << T << ") : " << val << std::endl;
+    std::cout << "Quantum omega (" << i << ", " << j << ", " << n << ", " << s << ", " << T << ") : " << val << std::endl;
     return val;
 }
 
 double Quantum::classical_omega(int i, int j, int l, int r, double T){
     std::cout << "Computing (C) : " << l << ", " << r << ", " << T << std::endl;
     double val = Spherical::omega(i, j, l, r, T);
-    std::cout << "Classical omega (" << l << ", " << r << ", " << T << ") : " << val << std::endl;
+    std::cout << "Classical omega (" << i << ", " << j << ", " << l << ", " << r << ", " << T << ") : " << val << std::endl;
     return val;
 }
 
@@ -433,14 +457,12 @@ double Quantum::scattering_volume(int i, int j, double E){
 
     double S = 0;
     double S_term = 0;
-    double prev_delta = (l == 0) ? PI : 0.;
     do {
-        double delta = absolute_phase_shift(i, j, l, E, prev_delta);
-        prev_delta = delta;
+        double delta = absolute_phase_shift(i, j, l, E);
         S_term = (2 * l + 2) * delta;        
         S += S_term;
         l += l_step;
-        std::cout << "Converging (" << l << ", " << E << ") :" << S << " / " << S_term << std::endl;
+        // std::cout << "Converging (" << l << ", " << E << ") :" << S << " / " << S_term << std::endl;
         if (l > 100) break;
     } while (abs(S_term / S) > 1e-8);
     return S;
@@ -451,16 +473,35 @@ double Quantum::second_virial(int i, int j, double T){
 }
 
 double Quantum::quantum_second_virial(int i, int j, double T){
+    std::cout << "Starting second virial at " << T << std::endl;
     double beta = 1 / (BOLTZMANN * T);
     double lamb = de_broglie_wavelength(i, j, T);
     double V_th = pow(lamb, 3);
     double B_id = 1. / 16.;
     double B_bound = (exp(- eps[i][j] / (BOLTZMANN * T)) - 1);
 
-    const auto integrand = [&](double Eb){return exp( - Eb) * scattering_volume(i, j, Eb / (beta * eps[i][j]));};
-    double I0 = simpson_inf(integrand, 0, 1);
+    int n_eval;
+    const auto integrand = [&](double Eb){
+        if (exp(- Eb) < 1e-10) return 0.;
+        std::cout << "Evaluating ... " << n_eval++ << std::endl;
+        double S_vol = scattering_volume(i, j, Eb / (beta * eps[i][j]));
+        std::cout << "Virial integrand : " << Eb << ", " << T << ", " << exp(- Eb) << ", " << S_vol << " : " << S_vol * exp(- Eb) << std::endl;
+        return exp(- Eb) * S_vol;
+    };
+    double I0 = simpson(integrand, 0, 3, 30) + simpson_inf(integrand, 3, 7);
+    std::cout << "Computed T = " << T << std::endl;
+    std::cout << "##############################" << std::endl;
     double B_th = I0 / PI;
     return - AVOGADRO * V_th * (B_id + B_bound + B_th);
+}
+
+double Quantum::semiclassical_second_virial(int i, int j, double T){
+    double tmp_JKWB_E_limit = JKWB_E_limit;
+    int tmp_JKWB_l_limit = JKWB_l_limit;
+    JKWB_E_limit = 0; JKWB_l_limit = 0;
+    double B = quantum_second_virial(i, j, T);
+    JKWB_E_limit = tmp_JKWB_E_limit; JKWB_l_limit = tmp_JKWB_l_limit;
+    return B;
 }
 
 void Quantum::set_quantum_active(bool active){
