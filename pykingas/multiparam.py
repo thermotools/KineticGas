@@ -115,7 +115,8 @@ class HFD_B2(Quantum):
 
 class Patowski(MultiParam, Quantum):
 
-    def __init__(self, comps):
+    def __init__(self, comps, quantum_active=True):
         super().__init__(comps)
         self.cpp_kingas = cpp_Patowski(comps)
         self.param = self.cpp_kingas.get_param()
+        self.cpp_kingas.set_quantum_active(quantum_active)
