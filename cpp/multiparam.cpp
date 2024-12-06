@@ -148,7 +148,7 @@ double HFD_B2::potential(int i, int j, double r){
     return V * param.eps_div_k * BOLTZMANN;
 }
 
-Patowski::Patowski(std::string comps)
+PatowskiCore::PatowskiCore(std::string comps)
     : Quantum(comps)
 {
     const auto cdata = compdata[0]["Patowski"]["default"];
@@ -175,9 +175,26 @@ Patowski::Patowski(std::string comps)
             eps[i][j] = param.eps_div_k * BOLTZMANN;
         }
     }
+
+    
+    // for (size_t i = 0; i < Ncomps; i++){
+    //     tab_potential.push_back(std::vector<Tabulated<tab_N, tab_deg>>());
+    //     tab_potential_r.push_back(std::vector<Tabulated<tab_N, tab_deg>>());
+    //     tab_potential_rr.push_back(std::vector<Tabulated<tab_N, tab_deg>>());
+    //     for (size_t j = i; j < Ncomps; j++){
+    //         double tab_min = 0.5 * sigma[i][j];
+    //         double tab_mid = sigma[i][j];
+    //         double tab_mid_n = 100.;
+    //         double tab_max = (tab_mid - tab_min) * (tab_N / tab_mid_n) + tab_min;
+    //         std::cout << "Tabulated max : " << tab_max / sigma[i][j] << ", dr : " << (tab_max - tab_min) / (tab_N * sigma[i][j]) << std::endl;
+    //         tab_potential[i].push_back(Tabulated<tab_N, tab_deg>([&](double r){return potential(i, j, r);}, tab_min, tab_max));
+    //         tab_potential_r[i].push_back(Tabulated<tab_N, tab_deg>([&](double r){return potential_derivative_r(i, j, r);}, tab_min, tab_max));
+    //         tab_potential_rr[i].push_back(Tabulated<tab_N, tab_deg>([&](double r){return potential_dblderivative_rr(i, j, r);}, tab_min, tab_max));
+    //     }
+    // }
 }
 
-dual2 Patowski::potential(int i, int j, dual2 r){
+dual2 PatowskiCore::potential(int i, int j, dual2 r){
     r *= 1e10; // Working in Å internally
     if (r < param.Rc){
         // Potential is only valid for r > Rc, but we need a continuous extrapolation that is well behaved for numerical purposes.
@@ -196,7 +213,7 @@ dual2 Patowski::potential(int i, int j, dual2 r){
     return p * BOLTZMANN;
 }
 
-double Patowski::potential(int i, int j, double r){
+double PatowskiCore::potential(int i, int j, double r){
     r *= 1e10; // Working in Å internally
     if (r < param.Rc){ 
         // Potential is only valid for r > Rc, but we need a continuous extrapolation that is well behaved for numerical purposes.

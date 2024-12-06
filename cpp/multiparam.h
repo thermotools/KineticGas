@@ -3,6 +3,7 @@
 #include "Spherical.h"
 #include "Quantum.h"
 #include "global_params.h"
+#include "extentions.h"
 #include <autodiff/forward/dual.hpp>
 
 using namespace autodiff;
@@ -63,16 +64,18 @@ struct PatowskiParam{
     std::array<double, 3> Cn;     
 };
 
-class Patowski : public Quantum {
+class PatowskiCore : public Quantum {
 public:
-    Patowski(std::string comps);
-    Patowski(PatowskiParam param);
+    PatowskiCore(std::string comps);
+    PatowskiCore(PatowskiParam param);
 
     using Spherical::potential;
     dual2 potential(int i, int j, dual2 r) override;
     double potential(int i, int j, double r) override;
 
-    PatowskiParam get_param(){return param;}
+    inline PatowskiParam get_param(){return param;}
 private:
     PatowskiParam param;
 };
+
+using Patowski = Tabulated<PatowskiCore, 1000, 3>;

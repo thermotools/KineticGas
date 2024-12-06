@@ -52,7 +52,9 @@ using vector2d = std::vector<vector1d>;
         .def("get_K_factors", &Model::get_K_factors) \
         .def("get_K_prime_factors", &Model::get_K_prime_factors) \
         .def("get_chemical_potential_factors", &Model::get_chemical_potential_factors) \
-        .def("get_ksi_factors", &Model::get_ksi_factors)
+        .def("get_ksi_factors", &Model::get_ksi_factors) \
+        \
+        .def("precompute_ideal_diffusion", &Model::precompute_ideal_diffusion) \
         \
         
 #define Spherical_potential_bindings(Model) \
@@ -233,7 +235,9 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("wave_function", &Quantum::wave_function)
         .def("phase_shift", &Quantum::phase_shift)
         .def("JKWB_phase_shift", &Quantum::JKWB_phase_shift)
-        .def("absolute_phase_shift", &Quantum::absolute_phase_shift)
+        .def("quantum_phase_shift", &Quantum::quantum_phase_shift)
+        .def("absolute_phase_shift", py::overload_cast<int, int, int, double, double>(&Quantum::absolute_phase_shift))
+        .def("absolute_phase_shift", py::overload_cast<int, int, int, double>(&Quantum::absolute_phase_shift))
         .def("get_de_boer", py::overload_cast<>(&Quantum::get_de_boer))
         .def("get_de_boer", py::overload_cast<int, int>(&Quantum::get_de_boer))
         .def("get_de_boer", py::overload_cast<int>(&Quantum::get_de_boer))
@@ -242,12 +246,16 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("JKWB_upper_E_limit", &Quantum::JKWB_upper_E_limit)
         .def("omega", &Quantum::omega)
         .def("quantum_omega", &Quantum::quantum_omega)
+        .def("second_virial", &Quantum::second_virial)
+        .def("semiclassical_second_virial", &Quantum::semiclassical_second_virial)
         .def("classical_omega", &Quantum::classical_omega)
         .def("scattering_volume", &Quantum::scattering_volume)
         .def("set_quantum_active", &Quantum::set_quantum_active)
         .def("get_quantum_active", &Quantum::get_quantum_active)
         .def("set_JKWB_limits", &Quantum::set_JKWB_limits)
         .def("get_JKWB_limits", &Quantum::get_JKWB_limits)
+        .def("omega_tester", &Quantum::omega_tester)
+        .def("w_integrand", &Quantum::w_integrand)
         ;
     
     py::class_<HFD_B2, Quantum>(handle, "cpp_HFD_B2")
@@ -280,6 +288,7 @@ PYBIND11_MODULE(libpykingas, handle){
         KineticGas_bindings(Patowski)
         Spherical_potential_bindings(Patowski)
         .def("get_param", &Patowski::get_param)
+        .def("set_using_tabulated", &Patowski::set_using_tabulated)
         ;
 
     py::class_<PseudoHardSphere>(handle, "cpp_PseudoHardSphere")
