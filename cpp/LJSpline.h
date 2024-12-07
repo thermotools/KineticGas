@@ -136,7 +136,8 @@ class LJSpline : public Spherical {
 
     std::vector<std::vector<double>> saft_rdf(double rho, double T, int order) {
         double beta = 1./(BOLTZMANN * T);
-        double g = get_g0(rho,T) + beta*eps[0][0]*get_g1(rho,T)+pow((beta*eps[0][0]),2)*get_g2(rho,T); 
+        double dilute = 1e-30; // a density limiting 0
+        double g = get_g0(rho,T) + beta*eps[0][0]*(get_g1(rho,T) - get_g1(dilute,T)) +pow((beta*eps[0][0]),2)*(get_g2(rho,T) - get_g2(dilute,T)); 
         std::vector<std::vector<double>> rdf_vec = {{g,g},{g,g}}; //quick fix, burde generaliseres
         return rdf_vec;
     };

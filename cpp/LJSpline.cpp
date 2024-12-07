@@ -131,7 +131,9 @@ double LJSpline::get_g2_MCA(double rho, double T) {
 }
 
 double LJSpline::gamma_corr(double rho, double T) {
-    std::vector<double> phi = {16.1284916, -10.15024328, 13.30221007, -0.54347841, 7.21743605};
+    //std::vector<double> phi = {16.1284916, -10.15024328, 13.30221007, -0.54347841, 7.21743605}; //old value with no low-density correction
+    //std::vector<double> phi = {25.08187934, -10.21193371,  13.66995865, -0.52920052, 4.44027427}; //old value with bad low-density correction
+    std::vector<double> phi = {9.52777133, -6.41980282,  9.53930812, -0.73272507,  5.09328091};
     double eta = get_eta(T,rho);
     double x0 = get_x0(T);
     double T_reduced = T*BOLTZMANN/eps[0][0];
@@ -150,7 +152,8 @@ double LJSpline::omega(int i, int j, int l, int r, double T){
         // The correlation gives the logarithm of the reduced collision integral.
         // The collision integral is reduced using the hard-sphere value, i.e. lnomega_star = log(omega / omega_hs)
         double T_star = T * BOLTZMANN / eps[i][j];
-        if (T_star > 0.4) return omega_correlation(i, j, l, r, T_star) * omega_hs(i, j, l, r, T);
+        if (T_star > 0.4) {
+            return omega_correlation(i, j, l, r, T_star) * omega_hs(i, j, l, r, T);}
     }
     return Spherical::omega(i, j, l, r, T);
 }

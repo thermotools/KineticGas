@@ -180,6 +180,7 @@ PYBIND11_MODULE(libpykingas, handle){
             )
         KineticGas_bindings(LJSpline)
         Spherical_bindings(LJSpline)
+        .def("omega", &LJSpline::omega)
         .def("omega_star", &LJSpline::omega_star)
         .def("omega_star_approx", &LJSpline::omega_star_approx);
 }

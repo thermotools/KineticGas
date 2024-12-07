@@ -12,11 +12,11 @@ from pykingas.py_KineticGas import py_KineticGas
 
 class LJSpline(py_KineticGas):
 
-    def __init__(self, sig, eps_div_k, mole_weights):
+    def __init__(self, sig, eps_div_k, mole_weights, is_ideal = False):
         if not type(mole_weights) is float:
             raise TypeError("MW must be a float!")
         mole_weights = [mole_weights,mole_weights]
-        super().__init__("AR", mole_weights=mole_weights, is_idealgas=False, is_single_component=True)
+        super().__init__("AR", mole_weights=mole_weights, is_idealgas=is_ideal, is_single_component=True)
         if not type(sig) is float:
             raise TypeError("Sigma must be a float!")
         if not type(eps_div_k) is float:
@@ -28,3 +28,5 @@ class LJSpline(py_KineticGas):
         return self.cpp_kingas.omega_star(i,j,T,r,l)
     def get_omega_star_approx(self, T, r, l, i = 0, j = 0):
         return self.cpp_kingas.omega_star_approx(i,j,T,r,l)
+    def get_omega(self, T, r, l, i = 0, j = 0):
+        return self.cpp_kingas.omega(i, j, l, r, T)
