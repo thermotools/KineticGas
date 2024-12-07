@@ -415,11 +415,8 @@ vector2d KineticGas::get_chemical_potential_factors(double T, double Vm, const s
     #endif
     vector2d dmudrho(Ncomps, vector1d(Ncomps, 0));
     if (is_singlecomp){
-        std::cout << "hei" << std::endl;
         const vector2d dmudn_pure = eos->dmudn(T, Vm, {1.});
-        std::cout << dmudn_pure[0][0] << std::endl;
         const double RT = GAS_CONSTANT * T;
-        std::cout << RT << std::endl;
         const double dmudrho_pure = Vm * dmudn_pure[0][0];
         const double rho = 1 / Vm;
         dmudrho[0][0] = (dmudrho_pure + RT * x[1] / (rho * x[0])) / AVOGADRO;

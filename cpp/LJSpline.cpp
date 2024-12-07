@@ -12,81 +12,6 @@ double LJSpline::get_BH_diameter(double T){
     return d_BH;
 }
 
-autodiff::dual LJSpline::g_hs_dep(const autodiff::dual& r_dual, const autodiff::dual& eta_dual) {
-    autodiff::dual alpha = 0.595157 - 2.469402*eta_dual - 31.99603*pow(eta_dual,2) - 0.897749*pow(eta_dual,3);
-    autodiff::dual rm = 1.960492 - 0.240131*eta_dual - 3.26102*pow(eta_dual,2) + 4.08014*pow(eta_dual,3);
-    autodiff::dual gm = 1.072954 - 1.13263*eta_dual + 3.05087*pow(eta_dual,2) - 5.94853*pow(eta_dual,3);
-    autodiff::dual mu = 0.58236 + 8.43296*eta_dual - 34.52268*pow(eta_dual,2) + 58.63440*pow(eta_dual,3) - 35.13525*pow(eta_dual,4);
-    autodiff::dual g_sig = (1. - 1./2.*eta_dual + 5./52.*pow(eta_dual,2) - 1./4.*pow(eta_dual,3) + 1./8.*pow(eta_dual,4))/pow((1. - eta_dual),3);
-    autodiff::dual B = (rm*gm - g_sig*exp(mu*(rm-1.)))/(exp(alpha*(rm-1.))-exp(mu*(rm-1.)));
-    autodiff::dual A = g_sig - B; 
-    return (A/r_dual*exp(mu*(r_dual-1.)) + B/r_dual*exp(alpha*(r_dual-1.)));
-}
-
-
-autodiff::dual LJSpline::g_hs_str(const autodiff::dual& r_dual, const autodiff::dual& eta_dual) {
-    autodiff::dual omega = 6.56745 + 0.721795*eta_dual; 
-    autodiff::dual kappa = 1.75879 - 3.23977*eta_dual + 0.449588*pow(eta_dual,2) - 0.148890*pow(eta_dual,3);
-    autodiff::dual rm = 1.960492 - 0.240131*eta_dual - 3.26102*pow(eta_dual,2) + 4.08014*pow(eta_dual,3);
-    autodiff::dual gm = 1.072954 - 1.13263*eta_dual + 3.05087*pow(eta_dual,2) - 5.94853*pow(eta_dual,3);
-    autodiff::dual delta = -omega*rm - atan((kappa*rm + 1.)/(omega*rm));
-    autodiff::dual C = rm*(gm - 1.)*exp(kappa*rm)/cos(omega*rm + delta);
-    return 1. + C/r_dual*cos(omega*r_dual+delta)*exp(-kappa*r_dual);
-}
-
-double LJSpline::integrand_u_g(double r,double rho, double T) {
-    return potential(0,0,r)*g_hs(r,rho,T)*pow(r,2);
-}
-double LJSpline::integrand_u_dg(double r,double rho, double T) {
-    return potential(0,0,r)*dg_hs_drho(r,rho,T)*pow(r,2);
-}
-
-double LJSpline::integrand_du_g(double r,double rho, double T) {
-    return potential_derivative_r(0,0,r)*g_hs(r,rho,T)*pow(r,3);
-}
-
-double LJSpline::integrand_u2_g(double r,double rho, double T) {
-    return pow(potential(0,0,r),2)*g_hs(r,rho,T)*pow(r,2);
-}
-
-double LJSpline::integrand_u2_dg(double r,double rho, double T) {
-    return pow(potential(0,0,r),2)*dg_hs_drho(r,rho,T)*pow(r,2);
-}
-
-double LJSpline::integrand_u_du_g(double r,double rho, double T) {
-    return potential(0,0,r)*potential_derivative_r(0,0,r)*g_hs(r,rho,T)*pow(r,3);
-}
-
-double LJSpline::int_u_g(double rho, double T) {
-    std::function<double(double)> func = std::bind(&LJSpline::integrand_u_g, this, std::placeholders::_1, rho, T);
-    return simpson(func, sigma[0][0], rc, 1000);
-}
-
-double LJSpline::int_u_dg(double rho, double T) {
-    std::function<double(double)> func = std::bind(&LJSpline::integrand_u_dg, this, std::placeholders::_1, rho, T);
-    return simpson(func, sigma[0][0], rc, 1000);
-}
-
-double LJSpline::int_du_g(double rho, double T) {
-    std::function<double(double)> func = std::bind(&LJSpline::integrand_du_g, this, std::placeholders::_1, rho, T);
-    return simpson(func, sigma[0][0], rc, 1000);
-}
-
-double LJSpline::int_u2_g(double rho, double T) {
-    std::function<double(double)> func = std::bind(&LJSpline::integrand_u2_g, this, std::placeholders::_1, rho, T);
-    return simpson(func, sigma[0][0], rc, 1000);
-}
-
-double LJSpline::int_u2_dg(double rho, double T) {
-    std::function<double(double)> func = std::bind(&LJSpline::integrand_u2_dg, this, std::placeholders::_1, rho, T);
-    return simpson(func, sigma[0][0], rc, 1000);
-}
-
-double LJSpline::int_u_du_g(double rho, double T) {
-    std::function<double(double)> func = std::bind(&LJSpline::integrand_u_du_g, this, std::placeholders::_1, rho, T);
-    return simpson(func, sigma[0][0], rc, 1000);
-}
-
 
 double LJSpline::get_g0(double rho, double T) {
     double eta = get_eta(T, rho);
@@ -98,42 +23,91 @@ double LJSpline::get_g0(double rho, double T) {
     return exp(k0+k1*x0+k2*pow(x0,2)+k3*pow(x0,3));
 }
 
+double LJSpline::I1(double rho_star, double T) {
+    // Uses rho_star = rho*sigma^3*N_avogadro
+    double d = get_BH_diameter(T) / sigma[0][0];
+    double integral = q_I1[0] + q_I1[1]*rho_star + q_I1[2]*pow(rho_star,2) + q_I1[3]*pow(rho_star,3) + q_I1[4]*pow(rho_star,4) + 
+          rho_star*(q_I1[5]*pow(rho_star,2) + q_I1[6]*rho_star + q_I1[7])*(d-1) + 
+          rho_star*(q_I1[8]*pow(rho_star,2) + q_I1[9]*rho_star + q_I1[10])*pow((d-1),2);
+    return integral;
+}
+
+double LJSpline::I1_diff(double rho_star, double T) {
+    double d = get_BH_diameter(T) / sigma[0][0];
+    double integral = q_I1[1] + 2*q_I1[2]*rho_star + 3*q_I1[3]*pow(rho_star,2) + 4*q_I1[4]*pow(rho_star,3) + 
+          (3*q_I1[5]*pow(rho_star,2) + 2*q_I1[6]*rho_star + q_I1[7])*(d-1) + 
+          (3*q_I1[8]*pow(rho_star,2) + 2*q_I1[9]*rho_star + q_I1[10])*pow((d-1),2);
+    return integral;
+}
+
+double LJSpline::I2(double rho_star, double T) {
+    // Uses rho_star = rho*sigma^3*N_avogadro
+    double d = get_BH_diameter(T) / sigma[0][0];
+    double integral = q_I2[0] + q_I2[1]*rho_star + q_I2[2]*pow(rho_star,2) + q_I2[3]*pow(rho_star,3) + q_I2[4]*pow(rho_star,4) + 
+          rho_star*(q_I2[5]*pow(rho_star,2) + q_I2[6]*rho_star + q_I2[7])*(d-1) + 
+          rho_star*(q_I2[8]*pow(rho_star,2) + q_I2[9]*rho_star + q_I2[10])*pow((d-1),2);
+    return integral;
+}
+
+double LJSpline::I2_diff(double rho_star, double T) {
+    double d = get_BH_diameter(T) / sigma[0][0];
+    double integral = q_I2[1] + 2*q_I2[2]*rho_star + 3*q_I2[3]*pow(rho_star,2) + 4*q_I2[4]*pow(rho_star,3) + 
+          (3*q_I2[5]*pow(rho_star,2) + 2*q_I2[6]*rho_star + q_I2[7])*(d-1) + 
+          (3*q_I2[8]*pow(rho_star,2) + 2*q_I2[9]*rho_star + q_I2[10])*pow((d-1),2);
+    return integral;
+}
+
+double LJSpline::J1(double rho_star, double T) {
+    // Uses rho_star = rho*sigma^3*N_avogadro
+    double d = get_BH_diameter(T) / sigma[0][0];
+    double integral = q_J1[0] + q_J1[1]*rho_star + q_J1[2]*pow(rho_star,2) + q_J1[3]*pow(rho_star,3) + q_J1[4]*pow(rho_star,4) + 
+          rho_star*(q_J1[5]*pow(rho_star,2) + q_J1[6]*rho_star + q_J1[7])*(d-1) + 
+          rho_star*(q_J1[8]*pow(rho_star,2) + q_J1[9]*rho_star + q_J1[10])*pow((d-1),2);
+    return integral;
+}
+
+double LJSpline::J2(double rho_star, double T) {
+    // Uses rho_star = rho*sigma^3*N_avogadro
+    double d = get_BH_diameter(T) / sigma[0][0];
+    double integral = q_J2[0] + q_J2[1]*rho_star + q_J2[2]*pow(rho_star,2) + q_J2[3]*pow(rho_star,3) + q_J2[4]*pow(rho_star,4) + 
+          rho_star*(q_J2[5]*pow(rho_star,2) + q_J2[6]*rho_star + q_J2[7])*(d-1) + 
+          rho_star*(q_J2[8]*pow(rho_star,2) + q_J2[9]*rho_star + q_J2[10])*pow((d-1),2);
+    return integral;
+}
+
+double LJSpline::K_HS(double rho, double T) {
+    double eta = get_eta(T, rho);
+    return pow((1-eta),4)/(1.+4.*eta+4.*pow(eta,2)-4.*pow(eta,3)+pow(eta,4));
+}
+
+double LJSpline::K_HS_deta(double rho, double T) {
+    double eta = get_eta(T, rho);
+    double temp = pow(eta, 4) - 4. * pow(eta, 3) + 4. * pow(eta, 2) + 4. * eta + 1.;
+    return 4. * (pow(eta, 2) - 5. * eta - 2.) * pow(1. - eta, 3) / pow(temp, 2);
+}
+
 double LJSpline::get_g1(double rho,double T) {
-    double I1 = int_du_g(rho, T);
-    double J1 = int_u_g(rho, T);
-    double dJ1 = int_u_dg(rho,T);
-    double d_BH = get_BH_diameter(T);
-    return 3/(eps[0][0]*pow(d_BH,3))*(J1+rho*dJ1+I1/3);
-}
-
-autodiff::dual LJSpline::K_HS(autodiff::dual rho_dual, autodiff::dual T_dual) {
-    autodiff::dual eta_dual = PI*rho_dual*pow(get_BH_diameter(T_dual.val),3)/6.;
-    return pow((1-eta_dual),4)/(1+4.*eta_dual+4.*pow(eta_dual,2)-4.*pow(eta_dual,3)+pow(eta_dual,4));
-}
-
-double LJSpline::dK_HS_drho(double rho, double T) {
-    const auto K_HS_ = [&](autodiff::dual rho_dual_, autodiff::dual T_dual_){return K_HS(rho_dual_,T_dual_);};
-    autodiff::dual rho_dual = rho;
-    autodiff::dual T_dual = T;
-    return autodiff::derivative(K_HS_, autodiff::wrt(rho_dual), autodiff::at(rho_dual,T_dual));
+    double rho_star = rho*pow(sigma[0][0],3);
+    double i1 = I1(rho_star, T);
+    double di1 = I1_diff(rho_star, T);
+    double j1 = J1(rho_star, T);
+    double d = get_BH_diameter(T) / sigma[0][0];
+    return (3*di1*rho_star + 3*i1 + j1)/pow(d,3);
 }
 
 double LJSpline::get_g2_MCA(double rho, double T) {
-    autodiff::dual rho_dual = rho;
-    autodiff::dual T_dual = T;
-    double KHS = K_HS(rho_dual,T_dual).val;
-    double dKHS = dK_HS_drho(rho,T);
-    double I2 = int_u_du_g(rho,T);
-    double J2 = int_u2_g(rho,T);
-    double dJ2 = int_u2_dg(rho,T);
-    double d_BH = get_BH_diameter(T);
-    return -3/(2*pow(d_BH,3)*pow(eps[0][0],2))*(KHS*J2+rho*J2*dKHS+rho*KHS*dJ2+2./3.*KHS*I2); 
+    double rho_star = rho*pow(sigma[0][0],3);
+    double i2 = I2(rho_star, T);
+    double di2 = I2_diff(rho_star, T);
+    double j2 = J2(rho_star, T);
+    double d = get_BH_diameter(T) / sigma[0][0];
+    double khs = K_HS(rho, T);
+    double dkhs = K_HS_deta(rho,T)*(PI*pow(d,3))/6;
+    return (-3/(2*pow(d,3)))*(i2*khs + rho_star*i2*dkhs + rho_star*khs*di2 + 2*khs*j2/3);
 }
 
+
 double LJSpline::gamma_corr(double rho, double T) {
-    //std::vector<double> phi = {16.1284916, -10.15024328, 13.30221007, -0.54347841, 7.21743605}; //old value with no low-density correction
-    //std::vector<double> phi = {25.08187934, -10.21193371,  13.66995865, -0.52920052, 4.44027427}; //old value with bad low-density correction
-    std::vector<double> phi = {9.52777133, -6.41980282,  9.53930812, -0.73272507,  5.09328091};
     double eta = get_eta(T,rho);
     double x0 = get_x0(T);
     double T_reduced = T*BOLTZMANN/eps[0][0];

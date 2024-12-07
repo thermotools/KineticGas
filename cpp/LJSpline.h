@@ -79,50 +79,9 @@ class LJSpline : public Spherical {
     double get_eta(double T, double rho) {return PI*rho*pow(get_BH_diameter(T),3)/6.;}
     double get_x0(double T) {return sigma[0][0]/get_BH_diameter(T);}
 
-    // Empirical Hard-sphere RDF by H. Liu, https://doi.org/10.1080/00268976.2023.2299250
-
-    autodiff::dual g_hs_dep(const autodiff::dual& r_dual, const autodiff::dual& eta_dual);
-    autodiff::dual g_hs_str(const autodiff::dual& r_dual, const autodiff::dual& eta_dual);
-
-    double g_hs(double r, double rho, double T) {
-        double d_BH = get_BH_diameter(T);
-        r = r / d_BH;
-        autodiff::dual r_dual = r;
-        autodiff::dual eta_dual = get_eta(T, rho);
-        double rm = 1.960492 - 0.240131*eta_dual.val - 3.26102*pow(eta_dual.val,2) + 4.08014*pow(eta_dual.val,3);
-        if (r < 1) {
-            return 0;
-        }
-        else if (r < rm) {
-            return g_hs_dep(r_dual,eta_dual).val;
-        }
-        else {
-            return g_hs_str(r_dual,eta_dual).val;
-        }
-    }
-
-    double dg_hs_drho(autodiff::dual r_dual, autodiff::dual rho_dual, autodiff::dual T_dual) {
-        const auto ghs_dep_ = [&](autodiff::dual r_dual_, autodiff::dual eta_dual_){return g_hs_dep(r_dual_,eta_dual_);};
-        const auto ghs_str_ = [&](autodiff::dual r_dual_, autodiff::dual eta_dual_){return g_hs_str(r_dual_,eta_dual_);};
-        double d_BH = get_BH_diameter(T_dual.val);
-        r_dual = r_dual /d_BH;
-        double r = r_dual.val;
-        autodiff::dual eta_dual = get_eta(T_dual.val, rho_dual.val);
-        double rm = 1.960492 - 0.240131*eta_dual.val - 3.26102*pow(eta_dual.val,2) + 4.08014*pow(eta_dual.val,3);
-        if (r < 1) {
-            return 0;
-        }
-        else if (r < rm) {
-            double dg_deta = autodiff::derivative(ghs_dep_,autodiff::wrt(eta_dual), autodiff::at(r_dual,eta_dual));
-            return dg_deta*PI*pow(d_BH,3)/6.;
-        }
-        else {
-            double dg_deta = autodiff::derivative(ghs_str_,autodiff::wrt(eta_dual), autodiff::at(r_dual,eta_dual));
-            return dg_deta*PI*pow(d_BH,3)/6.;
-        }
-    }
-    
+    //
     // g at contact functions. Calclulates the g(\sigma) = g_0 + (beta*epsilon)*g_1 + (beta*epsilon)²*g_2
+    //
 
     inline std::vector<std::vector<double>> model_rdf(double rho, double T, const std::vector<double>& x) override {
         return saft_rdf(rho, T, 2);
@@ -134,34 +93,37 @@ class LJSpline : public Spherical {
     double gamma_corr(double rho, double T);
     double get_g2(double rho, double T) {return (1+gamma_corr(rho,T))*get_g2_MCA(rho,T);}
 
+    double I1(double rho, double T);
+    double I1_diff(double rho, double T);
+    double I2(double rho, double T);
+    double I2_diff(double rho, double T);
+
+    double J1(double rho, double T);
+    double J2(double rho, double T);
+
+    double K_HS(double rho, double T);
+    double K_HS_deta(double rho, double T);
+
     std::vector<std::vector<double>> saft_rdf(double rho, double T, int order) {
-        double beta = 1./(BOLTZMANN * T);
-        double dilute = 1e-30; // a density limiting 0
-        double g = get_g0(rho,T) + beta*eps[0][0]*(get_g1(rho,T) - get_g1(dilute,T)) +pow((beta*eps[0][0]),2)*(get_g2(rho,T) - get_g2(dilute,T)); 
-        std::vector<std::vector<double>> rdf_vec = {{g,g},{g,g}}; //quick fix, burde generaliseres
+        double beta_star = eps[0][0]/(BOLTZMANN * T);
+        double g;
+        double g0 = get_g0(rho, T);
+        double g1 = get_g1(rho,T);
+        double g2 = get_g2(rho,T);
+        if (order == 0) {g = g0;} 
+        else if (order == 1) {g = g0 + beta_star*g1;}
+        else if (order == 2) {g = g0 + beta_star*g1 + pow(beta_star,2)*g2;}
+        else {throw std::invalid_argument("RDF order is invalid");}
+        std::vector<std::vector<double>> rdf_vec = {{g,g},{g,g}}; 
         return rdf_vec;
     };
 
-    double integrand_u_g(double r, double rho, double T);
-    double integrand_du_g(double r, double rho, double T);
-    double integrand_u_du_g(double r,double rho, double T);
-    double integrand_u_dg(double r, double rho, double T);
-    double integrand_u2_g(double r,double rho, double T);
-    double integrand_u2_dg(double r,double rho, double T);
-    
-    double int_u_g(double rho, double T); // //Retruns integral of U(r)*g_HS(r)*r²dr
-    double int_du_g(double rho, double T); //Retruns integral of dU(r)/dr*g_HS(r)*r³dr
-    double int_u_du_g(double rho, double T); //Returns integral of dU(r)/dr*U(r)g_HS(r)*r³dr
-    double int_u_dg(double rho, double T); //Returns integral of U(r)*dg_HS/d(rho)*r²dr
-    double int_u2_g(double rho, double T); //Returns integral of U(r)²*g_HS*r²dr
-    double int_u2_dg(double rho, double T); //Returns integral of U(r)²d(g_HS)/d(rho)*r²dr
-
-    autodiff::dual K_HS(autodiff::dual rho_dual, autodiff::dual T);
-    double dK_HS_drho(double rho, double T);
-
+    // Collision integral - related functions. 
     double omega(int i, int j, int l, int r, double T) override;
     double omega_correlation(int i, int j, int l, int r, double T_star);
     double omega_recursive_factor(int i, int j, int l, int r, double T);
+
+
     // The hard sphere integrals are used as the reducing factor for the correlations.
     // So we need to compute the hard-sphere integrals to convert the reduced collision integrals from 
     // a modified version of the correlation by Fokin et. al. to the "real" collision integrals.
@@ -215,4 +177,20 @@ constexpr double gl_w[20] = {0.017614007139152742, 0.040601429800386134,
                             0.11819453196151845, 0.1019301198172403,
                             0.08327674157670514, 0.06267204833410799,
                             0.040601429800386134, 0.017614007139152742};
+
+constexpr double q_I1[11] = {-0.53572874, -0.37806724,  -0.23016988,   0.34630713,   0.07308556,   5.27289035,
+                            -6.43165849, -1.63392187,  16.74650716, -27.36299942,  -0.43778915};
+
+constexpr double q_J1[11] = {1.60718622, -7.09047972e-02, -9.43081376e-01, -5.09423352e+00,  1.36949006e+00,
+                            -5.81631691e+01, -1.39795273e+00,  3.66229139e+00, -2.77904034e+02,
+                            5.65474349e+01,  1.01557784e+01};
+
+constexpr double q_I2[11] = {0.3592528, 0.27758414, 0.25126487, -0.22023453, -0.11005555, -4.46920946,
+                            6.117315, 0.95067716, -13.88450783, 24.30452001, -0.63636868};
+
+constexpr double q_J2[11] = {-0.5388792, 1.16814143e-02,  8.83906862e-02,  2.36081648e+00, -5.31094654e-01,
+                            2.62590123e+01, -2.13956077e+00, -1.20815977e+00,  1.18753081e+02,
+                            -2.84345337e+01, -2.53564086e+00}; 
+
+constexpr double phi[5] = {6.04626608, 5.85031436, -5.86439058, -0.38738745,  0.26266706};
 }

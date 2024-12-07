@@ -22,7 +22,7 @@ plt.show()
 plt.close()
 
 temps = [1.0,1.25,1.5,2.0,2.5,3]
-rhos = np.linspace(0.001, 0.9, 30)
+rhos = np.linspace(0.01, 0.9, 100)
 
 for T in temps:
     g = []
