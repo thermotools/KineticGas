@@ -119,6 +119,7 @@ vector2d Spherical::get_collision_diameters(double rho, double T, const std::vec
     }
     return avg_R;
 }
+
 vector2d Spherical::get_b_max(double T, std::vector<std::vector<int>>& ierr){
     // bmax[i][j] in units of sigma[i][j]
     // The maximum value of the impact parameter at which deflection angle (chi) is positive
@@ -147,6 +148,7 @@ vector2d Spherical::get_b_max(double T, std::vector<std::vector<int>>& ierr){
     }
     return bmax;
 }
+
 vector2d Spherical::get_b_max(double T){
     std::vector<std::vector<int>> ierr(Ncomps, std::vector<int>(Ncomps, 1));
     std::vector<std::vector<double>> b_max = get_b_max(T, ierr);
@@ -212,11 +214,15 @@ double Spherical::ewca_weight(int i, int j, double T, double g, double b, int pr
 
 double Spherical::momentum_transfer(int i, int j, double T, double g, double b){
     double chi_val = chi(i, j, T, g, b * sigma[i][j]);
+    // double red_mass = m[i] * m[j] / (m[i] + m[j]);
+    // double U = sqrt(2 * BOLTZMANN * T / red_mass) * g;
     return g * sqrt(2 * (1 - cos(chi_val))) * abs(sin(chi_val / 2.));
 }
 
 double Spherical::energy_transfer(int i, int j, double T, double g, double b){
     double chi_val = chi(i, j, T, g, b * sigma[i][j]);
+    // double red_mass = m[i] * m[j] / (m[i] + m[j]);
+    // double U = sqrt(2 * BOLTZMANN * T / red_mass) * g;
     return g * abs(cos(chi_val) - sin(chi_val) - 1);
 }
 

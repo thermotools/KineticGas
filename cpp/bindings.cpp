@@ -1,6 +1,7 @@
 #include "KineticGas.h"
 #include "Factorial.h"
 #include "MieKinGas.h"
+#include "QuantumMie.h"
 #include "HardSphere.h"
 #include "PseudoHardSphere.h"
 #include "multiparam.h"
@@ -49,6 +50,8 @@ using vector2d = std::vector<vector1d>;
         .def("get_conductivity_matrix", &Model::get_conductivity_matrix) \
         .def("get_viscosity_matrix", &Model::get_viscosity_matrix)\
         .def("get_viscosity_vector", &Model::get_viscosity_vector)\
+        .def("get_bulk_viscosity_matrix", &Model::get_bulk_viscosity_matrix)\
+        .def("get_bulk_viscosity_vector", &Model::get_bulk_viscosity_vector)\
         .def("get_K_factors", &Model::get_K_factors) \
         .def("get_K_prime_factors", &Model::get_K_prime_factors) \
         .def("get_chemical_potential_factors", &Model::get_chemical_potential_factors) \
@@ -114,6 +117,20 @@ PYBIND11_MODULE(libpykingas, handle){
         .def_readonly("tdiff", &Units::tdiff)   // Thermal diffusivity (m^2 / s)
         .def_readonly("tcond", &Units::tcond)   // Thermal conductivity
         ;
+    
+    py::class_<ExtSutherland>(handle, "cpp_ExtSutherland")
+        .def(py::init<vector1d, vector2d, vector2d, 
+                        vector3d, vector3d, vector3d, vector3d,
+                        bool, bool>())
+        KineticGas_bindings(ExtSutherland)
+        .def("saft_rdf", &ExtSutherland::saft_rdf)
+        .def("get_rdf_terms", &ExtSutherland::get_rdf_terms)
+        .def("get_sigma_eff", &ExtSutherland::get_sigma_eff)
+        .def("get_rmin", &ExtSutherland::get_sigma_min)
+        .def("get_epsilon_eff", &ExtSutherland::get_epsilon_eff)
+        .def("get_dBH", py::overload_cast<double, double>(&ExtSutherland::get_BH_diameters))
+        .def("get_vdw_alpha", &ExtSutherland::get_vdw_alpha)
+        ;
 
     py::class_<MieKinGas>(handle, "cpp_MieKinGas")
         .def(py::init<vector1d,
@@ -163,6 +180,20 @@ PYBIND11_MODULE(libpykingas, handle){
         // .def("da2_div_chi_drho", py::overload_cast<double, double, const vector1d&>(&MieKinGas::da2ij_div_chi_drho_func))
         // .def("gamma_corr", py::overload_cast<double, double, const vector1d&>(&MieKinGas::gamma_corr))
         // ;
+
+    py::class_<QuantumMie>(handle, "cpp_QuantumMie")
+        .def(py::init<vector1d, vector2d, vector2d, vector2d, vector2d, std::vector<int>, bool, bool>())
+        KineticGas_bindings(QuantumMie)
+        .def("potential", py::overload_cast<int, int, double, double>(&QuantumMie::potential))
+        // .def("potential_derivative_r", py::overload_cast<int, int, double, double>(&QuantumMie::potential_derivative_r))
+        // .def("potential_dblderivative_rr", py::overload_cast<int, int, double, double>(&QuantumMie::potential_dblderivative_rr))
+        // .def("get_sigma_eff", py::overload_cast<double>(&QuantumMie::get_sigma_eff))
+        // .def("get_sigma_min", py::overload_cast<double>(&QuantumMie::get_sigma_min))
+        // .def("get_epsilon_eff", py::overload_cast<double>(&QuantumMie::get_epsilon_eff))
+        // .def("get_BH_diameters", &QuantumMie::get_BH_diameters)
+        .def("saft_rdf", &QuantumMie::saft_rdf)
+        .def("get_rdf_terms", &QuantumMie::get_rdf_terms)
+        ;
 
    py::class_<IntegrationParam>(handle, "IntegrationParam")
         .def(py::init<vector1d, vector1d, double, double, int, int, double>())

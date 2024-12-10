@@ -19,7 +19,7 @@ References:
 struct StatePoint{
     int T_dK;
     double rho;
-    StatePoint(double T) : T_dK{static_cast<int>((T * 100.) + 0.5)} {}
+    StatePoint(double T) : T_dK{static_cast<int>((T * 100.) + 0.5)}, rho{-1} {}
     StatePoint(double T, double rho) : T_dK{static_cast<int>((T * 100.) + 0.5)}, rho{rho}{}
 
     bool operator<(const StatePoint& other) const {

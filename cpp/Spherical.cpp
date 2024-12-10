@@ -27,7 +27,7 @@ double Spherical::potential_dblderivative_rr(int i, int j, double r){
 }
 
 StatePoint Spherical::get_transfer_length_point(double rho, double T, const vector1d& x){
-    if (transfer_length_model_id == 2){
+    if (transfer_length_model_id == TransferLengthModel::correlation){
         return StatePoint(T, rho);
     }
     return StatePoint(T);
