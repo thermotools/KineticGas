@@ -130,9 +130,12 @@ std::string get_fluid_dir();
 template<size_t N, size_t deg>
 class FuncTable{
 public:
+    FuncTable() = default;
     FuncTable(std::function<double(double)> fun, double x_min, double x_max)
         : x_min{x_min}, x_max{x_max}, dx{(x_max - x_min) / (N - 1)}
         {
+            std::array<double, N> x_vals;
+            std::array<double, N> f_vals;
             double x = x_min;
             for (size_t i = 0; i < N; i++){
                 x_vals[i] = x;
@@ -140,9 +143,18 @@ public:
                 x += dx;
             }
             for (size_t i = 0; i < N; i++){
-                C[i] = get_interpolant(i);
+                C[i] = get_interpolant(i, x_vals, f_vals);
             }
         }
+
+    FuncTable<N, deg>& operator=(const FuncTable<N, deg>& other) = default;
+    // {
+    //     x_min = other.x_min; x_max = other.x_max; dx = other.dx;
+    //     C = other.C;
+    //     return *this;
+    // }
+
+    FuncTable<N, deg>& operator=(FuncTable<N, deg>&& other) = default;
 
     double unsafe_eval(double x){
         size_t x0_idx = static_cast<size_t>((x - x_min) / dx);
@@ -159,22 +171,21 @@ public:
     }
 
     inline bool in_valid_range(double x){return ((x > x_min + ((deg + 1) / 2) * dx) && (x + ((deg + 1) / 2) * dx < x_max));}
+
 private:
-    const double x_min, x_max, dx;    
+    double x_min, x_max, dx;    
     static constexpr size_t N_intervals = N - 1;
-    std::array<double, N> x_vals;
-    std::array<double, N> f_vals;
     std::array<std::array<double, deg + 1>, N> C;
 
-    std::array<double, deg + 1> get_interpolant(size_t x0_idx) {
+    std::array<double, deg + 1> get_interpolant(size_t x0_idx, const std::array<double, N>& x_vals, const std::array<double, N>& f_vals) {
         static_assert(deg % 2 == 1, "Interpolation degree must be odd.");
         constexpr size_t n_points = deg + 1;
 
         if (x0_idx < ((deg - 1) / 2)) {
-            return get_interpolant((deg - 1) / 2);
+            return get_interpolant((deg - 1) / 2, x_vals, f_vals);
         }
         else if (x0_idx > N - (n_points / 2)){
-            return get_interpolant(N - (n_points / 2));
+            return get_interpolant(N - (n_points / 2), x_vals, f_vals);
         }
 
         size_t start_idx = x0_idx - (deg - 1) / 2;

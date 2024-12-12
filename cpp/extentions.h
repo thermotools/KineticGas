@@ -7,26 +7,41 @@ public:
 
     template<typename... Args>
     Tabulated(Args&&... args)
-        : T(std::forward<Args>(args)...)
+        : T(std::forward<Args>(args)...), 
+          tab_potential(T::Ncomps, std::vector(T::Ncomps, FuncTable<N, deg>())),
+          tab_potential_r(T::Ncomps, std::vector(T::Ncomps, FuncTable<N, deg>())),
+          tab_potential_rr(T::Ncomps, std::vector(T::Ncomps, FuncTable<N, deg>()))
     {
+        update_tables();
+    }
+
+    inline void set_using_tabulated(bool use_tab){
+        using_tabulated = use_tab; 
+        update_tables();
+    };
+
+    void update_tables(){
         for (size_t i = 0; i < T::Ncomps; i++){
-            tab_potential.push_back(std::vector<FuncTable<N, deg>>());
-            tab_potential_r.push_back(std::vector<FuncTable<N, deg>>());
-            tab_potential_rr.push_back(std::vector<FuncTable<N, deg>>());
-            for (size_t j = i; j < T::Ncomps; j++){
+            for (size_t j = 0; j < T::Ncomps; j++){
                 double tab_min = 0.5 * T::sigma[i][j];
                 double tab_mid = T::sigma[i][j];
                 double tab_mid_n = 100.;
                 double tab_max = (tab_mid - tab_min) * (N / tab_mid_n) + tab_min;
-                tab_potential[i].push_back(FuncTable<N, deg>([&](double r){return T::potential(i, j, r);}, tab_min, tab_max));
-                tab_potential_r[i].push_back(FuncTable<N, deg>([&](double r){return T::potential_derivative_r(i, j, r);}, tab_min, tab_max));
-                tab_potential_rr[i].push_back(FuncTable<N, deg>([&](double r){return T::potential_dblderivative_rr(i, j, r);}, tab_min, tab_max));
+                tab_potential[i][j] = FuncTable<N, deg>([&](double r){return T::potential(i, j, r);}, tab_min, tab_max);
+                tab_potential_r[i][j] = FuncTable<N, deg>([&](double r){return T::potential_derivative_r(i, j, r);}, tab_min, tab_max);
+                tab_potential_rr[i][j] = FuncTable<N, deg>([&](double r){return T::potential_dblderivative_rr(i, j, r);}, tab_min, tab_max);
             }
         }
     }
 
-    inline void set_using_tabulated(bool use_tab){using_tabulated = use_tab;};
+    size_t set_internals(double rho, double temp, const vector1d& x) override {
+        size_t r = T::set_internals(rho, temp, x);
+        if (using_tabulated && r) update_tables();
+        return r;
+    }
 
+    using T::potential;
+    
     double potential(int i, int j, double r) override {
         if (using_tabulated){
             if (j < i) std::swap(i, j);
