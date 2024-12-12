@@ -130,7 +130,7 @@ std::string get_fluid_dir();
 template<size_t N, size_t deg>
 class FuncTable{
 public:
-    FuncTable() = default;
+    
     FuncTable(std::function<double(double)> fun, double x_min, double x_max)
         : x_min{x_min}, x_max{x_max}, dx{(x_max - x_min) / (N - 1)}
         {
@@ -146,15 +146,13 @@ public:
                 C[i] = get_interpolant(i, x_vals, f_vals);
             }
         }
+        
+    FuncTable() = default;
+    FuncTable(const FuncTable<N, deg>&) = default;
+    FuncTable(FuncTable<N, deg>&&) = default;
+    FuncTable<N, deg>& operator=(const FuncTable<N, deg>&) = default;
+    FuncTable<N, deg>& operator=(FuncTable<N, deg>&&) = default;
 
-    FuncTable<N, deg>& operator=(const FuncTable<N, deg>& other) = default;
-    // {
-    //     x_min = other.x_min; x_max = other.x_max; dx = other.dx;
-    //     C = other.C;
-    //     return *this;
-    // }
-
-    FuncTable<N, deg>& operator=(FuncTable<N, deg>&& other) = default;
 
     double unsafe_eval(double x){
         size_t x0_idx = static_cast<size_t>((x - x_min) / dx);

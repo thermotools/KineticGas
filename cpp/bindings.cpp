@@ -67,6 +67,7 @@ using vector2d = std::vector<vector1d>;
         .def("potential_r", &Model::potential_derivative_r) \
         .def("potential_rr", &Model::potential_dblderivative_rr) \
         .def("get_reducing_units", &Model::get_reducing_units) \
+        .def("get_r_min", &Model::get_r_min) \
 
 PYBIND11_MODULE(libpykingas, handle){
     handle.doc() = "Is this documentation? This is documentation.";
@@ -187,9 +188,9 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("potential", py::overload_cast<int, int, double, double>(&QuantumMie::potential))
         // .def("potential_derivative_r", py::overload_cast<int, int, double, double>(&QuantumMie::potential_derivative_r))
         // .def("potential_dblderivative_rr", py::overload_cast<int, int, double, double>(&QuantumMie::potential_dblderivative_rr))
-        // .def("get_sigma_eff", py::overload_cast<double>(&QuantumMie::get_sigma_eff))
-        // .def("get_sigma_min", py::overload_cast<double>(&QuantumMie::get_sigma_min))
-        // .def("get_epsilon_eff", py::overload_cast<double>(&QuantumMie::get_epsilon_eff))
+        .def("get_sigma_eff", py::overload_cast<double>(&QuantumMie::get_sigma_eff))
+        .def("get_sigma_min", py::overload_cast<double>(&QuantumMie::get_sigma_min))
+        .def("get_epsilon_eff", py::overload_cast<double>(&QuantumMie::get_epsilon_eff))
         // .def("get_BH_diameters", &QuantumMie::get_BH_diameters)
         .def("saft_rdf", &QuantumMie::saft_rdf)
         .def("get_rdf_terms", &QuantumMie::get_rdf_terms)
@@ -278,6 +279,7 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("omega", &Quantum::omega)
         .def("quantum_omega", &Quantum::quantum_omega)
         .def("second_virial", &Quantum::second_virial)
+        .def("second_virial_contribs", &Quantum::second_virial_contribs)
         .def("semiclassical_second_virial", &Quantum::semiclassical_second_virial)
         .def("classical_omega", &Quantum::classical_omega)
         .def("scattering_volume", &Quantum::scattering_volume)
@@ -320,6 +322,15 @@ PYBIND11_MODULE(libpykingas, handle){
         Spherical_potential_bindings(Patowski)
         .def("get_param", &Patowski::get_param)
         .def("set_using_tabulated", &Patowski::set_using_tabulated)
+        ;
+
+    py::class_<PatowskiFH1, Quantum>(handle, "cpp_PatowskiFH1")
+        .def(py::init<std::string>())
+        KineticGas_bindings(PatowskiFH1)
+        Spherical_potential_bindings(PatowskiFH1)
+        .def("potential", py::overload_cast<int, int, double, double>(&PatowskiFH1::potential))
+        .def("get_param", &PatowskiFH1::get_param)
+        .def("set_using_tabulated", &PatowskiFH1::set_using_tabulated)
         ;
 
     py::class_<PseudoHardSphere>(handle, "cpp_PseudoHardSphere")
