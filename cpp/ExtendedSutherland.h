@@ -134,8 +134,8 @@ protected:
     void mix_epsilon();
     void mix_exponents(vector2d& expo);
 
-    virtual void set_effective_params(dual2 rho, dual2 T);
-    void set_internals(double rho, double T, const vector1d& x) override {set_effective_params(rho, T);}
+    virtual size_t set_effective_params(dual2 rho, dual2 T);
+    size_t set_internals(double rho, double T, const vector1d& x) override {return set_effective_params(rho, T);}
     double current_T{-1.}, current_rho{-1.};
     bool C_set{false}, sigma_set{false}, eps_set{false}, alpha_set{false};
     vector2d2 sigma_eff;

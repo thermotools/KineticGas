@@ -50,7 +50,7 @@ private:
     using ExtSutherland::potential_dblderivative_rr;
 
     void init_FH_terms();
-    void set_effective_params(dual2 rho, dual2 T) override {ExtSutherland::set_effective_params(current_rho, T);}
+    size_t set_effective_params(dual2 rho, dual2 T) override {return ExtSutherland::set_effective_params(current_rho, T);}
     StatePoint get_transfer_length_point(double rho, double T, const vector1d& x) override {return Spherical::get_transfer_length_point(rho, T, x);}
     inline double Q1(size_t i, size_t j, const vector2d& lamb){
         return lamb[i][j] * (lamb[i][j] - 1);

@@ -162,13 +162,18 @@ dual2 ExtSutherland::potential_rr(int i, int j, dual2 r){
 // -------------------------- Handling of effective parameters -------------------------- // 
 // -------------------------------------------------------------------------------------- //
 
-void ExtSutherland::set_effective_params(dual2 rho, dual2 T){
-    if ((rho == current_rho) && (T == current_T)) return;
+size_t ExtSutherland::set_effective_params(dual2 rho, dual2 T){
+    if ((rho == current_rho) && (T == current_T)) return 0;
+    size_t r;
+    if ((rho != current_rho) && (T != current_T)) {r = 1;}
+    else if (rho != current_rho) {r = 2;}
+    else if (T != current_T) {r = 3;}
     set_C_eff(rho, T);
     set_sigma_eff(rho, T);
     set_epsilon_eff(rho, T);
     set_vdw_alpha(rho, T);
     current_rho = static_cast<double>(rho); current_T = static_cast<double>(T);
+    return r;
 }
 
 void ExtSutherland::set_C_eff(dual2 rho, dual2 T){

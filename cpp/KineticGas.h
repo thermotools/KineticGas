@@ -221,9 +221,13 @@ protected:
     int transfer_length_model_id = default_tl_model_id; // Currently active transfer length model
 
     // set_internals is called at the start of all public methods. 
-    // If a derived class needs to set any internals before running a computation,
-    // it should be done by overriding this method.
-    inline virtual void set_internals(double rho, double T, const vector1d& x){};
+    // If a derived class needs to set any internals before running a computation it should be done by overriding this method.
+    // The return value of the method signals if any internals have been set. 
+    // Use 0 to signal that nothing has been set, otherwise do whatever you like.
+    // Essentially, the return value can be useful if you are inheritting from some class, and want to check whether that class
+    // does anything at runtime.
+    virtual size_t set_internals(double rho, double T, const vector1d& x){return 0;};
+    
     void set_masses(); // Precompute reduced mass of particle pairs. Call this if you for some reason have modified particle masses after init.
 
     // Implementations of omega, model_mtl, and model_etl, may wish to use the omega_map, mtl_map and etl_map
