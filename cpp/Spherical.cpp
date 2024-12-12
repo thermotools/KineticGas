@@ -152,6 +152,10 @@ double Spherical::second_virial(int i, int j, double T){
     return - 0.5 * 4 * PI * pow(sigma[i][j], 3) * AVOGADRO * I;
 }
 
+double Spherical::get_r_min(int i, int j){
+    return newton([&](double r){return potential_derivative_r(i, j, r);}, [&](double r){return potential_dblderivative_rr(i, j, r);}, sigma[i][j]);
+}
+
 /*
 Contains functions for computing the collision integrals
 Common variables are:

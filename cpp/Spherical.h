@@ -65,6 +65,8 @@ class Spherical : public KineticGas {
     double w_integral_tester(int i, int j, double T, int l, int r, IntegrationParam& param);
     double w_integrand(int i, int j, double T, double g, double b, int l, int r);
 
+    virtual double get_r_min(int i, int j);
+
 protected:
     // ------------------------------------------------------------------------------------------- //
     // --------------------------------  TRANSFER LENGTH CACHING --------------------------------- //
