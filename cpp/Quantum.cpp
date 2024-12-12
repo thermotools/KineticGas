@@ -42,16 +42,37 @@ double bessel_deriv(int n, double r, size_t kind){
     }
 }
 
-Quantum::Quantum(std::string comps) : Spherical(comps, true) {
+Quantum::Quantum(std::string comps) 
+    : Spherical(comps, true), 
+    half_spin(Ncomps, 0), 
+    E_bound(Ncomps, std::vector<vector2d>(Ncomps))
+{
     half_spin = std::vector<unsigned int>(Ncomps, 0);
     for (size_t i = 0; i < Ncomps; i++){
         half_spin[i] = static_cast<size_t>(static_cast<double>(compdata[i]["spin"]) * 2 + 0.5);
+        E_bound[i][i] = compdata[i]["E_bound_div_k"];
+        if (E_bound[i][i].size() == 0){
+            std::cout << "WARNING : No bound state energies supplied for component " << i << std::endl; 
+        }
+        for (size_t v = 0; v < E_bound[i][i].size(); v++){
+            for (size_t l = 0; l < E_bound[i][i][v].size(); l++){
+                E_bound[i][i][v][l] *= BOLTZMANN;
+            }
+        }
+        
     }
 }
 
 void Quantum::clear_all_caches(){
     Spherical::clear_all_caches();
     phase_shift_map.clear();
+}
+
+int Quantum::get_interaction_statistics(int i, int j){
+    if ( (is_singlecomp) && (i != j) ) return get_interaction_statistics(i, i);
+    if ( i != j ) return StatisticType::Boltzmann;
+    if ( (half_spin[i] % 2) == 0 ) return StatisticType::BoseEinstein;
+    return StatisticType::FermiDirac;
 }
 
 vector2d Quantum::get_de_boer(){
@@ -267,8 +288,9 @@ double Quantum::phase_shift(int i, int j, int l, double E){
     const auto pos = phase_shift_map.find(point);
     if (pos != phase_shift_map.end()) return pos->second;
 
-    if ((E > JKWB_E_limit) || (l > JKWB_l_limit)) return JKWB_phase_shift(i, j, l, E);
-    return quantum_phase_shift(i, j, l, E);
+    double delta = ((E > JKWB_E_limit) || (l > JKWB_l_limit)) ? JKWB_phase_shift(i, j, l, E) : quantum_phase_shift(i, j, l, E);
+    phase_shift_map[point] = delta;
+    return delta;
 }
 
 double Quantum::absolute_phase_shift(int i, int j, int l, double E, double prev_delta){
@@ -411,21 +433,17 @@ double Quantum::classical_cross_section(int i, int j, int l, double E){
 
 double Quantum::quantum_omega(int i, int j, int n, int s, double T){
     double beta = 1. / (T * BOLTZMANN);
-    std::cout << "Computing (Q) : " << n << ", " << s << ", " << T << std::endl;
     const auto kernel = [&](double Eb){
         return exp(- Eb) * pow(Eb, s + 1) * cross_section(i, j, n, Eb / (beta * eps[i][j]));
     };
     double maxpoint = s + 1.;
     double I = simpson_inf(kernel, 0, maxpoint / 3);
     double val = I * sqrt(2. / (PI * beta * red_mass[i][j]));
-    std::cout << "Quantum omega (" << i << ", " << j << ", " << n << ", " << s << ", " << T << ") : " << val << std::endl;
     return val;
 }
 
 double Quantum::classical_omega(int i, int j, int l, int r, double T){
-    std::cout << "Computing (C) : " << l << ", " << r << ", " << T << std::endl;
     double val = Spherical::omega(i, j, l, r, T);
-    std::cout << "Classical omega (" << i << ", " << j << ", " << l << ", " << r << ", " << T << ") : " << val << std::endl;
     return val;
 }
 
@@ -469,12 +487,12 @@ double Quantum::scattering_volume(int i, int j, double E){
     double S_term = 0;
     do {
         double delta = absolute_phase_shift(i, j, l, E);
-        S_term = (2 * l + 2) * delta;        
+        S_term = (2 * l + 1) * delta;        
         S += S_term;
+        // std::cout << "Converging (" << l << ", " << E << ") : " << S << " / " << S_term << std::endl;
         l += l_step;
-        // std::cout << "Converging (" << l << ", " << E << ") :" << S << " / " << S_term << std::endl;
-        if (l > 100) break;
-    } while (abs(S_term / S) > 1e-8);
+        // if (l > 100) break;
+    } while (abs(S_term / S) > 1e-3);
     return S;
 }
 
@@ -483,38 +501,96 @@ double Quantum::second_virial(int i, int j, double T){
 }
 
 double Quantum::quantum_second_virial(int i, int j, double T){
+    vector1d contribs = second_virial_contribs(i, j, T);
+    double B = 0;
+    for (const double c : contribs){
+        B += c;
+    }
+    return B;
+}
+
+vector1d Quantum::second_virial_contribs(int i, int j, double T){
     std::cout << "Starting second virial at " << T << std::endl;
     double beta = 1 / (BOLTZMANN * T);
     double lamb = de_broglie_wavelength(i, j, T);
     double V_th = pow(lamb, 3);
     double B_id = 1. / 16.;
-    double B_bound = (exp(- eps[i][j] / (BOLTZMANN * T)) - 1);
+    double B_bound = 0; // (exp(- beta * E_bound) - 1.);
+    double B_th = 0;
+    const vector2d& Eb = E_bound[i][j];
+    int istats = get_interaction_statistics(i, j);
+    size_t l_start, l_step;
+    if (istats == StatisticType::Boltzmann){
+        l_start = 0; l_step = 1;
+    }
+    else if (istats == StatisticType::BoseEinstein){
+        l_start = 0; l_step = 2;
+    }
+    else if (istats == StatisticType::FermiDirac){
+        l_start = 1; l_step = 2;
+    }
+    else {
+        throw std::runtime_error("Invalid statistic type!");
+    }
 
-    int n_eval;
-    const auto integrand = [&](double Eb){
-        if (exp(- Eb) < 1e-10) return 0.;
-        std::cout << "Evaluating ... " << n_eval++ << std::endl;
-        double S_vol = scattering_volume(i, j, Eb / (beta * eps[i][j]));
-        std::cout << "Virial integrand : " << Eb << ", " << T << ", " << exp(- Eb) << ", " << S_vol << " : " << S_vol * exp(- Eb) << std::endl;
-        return exp(- Eb) * S_vol;
-    };
-    double I0 = simpson(integrand, 0, 3, 30) + simpson_inf(integrand, 3, 7);
+    for (size_t vib_i = 0; vib_i < Eb.size(); vib_i++){
+        for (size_t l = l_start; l < Eb[vib_i].size(); l+=l_step){
+            B_bound += (2 * l + 1) * (exp(- beta * Eb[vib_i][l]) - 1.);
+        }
+    }
+
+    // const auto integrand = [&](double beta_E){
+    //     if (exp(- beta_E) < 1e-10) return 0.;
+    //     double S_vol = scattering_volume(i, j, beta_E / (beta * eps[i][j]));
+    //     std::cout << "Virial integrand : " << beta_E << ", " << T << ", " << exp(- beta_E) << ", " << S_vol << " : " << S_vol * exp(- beta_E) << std::endl;
+    //     return exp(- beta_E) * S_vol;
+    // };
+    // double I0 = simpson(integrand, 0, 0.2, 10) 
+    //             + simpson(integrand, 0.2, 1, 10) 
+    //             + simpson(integrand, 1, 3, 20) 
+    //             + simpson_inf(integrand, 3, 7);
+    // double B_th = I0 / PI;
+
+    size_t l = l_start;
+    double B_th_term;
+    do {
+        auto integrand = [&](double beta_E){
+            double delta = absolute_phase_shift(i, j, l, beta_E / (beta * eps[i][j]));
+            return delta * exp(- beta_E);
+        };
+        double I = simpson(integrand, 0, 0.2, 10) 
+                 + simpson(integrand, 0.2, 1, 10) 
+                 + simpson(integrand, 1, 3, 20) 
+                 + simpson_inf(integrand, 3, 7);
+
+        B_th_term = (2 * l + 1) * I / PI;        
+        B_th += B_th_term;
+        l += l_step;
+    } while (abs(B_th_term / B_th) > 1e-3);
+
     std::cout << "Computed T = " << T << std::endl;
     std::cout << "##############################" << std::endl;
-    double B_th = I0 / PI;
-    return - AVOGADRO * V_th * (B_id + B_bound + B_th);
+    
+    double B = B_id + B_bound + B_th;
+    std::cout << "Contribs : " << B_id / B << ", " << B_bound / B << ", " << B_th / B << std::endl;
+    vector1d contribs = {B_id, B_bound, B_th};
+    for (double& c : contribs){
+        c *= - AVOGADRO * V_th;
+    }
+    return  contribs;
 }
 
 double Quantum::semiclassical_second_virial(int i, int j, double T){
     double tmp_JKWB_E_limit = JKWB_E_limit;
     int tmp_JKWB_l_limit = JKWB_l_limit;
-    JKWB_E_limit = 0; JKWB_l_limit = 0;
+    set_JKWB_limits(0, 0);
     double B = quantum_second_virial(i, j, T);
-    JKWB_E_limit = tmp_JKWB_E_limit; JKWB_l_limit = tmp_JKWB_l_limit;
+    set_JKWB_limits(tmp_JKWB_E_limit, tmp_JKWB_l_limit);
     return B;
 }
 
 void Quantum::set_quantum_active(bool active){
+    std::cout << "Setting quantum active to " << active << " (was " << quantum_is_active << ")" << std::endl;
     if (active != quantum_is_active){
         clear_all_caches();
     }

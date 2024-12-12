@@ -55,6 +55,7 @@ public:
     double potential(int i, int j, double r) override;
 
     HFD_B2_Param get_param(){return param;}
+    double get_r_min(int i, int j) override {return param.rm * 1e-9;}
 private:
     HFD_B2_Param param;
 };
@@ -74,8 +75,36 @@ public:
     double potential(int i, int j, double r) override;
 
     inline PatowskiParam get_param(){return param;}
-private:
+    double get_r_min(int i, int j) override {return param.r_min * 1e-10;}
+
+protected:
     PatowskiParam param;
 };
 
 using Patowski = Tabulated<PatowskiCore, 1000, 3>;
+
+class PatowskiCoreFH1 : public PatowskiCore {
+public:
+
+    PatowskiCoreFH1(std::string comps);
+
+    double potential(int i, int j, double r, double T) {
+        set_internals(0., T, {0.});
+        return potential(i, j, r);
+    }
+
+    double potential(int i, int j, double r) override;
+    double potential_derivative_r(int i, int j, double r) override;
+    double potential_dblderivative_rr(int i, int j, double r) override;
+
+    dual4th core_potential(int i, int j, dual4th r);
+
+    size_t set_internals(double rho, double T, const vector1d& x) override;
+
+private:
+    size_t set_current_T(double T);
+    double current_T;
+    vector2d D_factors;
+};
+
+using PatowskiFH1 = Tabulated<PatowskiCoreFH1, 1000, 3>;

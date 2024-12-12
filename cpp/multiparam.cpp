@@ -169,6 +169,7 @@ PatowskiCore::PatowskiCore(std::string comps)
     param.sigma = cdata["sigma"];
     param.r_min = cdata["r_min"];
     param.eps_div_k = cdata["eps_div_k"];
+
     for (size_t i = 0; i < Ncomps; i++){
         for (size_t j = 0; j < Ncomps; j++){
             sigma[i][j] = param.sigma;
@@ -176,22 +177,6 @@ PatowskiCore::PatowskiCore(std::string comps)
         }
     }
 
-    
-    // for (size_t i = 0; i < Ncomps; i++){
-    //     tab_potential.push_back(std::vector<Tabulated<tab_N, tab_deg>>());
-    //     tab_potential_r.push_back(std::vector<Tabulated<tab_N, tab_deg>>());
-    //     tab_potential_rr.push_back(std::vector<Tabulated<tab_N, tab_deg>>());
-    //     for (size_t j = i; j < Ncomps; j++){
-    //         double tab_min = 0.5 * sigma[i][j];
-    //         double tab_mid = sigma[i][j];
-    //         double tab_mid_n = 100.;
-    //         double tab_max = (tab_mid - tab_min) * (tab_N / tab_mid_n) + tab_min;
-    //         std::cout << "Tabulated max : " << tab_max / sigma[i][j] << ", dr : " << (tab_max - tab_min) / (tab_N * sigma[i][j]) << std::endl;
-    //         tab_potential[i].push_back(Tabulated<tab_N, tab_deg>([&](double r){return potential(i, j, r);}, tab_min, tab_max));
-    //         tab_potential_r[i].push_back(Tabulated<tab_N, tab_deg>([&](double r){return potential_derivative_r(i, j, r);}, tab_min, tab_max));
-    //         tab_potential_rr[i].push_back(Tabulated<tab_N, tab_deg>([&](double r){return potential_dblderivative_rr(i, j, r);}, tab_min, tab_max));
-    //     }
-    // }
 }
 
 dual2 PatowskiCore::potential(int i, int j, dual2 r){
@@ -230,4 +215,65 @@ double PatowskiCore::potential(int i, int j, double r){
         p += (param.Cn[n - 3] / pow(r, 2 * n)) * (1 - tmp * exp(- param.delta * r));
     }
     return p * BOLTZMANN;
+}
+
+ PatowskiCoreFH1::PatowskiCoreFH1(std::string comps) 
+        : PatowskiCore(comps), D_factors(Ncomps, vector1d(Ncomps, 0.)) 
+    {
+        set_quantum_active(false);
+    }
+
+double PatowskiCoreFH1::potential(int i, int j, double r){
+    dual4th rd = r;
+    auto [u, u1, u2, u3, u4] = autodiff::derivatives([&](dual4th r_){return core_potential(i, j, r_);}, autodiff::wrt(rd), autodiff::at(rd));
+    return u + D_factors[i][j] * u2;
+}
+
+double PatowskiCoreFH1::potential_derivative_r(int i, int j, double r){
+    dual4th rd = r;
+    auto [u, u1, u2, u3, u4] = autodiff::derivatives([&](dual4th r_){return core_potential(i, j, r_);}, autodiff::wrt(rd), autodiff::at(rd));
+    return u1 + D_factors[i][j] * u3;
+}
+
+double PatowskiCoreFH1::potential_dblderivative_rr(int i, int j, double r){
+    dual4th rd = r;
+    auto [u, u1, u2, u3, u4] = autodiff::derivatives([&](dual4th r_){return core_potential(i, j, r_);}, autodiff::wrt(rd), autodiff::at(rd));
+    return u2 + D_factors[i][j] * u4;
+}
+
+dual4th PatowskiCoreFH1::core_potential(int i, int j, dual4th r){
+    r *= 1e10; // Working in Å internally
+    if (r < param.Rc){
+        // Potential is only valid for r > Rc, but we need a continuous extrapolation that is well behaved for numerical purposes.
+        // In practice, something is probably very wrong if we are ever at distances r < Rc, except when iterating some solver.
+        // This extension is made by requiring a contiuous potential and first derivative at r = Rc.
+        return param.Ac * exp(param.Bc * (r - param.Rc)) * BOLTZMANN;
+    }
+    dual4th p = (param.Csp1 + r * param.Csp2 + pow(r, 2) * param.Csp3 + pow(r, 3) * param.Csp4) * exp(param.Cex1 + param.Cex2 * r);
+    for (size_t n = 3; n <= 5; n++){
+        dual4th tmp = 0;
+        for (int k = 0; k <= 2 * n; k++){
+            tmp += pow(param.delta * r, k) / Fac(k).eval_d();
+        }
+        p += (param.Cn[n - 3] / pow(r, 2 * n)) * (1 - tmp * exp(- param.delta * r));
+    }
+    return p * BOLTZMANN;
+}
+
+size_t PatowskiCoreFH1::set_internals(double rho, double T, const vector1d& x){
+    return set_current_T(T);
+}
+
+size_t PatowskiCoreFH1::set_current_T(double T){
+    if (T != current_T){
+        double beta = 1 / (BOLTZMANN * T);
+        for (size_t i = 0; i < Ncomps; i++){
+            for (size_t j = 0; j < Ncomps; j++){
+                D_factors[i][j] = beta * pow(HBAR, 2) / (24 * red_mass[i][j]);
+            }
+        }
+        current_T = T;
+        return 1;
+    }
+    return 0;
 }

@@ -127,6 +127,12 @@ struct Units {
 void set_fluid_dir(const std::string path);
 std::string get_fluid_dir();
 
+enum StatisticType {
+    Boltzmann,
+    BoseEinstein,
+    FermiDirac
+};
+
 template<size_t N, size_t deg>
 class FuncTable{
 public:
@@ -146,7 +152,7 @@ public:
                 C[i] = get_interpolant(i, x_vals, f_vals);
             }
         }
-        
+
     FuncTable() = default;
     FuncTable(const FuncTable<N, deg>&) = default;
     FuncTable(FuncTable<N, deg>&&) = default;
