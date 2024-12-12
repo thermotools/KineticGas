@@ -1,6 +1,6 @@
 from pykingas.py_KineticGas import py_KineticGas
 from pykingas.Quantum import Quantum
-from .libpykingas import cpp_ModTangToennis, cpp_TangToennisParam, cpp_HFD_B2, cpp_Patowski
+from .libpykingas import cpp_ModTangToennis, cpp_TangToennisParam, cpp_HFD_B2, cpp_Patowski, cpp_PatowskiFH1
 from scipy.constants import Boltzmann, Avogadro
 import numpy as np
 from scipy.integrate import quad
@@ -64,12 +64,13 @@ class MultiParam(py_KineticGas):
         Returns: 
             float : Second virial coefficient
         """
-        integrand = lambda r_aa: (1 - np.exp(- self.potential(r_aa * 1e-10) / (Boltzmann * T))) * 4 * np.pi * r_aa ** 2
-        r1, r2 = self.Re * 1e10, 1.5 * self.Re * 1e10
-        B0 = quad(integrand, 0, r1)[0]
-        B1 = quad(integrand, r1, r2)[0]
-        B2 = quad(integrand, r2, np.inf)[0]
-        return 0.5 * (B0 + B1 + B2) * Avogadro * 1e-30
+        # integrand = lambda r_aa: (1 - np.exp(- self.potential(r_aa * 1e-10) / (Boltzmann * T))) * 4 * np.pi * r_aa ** 2
+        # r1, r2 = self.Re * 1e10, 1.5 * self.Re * 1e10
+        # B0 = quad(integrand, 0, r1)[0]
+        # B1 = quad(integrand, r1, r2)[0]
+        # B2 = quad(integrand, r2, np.inf)[0]
+        # return 0.5 * (B0 + B1 + B2) * Avogadro * 1e-30
+        return self.cpp_kingas.second_virial(0, 0, T)
 
     def vdw_alpha(self):
         """Utility
@@ -83,6 +84,9 @@ class MultiParam(py_KineticGas):
         E += quad(integrand, 1.5 * self.sigma * 1e10, np.inf)[0]
         E *= 1e-30
         return - E / ((self.eps_div_k * Boltzmann) * self.sigma ** 3)
+    
+    def get_r_min(self, i, j):
+        return self.cpp_kingas.get_r_min(i, j)
 
 class ModTangToennies(MultiParam):
     
@@ -107,7 +111,7 @@ class ModTangToennies(MultiParam):
         self.Re = potential['Re'] * 1e-9
         self.cpp_kingas = cpp_ModTangToennis(param, self.mole_weights, np.ones((2, 2)) * self.sigma, self.is_idealgas)
 
-class HFD_B2(Quantum):
+class HFD_B2(MultiParam, Quantum):
 
     def __init__(self, comps):
         super().__init__(comps)
@@ -120,3 +124,13 @@ class Patowski(MultiParam, Quantum):
         self.cpp_kingas = cpp_Patowski(comps)
         self.param = self.cpp_kingas.get_param()
         self.cpp_kingas.set_quantum_active(quantum_active)
+
+class PatowskiFH1(MultiParam, Quantum):
+
+    def __init__(self, comps):
+        super().__init__(comps)
+        self.cpp_kingas = cpp_PatowskiFH1(comps)
+        self.param = self.cpp_kingas.get_param()
+    
+    def potential(self, r, T):
+        return self.cpp_kingas.potential(0, 0, r, T)

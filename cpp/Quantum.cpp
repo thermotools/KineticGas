@@ -572,7 +572,7 @@ vector1d Quantum::second_virial_contribs(int i, int j, double T){
     std::cout << "##############################" << std::endl;
     
     double B = B_id + B_bound + B_th;
-    std::cout << "Contribs : " << B_id / B << ", " << B_bound / B << ", " << B_th / B << std::endl;
+    std::cout << "Contribs : " << B_id << ", " << B_bound << ", " << B_th << std::endl;
     vector1d contribs = {B_id, B_bound, B_th};
     for (double& c : contribs){
         c *= - AVOGADRO * V_th;
