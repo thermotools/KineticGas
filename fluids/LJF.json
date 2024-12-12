@@ -36,6 +36,26 @@
             "bib_reference": ""
         }
     },
+    "Mie-FH1": {
+        "default": {
+            "sigma": 3e-10,
+            "eps_div_k": 30.0,
+            "lambda_a": 6.0,
+            "lambda_r": 12.0,
+            "FH_order": 1,
+            "bib_reference": ""
+        }
+    },
+    "Mie-FH2": {
+        "default": {
+            "sigma": 3e-10,
+            "eps_div_k": 30.0,
+            "lambda_a": 6.0,
+            "lambda_r": 12.0,
+            "FH_order": 2,
+            "bib_reference": ""
+        }
+    },
     "LJs": {
         "default": {
             "sigma": 3e-10,

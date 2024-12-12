@@ -175,6 +175,7 @@
             "eps_div_k": 10.94,
             "rm": 0.2970,
             "sigma": 2.64205e-10,
+            "E_bound_div_k": [[-1.520e-3]],
             "bib_reference": "R A Aziz and M J Slaman 1990 Metrologia 27 211",
             "Note": "Length units is reduced using rm (position of minimum in nm). Energies are in units of eps (i.e. eps_div_k * Boltzmann)"
         }

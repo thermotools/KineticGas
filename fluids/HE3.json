@@ -182,7 +182,9 @@
             "eps_div_k": 10.94,
             "rm": 0.2970,
             "sigma": 2.64205e-10,
+            "E_bound_div_k": [[]],
             "bib_reference": "R A Aziz and M J Slaman 1990 Metrologia 27 211",
+            "E_bound_reference": "Calculated using MolCas VibRot : https://molcas.gitlab.io/OpenMolcas/sphinx/users.guide/programs/vibrot.html#ug-sec-vibrot",
             "Note": "Beware fucked up units (see implementation or reference)."
         }
     }
