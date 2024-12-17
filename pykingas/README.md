@@ -1,5 +1,5 @@
 <!--- 
-Generated at: 2024-07-27T01:07:15.692788
+Generated at: 2024-12-17T13:43:23.283901
 This is an auto-generated file, generated using the script at KineticGas/docs/join_docs.py
 The file is created by joining the contents of the files
     KineticGas/docs/markdown/
@@ -37,13 +37,16 @@ on `PyPI`.
 
 # Please Cite
 
-KineticGas has been developed throughout several works. If you are referencing the package, please cite the works
+KineticGas has been developed throughout several works. If you are referencing the package, please cite one or more of the associated works
 
 * General usage
-   * [Revised Enskog theory for Mie fluids: Prediction of diffusion coefficients, thermal diffusion coefficients, viscosities and thermal conductivities](https://doi.org/10.1063/5.0149865) (Vegard G. Jervell and Øivind Wilhelmsen, 2023)
+   * [Revised Enskog theory for Mie fluids: Prediction of diffusion coefficients, thermal diffusion coefficients, viscosities and thermal conductivities](https://doi.org/10.1063/5.0149865) (Vegard G. Jervell and Øivind Wilhelmsen, J. Chem. Phys. 2023)
+   * [Predicting viscosities and thermal conductivities from dilute gas to dense liquid: Deriving fundamental transfer lengths for momentum and energy exchange in revised Enskog theory](https://pubs.aip.org/aip/jcp/article/161/23/234106/3325824/Predicting-viscosities-and-thermal-conductivities) (V. G. Jervell and Ø. Wilhelmsen, J. Chem. Phys. 2024)
    * [The Kinetic Gas theory of Mie fluids](https://ntnuopen.ntnu.no/ntnu-xmlui/handle/11250/3029213) (Vegard G. Jervell, 2022)
 * Connection to Non-Equilibrium thermodynamics (Onsager coefficients)
-   * [The influence of thermal diffusion on water migration through a porous insulation material](10.1016/j.ijheatmasstransfer.2024.125576) (V. G. Jervell, M. Aa. Gjennestad, T. T. Trinh, Ø. Wilhelmsen, 2024)
+   * [The influence of thermal diffusion on water migration through a porous insulation material](https://doi.org/10.1016/j.ijheatmasstransfer.2024.125576) (V. G. Jervell, M. Aa. Gjennestad, T. T. Trinh, Ø. Wilhelmsen, Int. J. Heat Mass Transfer, 2024)
+* Transfer Lengths, the EWCA model
+  * [Predicting viscosities and thermal conductivities from dilute gas to dense liquid: Deriving fundamental transfer lengths for momentum and energy exchange in revised Enskog theory](https://pubs.aip.org/aip/jcp/article/161/23/234106/3325824/Predicting-viscosities-and-thermal-conductivities) (V. G. Jervell and Ø. Wilhelmsen, J. Chem. Phys. 2024)
 
 ## Acknowledgments and sources
 This implementation of the Revised Enskog solutions is build upon the work presented by M. López de Haro, E. D. G. Cohen, and J. Kincaid in the series of papers *The Enskog Theory for multicomponent mixtures I - IV*, J. Chem. Phys. (1983 - 1987) ([I](https://doi.org/10.1063/1.444985), [II](https://doi.org/10.1063/1.446388), [III](https://doi.org/10.1063/1.446463), [IV](https://doi.org/10.1063/1.452243)).
@@ -62,9 +65,9 @@ The KineticGas package is distributed as free software under the MIT licence.
 
 In addition to this explanation, some examples may be found in the [pyExamples directory](https://github.com/thermotools/KineticGas_private/tree/main/pyExamples).
 
-## Initializing a model
+## Initialising a model
 
-The available models are `HardSphere` - The RET for Hard Spheres, `MieKinGas` - The RET-Mie. They are initialized by passing the appropriate component identifiers to the class constructors.
+The available models are `HardSphere` - The RET for Hard Spheres, `MieKinGas` - The RET-Mie. They are initialised by passing the appropriate component identifiers to the class constructors.
 
 ```Python
 from pykingas.HardSphere import HardSphere
@@ -74,17 +77,7 @@ mie = MieKinGas('CO2,C1') # RET-Mie for CO2/CH4 mixture
 hs = HardSphere('AR,KR,XE') # RET-HS for Ar/Kr/He mixture
 ```
 
-The component identifiers are equivalent to the file names in the `pykingas/fluids` directory, and are consistent with the identifiers used by `ThermoPack`. A list of all available fluids and their identifiers can be found in the [Fluid identifiers](#fluid-identifiers) section.
-
-### Note on pure components
-
-*When doing computations for a single component, two mole fractions must be supplied.*
-
-Internally pure components are treated as binary mixtures of equivalent species, such that a model initialized with e.g. `MieKinGas('H2')` will treat pure hydrogen as a mixture of "Hydrogen with hydrogen". This allows computation of the self-diffusion coefficient through the normal `interdiffusion` method, but carries the caveat mentioned above.
-
-Properties are not dependent on the supplied mole fractions, but it has been found that for numerical stability, the choice `x = [0.5, 0.5]` is best.
-
-This may be changed in future versions, such that no mole fraction needs to be supplied when working with pure fluids.
+The component identifiers are equivalent to the file names in the `pykingas/fluids` directory, and are consistent with the identifiers used by `ThermoPack`. A list of all available fluids and their identifiers can be found in the [Fluid identifiers](https://thermotools.github.io/KineticGas/vcurrent/fluid_identifiers.html) section.
 
 ### Specifying parameters
 
@@ -140,6 +133,10 @@ Properties at infinite dilution can be of interest. Note that at infinite diluti
 from pykingas.MieKinGas import MieKinGas
 mie = MieKinGas('H2', is_idealgas=True) # Properties of hydrogen at infinite dilution
 ```
+
+## Working in reduced units
+
+When working in reduced (Lennard-Jones) units
 
 ## Making predictions
 
@@ -395,12 +392,7 @@ $$J_{CO2} = D_{T}[2] \nabla \ln T - D[2, 0] \nabla n_{C1} - D[2, 1] \nabla n_{O2
 
 The `frame_of_reference` kwarg works as normal when setting `use_independent=False`.
 
----
-layout: default
-version: 
-title: Fluid identifiers
-permalink: /vcurrent/fluid_identifiers.html
----
+# Fluid identifiers
 
 *Note* : Many of these fluid parameters have been pulled directly from the [ThermoPack](https://github.com/thermotools/thermopack) fluid database for SAFT-VR Mie parameters. In the cases where SAFT-VR Mie uses segment numbers $>1$ to describe the fluids, the parameter sets cannot be expected to be suitable for use with RET-Mie.
 

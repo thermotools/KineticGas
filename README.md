@@ -1,5 +1,5 @@
 <!--- 
-Generated at: 2024-07-27T01:07:15.694796
+Generated at: 2024-12-17T13:43:23.285231
 This is an auto-generated file, generated using the script at KineticGas/docs/join_docs.py
 The file is created by joining the contents of the files
     KineticGas/docs/markdown/
@@ -47,13 +47,16 @@ on `PyPI`.
 
 # Please Cite
 
-KineticGas has been developed throughout several works. If you are referencing the package, please cite the works
+KineticGas has been developed throughout several works. If you are referencing the package, please cite one or more of the associated works
 
 * General usage
-   * [Revised Enskog theory for Mie fluids: Prediction of diffusion coefficients, thermal diffusion coefficients, viscosities and thermal conductivities](https://doi.org/10.1063/5.0149865) (Vegard G. Jervell and Øivind Wilhelmsen, 2023)
+   * [Revised Enskog theory for Mie fluids: Prediction of diffusion coefficients, thermal diffusion coefficients, viscosities and thermal conductivities](https://doi.org/10.1063/5.0149865) (Vegard G. Jervell and Øivind Wilhelmsen, J. Chem. Phys. 2023)
+   * [Predicting viscosities and thermal conductivities from dilute gas to dense liquid: Deriving fundamental transfer lengths for momentum and energy exchange in revised Enskog theory](https://pubs.aip.org/aip/jcp/article/161/23/234106/3325824/Predicting-viscosities-and-thermal-conductivities) (V. G. Jervell and Ø. Wilhelmsen, J. Chem. Phys. 2024)
    * [The Kinetic Gas theory of Mie fluids](https://ntnuopen.ntnu.no/ntnu-xmlui/handle/11250/3029213) (Vegard G. Jervell, 2022)
 * Connection to Non-Equilibrium thermodynamics (Onsager coefficients)
-   * [The influence of thermal diffusion on water migration through a porous insulation material](10.1016/j.ijheatmasstransfer.2024.125576) (V. G. Jervell, M. Aa. Gjennestad, T. T. Trinh, Ø. Wilhelmsen, 2024)
+   * [The influence of thermal diffusion on water migration through a porous insulation material](https://doi.org/10.1016/j.ijheatmasstransfer.2024.125576) (V. G. Jervell, M. Aa. Gjennestad, T. T. Trinh, Ø. Wilhelmsen, Int. J. Heat Mass Transfer, 2024)
+* Transfer Lengths, the EWCA model
+  * [Predicting viscosities and thermal conductivities from dilute gas to dense liquid: Deriving fundamental transfer lengths for momentum and energy exchange in revised Enskog theory](https://pubs.aip.org/aip/jcp/article/161/23/234106/3325824/Predicting-viscosities-and-thermal-conductivities) (V. G. Jervell and Ø. Wilhelmsen, J. Chem. Phys. 2024)
 
 ## Acknowledgments and sources
 This implementation of the Revised Enskog solutions is build upon the work presented by M. López de Haro, E. D. G. Cohen, and J. Kincaid in the series of papers *The Enskog Theory for multicomponent mixtures I - IV*, J. Chem. Phys. (1983 - 1987) ([I](https://doi.org/10.1063/1.444985), [II](https://doi.org/10.1063/1.446388), [III](https://doi.org/10.1063/1.446463), [IV](https://doi.org/10.1063/1.452243)).
@@ -73,6 +76,21 @@ KineticGas is available on PyPi as the [`pykingas`](https://pypi.org/project/pyk
 In addition, wheels versions of `KineticGas > 2.0.0` for macOS, Linux and Windows, as well as wheels for the latest version on GitHub can be downloaded [here](https://github.com/thermotools/KineticGas/releases). Instructions for installing with `pip` directly from a downloaded wheel are provided at the linked page.
 
 For MacOS running on Intel, or other operating systems, KineticGas must currently be built from source or installed from one of the distributed wheels linked above.
+
+A KineticGas C++ library is available, and can be built using `cmake` and `make`.
+
+- [Python - `pykingas`](#python---pykingas)
+  - [Dependencies](#dependencies)
+  - [Building from source](#building-from-source)
+    - [First Try](#first-try)
+      - [Short explanation](#short-explanation)
+    - [When something goes wrong](#when-something-goes-wrong)
+- [C++](#c)
+  - [Building and installing](#building-and-installing)
+  - [Fluid file search path](#fluid-file-search-path)
+  - [Linking to the KineticGas library](#linking-to-the-kineticgas-library)
+
+# Python - `pykingas`
 
 ## Dependencies
 
@@ -95,6 +113,7 @@ If all goes well, running
 ```
 git clone https://github.com/thermotools/KineticGas.git
 cd KineticGas
+git submodule update --init --recursive
 mkdir build
 cd build
 cmake ..
@@ -106,52 +125,76 @@ make sure to activate a virtual environment first if you want to avoid doing sys
 
 #### Short explanation
 
-The `bash` script `cpp/build_kingas.sh` uses `cmake` and `make` to compile the binary that is called from the python module. Then it moves the binary to the `pykingas` directory.
+The dynamic library `libpykingas` will be built and installed to the `pykingas` directory, additionally, the `fluids` directory containing the fluid parameter database is copied into the `pykingas` directory.
 
 ### When something goes wrong
 
-*Note:* The build system has been changed relatively recently, and is less tested than the build system that was used in the `2.0.0` release. If you encounter issues, please don't hesitate to post an issue on github so that we can improve robustness. Also, the old build system should still work fine. So if you are having trouble, a workaround may be to download the build files in the `v2.0.0` tagged version on github and use those.
+*Note:* The build system has been changed relatively recently, and is less tested than the build system that was used in the `2.0.0` release. If you encounter issues, please don't hesitate to post an issue on github so that we can improve robustness.
 
-* Error when importing `pykingas`: If you get an error of the type
-```
-ImportError: dlopen(/.../venv/lib/python3.11/site-packages/pykingas/libpykingas.cpython-311-darwin.so, 0x0002): tried: '/.../venv/lib/python3.11/site-packages/pykingas/libpykingas.cpython-311-darwin.so' (mach-o file, but is an incompatible architecture (have (x86_64), need (arm64e)))
-```
- * set the environment variables `CC` and `CXX` with
-```
-export CC=/opt/homebrew/bin/gcc-13
-export CXX=/opt/homebrew/bin/g++-13
-```
-  * This can help force compilation for `arm64`
-* If you get an error message when the file `bindings.cpp` is compiling, that originates from the `pybind11` headers:
-  * You are likely getting an error of the type
-```
- error: address of overloaded function '<some_func>' does not match required type 'pybind11::overload_cast<some stuff>'
-```
-and 
-```
-error: static_assert failed due to requirement 'detail::integral_constant<bool, false>::value' "pybind11::overload_cast<...> requires compiling in C++14 mode"
-```
-  * and you are likely using `clang` compiled for the C++-11 standard. (The compiler located in `/usr/...` on Mac is likely `clang`, even though it is called `gcc`)
-  * To fix the issue: 
-    * Install `gcc` with [homebrew](https://formulae.brew.sh/formula/gcc).
-    * Locate the compilers you've installed (`which gcc-13` and `which g++-13` should work if you installed gcc version 13.x.x)
-    * Set the environment variables `CC` and `CXX` in `cpp/build.sh` to the path to these compilers by modifying the `export` statements. For example
-```
-export CC=/opt/homebrew/bin/gcc-13
-export CXX=/opt/homebrew/bin/g++-13
-```
-  * **NOTE**: You may need to delete the file `cpp/release/CMakeCache.txt` for changes to take effect.
-  * See also: [This stackoverflow question](https://stackoverflow.com/questions/73758291/is-there-a-way-to-specify-the-c-standard-of-clangd-without-recompiling-it) for info
-* If none of the above works, please feel free to leave an issue.
+* Warning that thermopack is not installed
+  * The easiest way to obtain the `ThermoPack` dynamic library (which `KineticGas` needs) is likely to download the appropriate zip file [here](https://github.com/thermotools/thermopack/releases), unzip it, and set the environment variable `THERMOPACK_DIR` to the resulting directory (where `thermopack-config.cmake` is located).
+    * On Linux and macOS: `export THERMOPACK_DIR=/path/to/thermopack-<system>/`
+    * On Windows (powershell): `$THERMOPACK_DIR = C:\path\to\thermopack-<system>\thermopack-<system>`
+    * To check that it is set correctly: `ls ${THERMOPACK_DIR}` should give a list of files including `thermopack-config.cmake`.
+  * The `KineticGas` library has a dependency on the `ThermoPack` C++ wrapper. If you have not installed thermopack, the build system will generate a target from the `thermopack` submodule. Running `make install` should build and install this target, re-running `cmake ..` after building and installing `thermopack` should then give output telling you that `thermopack` has been found and is installed.
+  * If you have installed thermopack, run `export THERMOPACK_DIR=<path/to/thermopack>`, to help `cmake` find your installation.
 
+
+# C++
+
+The KineticGas C++ library is built using `cmake` and `make`. All dependencies are included as git submodules under `cpp/external`, and should be properly retrieved when you clone the `KineticGas` repository and run `git submodule update --init --recursive`. 
+
+*Note*: `KineticGas` depends on [`ThermoPack`](https://thermotools.github.io/thermopack/). If an installation of `ThermoPack` is not found, the build system will attempt to compile it as part of the build process. If you already have an installation of `ThermoPack`, setting the environment variable `THERMOPACK_DIR` to the root directory of `ThermoPack` (where `thermopack-config.cmake` is found), that installation of `ThermoPack` will be used istead of re-compiling. You can also download a binary distribution of ThermoPack at the [ThermoPack repository](https://github.com/thermotools/thermopack/releases).
+
+## Building and installing
+
+If all goes well, you should be able to build the `KineticGas` C++ library by running
+
+```bash
+git clone https://github.com/thermotools/KineticGas.git
+cd KineticGas
+git submodule update --init --recursive
+mkdir build
+cd build
+cmake -Dpurecpp=ON -Dpylib=OFF ..
+make install
+```
+
+This will provide you with the `lib/libkineticgas.[so/dylib/dll]` dynamic library, and the minimal example program `build/run_kineticgas`, which is built from the source file at `cpp/run_kineticgas.cpp`.
+
+## Fluid file search path
+
+By default, `KineticGas` will search for fluid files at the relative path `../fluids` (relative to the location of the `libkineticgas` dynamic library). This default search path can be changed by building with 
+```bash
+cmake -DFLUID_DIR=<path/to/fluids> ..
+```
+where supplying a relative path will result in the library searching for fluid files in the path relative to it's location (`KineticGas/lib`). Supplying absolute paths is also supported. To check
+or change where your compiled `KineticGas` library is searching for fluid files, use the `[get/set]_fluid_dir` functions with signatures
+```C++
+// In utils.h
+void set_fluid_dir(const std::string path); // supports both absolute and relative paths (relative to dynamic library location).
+std::string get_fluid_dir(); // Current search path for fluid files
+```
+
+## Linking to the KineticGas library
+
+An example program with a `CMakeLists.txt` demonstrating how you can include and link to the `KineticGas` library once it is installed is found in `KineticGas/cppExamples`. 
+
+In short terms: Setting the environment variable `KINETICGAS_DIR` to the top-level directory of the KineticGas package (where `kineticgas-config.cmake` is found), should allow `cmake` to find the library using `find_library(KINETICGAS)`. Some convenience variables are set once the library is found:
+
+* `KINETICGAS_ROOT` : Path to root directory of the package
+* `KINETICGAS_INSTALLED` : `TRUE` if the dynamic library is found in the correct install location, `FALSE` otherwise
+* `KINETICGAS_LIB` : Path to the `libkineticgas` dynamic library
+* `KINETICGAS_INCLUDE` : List of include paths needed to include the kineticgas headers and dependencies
+* `kineticgas` : Exported target, linking to this target should automatically add the appropriate directories to your include path. 
 
 # Getting started - In Python
 
 In addition to this explanation, some examples may be found in the [pyExamples directory](https://github.com/thermotools/KineticGas_private/tree/main/pyExamples).
 
-## Initializing a model
+## Initialising a model
 
-The available models are `HardSphere` - The RET for Hard Spheres, `MieKinGas` - The RET-Mie. They are initialized by passing the appropriate component identifiers to the class constructors.
+The available models are `HardSphere` - The RET for Hard Spheres, `MieKinGas` - The RET-Mie. They are initialised by passing the appropriate component identifiers to the class constructors.
 
 ```Python
 from pykingas.HardSphere import HardSphere
@@ -161,17 +204,7 @@ mie = MieKinGas('CO2,C1') # RET-Mie for CO2/CH4 mixture
 hs = HardSphere('AR,KR,XE') # RET-HS for Ar/Kr/He mixture
 ```
 
-The component identifiers are equivalent to the file names in the `pykingas/fluids` directory, and are consistent with the identifiers used by `ThermoPack`. A list of all available fluids and their identifiers can be found in the [Fluid identifiers](#fluid-identifiers) section.
-
-### Note on pure components
-
-*When doing computations for a single component, two mole fractions must be supplied.*
-
-Internally pure components are treated as binary mixtures of equivalent species, such that a model initialized with e.g. `MieKinGas('H2')` will treat pure hydrogen as a mixture of "Hydrogen with hydrogen". This allows computation of the self-diffusion coefficient through the normal `interdiffusion` method, but carries the caveat mentioned above.
-
-Properties are not dependent on the supplied mole fractions, but it has been found that for numerical stability, the choice `x = [0.5, 0.5]` is best.
-
-This may be changed in future versions, such that no mole fraction needs to be supplied when working with pure fluids.
+The component identifiers are equivalent to the file names in the `pykingas/fluids` directory, and are consistent with the identifiers used by `ThermoPack`. A list of all available fluids and their identifiers can be found in the [Fluid identifiers](https://thermotools.github.io/KineticGas/vcurrent/fluid_identifiers.html) section.
 
 ### Specifying parameters
 
@@ -227,6 +260,10 @@ Properties at infinite dilution can be of interest. Note that at infinite diluti
 from pykingas.MieKinGas import MieKinGas
 mie = MieKinGas('H2', is_idealgas=True) # Properties of hydrogen at infinite dilution
 ```
+
+## Working in reduced units
+
+When working in reduced (Lennard-Jones) units
 
 ## Making predictions
 
@@ -484,16 +521,57 @@ The `frame_of_reference` kwarg works as normal when setting `use_independent=Fal
 
 # Getting started - In C++
 
-## Getting started: In C++
+For instructions on building the `KineticGas` C++ library, see the [installation guide](source_build.html#c).
 
-A standalone C++ library, that does not depend upon the Python wrapper, is currently under development. See branches under `pure_cpp/` for the most up to date information on that.
+A basic example showing initialization of a model is found in [`cppExamples/basic.cpp`](), the `cppExamples` directory also contains a `CMakeLists.txt` showing how to obtain the required headers for the `KineticGas` library, as well as link the library to your program.
 
----
-layout: default
-version: 
-title: Advanced usage
-permalink: /vcurrent/advanced.html
----
+## Initializing a model
+
+To initialize a model, `include` the appropriate header file, and specify the components to model with a comma separated string, as
+```C
+#include "MieKinGas.h"
+
+int main(){
+    MieKinGas mie("HE,NE"); // Mixture of helium and neon.
+}
+```
+The component identifiers used are equivalent to the file names of the [fluid files](https://thermotools.github.io/KineticGas/vcurrent/https://github.com/thermotools/KineticGas/tree/main/fluids), and are summarised [here](fluid_identifiers.html)
+
+## Computing properties
+
+The interfaces for property calculations are more or less equivalent to those used in Python. The major differences you should be aware of are
+* Diffusion coefficients are returned as an `Eigen::MatrixXd`
+  * *Note*: The optional `dependent_idx` argument to `interdiffusion` supports python-style negative indexing (i.e. `-1` is the last component).
+* Vector properties (e.g. thermal diffusion coefficients) are returned as an `Eigen::VectorXd`
+* Frames of reference are specified with the `FrameOfReference` enum, found in `utils.h`. Valid values are
+  * `FrameOfReference::CoN` - Center of moles
+  * `CoM` - Center of mass (barycentric)
+  * `CoV` - Center of volume
+  * `solvent` - Solvent, solvent index is the `dependent_idx`, which defaults to the last component.
+  * `zarate`, `zarate_x`, and `zarate_w` - See the [memo](/KineticGas/memo/diffusion/diffusion_definitions.pdf)
+  * See the python docs and the [memo](/KineticGas/memo/diffusion/diffusion_definitions.pdf) for more details on definitions of the diffusion coefficients.
+
+## Selecting transfer length models
+
+Use the methods
+* `void KineticGas::set_transfer_length_model(int model_id)` - Set the transfer length model
+* `std::pair<int, std::string> KineticGas::get_transfer_length_model()` - Return the current transfer length model key (`int`) and description (`string`)
+* `std::map<int, std::string> KineticGas::get_valid_transfer_length_models()` - Get a map of valid models with descriptions
+
+In addition, the enum `TransferLengthModel` in `utils.h` may be useful if you don't like remembering keys. The enum is used everywhere internally, and it is heavily
+recommended to use it instead of manually specifying , in case keys for different models are changed in the future
+
+# Advanced usage
+
+* [Selecting transfer length models](#selecting-transfer-length-models)
+* [Modifying and adding fluids](#modifying-and-adding-fluids)
+* [Implementing new potentials](#implementing-new-potentials)
+
+## Selecting transfer length models
+
+For the computation of transfer lengths, several models can be used. All classes inheritting from `py_KineticGas` support the `get_valid_tl_models()` method,
+which returns a `dict` with key-description pairs indicating the available transfer length models. Use the methods `get_tl_model()` and `set_tl_model(key)`
+to see the active transfer length model, and to select another model.
 
 ## Modifying and adding fluids
 
@@ -535,6 +613,20 @@ The currently supported `"<Potential identifier>"`'s are `"Mie"` (for RET-Mie) a
 Other than the potential parameters, only the `"mol_weight"` field is strictly required. Filling in the other fields is recommended for consistency with existing code, in case it at some point becomes desirable to use them.
 
 The identifier used for a fluid in `KineticGas` is equivalent to the name of the corresponding `<name>.json` file.
+
+## Managing fluid file search path (only for C++)
+
+By default, `KineticGas` will search for fluid files at the relative path `../fluids` (relative to the location of the `libkineticgas` dynamic library). This default search path can be changed by building with 
+```bash
+cmake -DFLUID_DIR=<path/to/fluids> ..
+```
+where supplying a relative path will result in the library searching for fluid files in the path relative to it's location (`KineticGas/lib`). Supplying absolute paths is also supported. To check
+or change where your compiled `KineticGas` library is searching for fluid files, use the `[get/set]_fluid_dir` functions with signatures
+```C++
+// In utils.h
+void set_fluid_dir(const std::string path); // supports both absolute and relative paths (relative to dynamic library location).
+std::string get_fluid_dir(); // Current search path for fluid files
+```
 
 ## Implementing new potentials
 
@@ -579,12 +671,7 @@ class MyNewPotential(py_KineticGas)
         self.eos = <Some ThermoPack EoS>(comps)
 ```
 
----
-layout: default
-version: 
-title: Structure
-permalink: /vcurrent/structure.html
----
+# Structure
 
 See the [structure docs](https://github.com/thermotools/KineticGas/blob/main/docs/structure/structure.pdf) for more information.
 
@@ -611,24 +698,19 @@ The primary responsibilities of the python-side and C++ side of the package are
      * Implements RDF at contact
      * Implements collision diameter
  
-
-Stuff is illustrated here as well:
-
-![](https://github.com/thermotools/KineticGas/blob/main/docs/structure/kineticgas_classes.svg?raw=true)
-
-![](https://github.com/thermotools/KineticGas/blob/main/docs/structure/who_does_what.svg?raw=true)
-
 # File system
 
 `cpp/` : The C++ source code and headers for `KineticGas`
 
 `cpp/Integration/` : The C++ source code and headers for the integration module used to evaluate the collision integrals.
 
-`pyExamples` : Example files for doing computations
+`pyExamples/` : Example files for doing computations in python
 
-`pykingas/` : Python source code for the package
+`cppExamples/`: Example files for C++
 
-`pykingas/tests/` : Tests that are run after compiling
+`pykingas/` : Python source code for the `pykingas` package
+
+`pykingas/tests/` : Python-side test suite
 
 `pykingas/fluids/` : Fluid parameter database
 
@@ -636,12 +718,7 @@ Stuff is illustrated here as well:
 
 `docs/` : Documentation
 
----
-layout: default
-version: 
-title: Fluid identifiers
-permalink: /vcurrent/fluid_identifiers.html
----
+# Fluid identifiers
 
 *Note* : Many of these fluid parameters have been pulled directly from the [ThermoPack](https://github.com/thermotools/thermopack) fluid database for SAFT-VR Mie parameters. In the cases where SAFT-VR Mie uses segment numbers $>1$ to describe the fluids, the parameter sets cannot be expected to be suitable for use with RET-Mie.
 
