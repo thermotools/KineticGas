@@ -5,6 +5,7 @@
 #include "PseudoHardSphere.h"
 #include "ModTangToennis.h"
 #include "LJSpline.h"
+#include "LJTS.h"
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 #include "pybind11/operators.h"
@@ -183,4 +184,15 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("omega", &LJSpline::omega)
         .def("omega_star", &LJSpline::omega_star)
         .def("omega_star_approx", &LJSpline::omega_star_approx);
+
+    py::class_<LJTS>(handle, "cpp_LJTS")
+        .def(py::init<
+                        vector1d,
+                        vector2d,
+                        vector2d,
+                        bool, bool
+                    >()
+            )
+        KineticGas_bindings(LJSpline)
+        Spherical_bindings(LJSpline);
 }

@@ -25,9 +25,9 @@ class LJSpline : public Spherical {
     : Spherical(mole_weights, sigmaij, eps, is_idealgas, is_singlecomp), a{-24192. / 3211.}, b{-387072. / 61009.},
     rs{pow(26./7. , 1./6.)*sigma[0][0]}, rc{67. * rs / 48.} 
     {
-        LJs_bh bh_eos{"Default",1.0};
+        LJs_uv uv_eos{"Default",1.0};
         // bh_eos.set_sigma_eps(sigma[0][0],eps[0][0]);
-        GenericEoS ljs_eos{ThermoWrapper(std::move(bh_eos))};
+        GenericEoS ljs_eos{ThermoWrapper(std::move(uv_eos))};
         this -> set_eos(std::move(ljs_eos));
         if ((sigmaij.size() > 2) | (mole_weights.size() > 2) | (eps.size() > 2)) 
         {
