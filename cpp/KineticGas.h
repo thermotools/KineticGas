@@ -227,8 +227,7 @@ protected:
     // Essentially, the return value can be useful if you are inheritting from some class, and want to check whether that class
     // does anything at runtime.
     virtual size_t set_internals(double rho, double T, const vector1d& x){return 0;};
-    
-    void set_masses(); // Precompute reduced mass of particle pairs. Call this if you for some reason have modified particle masses after init.
+    virtual void set_masses(); // Precompute reduced mass of particle pairs. Call this if you for some reason have modified particle masses after init.
 
     // Implementations of omega, model_mtl, and model_etl, may wish to use the omega_map, mtl_map and etl_map
     // To store values for lazy evaluation (massive speedups)
