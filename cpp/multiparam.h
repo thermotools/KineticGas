@@ -108,3 +108,6 @@ private:
 };
 
 using PatowskiFH1 = Tabulated<PatowskiCoreFH1, 1000, 3>;
+using PatowskiFH2 = FH_Corrected<Splined<PatowskiCore, 1000, 6>, 2>;
+using PatowskiFH3 = FH_Corrected<Splined<PatowskiCore, 1000, 8>, 3>;
+// using PatowskiFH5 = FH_Corrected<Splined<PatowskiCore, 500, 10>, 4>; // Spline degree must be at least 2 * FH_order + 2

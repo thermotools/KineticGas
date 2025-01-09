@@ -2,14 +2,12 @@
 #include "Factorial.h"
 #include <algorithm>
 
-double partialfactorial(int start, int stop){
-    // Evaluate (stop! / start!)
-    double fac = 1.;
-    start = (start == 0) ? 1 : start;
-    for (int i = start; i <= stop; i++){
-        fac *= i;
-    }
-    return fac;
+inline size_t binom(size_t n, size_t k) noexcept {
+    if (k > n) return 0;
+    if ( (k == 0) || (k == n) ) return 1;
+    if ( (k == 1) || (k == n - 1) ) return n;
+    if ( 2 * k < n ) return ( binom(n - 1, k - 1) * n) / k; //  path to k=1   is faster
+    return (binom(n - 1, k) * n) / (n - k); //  path to k=n-1 is faster               
 }
 
 ModTangToennis::ModTangToennis(TangToennisParam param, vector1d mole_weights, bool is_idealgas)
@@ -58,7 +56,7 @@ dual2 ModTangToennis::potential(int i, int j, dual2 r){
             tmp += pow(param.b * r, k) / partialfactorial(1, k);
         }
         for (; k <= 2 * n; k++){
-            tmp += (pow(param.b * r, 10) / partialfactorial(1, 10)) * (pow(param.b * r, k - 10) / partialfactorial(11, k));
+            tmp += (pow(param.b * r, 10) / partialfactorial(1, 10)) * (pow(param.b * r, k - 10) / partialfactorial(10, k));
         }
         u -= (param.C[n - 3] / pow(r, 2 * n)) * (1 - exp_prefactor * tmp);
     }
@@ -79,7 +77,7 @@ double ModTangToennis::potential(int i, int j, double r){
             tmp += pow(param.b * r, k) / partialfactorial(1, k);
         }
         for (; k <= 2 * n; k++){ // Prevent factorial overflow
-            tmp += (pow(param.b * r, 10) / partialfactorial(1, 10)) * (pow(param.b * r, k - 10) / partialfactorial(11, k));
+            tmp += (pow(param.b * r, 10) / partialfactorial(1, 10)) * (pow(param.b * r, k - 10) / partialfactorial(10, k));
         }
         u -= (param.C[n - 3] / pow(r, 2 * n)) * (1 - exp_prefactor * tmp);
     }
