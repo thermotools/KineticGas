@@ -14,6 +14,7 @@ References:
 #include <Eigen/Dense>
 #include <array>
 #include <stdexcept>
+#include "Factorial.h"
 
 
 struct StatePoint{
@@ -240,16 +241,39 @@ public:
         fit_spline(x_vals, f_vals);
     }
 
-    double operator()(double x) {
+    FuncSpline() = default;
+    FuncSpline(const FuncSpline&) = default;
+    FuncSpline(FuncSpline&&) = default;
+    FuncSpline<N, deg>& operator=(const FuncSpline&) = default;
+    FuncSpline<N, deg>& operator=(FuncSpline&&) = default;
+
+    double operator()(double x) const {
         // Check if x is in range
-        if (x < x_min || x > x_max)
-            throw std::runtime_error("Input x is out of the interpolation range!");
-        
+        if ( !(in_valid_range(x)) ) throw std::out_of_range("Input x is out of the interpolation range!");
         double val = 0.0;
         for (size_t i = 0; i < coefficients.size(); ++i) {
-            val += coefficients[i] * b_spline_basis(x, i, deg, knots);
+            val += coefficients[i] * b_spline_basis(x, i, deg);
         }
         return val;
+    }
+
+    // Method to evaluate the n'th derivative of the spline at point x
+    double derivative(double x, int n) const {
+        // Check if x is in range
+        if (n < 0) throw std::out_of_range("Cannot compute derivative < 0");
+        if (n > deg) throw std::out_of_range("Too high derivative order (" + std::to_string(n) + ") for FuncSpline with degree " + std::to_string(deg));
+        if ( !(in_valid_range(x)) ) throw std::out_of_range("Input x is out of the spline range!");
+        if (n == 0) return this->operator()(x);
+
+        double val = 0.0;
+        for (size_t i = 0; i < coefficients.size(); ++i) {
+            val += coefficients[i] * b_spline_basis_derivative(x, i, deg, n);
+        }
+        return val;
+    }
+
+    bool in_valid_range(double x) const {
+        return ( (x_min + deg * dx < x ) && (x < x_max - deg * dx) );
     }
 
 private:
@@ -267,19 +291,20 @@ private:
     void fit_spline(const std::array<double, N>& x_vals, const std::array<double, N>& f_vals) {
         // Construct the knot vector (uniform or clamped)
         for (size_t i = 0; i < num_knots; ++i) {
-            if (i < deg + 1)
+            if (i < deg + 1){
                 knots[i] = x_min;  // Clamped knots at the start
-            else if (i >= N)
+            } else if (i >= N) {
                 knots[i] = x_max;  // Clamped knots at the end
-            else
+            } else {
                 knots[i] = x_min + (i - deg) * dx;
+            }
         }
 
         // Solve for B-spline coefficients using least squares
         Eigen::MatrixXd basis(N, N);
         for (size_t i = 0; i < N; ++i) {
             for (size_t j = 0; j < N; ++j) {
-                basis(i, j) = b_spline_basis(x_vals[i], j, deg, knots);
+                basis(i, j) = b_spline_basis(x_vals[i], j, deg);
             }
         }
 
@@ -295,19 +320,37 @@ private:
     }
 
     // B-spline basis function
-    double b_spline_basis(double x, size_t i, size_t k, const std::array<double, num_knots>& knots) const {
+    double b_spline_basis(double x, size_t i, size_t k) const {
         if (k == 0) {
             return (x >= knots[i] && x < knots[i + 1]) ? 1.0 : 0.0;
         }
 
         double term1 = 0.0, term2 = 0.0;
         if (knots[i + k] != knots[i]) {
-            term1 = (x - knots[i]) / (knots[i + k] - knots[i]) * b_spline_basis(x, i, k - 1, knots);
+            term1 = (x - knots[i]) / (knots[i + k] - knots[i]) * b_spline_basis(x, i, k - 1);
         }
         if (knots[i + k + 1] != knots[i + 1]) {
-            term2 = (knots[i + k + 1] - x) / (knots[i + k + 1] - knots[i + 1]) * b_spline_basis(x, i + 1, k - 1, knots);
+            term2 = (knots[i + k + 1] - x) / (knots[i + k + 1] - knots[i + 1]) * b_spline_basis(x, i + 1, k - 1);
         }
 
         return term1 + term2;
+    }
+
+    // Recursive method to compute the n'th derivative of a B-spline basis function
+    double b_spline_basis_derivative(double x, size_t i, size_t k, int n) const {
+        if (n == 0) {
+            return b_spline_basis(x, i, k);
+        }
+
+        double term1 = 0.0, term2 = 0.0;
+        if ( (k > 0) && (knots[i + k] != knots[i]) ) {
+            term1 = k * b_spline_basis_derivative(x, i, k - 1, n - 1) / (knots[i + k] - knots[i]);
+        }
+
+        if ( (k > 0) && (knots[i + k + 1] != knots[i + 1]) ) {
+            term2 = k * b_spline_basis_derivative(x, i + 1, k - 1, n - 1) / (knots[i + k + 1] - knots[i + 1]);
+        }
+
+        return term1 - term2; // Derivative adjusts the recursive contributions
     }
 };

@@ -295,3 +295,120 @@ int factorial_tests(){
     }
     return 0;
 }
+
+double partialfactorial(int start, int stop){
+    // Evaluate (stop! / start!)
+    double fac = 1.;
+    start = (start == 0) ? 1 : start;
+    for (int i = start + 1; i <= stop; i++){
+        fac *= i;
+    }
+    return fac;
+}
+
+std::vector<std::vector<int>> get_partitions(int N, int m){
+    if (N == 0) return std::vector<std::vector<int>>(1, std::vector<int>());
+    if (N == 1) return std::vector<std::vector<int>>(1, std::vector<int>(1, 1));
+
+    std::vector<std::vector<int>> partitions;
+    int min_k = (N - m < 0) ? 0 : N - m;
+    for (int k = min_k; k < N; k++){
+        int n = N - k;
+        std::vector<std::vector<int>> sub_partitions = get_partitions(k, n);
+        for (std::vector<int>& part : sub_partitions){
+            part.push_front(n);
+            partitions.push_back(part);
+        }
+    }
+    return partitions;
+}
+
+size_t partition_multiplicity(const std::vector<int>& partition){
+    int n = 0;
+    for (const int p : partition){
+        n += p;
+    }
+
+    Fac num{p};
+    Product denom{1};
+    for (const size_t p : partition){
+        denom *= Fac(p);
+    }
+
+    std::vector<size_t> counted;
+    for (const size_t p : partition){
+        if (std::count(counted.begin(), counted.end(), p) > 0) continue;
+        denom *= Fac(std::count(partition.begin(), partition.end(), p));
+        counted.push_back(p);
+    }
+
+    return static_cast<size_t>((num / denom).eval() + 0.5); // + 0.5 To ensure correct flooring in case of funky floating point error.
+}
+
+class Term{
+public:
+    virtual double operator()(double x){
+        return derivative(x, 0);
+    }
+
+    virtual double derivative(double x, size_t n) = 0;
+}
+
+
+Polynomial::Polynomial(size_t k_min, size_t k_max, std::vector<double> coeff, int k_step) 
+        : k_min{k_min}, k_max{k_max}, k_step{k_step}
+        _is_linear{(k_min == 0) && (k_max == 1)}, 
+        _is_constant{(k_min == 0) && (k_max == 0)}, 
+        coeff(coeff)
+    {}
+
+double Polynomial::operator()(double x) override {
+    double p = 0;
+    for (int k = k_min; k <= k_max; k++){
+        p += coeff[k - k_min] * pow(x, k);
+    }
+    return p;
+}
+
+double Polynomial::derivative(double x, size_t n) override {
+    double p = 0;
+
+    int prefactor = ((n % 2 == 0) ? 1 : -1)
+    int max_k_negative = (k_max < 0) ? k_max : -1;
+    for (int k = k_min; k <= max_k_negative; k++){
+        p += prefactor * partialfactorial(- k - 1, n - k - 1) * coeff[k - k_min] * pow(x, k - n);
+    }
+    for (int k = 0; k <= k_max; k++){
+        p += partialfactorial(k - n, k) * coeff[k - k_min] * pow(x, k - n);
+    }
+    return p;
+}
+
+bool is_linear(){return _is_linear;}
+
+PolyExp::PolyExp(Polynomial pref, Polynomial expo)
+    : pref{pref}, expo{expo}
+{}
+
+double PolyExp::operator()(double x) override {
+    return pref(x) * exp(expo(x));
+}
+
+double PolyExp::derivative(double x, size_t n) override {
+    if (expo.is_linear()) {
+
+    }
+
+}
+
+double PolyExp::get_Gn(double x, size_t n){
+    if (expo.is_linear()){
+        return expo.derivative(x, 1);
+    }
+
+    if (n == 0){
+        return 1;
+    }
+
+    return expo.derivative(x, 1) * get_Gn(x, n - 1) + get_Gn_deriv(x, n - 1, 1);
+}

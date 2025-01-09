@@ -87,3 +87,52 @@ double operator+=(double& lhs, const Frac& rhs);
 
 Product ipow(int base, int expo);
 int factorial_tests();
+
+double partialfactorial(int start, int stop);
+
+std::vector<std::vector<int>> get_partitions(int N, int m);
+size_t partition_multiplicity(const std::vector<int>& partition);
+
+class Term{
+public:
+    virtual double operator()(double x){
+        return derivative(x, 0);
+    }
+
+    virtual double derivative(double x, size_t n) = 0;
+}
+
+class Polynomial : public Term {
+public:
+    Polynomial(int k_min, int k_max, std::vector<double> coeff, int k_step=1) 
+        : k_min{k_min}, k_max{k_max}, 
+        _is_linear{(k_min == 0) && (k_max == 1)}, 
+        _is_constant{(k_min == 0) && (k_max == 0)}, 
+        coeff(coeff)
+    {}
+
+    double operator()(double x) override;
+    double derivative(double x, size_t n) override;
+    inline bool is_linear(){return _is_linear;}
+    inline bool is_constant(){return _is_constant;}
+
+private:
+    int k_min, k_max;
+    bool _is_linear, _is_constant;
+    std::vector<double> coeff;
+};
+
+class PolyExp{
+public:
+    PolyExp(Polynomial pref, Polynomial expo);
+
+    double operator()(double x) override;
+    double derivative(double x, size_t n) override;
+    double get_Gn(double x, size_t n);
+
+private:
+    Polynomial pref;
+    Polynomial expo;
+
+    std::vector<double> dg;
+};
