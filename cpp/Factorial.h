@@ -36,6 +36,7 @@ Note: The max number of integers in a Product or a factorial (Fac) is 1000. Exce
 #include "cmath"
 #include <array>
 #include <cstdio>
+#include <iostream>
 
 class Fac{
     public:
@@ -89,50 +90,56 @@ Product ipow(int base, int expo);
 int factorial_tests();
 
 double partialfactorial(int start, int stop);
+double binom(int n, int k);
 
-std::vector<std::vector<int>> get_partitions(int N, int m);
-size_t partition_multiplicity(const std::vector<int>& partition);
+std::vector<std::vector<int>> get_partitions(int N, int m=-1);
+long long partition_multiplicity(const std::vector<int>& partition);
 
 class Term{
 public:
-    virtual double operator()(double x){
+    virtual double operator()(double x) const {
         return derivative(x, 0);
     }
 
-    virtual double derivative(double x, size_t n) = 0;
-}
-
-class Polynomial : public Term {
-public:
-    Polynomial(int k_min, int k_max, std::vector<double> coeff, int k_step=1) 
-        : k_min{k_min}, k_max{k_max}, 
-        _is_linear{(k_min == 0) && (k_max == 1)}, 
-        _is_constant{(k_min == 0) && (k_max == 0)}, 
-        coeff(coeff)
-    {}
-
-    double operator()(double x) override;
-    double derivative(double x, size_t n) override;
-    inline bool is_linear(){return _is_linear;}
-    inline bool is_constant(){return _is_constant;}
-
-private:
-    int k_min, k_max;
-    bool _is_linear, _is_constant;
-    std::vector<double> coeff;
+    virtual double derivative(double x, int n) const = 0;
 };
 
-class PolyExp{
+class PolyExp;
+class Polynomial : public Term {
+public:
+    friend class PolyExp;
+    Polynomial(int k_min, int k_max, std::vector<double> coeff, int k_step=1);
+    Polynomial(double val);
+    static Polynomial constant(double v) {return Polynomial(0, 0, {v});}
+    static Polynomial zero() {return Polynomial::constant(0);}
+    static Polynomial unity() {return Polynomial::constant(1);} 
+    static Polynomial linear(double a, double b) {return Polynomial(0, 1, {a, b});}
+    static Polynomial linear(double a) {return Polynomial(1, 1, {a});}
+
+    double operator()(double x) const override;
+    double derivative(double x, int n) const override;
+    inline bool is_linear() const{return _is_linear;}
+    inline bool is_constant() const{return _is_constant;}
+
+    friend std::ostream& operator<<(std::ostream& strm, const Polynomial& p);
+private:
+    const int k_min, k_max, k_step;
+    const bool _is_linear, _is_constant;
+    const std::vector<double> coeff;
+};
+
+class PolyExp : public Term{
 public:
     PolyExp(Polynomial pref, Polynomial expo);
+    PolyExp(Polynomial pref, double expo);
+    PolyExp(double pref, Polynomial expo);
 
-    double operator()(double x) override;
-    double derivative(double x, size_t n) override;
-    double get_Gn(double x, size_t n);
+    double operator()(double x) const override;
+    double derivative(double x, int n) const override;
+    double get_Gk(double x, int k, const vector1d& dg) const;
 
-private:
-    Polynomial pref;
-    Polynomial expo;
-
-    std::vector<double> dg;
+    friend std::ostream& operator<<(std::ostream& strm, const PolyExp& p);
+// private:
+    const Polynomial pref;
+    const Polynomial expo;
 };

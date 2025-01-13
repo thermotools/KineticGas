@@ -10,6 +10,7 @@
 #include "pybind11/stl.h"
 #include "pybind11/operators.h"
 #include "pybind11/eigen.h"
+#include "pybind11/numpy.h"
 #include <sstream>
 
 namespace py = pybind11;
@@ -74,6 +75,9 @@ PYBIND11_MODULE(libpykingas, handle){
     handle.def("ipow", &ipow);
     handle.def("factorial_tests", &factorial_tests);
 
+    handle.def("get_partitions", &get_partitions);
+    handle.def("partition_multiplicity", &partition_multiplicity);
+
     handle.def("simpson", [](double ulim, int N){return simpson([](double x){return exp(- x) * pow(x, 2);}, 0, ulim, N);});
     handle.def("simpson_inf", [](double ulim){return simpson_inf([](double x){return exp(- x) * pow(x, 2);}, 0, ulim);});
 
@@ -86,6 +90,16 @@ PYBIND11_MODULE(libpykingas, handle){
     py::class_<Fac>(handle, "Fac")
         .def(py::init<int>())
         .def("eval", &Fac::eval);
+
+    py::class_<Polynomial>(handle, "Polynomial")
+        .def(py::init<int, int, vector1d, int>())
+        .def("derivative", py::vectorize(&Polynomial::derivative))
+        ;
+
+    py::class_<PolyExp>(handle, "PolyExp")
+        .def(py::init<Polynomial, Polynomial>())
+        .def("derivative", py::vectorize(&PolyExp::derivative))
+        ;
 
     py::class_<OmegaPoint>(handle, "OmegaPoint")
         .def_readwrite("i", &OmegaPoint::i)
@@ -321,7 +335,8 @@ PYBIND11_MODULE(libpykingas, handle){
         KineticGas_bindings(Patowski)
         Spherical_potential_bindings(Patowski)
         .def("get_param", &Patowski::get_param)
-        .def("set_using_tabulated", &Patowski::set_using_tabulated)
+        .def("potential_dn", &Patowski::potential_dn)
+        // .def("set_using_tabulated", &Patowski::set_using_tabulated)
         ;
 
     py::class_<PatowskiFH1, Quantum>(handle, "cpp_PatowskiFH1")
@@ -330,7 +345,27 @@ PYBIND11_MODULE(libpykingas, handle){
         Spherical_potential_bindings(PatowskiFH1)
         .def("potential", py::overload_cast<int, int, double, double>(&PatowskiFH1::potential))
         .def("get_param", &PatowskiFH1::get_param)
-        .def("set_using_tabulated", &PatowskiFH1::set_using_tabulated)
+        ;
+    
+    py::class_<PatowskiFH2, Quantum>(handle, "cpp_PatowskiFH2")
+        .def(py::init<std::string>())
+        KineticGas_bindings(PatowskiFH2)
+        // Spherical_potential_bindings(PatowskiFH2)
+        .def("potential", py::overload_cast<int, int, double, double>(&PatowskiFH2::potential))
+        .def("potential_r", py::overload_cast<int, int, double, double>(&PatowskiFH2::potential_derivative_r))
+        .def("potential_rr", py::overload_cast<int, int, double, double>(&PatowskiFH2::potential_dblderivative_rr))
+        .def("get_param", &PatowskiFH2::get_param)
+
+        ;
+    
+    py::class_<PatowskiFH3, Quantum>(handle, "cpp_PatowskiFH3")
+        .def(py::init<std::string>())
+        KineticGas_bindings(PatowskiFH3)
+        // Spherical_potential_bindings(PatowskiFH2)
+        .def("potential", py::overload_cast<int, int, double, double>(&PatowskiFH3::potential))
+        .def("potential_r", py::overload_cast<int, int, double, double>(&PatowskiFH3::potential_derivative_r))
+        .def("potential_rr", py::overload_cast<int, int, double, double>(&PatowskiFH3::potential_dblderivative_rr))
+        .def("get_param", &PatowskiFH3::get_param)
         ;
 
     py::class_<PseudoHardSphere>(handle, "cpp_PseudoHardSphere")

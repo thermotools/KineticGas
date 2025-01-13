@@ -14,7 +14,6 @@ References:
 #include <Eigen/Dense>
 #include <array>
 #include <stdexcept>
-#include "Factorial.h"
 
 
 struct StatePoint{

@@ -39,6 +39,9 @@ class Spherical : public KineticGas {
     virtual double potential(int i, int j, double r);
     virtual double potential_derivative_r(int i, int j, double r);
     virtual double potential_dblderivative_rr(int i, int j, double r);
+    virtual double potential_dn(int i, int j, double r, size_t n) { // n'th derivative of potential
+        throw std::runtime_error("Spherical::potential_dn has not been overriden by this class.");
+    }
 
     virtual double cross_section(int i, int j, int l, double E);
     double hs_cross_section(int i, int j, int l);

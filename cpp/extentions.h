@@ -132,7 +132,7 @@ public:
         return r;
     }
 
-    double potential_n(int i, int j, double r, int n){
+    double potential_dn(int i, int j, double r, int n){
         if (n < 0) throw std::out_of_range("Cannot compute derivative < 0.");
         if (using_spline){
             if (j < i) std::swap(i, j);
@@ -158,9 +158,9 @@ public:
     }
 
     using T::potential;
-    double potential(int i, int j, double r) override {return potential_n(i, j, r, 0); }
-    double potential_derivative_r(int i, int j, double r) override {return potential_n(i, j, r, 1);}
-    double potential_dblderivative_rr(int i, int j, double r) override {return potential_n(i, j, r, 2);}
+    double potential(int i, int j, double r) override {return potential_dn(i, j, r, 0); }
+    double potential_derivative_r(int i, int j, double r) override {return potential_dn(i, j, r, 1);}
+    double potential_dblderivative_rr(int i, int j, double r) override {return potential_dn(i, j, r, 2);}
     
 
 private:
@@ -180,23 +180,27 @@ public:
         D_factors(T::Ncomps, vector1d(T::Ncomps))
     {
         set_D_factors();
-        T::set_using_spline(true);
     }
 
     double potential(int i, int j, double r, double temp){
-        set_internals(0, temp, {0.});
+        set_temperature(temp);
         return potential(i, j, r);
     }
 
     double potential_derivative_r(int i, int j, double r, double temp){
-        set_internals(0, temp, {0.});
+        set_temperature(temp);
         return potential_derivative_r(i, j, r);
     }
 
 
     double potential_dblderivative_rr(int i, int j, double r, double temp){
-        set_internals(0, temp, {0.});
+        set_temperature(temp);
         return potential_dblderivative_rr(i, j, r);
+    }
+
+    double potential_dn(int i, int j, double r, double temp, int n){
+        set_temperature(temp);
+        return potential_dn(i, j, r, n);
     }
 
     using T::potential;
@@ -206,7 +210,7 @@ public:
         for (size_t n = 0; n <= FH_order; n++){
             double nfac = 1;
             for (size_t ni = 2; ni <= n; ni++) nfac *= n;
-            u += pow(D_factors[i][j] / (BOLTZMANN * current_T), n) * T::potential_n(i, j, r, 2 * n) / nfac;
+            u += pow(D_factors[i][j] / (BOLTZMANN * current_T), n) * T::potential_dn(i, j, r, 2 * n) / nfac;
         }
         std::cout << r / T::sigma[i][j] << ", " << u / T::eps[i][j] << std::endl;
         return u;
@@ -216,7 +220,7 @@ public:
     double potential_derivative_r(int i, int j, double r) override {
         double ur = 0;
         for (size_t n = 0; n <= FH_order; n++){
-            ur += pow(D_factors[i][j] / (BOLTZMANN * current_T), n) * T::potential_n(i, j, r, 2 * n + 1);
+            ur += pow(D_factors[i][j] / (BOLTZMANN * current_T), n) * T::potential_dn(i, j, r, 2 * n + 1);
         }
         return ur;
     }
@@ -225,9 +229,22 @@ public:
     double potential_dblderivative_rr(int i, int j, double r) override {
         double urr = 0;
         for (size_t n = 0; n <= FH_order; n++){
-            urr += pow(D_factors[i][j] / (BOLTZMANN * current_T), n) * T::potential_n(i, j, r, 2 * n + 2);
+            urr += pow(D_factors[i][j] / (BOLTZMANN * current_T), n) * T::potential_dn(i, j, r, 2 * n + 2);
         }
         return urr;
+    }
+
+    using T::potential_dn;
+    double potential_dn(int i, int j, double r, size_t n) override {
+        double un = 0;
+        for (size_t k = 0; k <= FH_order; k++){
+            un += pow(D_factors[i][j] / (BOLTZMANN * current_T), n) * T::potential_dn(i, j, r, 2 * k + n);
+        }
+        return un;
+    }
+
+    inline size_t set_temperature(double temp) {
+        return set_internals(0, temp, {0.});
     }
 
     size_t set_internals(double rho, double temp, const vector1d& x) override {

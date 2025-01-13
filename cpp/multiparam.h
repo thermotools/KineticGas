@@ -65,28 +65,30 @@ struct PatowskiParam{
     std::array<double, 3> Cn;     
 };
 
-class PatowskiCore : public Quantum {
+class Patowski : public Quantum {
 public:
-    PatowskiCore(std::string comps);
-    PatowskiCore(PatowskiParam param);
+    Patowski(std::string comps);
+    Patowski(PatowskiParam param);
 
     using Spherical::potential;
     dual2 potential(int i, int j, dual2 r) override;
     double potential(int i, int j, double r) override;
+    double potential_dn(int i, int j, double r, size_t n) override;
 
     inline PatowskiParam get_param(){return param;}
     double get_r_min(int i, int j) override {return param.r_min * 1e-10;}
 
 protected:
     PatowskiParam param;
+    std::vector<PolyExp> potential_terms;
 };
 
-using Patowski = Tabulated<PatowskiCore, 1000, 3>;
 
-class PatowskiCoreFH1 : public PatowskiCore {
+
+class PatowskiFH1 : public Patowski {
 public:
 
-    PatowskiCoreFH1(std::string comps);
+    PatowskiFH1(std::string comps);
 
     double potential(int i, int j, double r, double T) {
         set_internals(0., T, {0.});
@@ -107,7 +109,8 @@ private:
     vector2d D_factors;
 };
 
-using PatowskiFH1 = Tabulated<PatowskiCoreFH1, 1000, 3>;
-using PatowskiFH2 = FH_Corrected<Splined<PatowskiCore, 1000, 6>, 2>;
-using PatowskiFH3 = FH_Corrected<Splined<PatowskiCore, 1000, 8>, 3>;
+using PatowskiTab = Tabulated<Patowski, 1000, 3>;
+// using PatowskiFH1 = FH_Corrected<Patowski, 1>; // Tabulated<PatowskiFH1, 1000, 3>;
+using PatowskiFH2 = FH_Corrected<Patowski, 2>; // FH_Corrected<Splined<PatowskiCore, 1000, 6>, 2>;
+using PatowskiFH3 = FH_Corrected<Patowski, 3>; // FH_Corrected<Splined<PatowskiCore, 1000, 8>, 3>;
 // using PatowskiFH5 = FH_Corrected<Splined<PatowskiCore, 500, 10>, 4>; // Spline degree must be at least 2 * FH_order + 2

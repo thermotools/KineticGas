@@ -2,14 +2,6 @@
 #include "Factorial.h"
 #include <algorithm>
 
-inline size_t binom(size_t n, size_t k) noexcept {
-    if (k > n) return 0;
-    if ( (k == 0) || (k == n) ) return 1;
-    if ( (k == 1) || (k == n - 1) ) return n;
-    if ( 2 * k < n ) return ( binom(n - 1, k - 1) * n) / k; //  path to k=1   is faster
-    return (binom(n - 1, k) * n) / (n - k); //  path to k=n-1 is faster               
-}
-
 ModTangToennis::ModTangToennis(TangToennisParam param, vector1d mole_weights, bool is_idealgas)
     : Spherical(mole_weights, 
                 vector2d(Ncomps, vector1d(Ncomps, param.sigma)), 
@@ -146,7 +138,7 @@ double HFD_B2::potential(int i, int j, double r){
     return V * param.eps_div_k * BOLTZMANN;
 }
 
-PatowskiCore::PatowskiCore(std::string comps)
+Patowski::Patowski(std::string comps)
     : Quantum(comps)
 {
     const auto cdata = compdata[0]["Patowski"]["default"];
@@ -175,9 +167,22 @@ PatowskiCore::PatowskiCore(std::string comps)
         }
     }
 
+    potential_terms.emplace_back(Polynomial(0, 3, {param.Csp1, param.Csp2, param.Csp3, param.Csp4}), 
+                                 Polynomial(0, 1, {param.Cex1, param.Cex2}));
+    potential_terms.emplace_back(Polynomial(-10, -6, {param.C10, param.C8, param.C6}, 2),
+                                 Polynomial::zero());
+
+    for (int n = 3; n <= 5; n++){
+        std::vector<double> coeff;
+        for (int k = 0; k <= 2 * n; k++){
+            coeff.push_back(- param.Cn[n - 3] * pow(param.delta, k) / Fac(k).eval_d());
+        }
+        potential_terms.emplace_back(Polynomial(- 2 * n, 0, coeff),
+                                     Polynomial::linear(- param.delta));
+    }
 }
 
-dual2 PatowskiCore::potential(int i, int j, dual2 r){
+dual2 Patowski::potential(int i, int j, dual2 r){
     r *= 1e10; // Working in Å internally
     if (r < param.Rc){
         // Potential is only valid for r > Rc, but we need a continuous extrapolation that is well behaved for numerical purposes.
@@ -196,7 +201,7 @@ dual2 PatowskiCore::potential(int i, int j, dual2 r){
     return p * BOLTZMANN;
 }
 
-double PatowskiCore::potential(int i, int j, double r){
+double Patowski::potential(int i, int j, double r){
     r *= 1e10; // Working in Å internally
     if (r < param.Rc){ 
         // Potential is only valid for r > Rc, but we need a continuous extrapolation that is well behaved for numerical purposes.
@@ -205,41 +210,63 @@ double PatowskiCore::potential(int i, int j, double r){
         return param.Ac * exp(param.Bc * (r - param.Rc)) * BOLTZMANN;
     }
     double p = (param.Csp1 + r * param.Csp2 + pow(r, 2) * param.Csp3 + pow(r, 3) * param.Csp4) * exp(param.Cex1 + param.Cex2 * r);
+    // std::cout << "Potential : " << param.Csp1 << ", " << param.Csp2 << ", " << param.Csp3 << ", " << param.Csp4 << ", " << param.Cex1 << ", " << param.Cex2 << std::endl;
+    // return p * BOLTZMANN;
+    
     for (size_t n = 3; n <= 5; n++){
+        double tn = 0;
         double tmp = 0;
         for (int k = 0; k <= 2 * n; k++){
             tmp += pow(param.delta * r, k) / Fac(k).eval_d();
         }
         p += (param.Cn[n - 3] / pow(r, 2 * n)) * (1 - tmp * exp(- param.delta * r));
+        // std::cout << "Term (" << n - 1 << ")(" << r << ") : " << tmp << " * " << exp(-param.delta * r) << " = " << tmp * exp(- param.delta * r) << std::endl;
     }
     return p * BOLTZMANN;
 }
 
- PatowskiCoreFH1::PatowskiCoreFH1(std::string comps) 
-        : PatowskiCore(comps), D_factors(Ncomps, vector1d(Ncomps, 0.)) 
-    {
-        set_quantum_active(false);
+double Patowski::potential_dn(int i, int j, double r, size_t n){
+    // if (n == 0) return potential(i, j, r);
+    r *= 1e10; // Working in Å internally
+    double val = 0;
+    size_t term_idx = 0;
+    for (const PolyExp& term : potential_terms){
+        double t = term.derivative(r, n);
+        // std::cout << "Term[" << term_idx << "](" << r << ") : " << term << std::endl;
+        // std::cout << "Term[" << term_idx++ << "](" << r << ") : " << term.pref(r) << " * " << exp(term.expo(r)) << " = " << t << std::endl;
+        // std::cout << term << std::endl;
+        val += t;
+        // term_idx++;
+        // if (term_idx > 1) break;
     }
+    return val * BOLTZMANN * pow(1e10, n);
+}
 
-double PatowskiCoreFH1::potential(int i, int j, double r){
+PatowskiFH1::PatowskiFH1(std::string comps) 
+    : Patowski(comps), D_factors(Ncomps, vector1d(Ncomps, 0.)) 
+{
+    set_quantum_active(false);
+}
+
+double PatowskiFH1::potential(int i, int j, double r){
     dual4th rd = r;
     auto [u, u1, u2, u3, u4] = autodiff::derivatives([&](dual4th r_){return core_potential(i, j, r_);}, autodiff::wrt(rd), autodiff::at(rd));
     return u + D_factors[i][j] * u2;
 }
 
-double PatowskiCoreFH1::potential_derivative_r(int i, int j, double r){
+double PatowskiFH1::potential_derivative_r(int i, int j, double r){
     dual4th rd = r;
     auto [u, u1, u2, u3, u4] = autodiff::derivatives([&](dual4th r_){return core_potential(i, j, r_);}, autodiff::wrt(rd), autodiff::at(rd));
     return u1 + D_factors[i][j] * u3;
 }
 
-double PatowskiCoreFH1::potential_dblderivative_rr(int i, int j, double r){
+double PatowskiFH1::potential_dblderivative_rr(int i, int j, double r){
     dual4th rd = r;
     auto [u, u1, u2, u3, u4] = autodiff::derivatives([&](dual4th r_){return core_potential(i, j, r_);}, autodiff::wrt(rd), autodiff::at(rd));
     return u2 + D_factors[i][j] * u4;
 }
 
-dual4th PatowskiCoreFH1::core_potential(int i, int j, dual4th r){
+dual4th PatowskiFH1::core_potential(int i, int j, dual4th r){
     r *= 1e10; // Working in Å internally
     if (r < param.Rc){
         // Potential is only valid for r > Rc, but we need a continuous extrapolation that is well behaved for numerical purposes.
@@ -258,11 +285,11 @@ dual4th PatowskiCoreFH1::core_potential(int i, int j, dual4th r){
     return p * BOLTZMANN;
 }
 
-size_t PatowskiCoreFH1::set_internals(double rho, double T, const vector1d& x){
+size_t PatowskiFH1::set_internals(double rho, double T, const vector1d& x){
     return set_current_T(T);
 }
 
-size_t PatowskiCoreFH1::set_current_T(double T){
+size_t PatowskiFH1::set_current_T(double T){
     if (T != current_T){
         double beta = 1 / (BOLTZMANN * T);
         for (size_t i = 0; i < Ncomps; i++){
