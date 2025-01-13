@@ -109,8 +109,16 @@ private:
     vector2d D_factors;
 };
 
+class PatowskiFH : public FH_Corrected<Patowski> {
+public:
+    PatowskiFH(std::string comps, size_t FH_order)
+        : FH_Corrected<Patowski>(FH_order, comps)
+    {}
+};
+
 using PatowskiTab = Tabulated<Patowski, 1000, 3>;
+// using PatowskiFH = FH_Corrected<Patowski>;
 // using PatowskiFH1 = FH_Corrected<Patowski, 1>; // Tabulated<PatowskiFH1, 1000, 3>;
-using PatowskiFH2 = FH_Corrected<Patowski, 2>; // FH_Corrected<Splined<PatowskiCore, 1000, 6>, 2>;
-using PatowskiFH3 = FH_Corrected<Patowski, 3>; // FH_Corrected<Splined<PatowskiCore, 1000, 8>, 3>;
+// using PatowskiFH2 = FH_Corrected<Patowski, 2>; // FH_Corrected<Splined<PatowskiCore, 1000, 6>, 2>;
+// using PatowskiFH3 = FH_Corrected<Patowski, 3>; // FH_Corrected<Splined<PatowskiCore, 1000, 8>, 3>;
 // using PatowskiFH5 = FH_Corrected<Splined<PatowskiCore, 500, 10>, 4>; // Spline degree must be at least 2 * FH_order + 2

@@ -221,8 +221,12 @@ double Patowski::potential(int i, int j, double r){
 }
 
 double Patowski::potential_dn(int i, int j, double r, size_t n){
-    if (n == 0) return potential(i, j, r);
+    // std::cout << "potential_dn : " << n << std::endl;
+    // if (n == 0) return potential(i, j, r);
     r *= 1e10; // Working in Å internally
+    if (r < param.Rc){
+        return param.Ac * pow(param.Bc, n) * exp(param.Bc * (r - param.Rc)) * BOLTZMANN;
+    }
     double val = 0;
     for (const PolyExp& term : potential_terms){
         double t = term.derivative(r, n);

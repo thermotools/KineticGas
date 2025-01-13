@@ -171,15 +171,16 @@ private:
 
 };
 
-template<typename T, size_t FH_order>
+template<typename T>
 class FH_Corrected : public T {
 public:
     template<typename... Args>
-    FH_Corrected(Args&&... args)
-        : T(std::forward<Args>(args)...),
+    FH_Corrected(size_t FH_order, Args&&... args)
+        : T(std::forward<Args>(args)...), FH_order{FH_order},
         D_factors(T::Ncomps, vector1d(T::Ncomps))
     {
         set_D_factors();
+        std::cout << "Init FH_corrected : " << T::Ncomps << ", " << D_factors[0][0] << std::endl;
     }
 
     double potential(int i, int j, double r, double temp){
@@ -191,7 +192,6 @@ public:
         set_temperature(temp);
         return potential_derivative_r(i, j, r);
     }
-
 
     double potential_dblderivative_rr(int i, int j, double r, double temp){
         set_temperature(temp);
@@ -205,14 +205,12 @@ public:
 
     using T::potential;
     double potential(int i, int j, double r) override {
-        std::cout << "Evaluate potential at T = " << current_T << " : ";
         double u = 0;
         for (size_t n = 0; n <= FH_order; n++){
             double nfac = 1;
             for (size_t ni = 2; ni <= n; ni++) nfac *= n;
             u += pow(D_factors[i][j] / (BOLTZMANN * current_T), n) * T::potential_dn(i, j, r, 2 * n) / nfac;
         }
-        std::cout << r / T::sigma[i][j] << ", " << u / T::eps[i][j] << std::endl;
         return u;
     }
 
@@ -250,7 +248,6 @@ public:
     size_t set_internals(double rho, double temp, const vector1d& x) override {
         size_t r = T::set_internals(rho, temp, x);
         if (temp != current_T){
-            std::cout << "Set current T : " << temp << std::endl;
             current_T = temp;
             return r + 1;
         }
@@ -270,7 +267,15 @@ public:
         }
     }
 
+    void set_FH_order(size_t order) {
+        if (order != FH_order){
+            T::clear_all_caches();
+            FH_order = order;
+        }
+    }
+
 private:
     double current_T;
+    size_t FH_order;
     vector2d D_factors;
 };

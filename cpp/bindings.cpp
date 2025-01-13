@@ -347,26 +347,26 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("get_param", &PatowskiFH1::get_param)
         ;
     
-    py::class_<PatowskiFH2, Quantum>(handle, "cpp_PatowskiFH2")
-        .def(py::init<std::string>())
-        KineticGas_bindings(PatowskiFH2)
+    py::class_<PatowskiFH, Quantum>(handle, "cpp_PatowskiFH")
+        .def(py::init<std::string, size_t>())
+        KineticGas_bindings(PatowskiFH)
         // Spherical_potential_bindings(PatowskiFH2)
-        .def("potential", py::overload_cast<int, int, double, double>(&PatowskiFH2::potential))
-        .def("potential_r", py::overload_cast<int, int, double, double>(&PatowskiFH2::potential_derivative_r))
-        .def("potential_rr", py::overload_cast<int, int, double, double>(&PatowskiFH2::potential_dblderivative_rr))
-        .def("get_param", &PatowskiFH2::get_param)
-
+        .def("potential", py::overload_cast<int, int, double, double>(&PatowskiFH::potential))
+        .def("potential_r", py::overload_cast<int, int, double, double>(&PatowskiFH::potential_derivative_r))
+        .def("potential_rr", py::overload_cast<int, int, double, double>(&PatowskiFH::potential_dblderivative_rr))
+        .def("set_FH_order", &PatowskiFH::set_FH_order)
+        .def("get_param", &PatowskiFH::get_param)
         ;
     
-    py::class_<PatowskiFH3, Quantum>(handle, "cpp_PatowskiFH3")
-        .def(py::init<std::string>())
-        KineticGas_bindings(PatowskiFH3)
-        // Spherical_potential_bindings(PatowskiFH2)
-        .def("potential", py::overload_cast<int, int, double, double>(&PatowskiFH3::potential))
-        .def("potential_r", py::overload_cast<int, int, double, double>(&PatowskiFH3::potential_derivative_r))
-        .def("potential_rr", py::overload_cast<int, int, double, double>(&PatowskiFH3::potential_dblderivative_rr))
-        .def("get_param", &PatowskiFH3::get_param)
-        ;
+    // py::class_<PatowskiFH3, Quantum>(handle, "cpp_PatowskiFH3")
+    //     .def(py::init<std::string>())
+    //     KineticGas_bindings(PatowskiFH3)
+    //     // Spherical_potential_bindings(PatowskiFH2)
+    //     .def("potential", py::overload_cast<int, int, double, double>(&PatowskiFH3::potential))
+    //     .def("potential_r", py::overload_cast<int, int, double, double>(&PatowskiFH3::potential_derivative_r))
+    //     .def("potential_rr", py::overload_cast<int, int, double, double>(&PatowskiFH3::potential_dblderivative_rr))
+    //     .def("get_param", &PatowskiFH3::get_param)
+    //     ;
 
     py::class_<PseudoHardSphere>(handle, "cpp_PseudoHardSphere")
         .def(py::init<
