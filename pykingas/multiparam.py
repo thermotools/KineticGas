@@ -1,6 +1,6 @@
 from pykingas.py_KineticGas import py_KineticGas
 from pykingas.Quantum import Quantum
-from .libpykingas import cpp_ModTangToennis, cpp_TangToennisParam, cpp_HFD_B2, cpp_Patowski, cpp_PatowskiFH1
+from .libpykingas import cpp_ModTangToennis, cpp_TangToennisParam, cpp_HFD_B2, cpp_Patowski, cpp_PatowskiFH1, cpp_PatowskiFH2, cpp_PatowskiFH3
 from scipy.constants import Boltzmann, Avogadro
 import numpy as np
 from scipy.integrate import quad
@@ -134,3 +134,27 @@ class PatowskiFH1(MultiParam, Quantum):
     
     def potential(self, r, T):
         return self.cpp_kingas.potential(0, 0, r, T)
+
+class PatowskiFH(MultiParam, Quantum):
+
+    def __init__(self, comps, FH_order=1):
+        super().__init__(comps)
+        if FH_order == 1:
+            self.cpp_kingas = cpp_PatowskiFH1(comps)
+        elif FH_order == 2:
+            self.cpp_kingas = cpp_PatowskiFH2(comps)
+        elif FH_order == 3:
+            self.cpp_kingas = cpp_PatowskiFH3(comps)
+        else:
+            raise IndexError(f'FH order {FH_order} not available in Python!')
+        
+        self.cpp_kingas.set_quantum_active(False)
+    
+    def potential(self, r, T):
+        return self.cpp_kingas.potential(0, 0, r, T)
+    
+    def potential_r(self, r, T):
+        return self.cpp_kingas.potential_r(0, 0, r, T)
+    
+    def potential_rr(self, r, T):
+        return self.cpp_kingas.potential_rr(0, 0, r, T)

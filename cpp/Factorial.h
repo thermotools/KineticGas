@@ -139,7 +139,7 @@ public:
     double get_Gk(double x, int k, const vector1d& dg) const;
 
     friend std::ostream& operator<<(std::ostream& strm, const PolyExp& p);
-// private:
+private:
     const Polynomial pref;
     const Polynomial expo;
 };

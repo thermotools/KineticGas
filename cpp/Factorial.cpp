@@ -391,16 +391,11 @@ double Polynomial::derivative(double x, int n) const {
     int k = k_min;
     for (; k <= max_k_negative; k += k_step){
         p += prefactor * partialfactorial(- k - 1, n - k - 1) * coeff[C_idx++] * pow(x, k - n);
-        // std::cout << "Term (" << x << ") " << n << ", " << k << " : " << p 
-        // << " (" << prefactor << ", " << partialfactorial(- k - 1, n - k - 1) << ", " << coeff[k - k_min] << ", " << pow(x, k - n) << ") " << k - n << std::endl;
     }
     for (; k <= k_max; k += k_step){
-        if (k < n){
-            C_idx++; continue;
-        }
+        if (k < n){C_idx++; continue;}
         p += partialfactorial(k - n, k) * coeff[C_idx++] * pow(x, k - n);
-        // std::cout << "Term (" << x << ") " << n << ", " << k << " : " << partialfactorial(k - n, k) << ", " << coeff[C_idx - 1] << ", " << pow(x, k - n) << ", " << k - n << std::endl;
-    }
+     }
     return p;
 }
 

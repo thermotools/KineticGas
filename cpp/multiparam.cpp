@@ -210,34 +210,23 @@ double Patowski::potential(int i, int j, double r){
         return param.Ac * exp(param.Bc * (r - param.Rc)) * BOLTZMANN;
     }
     double p = (param.Csp1 + r * param.Csp2 + pow(r, 2) * param.Csp3 + pow(r, 3) * param.Csp4) * exp(param.Cex1 + param.Cex2 * r);
-    // std::cout << "Potential : " << param.Csp1 << ", " << param.Csp2 << ", " << param.Csp3 << ", " << param.Csp4 << ", " << param.Cex1 << ", " << param.Cex2 << std::endl;
-    // return p * BOLTZMANN;
-    
     for (size_t n = 3; n <= 5; n++){
-        double tn = 0;
         double tmp = 0;
         for (int k = 0; k <= 2 * n; k++){
             tmp += pow(param.delta * r, k) / Fac(k).eval_d();
         }
         p += (param.Cn[n - 3] / pow(r, 2 * n)) * (1 - tmp * exp(- param.delta * r));
-        // std::cout << "Term (" << n - 1 << ")(" << r << ") : " << tmp << " * " << exp(-param.delta * r) << " = " << tmp * exp(- param.delta * r) << std::endl;
     }
     return p * BOLTZMANN;
 }
 
 double Patowski::potential_dn(int i, int j, double r, size_t n){
-    // if (n == 0) return potential(i, j, r);
+    if (n == 0) return potential(i, j, r);
     r *= 1e10; // Working in Å internally
     double val = 0;
-    size_t term_idx = 0;
     for (const PolyExp& term : potential_terms){
         double t = term.derivative(r, n);
-        // std::cout << "Term[" << term_idx << "](" << r << ") : " << term << std::endl;
-        // std::cout << "Term[" << term_idx++ << "](" << r << ") : " << term.pref(r) << " * " << exp(term.expo(r)) << " = " << t << std::endl;
-        // std::cout << term << std::endl;
         val += t;
-        // term_idx++;
-        // if (term_idx > 1) break;
     }
     return val * BOLTZMANN * pow(1e10, n);
 }

@@ -590,7 +590,6 @@ double Quantum::semiclassical_second_virial(int i, int j, double T){
 }
 
 void Quantum::set_quantum_active(bool active){
-    std::cout << "Setting quantum active to " << active << " (was " << quantum_is_active << ")" << std::endl;
     if (active != quantum_is_active){
         clear_all_caches();
     }
