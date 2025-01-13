@@ -104,6 +104,17 @@ HFD_B2::HFD_B2(std::string comps) : Quantum(comps) {
             eps[i][j] = param.eps_div_k * BOLTZMANN;
         }
     }
+
+    potential_terms.emplace_back(Polynomial::constant(param.A),
+                                 Polynomial(1, 2, {-param.alpha, param.beta_star}));
+
+    potential_terms.emplace_back(Polynomial(-10, -6, {param.c10, param.c8, param.c6}, 2),
+                                 Polynomial(-2, 0, {- pow(param.D, 2), 2 * param.D, -1}));
+    
+    potential_terms.emplace_back(Polynomial(-10, -6, {param.c10, param.c8, param.c6}, 2),
+                                 Polynomial::zero());
+    
+    
 }
 
 dual2 HFD_B2::potential(int i, int j, dual2 r){
@@ -136,6 +147,26 @@ double HFD_B2::potential(int i, int j, double r){
     }
     V -= F * C;
     return V * param.eps_div_k * BOLTZMANN;
+}
+
+double HFD_B2::potential_dn(int i, int j, double r, size_t n){
+    r *= 1e9; // Working in nm internally
+    double x = r / param.rm;
+    double scaling = eps[i][j] * pow(1e9 / param.rm, n);
+
+    double dvdx = potential_terms[0].derivative(x, n);
+    if (x < 1e-10) return  dvdx * scaling;
+
+    if (x < param.D) {
+        double FC = potential_terms[1].derivative(x, n);
+        dvdx -= FC;
+    }
+    else {
+        double FC = potential_terms[2].derivative(x, n);
+        dvdx -= FC;
+    }
+
+    return dvdx * scaling;
 }
 
 Patowski::Patowski(std::string comps)

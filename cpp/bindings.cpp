@@ -69,6 +69,9 @@ using vector2d = std::vector<vector1d>;
         .def("potential_rr", &Model::potential_dblderivative_rr) \
         .def("get_reducing_units", &Model::get_reducing_units) \
         .def("get_r_min", &Model::get_r_min) \
+        .def("get_sigma_eff", &Model::get_sigma_eff) \
+        .def("get_eps_eff", &Model::get_eps_eff) \
+        .def("get_alpha_eff", &Model::get_alpha_eff)
 
 PYBIND11_MODULE(libpykingas, handle){
     handle.doc() = "Is this documentation? This is documentation.";
@@ -309,6 +312,16 @@ PYBIND11_MODULE(libpykingas, handle){
         .def(py::init<std::string>())
         KineticGas_bindings(HFD_B2)
         Spherical_potential_bindings(HFD_B2)
+        .def("potential_dn", &HFD_B2::potential_dn)
+        ;
+    
+    py::class_<FH_HFD_B2, Quantum>(handle, "cpp_FH_HFD_B2")
+        .def(py::init<std::string, size_t>())
+        KineticGas_bindings(FH_HFD_B2)
+        .def("potential", py::overload_cast<int, int, double, double>(&FH_HFD_B2::potential))
+        .def("potential_r", py::overload_cast<int, int, double, double>(&FH_HFD_B2::potential_derivative_r))
+        .def("potential_rr", py::overload_cast<int, int, double, double>(&FH_HFD_B2::potential_dblderivative_rr))
+        .def("set_FH_order", &FH_HFD_B2::set_FH_order)
         ;
 
     py::class_<PatowskiParam>(handle, "cpp_PatowskiParam")
@@ -339,14 +352,13 @@ PYBIND11_MODULE(libpykingas, handle){
         // .def("set_using_tabulated", &Patowski::set_using_tabulated)
         ;
 
-    py::class_<PatowskiFH1, Quantum>(handle, "cpp_PatowskiFH1")
-        .def(py::init<std::string>())
-        KineticGas_bindings(PatowskiFH1)
-        Spherical_potential_bindings(PatowskiFH1)
-        .def("potential", py::overload_cast<int, int, double, double>(&PatowskiFH1::potential))
-        .def("get_param", &PatowskiFH1::get_param)
-        ;
-    
+    // py::class_<PatowskiFH1, Quantum>(handle, "cpp_PatowskiFH1")
+    //     .def(py::init<std::string>())
+    //     KineticGas_bindings(PatowskiFH1)
+    //     Spherical_potential_bindings(PatowskiFH1)
+    //     .def("potential", py::overload_cast<int, int, double, double>(&PatowskiFH1::potential))
+    //     .def("get_param", &PatowskiFH1::get_param)
+    //     ;
     py::class_<PatowskiFH, Quantum>(handle, "cpp_PatowskiFH")
         .def(py::init<std::string, size_t>())
         KineticGas_bindings(PatowskiFH)

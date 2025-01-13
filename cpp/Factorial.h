@@ -118,11 +118,11 @@ public:
 
     double operator()(double x) const override;
     double derivative(double x, int n) const override;
-    inline bool is_linear() const{return _is_linear;}
-    inline bool is_constant() const{return _is_constant;}
+    inline bool is_linear() const {return _is_linear;}
+    inline bool is_constant() const {return _is_constant;}
 
     friend std::ostream& operator<<(std::ostream& strm, const Polynomial& p);
-private:
+// private:
     const int k_min, k_max, k_step;
     const bool _is_linear, _is_constant;
     const std::vector<double> coeff;
@@ -139,7 +139,7 @@ public:
     double get_Gk(double x, int k, const vector1d& dg) const;
 
     friend std::ostream& operator<<(std::ostream& strm, const PolyExp& p);
-private:
+// private:
     const Polynomial pref;
     const Polynomial expo;
 };

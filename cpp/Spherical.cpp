@@ -156,8 +156,33 @@ double Spherical::second_virial(int i, int j, double T){
     return - 0.5 * 4 * PI * pow(sigma[i][j], 3) * AVOGADRO * I;
 }
 
-double Spherical::get_r_min(int i, int j){
-    return newton([&](double r){return potential_derivative_r(i, j, r);}, [&](double r){return potential_dblderivative_rr(i, j, r);}, sigma[i][j]);
+double Spherical::get_r_min(int i, int j, double T){
+    set_internals(1, T, {1.});
+    return newton([&](double r){return potential_derivative_r(i, j, r) * sigma[i][j] / eps[i][j];}, 
+                  [&](double r){return potential_dblderivative_rr(i, j, r) * sigma[i][j] / eps[i][j];}, 
+                  sigma[i][j]);
+}
+
+double Spherical::get_sigma_eff(int i, int j, double T){
+    set_internals(1, T, {1.});
+    return newton([&](double r){return potential(i, j, r) / eps[i][j];},
+                  [&](double r){return potential_derivative_r(i, j, r) / eps[i][j];},
+                  sigma[i][j]);
+}
+
+double Spherical::get_eps_eff(int i, int j, double T){
+    set_internals(1, T, {1.});
+    return - potential(i, j, get_r_min(i, j, T));
+}
+
+double Spherical::get_alpha_eff(int i, int j, double T){
+    set_internals(1, T, {1.});
+    double r0 = get_sigma_eff(i, j, T) / sigma[i][j]; 
+    const auto I = [&](double r){return pow(r, 2) * potential(i, j, r * sigma[i][j]);};
+    double E = simpson(I, r0, 2 * r0, 50);
+    std::cout << "Alpha (" << r0 << ", " << potential(i, j, r0 * sigma[i][j]) / eps[i][j] << ") : " << E << std::endl;
+    E += simpson_inf(I, 2 * r0, 3 * r0);
+    return - E / eps[i][j];
 }
 
 /*

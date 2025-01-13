@@ -1,6 +1,6 @@
 from pykingas.py_KineticGas import py_KineticGas
-from pykingas.Quantum import Quantum
-from .libpykingas import cpp_ModTangToennis, cpp_TangToennisParam, cpp_HFD_B2, cpp_Patowski, cpp_PatowskiFH
+from pykingas.Quantum import Quantum, FH_Corrected
+from .libpykingas import cpp_ModTangToennis, cpp_TangToennisParam, cpp_HFD_B2, cpp_FH_HFD_B2, cpp_Patowski, cpp_PatowskiFH
 from scipy.constants import Boltzmann, Avogadro
 import numpy as np
 from scipy.integrate import quad
@@ -113,9 +113,18 @@ class ModTangToennies(MultiParam):
 
 class HFD_B2(MultiParam, Quantum):
 
-    def __init__(self, comps):
+    def __init__(self, comps, quantum_active=True):
         super().__init__(comps)
         self.cpp_kingas = cpp_HFD_B2(comps)
+        self.cpp_kingas.set_quantum_active(quantum_active)
+
+class FH_HFD_B2(MultiParam, FH_Corrected):
+
+    def __init__(self, comps, FH_order=1):
+        super().__init__(comps)
+        self.cpp_kingas = cpp_FH_HFD_B2(comps, FH_order)
+        self.cpp_kingas.set_quantum_active(False)
+
 
 class Patowski(MultiParam, Quantum):
 
@@ -125,17 +134,17 @@ class Patowski(MultiParam, Quantum):
         self.param = self.cpp_kingas.get_param()
         self.cpp_kingas.set_quantum_active(quantum_active)
 
-class PatowskiFH1(MultiParam, Quantum):
+# class PatowskiFH1(MultiParam, Quantum):
+# 
+#     def __init__(self, comps):
+#         super().__init__(comps)
+#         self.cpp_kingas = cpp_PatowskiFH1(comps)
+#         self.param = self.cpp_kingas.get_param()
+#     
+#     def potential(self, r, T):
+#         return self.cpp_kingas.potential(0, 0, r, T)
 
-    def __init__(self, comps):
-        super().__init__(comps)
-        self.cpp_kingas = cpp_PatowskiFH1(comps)
-        self.param = self.cpp_kingas.get_param()
-    
-    def potential(self, r, T):
-        return self.cpp_kingas.potential(0, 0, r, T)
-
-class PatowskiFH(MultiParam, Quantum):
+class PatowskiFH(MultiParam, FH_Corrected):
 
     def __init__(self, comps, FH_order=1):
         super().__init__(comps)
@@ -151,14 +160,14 @@ class PatowskiFH(MultiParam, Quantum):
         
         self.cpp_kingas.set_quantum_active(False)
     
-    def potential(self, r, T):
-        return self.cpp_kingas.potential(0, 0, r, T)
-    
-    def potential_r(self, r, T):
-        return self.cpp_kingas.potential_r(0, 0, r, T)
-    
-    def potential_rr(self, r, T):
-        return self.cpp_kingas.potential_rr(0, 0, r, T)
-
-    def set_FH_order(self, FH_order):
-        self.cpp_kingas.set_FH_order(FH_order)
+    # def potential(self, r, T):
+    #     return self.cpp_kingas.potential(0, 0, r, T)
+    # 
+    # def potential_r(self, r, T):
+    #     return self.cpp_kingas.potential_r(0, 0, r, T)
+    # 
+    # def potential_rr(self, r, T):
+    #     return self.cpp_kingas.potential_rr(0, 0, r, T)
+    #  
+    # def set_FH_order(self, FH_order):
+    #     self.cpp_kingas.set_FH_order(FH_order)

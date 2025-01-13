@@ -59,4 +59,31 @@ class Quantum(py_KineticGas):
 
     def get_quantum_active(self):
         return self.cpp_kingas.get_quantum_active()
+
+class FH_Corrected:
+
+    def __init__(self): pass
     
+    def set_FH_order(self, FH_order):
+        self.cpp_kingas.set_FH_order(FH_order)
+    
+    def potential(self, r, T):
+        return self.cpp_kingas.potential(0, 0, r, T)
+    
+    def potential_r(self, r, T):
+        return self.cpp_kingas.potential_r(0, 0, r, T)
+    
+    def potential_rr(self, r, T):
+        return self.cpp_kingas.potential_rr(0, 0, r, T)
+
+    def get_r_min_eff(self, T):
+        return self.cpp_kingas.get_r_min(0, 0, T)
+    
+    def get_sigma_eff(self, T):
+        return self.cpp_kingas.get_sigma_eff(0, 0, T)
+    
+    def get_eps_eff(self, T):
+        return self.cpp_kingas.get_eps_eff(0, 0, T)
+    
+    def get_alpha_eff(self, T):
+        return self.cpp_kingas.get_alpha_eff(0, 0, T)

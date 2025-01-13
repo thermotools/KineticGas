@@ -53,11 +53,21 @@ public:
 
     dual2 potential(int i, int j, dual2 r) override;
     double potential(int i, int j, double r) override;
+    double potential_dn(int i, int j, double r, size_t n) override;
 
     HFD_B2_Param get_param(){return param;}
-    double get_r_min(int i, int j) override {return param.rm * 1e-9;}
 private:
     HFD_B2_Param param;
+    std::vector<PolyExp> potential_terms;
+};
+
+class FH_HFD_B2 : public FH_Corrected<HFD_B2> {
+public:
+    FH_HFD_B2(std::string comps, size_t FH_order)
+        : FH_Corrected<HFD_B2>(FH_order, comps)
+    {
+        set_quantum_active(false);
+    }
 };
 
 struct PatowskiParam{
@@ -76,14 +86,10 @@ public:
     double potential_dn(int i, int j, double r, size_t n) override;
 
     inline PatowskiParam get_param(){return param;}
-    double get_r_min(int i, int j) override {return param.r_min * 1e-10;}
-
 protected:
     PatowskiParam param;
     std::vector<PolyExp> potential_terms;
 };
-
-
 
 class PatowskiFH1 : public Patowski {
 public:
@@ -113,7 +119,9 @@ class PatowskiFH : public FH_Corrected<Patowski> {
 public:
     PatowskiFH(std::string comps, size_t FH_order)
         : FH_Corrected<Patowski>(FH_order, comps)
-    {}
+    {
+        set_quantum_active(false);
+    }
 };
 
 using PatowskiTab = Tabulated<Patowski, 1000, 3>;

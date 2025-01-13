@@ -180,7 +180,6 @@ public:
         D_factors(T::Ncomps, vector1d(T::Ncomps))
     {
         set_D_factors();
-        std::cout << "Init FH_corrected : " << T::Ncomps << ", " << D_factors[0][0] << std::endl;
     }
 
     double potential(int i, int j, double r, double temp){
