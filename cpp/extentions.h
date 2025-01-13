@@ -217,7 +217,9 @@ public:
     double potential_derivative_r(int i, int j, double r) override {
         double ur = 0;
         for (size_t n = 0; n <= FH_order; n++){
-            ur += pow(D_factors[i][j] / (BOLTZMANN * current_T), n) * T::potential_dn(i, j, r, 2 * n + 1);
+            double nfac = 1;
+            for (size_t ni = 2; ni <= n; ni++) nfac *= n;
+            ur += pow(D_factors[i][j] / (BOLTZMANN * current_T), n) * T::potential_dn(i, j, r, 2 * n + 1) / nfac;
         }
         return ur;
     }
@@ -226,7 +228,9 @@ public:
     double potential_dblderivative_rr(int i, int j, double r) override {
         double urr = 0;
         for (size_t n = 0; n <= FH_order; n++){
-            urr += pow(D_factors[i][j] / (BOLTZMANN * current_T), n) * T::potential_dn(i, j, r, 2 * n + 2);
+            double nfac = 1;
+            for (size_t ni = 2; ni <= n; ni++) nfac *= n;
+            urr += pow(D_factors[i][j] / (BOLTZMANN * current_T), n) * T::potential_dn(i, j, r, 2 * n + 2) / nfac;
         }
         return urr;
     }
@@ -235,7 +239,9 @@ public:
     double potential_dn(int i, int j, double r, size_t n) override {
         double un = 0;
         for (size_t k = 0; k <= FH_order; k++){
-            un += pow(D_factors[i][j] / (BOLTZMANN * current_T), n) * T::potential_dn(i, j, r, 2 * k + n);
+            double nfac = 1;
+            for (size_t ni = 2; ni <= n; ni++) nfac *= n;
+            un += pow(D_factors[i][j] / (BOLTZMANN * current_T), n) * T::potential_dn(i, j, r, 2 * k + n) / nfac;
         }
         return un;
     }
