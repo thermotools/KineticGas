@@ -314,6 +314,8 @@ double binom(int n, int k) {
 }
 
 std::vector<std::vector<int>> get_partitions(int N, int m){
+    // Find all unique integer partitions of the number N, with largest value smaller than or equal to m
+    // See: Memo on derivatives
     if (N == 0) return std::vector<std::vector<int>>(1, std::vector<int>());
     if (N == 1) return std::vector<std::vector<int>>(1, std::vector<int>(1, 1));
     if (m < 0) m = N;
@@ -332,6 +334,9 @@ std::vector<std::vector<int>> get_partitions(int N, int m){
 }
 
 long long partition_multiplicity(const std::vector<int>& partition){
+    // The "Multiplicity" of a partition is the number of ways a set of N elements can be subdivided into subsets of k_1, k_2, ... elements
+    // For N = k_1 + k_2 + ...
+    // See: Memo on derivatives
     int n = 0;
     for (const int p : partition){
         n += p;
