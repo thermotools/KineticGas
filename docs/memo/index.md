@@ -13,3 +13,4 @@ version controlled information on available options and usage.
 * [Definitions of diffusion and thermal diffusion coefficients](diffusion/diffusion_definitions.pdf)
 * [Binary limits of ternary systems](binary_limit/binary_limit.pdf)
 * [Sonine polynomial expansion coefficients](multicomponent/multicomp_docs.pdf)
+* [Arbitrary order derivatives of t-functions](derivatives/derivatives.pdf)
