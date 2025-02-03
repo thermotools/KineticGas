@@ -118,7 +118,7 @@ public:
     // ---------------------- End users should not need to care about anything below ------------------------------------- //
     // ------------------------------------------------------------------------------------------------------------------- //
 
-protected:
+// protected:
     vector3d C;
     vector3d lambda;
     vector3d beta_exp;

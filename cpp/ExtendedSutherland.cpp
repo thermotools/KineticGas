@@ -64,6 +64,9 @@ void ExtSutherland::init_effective_params(){
         for (size_t j = 0; j < Ncomps; j++){
             sigma_eff[i][j] = sigma_eff[j][i] = r_min[i][j] = r_min[j][i] = sigma[i][j];
             eps_eff[i][j] = eps_eff[j][i] = eps[i][j];
+            for (size_t k = 0; k < nterms; k++){
+                C_eff[k][i][j] = C[k][i][j];
+            }
         }
     }
 }
@@ -182,7 +185,14 @@ void ExtSutherland::set_C_eff(dual2 rho, dual2 T){
             for (size_t j = i; j < Ncomps; j++){
                 dual2 rho_r = rho * pow(sigma[i][j], 3);
                 dual2 beta = eps[i][j] / (BOLTZMANN * T);
-                C_eff[k][j][i] = C_eff[k][i][j] = C[k][i][j] * pow(rho_r, rho_exp[k][i][j]) * pow(beta, beta_exp[k][i][j]);
+                dual2 C_eff_i = C[k][i][j];
+                if (rho_exp[k][i][j] != 0){
+                    C_eff_i *= pow(rho_r, rho_exp[k][i][j]);
+                }
+                if (beta_exp[k][i][j] != 0){
+                    C_eff_i *= pow(beta, beta_exp[k][i][j]);
+                }
+                C_eff[k][j][i] = C_eff[k][i][j] = C_eff_i;
             }
         }
     }
