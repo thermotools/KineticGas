@@ -54,24 +54,6 @@ class MultiParam(py_KineticGas):
         """        
         return self.cpp_kingas.potential_rr(0, 0, r)
 
-    def second_virial(self, T):
-        """Utility
-        Compute second virial coefficient
-        &&
-        Args:
-            T (float) : Temperature (K)
-        
-        Returns: 
-            float : Second virial coefficient
-        """
-        # integrand = lambda r_aa: (1 - np.exp(- self.potential(r_aa * 1e-10) / (Boltzmann * T))) * 4 * np.pi * r_aa ** 2
-        # r1, r2 = self.Re * 1e10, 1.5 * self.Re * 1e10
-        # B0 = quad(integrand, 0, r1)[0]
-        # B1 = quad(integrand, r1, r2)[0]
-        # B2 = quad(integrand, r2, np.inf)[0]
-        # return 0.5 * (B0 + B1 + B2) * Avogadro * 1e-30
-        return self.cpp_kingas.second_virial(0, 0, T)
-
     def vdw_alpha(self):
         """Utility
         Get the dimensionless Van der Waals alpha-parameter
@@ -98,7 +80,7 @@ class ModTangToennies(MultiParam):
             comps (str) : Single component identifier
             parameter_ref (str, optional) : Identifier for parameter set to use
         """
-        super().__init__(comps, is_idealgas=True)
+        super().__init__(comps)
 
         potential = self.fluids[0]['ModTangToennis'][parameter_ref]
         param = cpp_TangToennisParam(potential['A_div_k'], potential['b'],
@@ -109,7 +91,7 @@ class ModTangToennies(MultiParam):
         self.eps_div_k = potential['eps_div_k']
         self.sigma = potential['sigma']
         self.Re = potential['Re'] * 1e-9
-        self.cpp_kingas = cpp_ModTangToennis(param, self.mole_weights, np.ones((2, 2)) * self.sigma, self.is_idealgas)
+        self.cpp_kingas = cpp_ModTangToennis(comps, True, 'default') # param, self.mole_weights, self.is_idealgas)
 
 class HFD_B2(MultiParam, Quantum):
 

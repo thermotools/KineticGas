@@ -144,11 +144,13 @@ double Spherical::reduced_cross_section(int i, int j, int l, double E){
 
 double Spherical::second_virial(int i, int j, double T){
     set_internals(0, T, {1.});
+    // Integration variable is r / sigma[i][j];
     const auto integrand = [&](double r){
         const double u = potential(i, j, r * sigma[i][j]) / BOLTZMANN;
         const double val = pow(r, 2) * (exp(- u / T) - 1);
         return val;
-    }; // Integration variable is r / sigma[i][j];
+    };
+    
     const double r0 = (T * BOLTZMANN / eps[i][j] > 1.) ? 0.3 : 0.9 - 0.6 * T * BOLTZMANN / eps[i][j];
     const double r1 = 2;
     double I = - (pow(r0, 3) / 3) + simpson(integrand, r0, r1, 100);

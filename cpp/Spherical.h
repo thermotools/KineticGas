@@ -52,7 +52,7 @@ class Spherical : public KineticGas {
     vector2d model_mtl(double rho, double T, const vector1d& x) override; // Momentum transfer length
     vector2d model_etl(double rho, double T, const vector1d& x) override; // Energy transfer length
 
-    virtual double second_virial(int i, int j, double T);
+    double second_virial(int i, int j, double T) override;
 
     // ------------------------------------------------------------------------------------------- //
     // -------------------- GENERIC METHODS DESCRIBING A COLLISION TRAJECTORY -------------------- //

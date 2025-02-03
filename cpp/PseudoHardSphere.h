@@ -47,6 +47,18 @@ class PseudoHardSphere : public Spherical {
         return (20.0 * 21.0 * pow(sigma[i][j], 20) / pow((r), 22) - 20.0 * 21.0 / pow(sigma[i][j], 2) ) / BOLTZMANN; // Force continiuous second derivative
     }
 
+    double second_virial(int i, int j, double T) override {
+        const auto integrand = [&](double r){
+            const double u = potential(i, j, r * sigma[i][j]) / BOLTZMANN;
+            const double val = pow(r, 2) * (exp(- u / T) - 1);
+            return val;
+        };
+        
+        const double r0 = 0.5;
+        double I = - (pow(r0, 3) / 3) + simpson(integrand, r0, 1, 100);
+        return - 2 * PI * pow(sigma[i][j], 3) * AVOGADRO * I;
+    }
+
     std::vector<std::vector<double>> model_rdf(double rho, double T, const std::vector<double>& xi) override {
         std::vector<double> Zi(3);
         for (int i = 1; i < 4; i++){

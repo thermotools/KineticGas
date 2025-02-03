@@ -1,5 +1,5 @@
 from pykingas.py_KineticGas import py_KineticGas
-from .libpykingas import cpp_Sutherland, cpp_ExtSutherland
+from .libpykingas import cpp_ExtSutherland
 import numpy as np
 from scipy.constants import Boltzmann
 from warnings import warn
@@ -30,14 +30,20 @@ class Sutherland(py_KineticGas):
         self.sigma = sigma
         self.eps_div_k = eps_div_k
 
-        self.cpp_kingas = cpp_Sutherland(self.mole_weights, self.sigma, self.eps_div_k * Boltzmann, self.C, self.lambdas,
-                                         is_idealgas, self._is_singlecomp)
+        beta_exp = np.zeros_like(self.lambdas)
+        rho_exp = np.zeros_like(self.lambdas)
+        self.cpp_kingas = cpp_ExtSutherland(self.mole_weights, self.sigma, self.eps_div_k * Boltzmann, self.C, self.lambdas,
+                                            beta_exp, rho_exp, is_idealgas, self._is_singlecomp)
+        
         if (use_eos is None) and (self.eos is None):
             self.eos = saftvrss(','.join(self.comps), init_from_db='SAFT-VR-MIE')
             for i in range(self.ncomps):
                 for j in range(self.ncomps):
                     self.eos.set_pair_potential_params(i + 1, j + 1, self.C[:, i, j], self.lambdas[:, i, j], self.sigma[i][j],
                                                        self.eps_div_k[i][j])
+        elif self.eos is None:
+            self.eos = use_eos
+
         self.cpp_kingas.set_eos(self.eos)
 
     @staticmethod
@@ -173,18 +179,6 @@ class Sutherland(py_KineticGas):
                         number of terms for any pure component.
         """
         return Sutherland.mix_C_array(lambda_arr)
-
-    def get_reducing_units(self, comp_idx=0):
-        """Utility
-        Get reducing units for this model, as a `Units` struct. See `units.py`.
-        &&
-        Args:
-            comp_idx (int, optional) : Which component to use for reducing units
-
-        Returns:
-            Units : Struct holding the reducing units
-        """
-        return Units(self.mole_weights[comp_idx], self.sigma[comp_idx][comp_idx], self.eps_div_k[comp_idx][comp_idx])
 
     @staticmethod
     def extract_components(array, i=None, j=None):
@@ -504,7 +498,7 @@ class ExtSutherland(py_KineticGas):
 
         self.cpp_kingas = cpp_ExtSutherland(self.mole_weights, self.sigma, self.eps_div_k * Boltzmann, self.C, self.lambdas,
                                             beta_exp, rho_exp, is_idealgas, self._is_singlecomp)
-        print(f"Use eos : {use_eos}, self.eos : {self.eos}")
+
         if (use_eos is None) and (self.eos is None):
             self.eos = saftvrss(','.join(self.comps), init_from_db='SAFT-VR-MIE')
             for i in range(self.ncomps):
@@ -517,7 +511,7 @@ class ExtSutherland(py_KineticGas):
         self.cpp_kingas.set_eos(self.eos)
 
     @staticmethod
-    def init_single(mole_weights, sigma, eps_div_k, C, lambdas, beta_exp, rho_exp, N=2, is_idealgas=False):
+    def init_single(mole_weights, sigma, eps_div_k, C, lambdas, beta_exp=None, rho_exp=None, N=2, is_idealgas=False):
         """Constructor
         Initialize a pure-fluid Sutherland-Sum
         &&
@@ -537,7 +531,10 @@ class ExtSutherland(py_KineticGas):
         """
         if len(lambdas) != len(C):
             raise ValueError(f"Number of coefficients ({len(C)}) does not match number of exponents ({len(lambdas)}!")
-
+        
+        if beta_exp is None: beta_exp = np.zeros_like(lambdas)
+        if rho_exp is None: rho_exp = np.zeros_like(lambdas)
+        
         eos = saftvrss('LJF', init_from_db='SAFT-VR-MIE')
         eos.set_pair_potential_params(1, 1, C, lambdas, sigma, eps_div_k)
 
@@ -784,7 +781,6 @@ class ExtSutherland(py_KineticGas):
             float : Value of pair-potential second derivative (N/m)
         """
         return self.cpp_kingas.potential_dblderivative_rr(i, j, r)
-
 
 class AT_Sutherland(ExtSutherland):
 

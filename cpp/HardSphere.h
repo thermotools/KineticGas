@@ -43,6 +43,10 @@ class HardSphere : public KineticGas {
         return 0.5 * f;
     }
 
+    double second_virial(int i, int j, double T) override {
+        return 2. * PI * AVOGADRO * pow(sigma[i][j], 3) / 3.;
+    }
+
     double chi(int i, int j, double T, double g, double b){
         if (b >= sigma[i][j]) return 0;
         return acos(1 - 2 * (1 - pow(b / sigma[i][j], 2)));

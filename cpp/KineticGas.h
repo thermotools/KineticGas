@@ -110,6 +110,7 @@ public:
     Eigen::MatrixXd interdiffusion_dependent_CoM(double T, double Vm, const std::vector<double>& x, int N=2);
     Eigen::VectorXd soret_coefficient(double T, double Vm, const std::vector<double>& x, int N, int dependent_idx=-1);
     std::map<std::string, double> thermal_conductivity_contributions(double T, double Vm, const std::vector<double>& x, int N=2, std::string contribs="tdi");
+    virtual double second_virial(int i, int j, double T) = 0;
 
     // ------------------------------------------------------------------------------------------------------------------- //
     // ----------- TP-interface methods: These just compute molar volume and feed the call to the methods above ---------- //

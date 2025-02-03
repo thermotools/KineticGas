@@ -900,6 +900,18 @@ class py_KineticGas:
 
         raise KeyError(f'Invalid formulation : {formulation}')
 
+    def second_virial(self, ci, cj, T):
+        """TV-Property
+        Compute second virial coefficient
+        &&
+        Args:
+            T (float) : Temperature (K)
+        
+        Returns: 
+            float : Second virial coefficient
+        """
+        return self.cpp_kingas.second_virial(ci, cj, T)
+
     #####################################################
     #                    Tp-interface                   #
     # Compute properties as a function of (T, p, x) by  #
