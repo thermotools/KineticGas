@@ -1,3 +1,40 @@
+/* 
+A bunch of quantum mechanics pls help
+    
+References:
+Second virial : 
+    Kilpatrick et al., Second virial coefficients of He3 and He4, Phys. Rev. 94 (5), 1954
+        DOI: https://doi.org/10.1103/PhysRev.94.1103 
+
+Quantal cross sections, Phase shifts, JKWB approximation : 
+    Meeks et al., On the quantum cross sections in dilute gases, J. Chem. Phys. 100 (5), 1994
+        DOI: https://doi.org/10.1063/1.466370
+
+    Lang et al., Thermophysical properties of argon gas from improved two-body interaction potential, Phys. Rev. A 109 (2024)
+        DOI: 10.1103/PhysRevA.109.052803
+
+    Blatt, Practical points concerning the solution of the Schrödinger equation, J. Comp. Phys. 1 (3), 1967
+        DOI: https://doi.org/10.1016/0021-9991(67)90046-0
+
+    Munn et al., Some Aspects of the Quantal and Semiclassical Calculation of Phase shifts and 
+        cross sections for molecular scattering and transport, J. Chem. Phys. 41 (12), 1964
+        DOI: https://doi.org/10.1063/1.1725845
+
+    Mehl et al. Ab initio transport coefficients of gaseous hydrogen, Int. J. Thermophys. 31, 2010
+        DOI: https://doi.org/10.1007/s10765-009-0697-9
+
+    Hurly & Mehl, He4 Thermophysical properties: New ab initio calculations, J. Res. Natl. Inst. Stand. Technol. 112, 2007
+        DOI: 10.6028/jres.112.006
+
+See Also:
+    Aziz & Slaman, An Analysis of the ITS-90 Relations for the Non-Ideality of 3He and 4He: Recommended Relations 
+        Based on a New Interatomic Potential for Helium, Metrologia 27 (211), 1990
+        DOI: 10.1088/0026-1394/27/4/005
+        
+    Sidharth, Phase shifts in the collision of massive particles, J. Math. Phys. 30 (3), 1989
+        DOI: https://doi.org/10.1063/1.528381
+*/ 
+
 #include "Quantum.h"
 #include "Integration/Integration.h"
 #include <autodiff/forward/dual.hpp>
