@@ -39,7 +39,7 @@ public:
 
     double scattering_volume(int i, int j, double E);
     double quantum_second_virial(int i, int j, double T);
-    vector1d second_virial_contribs(int i, int j, double T);
+    vector1d second_virial_contribs(int i, int j, double T, int istats);
 
     void set_quantum_active(bool active);
     bool get_quantum_active(){return quantum_is_active;}
@@ -54,6 +54,7 @@ public:
     }
 
     int get_interaction_statistics(int i, int j);
+    std::array<double, 2> get_symmetry_weights(int i, int j);
 
 protected:
     vector2d model_rdf(double rho, double T, const vector1d& mole_fracs) override {throw std::runtime_error("Method model_rdf not implemented for Quantum!");}
@@ -67,6 +68,8 @@ private:
     int JKWB_l_limit = 1000;
     
     std::vector<unsigned int> half_spin; // Spin of each particle multiplied by two 
+    std::vector<double> spin;
+    std::vector<unsigned int> rot_ground_state; // Rotational ground state
     std::vector<std::vector<int>> interaction_statistics;
     std::map<std::pair<int, double>, double> phase_shift_map;
     

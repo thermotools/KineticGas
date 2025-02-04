@@ -30,7 +30,7 @@ See Also:
     Aziz & Slaman, An Analysis of the ITS-90 Relations for the Non-Ideality of 3He and 4He: Recommended Relations 
         Based on a New Interatomic Potential for Helium, Metrologia 27 (211), 1990
         DOI: 10.1088/0026-1394/27/4/005
-        
+
     Sidharth, Phase shifts in the collision of massive particles, J. Math. Phys. 30 (3), 1989
         DOI: https://doi.org/10.1063/1.528381
 */ 
@@ -82,11 +82,15 @@ double bessel_deriv(int n, double r, size_t kind){
 Quantum::Quantum(std::string comps) 
     : Spherical(comps, true), 
     E_bound(Ncomps, std::vector<vector2d>(Ncomps)),
-    half_spin(Ncomps, 0)
+    half_spin(Ncomps, 0),
+    spin(Ncomps, 0),
+    rot_ground_state(Ncomps, 0)
 {
     half_spin = std::vector<unsigned int>(Ncomps, 0);
     for (size_t i = 0; i < Ncomps; i++){
-        half_spin[i] = static_cast<size_t>(static_cast<double>(compdata[i]["spin"]) * 2 + 0.5);
+        half_spin[i] = static_cast<unsigned int>(compdata[i]["half_spin"]);
+        spin[i] = static_cast<double>(half_spin[i]) / 2.;
+        rot_ground_state[i] = static_cast<unsigned int>(compdata[i]["rot_ground_state"]);
         E_bound[i][i] = compdata[i]["E_bound_div_k"];
         if (E_bound[i][i].size() == 0){
             std::cout << "WARNING : No bound state energies supplied for component " << i << std::endl; 
@@ -106,10 +110,25 @@ void Quantum::clear_all_caches(){
 }
 
 int Quantum::get_interaction_statistics(int i, int j){
-    if ( (is_singlecomp) && (i != j) ) return get_interaction_statistics(i, i);
+    if ( (is_singlecomp) ) i = j;
     if ( i != j ) return StatisticType::Boltzmann;
     if ( (half_spin[i] % 2) == 0 ) return StatisticType::BoseEinstein;
     return StatisticType::FermiDirac;
+}
+
+std::array<double, 2> Quantum::get_symmetry_weights(int i, int j){
+    std::array<double, 2> wts;
+    if (i != j){
+        wts[0] = wts[1] = 0.5;
+    }
+    else {
+        wts[0] = ((spin[i] + 1) * (rot_ground_state[i] + 1) + spin[i] * rot_ground_state[i]) / ((2 * spin[i] + 1) * (2 * rot_ground_state[i] + 1));
+        wts[1] = ((spin[i] + 1) * rot_ground_state[i] + spin[i] * (rot_ground_state[i] + 1)) / ((2 * spin[i] + 1) * (2 * rot_ground_state[i] + 1));
+    }
+    if (get_interaction_statistics(i, j) == StatisticType::FermiDirac){
+        std::swap(wts[0], wts[1]);
+    }
+    return wts;
 }
 
 vector2d Quantum::get_de_boer(){
@@ -121,6 +140,7 @@ vector2d Quantum::get_de_boer(){
     }
     return de_boer;
 }
+
 double Quantum::get_de_boer(int i, int j){
     return PLANCK / (sigma[i][j] * sqrt(2. * red_mass[i][j] * eps[i][j]));
 }
@@ -131,7 +151,7 @@ void Quantum::set_de_boer_mass(int i, double de_boer){
 }
 
 double Quantum::de_broglie_wavelength(int i, double T){
-    return PLANCK / sqrt(2 * PI * m[i] * BOLTZMANN * T);
+    return PLANCK / sqrt(PI * m[i] * BOLTZMANN * T);
 }
 
 double Quantum::de_broglie_wavelength(int i, int j, double T){
@@ -334,7 +354,7 @@ double Quantum::absolute_phase_shift(int i, int j, int l, double E, double prev_
     double delta = phase_shift(i, j, l, E);
     if ((E > JKWB_E_limit) || (l > JKWB_l_limit)) return delta;
 
-    if (l == 0) delta += PI;
+    if (l <= rot_ground_state[i]) delta += PI;
     
     while (abs(delta - PI - prev_delta) < abs(delta - prev_delta)) delta -= PI;
     while (abs(delta + PI - prev_delta) < abs(delta - prev_delta)) delta += PI;
@@ -343,7 +363,7 @@ double Quantum::absolute_phase_shift(int i, int j, int l, double E, double prev_
 
 double Quantum::absolute_phase_shift(int i, int j, int l, double E){
     if ((E > JKWB_E_limit) || (l > JKWB_l_limit)) return JKWB_phase_shift(i, j, l, E);
-    double delta = (l == 0) ? PI : 0;
+    double delta = (l <= rot_ground_state[i]) ? PI : 0;
     double Ei = 1e-1;
     if (l <= 2) {
         Ei = 1e-2;
@@ -407,34 +427,34 @@ double Quantum::cross_section(int i, int j, const int n, const double E){
     if (E < 5e-4) return cross_section(i, j, n, 5e-4); // Cross sections approach constant value at small E, but numerical solver fails for very small E
     if (is_singlecomp) i = j;
     
-    double sym_prefactor, anti_prefactor;
-    if ((i != j) && (!is_singlecomp)) {
-        sym_prefactor = anti_prefactor = .5;
-    }
-    else {
-        double S = half_spin[i] / 2.;
-        switch (half_spin[i]){
-        case 0:
-            sym_prefactor = 1;
-            anti_prefactor = 0;
-            break;
-        case 1:
-            sym_prefactor = 3. / 4.;
-            anti_prefactor = 1. / 4.;
-            break;
-        case 2:
-            sym_prefactor = 5. / 9.; // (S + 1) / (2 * S + 1);
-            anti_prefactor = 4. / 9.; // S / (2 * S + 1);
-            break;
-        default:
-            throw std::runtime_error("Invalid half-spin!");
-        }
-        if (half_spin[i] % 2 != 0) { // Odd Half-Integer spin, Fermions: Swap prefactors
-            double tmp = sym_prefactor;
-            sym_prefactor = anti_prefactor;
-            anti_prefactor = tmp;
-        }
-    }
+    auto [sym_prefactor, anti_prefactor] = get_symmetry_weights(i, j);
+    // if ((i != j) && (!is_singlecomp)) {
+    //     sym_prefactor = anti_prefactor = .5;
+    // }
+    // else {
+    //     double S = half_spin[i] / 2.;
+    //     switch (half_spin[i]){
+    //     case 0:
+    //         sym_prefactor = 1;
+    //         anti_prefactor = 0;
+    //         break;
+    //     case 1:
+    //         sym_prefactor = 3. / 4.;
+    //         anti_prefactor = 1. / 4.;
+    //         break;
+    //     case 2:
+    //         sym_prefactor = 5. / 9.; // (S + 1) / (2 * S + 1);
+    //         anti_prefactor = 4. / 9.; // S / (2 * S + 1);
+    //         break;
+    //     default:
+    //         throw std::runtime_error("Invalid half-spin!");
+    //     }
+    //     if (half_spin[i] % 2 != 0) { // Odd Half-Integer spin, Fermions: Swap prefactors
+    //         double tmp = sym_prefactor;
+    //         sym_prefactor = anti_prefactor;
+    //         anti_prefactor = tmp;
+    //     }
+    // }
     double Q = 0;
     if (sym_prefactor > 0.){
         double Q_even = 0;
@@ -538,33 +558,47 @@ double Quantum::second_virial(int i, int j, double T){
 }
 
 double Quantum::quantum_second_virial(int i, int j, double T){
-    vector1d contribs = second_virial_contribs(i, j, T);
+    auto [sym_wt, anti_wt] = get_symmetry_weights(i, j);
     double B = 0;
-    for (const double c : contribs){
-        B += c;
+    double B_s = 0; double B_a = 0;
+    if (sym_wt != 0){
+        std::vector<double> contribs = second_virial_contribs(i, j, T, StatisticType::BoseEinstein);
+        for (const double c : contribs){
+            B += sym_wt * c; B_s += sym_wt * c;
+            std::cout << sym_wt * c << ", ";
+        }
     }
+    std::cout << std::endl;
+    if (anti_wt != 0){
+        std::vector<double> contribs = second_virial_contribs(i, j, T, StatisticType::FermiDirac);
+        for (const double c : contribs){
+            B += anti_wt * c; B_a += anti_wt * c;
+            std::cout << anti_wt * c << ", ";
+        }
+    }
+    std::cout << "\nSym / anti / tot : " << B_s << " / " << B_a << " / " << B << std::endl;
     return B;
 }
 
-vector1d Quantum::second_virial_contribs(int i, int j, double T){
-    std::cout << "Starting second virial at " << T << std::endl;
+vector1d Quantum::second_virial_contribs(int i, int j, double T, int istats){
+    // See: Kilpatrick et al. Second virial coefficients of He3 and He4, Physical Review vol. 94, nr. 5 (1954)
+    //      DOI: https://doi.org/10.1103/PhysRev.94.1103 
     double beta = 1 / (BOLTZMANN * T);
     double lamb = de_broglie_wavelength(i, j, T);
     double V_th = pow(lamb, 3);
-    double B_id = 1. / 16.;
-    double B_bound = 0; // (exp(- beta * E_bound) - 1.);
+    double B_id;
+    double B_bound = 0;
     double B_th = 0;
     const vector2d& Eb = E_bound[i][j];
-    int istats = get_interaction_statistics(i, j);
-    size_t l_start, l_step;
-    if (istats == StatisticType::Boltzmann){
-        l_start = 0; l_step = 1;
-    }
-    else if (istats == StatisticType::BoseEinstein){
-        l_start = 0; l_step = 2;
+    size_t l_start;
+    size_t l_step = 2;
+    if (istats == StatisticType::BoseEinstein){
+        l_start = 0;
+        B_id = 1. / 16.;
     }
     else if (istats == StatisticType::FermiDirac){
-        l_start = 1; l_step = 2;
+        l_start = 1;
+        B_id = - 1. / 16.;
     }
     else {
         throw std::runtime_error("Invalid statistic type!");
@@ -575,18 +609,6 @@ vector1d Quantum::second_virial_contribs(int i, int j, double T){
             B_bound += (2 * l + 1) * (exp(- beta * Eb[vib_i][l]) - 1.);
         }
     }
-
-    // const auto integrand = [&](double beta_E){
-    //     if (exp(- beta_E) < 1e-10) return 0.;
-    //     double S_vol = scattering_volume(i, j, beta_E / (beta * eps[i][j]));
-    //     std::cout << "Virial integrand : " << beta_E << ", " << T << ", " << exp(- beta_E) << ", " << S_vol << " : " << S_vol * exp(- beta_E) << std::endl;
-    //     return exp(- beta_E) * S_vol;
-    // };
-    // double I0 = simpson(integrand, 0, 0.2, 10) 
-    //             + simpson(integrand, 0.2, 1, 10) 
-    //             + simpson(integrand, 1, 3, 20) 
-    //             + simpson_inf(integrand, 3, 7);
-    // double B_th = I0 / PI;
 
     size_t l = l_start;
     double B_th_term;
@@ -605,9 +627,6 @@ vector1d Quantum::second_virial_contribs(int i, int j, double T){
         l += l_step;
     } while (abs(B_th_term / B_th) > 1e-3);
 
-    std::cout << "Computed T = " << T << std::endl;
-    std::cout << "##############################" << std::endl;
-    
     double B = B_id + B_bound + B_th;
     std::cout << "Contribs : " << B_id << ", " << B_bound << ", " << B_th << std::endl;
     vector1d contribs = {B_id, B_bound, B_th};
