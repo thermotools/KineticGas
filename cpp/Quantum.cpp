@@ -38,6 +38,8 @@ See Also:
 #include "Quantum.h"
 #include "Integration/Integration.h"
 #include <autodiff/forward/dual.hpp>
+#include <fstream>
+#include <sstream>
 
 using dual = autodiff::dual;
 
@@ -79,22 +81,39 @@ double bessel_deriv(int n, double r, size_t kind){
     }
 }
 
-Quantum::Quantum(std::string comps) 
-    : Spherical(comps, true), 
+Quantum::Quantum(std::string comps_) 
+    : Spherical(comps_, true), 
     E_bound(Ncomps, std::vector<vector2d>(Ncomps)),
     half_spin(Ncomps, 0),
     spin(Ncomps, 0),
     rot_ground_state(Ncomps, 0)
-{
-    half_spin = std::vector<unsigned int>(Ncomps, 0);
+{   
     for (size_t i = 0; i < Ncomps; i++){
-        half_spin[i] = static_cast<unsigned int>(compdata[i]["half_spin"]);
+        const auto qdata = compdata[i]["Quantum"];
+        bool has_quantum_params = static_cast<bool>(qdata["Quantum"]);
+        if (!has_quantum_params) {
+            std::cout << "WARNING : Component " << comps[i] << " does not support Quantum!\n";
+            std::cout << "\tDeactivating Quantum as default behaviour. You can use `set_quantum_active` if you really want to ...\n";
+            quantum_is_active = false;
+            quantum_supported = false;
+            continue;
+        }
+        half_spin[i] = static_cast<unsigned int>(qdata["half_spin"]);
         spin[i] = static_cast<double>(half_spin[i]) / 2.;
-        rot_ground_state[i] = static_cast<unsigned int>(compdata[i]["rot_ground_state"]);
-        E_bound[i][i] = compdata[i]["E_bound_div_k"];
+        rot_ground_state[i] = static_cast<unsigned int>(qdata["rot_ground_state"]);
+        
+        bool has_E_bound_file = static_cast<bool>(qdata["has_E_bound_file"]);
+        if (has_E_bound_file){
+            E_bound[i][i] = get_E_bound_from_file(comps[i]);
+        }
+        else {
+            E_bound[i][i] = qdata["E_bound_div_k"];
+        }
+
         if (E_bound[i][i].size() == 0){
             std::cout << "WARNING : No bound state energies supplied for component " << i << std::endl; 
         }
+
         for (size_t v = 0; v < E_bound[i][i].size(); v++){
             for (size_t l = 0; l < E_bound[i][i][v].size(); l++){
                 E_bound[i][i][v][l] *= BOLTZMANN;
@@ -102,6 +121,33 @@ Quantum::Quantum(std::string comps)
         }
         
     }
+}
+
+vector2d Quantum::get_E_bound_from_file(const std::string& comp){
+    std::string filepath = get_fluid_dir() + "/E_bound/" + comp + ".dat";
+    std::ifstream file(filepath);
+    if (!file.is_open()) throw std::runtime_error("Failed to open E_bound file: " + filepath);
+    
+    vector2d data;
+    std::string line;
+    size_t ri{0}, ci{0};
+    while (std::getline(file, line)){
+        vector1d row;
+        std::stringstream ss(line);
+        std::string val;
+        while (std::getline(ss, val, ',')){
+            try {
+                row.push_back(std::stod(val)); // Convert to double
+            } catch (const std::invalid_argument& e) {
+                std::cout << "In file : " << filepath << "\n\tInvalid value on (row, col) : (" << ri << ", " << ci << ")\n\tValue : " << val << std::endl;
+                throw e;
+            }
+            ci++;
+        }
+        data.push_back(row);
+        ri++; ci = 0;
+    }
+    return data;
 }
 
 void Quantum::clear_all_caches(){

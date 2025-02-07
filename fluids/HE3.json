@@ -9,7 +9,14 @@
     ],
     "mol_weight": 3.016,
     "default_fh_order": 0,
-    "spin" : 0.5,
+    "Quantum" : {
+        "has_quantum_params" : true,
+        "half_spin" : 1,
+        "rot_ground_state" : 0,
+        "has_E_bound_file" : false,
+        "E_bound_div_k": [[-1.520e-3]],
+        "E_bound_reference": "R A Aziz and M J Slaman 1990 Metrologia 27 211"
+    },
     "Mie": {
         "Herdes": {
             "sigma": 3.353e-10,

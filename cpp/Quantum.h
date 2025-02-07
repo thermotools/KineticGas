@@ -4,6 +4,7 @@
 class Quantum : public Spherical {
 public:
     Quantum(std::string comps);
+    vector2d get_E_bound_from_file(const std::string& comp);
 
     double omega(int i, int j, int l, int r, double T) override;
 

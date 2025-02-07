@@ -10,9 +10,14 @@
     ],
     "mol_weight": 2.01594,
     "default_fh_order": 0,
-    "spin" : 0,
-    "E_bound_div_k" : [[-4.10507, -1.89464]],
-    "E_bound_reference": "Calculated using MolCas VibRot : https://molcas.gitlab.io/OpenMolcas/sphinx/users.guide/programs/vibrot.html#ug-sec-vibrot",
+    "Quantum" : {
+        "has_quantum_params" : true,
+        "half_spin" : 0,
+        "rot_ground_state" : 0,
+        "has_E_bound_file" : false,
+        "E_bound_div_k" : [[-4.10507, -1.89464]],
+        "E_bound_reference": "Calculated using MolCas VibRot : https://molcas.gitlab.io/OpenMolcas/sphinx/users.guide/programs/vibrot.html#ug-sec-vibrot"
+    },
     "Mie": {
         "default": {
             "sigma": 3.2557e-10,
