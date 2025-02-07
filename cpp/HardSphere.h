@@ -47,6 +47,18 @@ class HardSphere : public KineticGas {
         return 2. * PI * AVOGADRO * pow(sigma[i][j], 3) / 3.;
     }
 
+    double bound_second_virial(int i, int j, double T) override {
+        return 0;
+    }
+
+    std::map<char, double> second_virial_contribs(int i, int j, double T, const std::string& contribs) override {
+        std::map<char, double> B_contribs;
+        B_contribs['i'] = 0;
+        B_contribs['b'] = 0;
+        B_contribs['t'] = second_virial(i, j, T);
+        return B_contribs;
+    }
+
     double chi(int i, int j, double T, double g, double b){
         if (b >= sigma[i][j]) return 0;
         return acos(1 - 2 * (1 - pow(b / sigma[i][j], 2)));

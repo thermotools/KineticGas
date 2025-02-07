@@ -78,7 +78,7 @@ std::map<std::string, double> KineticGas::thermal_conductivity_contributions(dou
     double rho = AVOGADRO / Vm;
 
     std::map<std::string, double> computed_contribs;
-    const auto contribs_contain = [&](std::string substr){return (contribs.find(substr) != std::string::npos);};
+    const auto contribs_contain = [&](std::string substr){return str_contains(contribs, substr);};
 
     if (contribs_contain("t")){
         Eigen::VectorXd th_expansion_coeff{compute_thermal_expansion_coeff(rho, T, x, N)};

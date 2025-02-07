@@ -133,6 +133,10 @@ enum StatisticType {
     FermiDirac
 };
 
+inline bool str_contains(const std::string& str, const std::string& sub){
+    return (str.find(sub) != std::string::npos);
+}
+
 template<size_t N, size_t deg>
 class FuncTable{
 public:

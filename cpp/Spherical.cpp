@@ -145,17 +145,53 @@ double Spherical::reduced_cross_section(int i, int j, int l, double E){
 double Spherical::second_virial(int i, int j, double T){
     set_internals(0, T, {1.});
     // Integration variable is r / sigma[i][j];
+    double r_scale = get_sigma_eff(i, j, T);
     const auto integrand = [&](double r){
-        const double u = potential(i, j, r * sigma[i][j]) / BOLTZMANN;
+        const double u = potential(i, j, r * r_scale) / BOLTZMANN;
         const double val = pow(r, 2) * (exp(- u / T) - 1);
         return val;
     };
     
-    const double r0 = (T * BOLTZMANN / eps[i][j] > 1.) ? 0.3 : 0.9 - 0.6 * T * BOLTZMANN / eps[i][j];
+    double r0 = 0.9; // (T * BOLTZMANN / eps[i][j] > 1.) ? 0.3 : 0.9 - 0.6 * T * BOLTZMANN / eps[i][j];
+    while (exp(- potential(i, j, r0 * r_scale) / (BOLTZMANN * T)) > 1e-8) {
+        r0 -= 0.01;
+    }
     const double r1 = 2;
     double I = - (pow(r0, 3) / 3) + simpson(integrand, r0, r1, 100);
     I += simpson_inf(integrand, r1, 3);
-    return - 0.5 * 4 * PI * pow(sigma[i][j], 3) * AVOGADRO * I;
+    return - 0.5 * 4 * PI * pow(r_scale, 3) * AVOGADRO * I;
+}
+
+double Spherical::bound_second_virial(int i, int j, double T){
+    set_internals(0, T, {1.});
+    double beta = 1 / (BOLTZMANN * T);
+    double r0 = get_potential_root(i, j);
+    double prefactor = sqrt(PI) / 2.;
+    const auto integrand = [&](double r){
+                                    double bu = beta * potential(i, j, r * r0);
+                                    return pow(r, 2) * exp(- bu) * (prefactor * erf(sqrt(- bu)) - sqrt(-bu) * exp(bu));
+                                };
+    double I0 = simpson(integrand, 1 + 1e-6, 1.1, 30);
+    double I1 = simpson_inf(integrand, 1.1, 1.125);
+    return - 4 * sqrt(PI) * AVOGADRO * pow(r0, 3) * (I0 + I1);
+}
+
+std::map<char, double> Spherical::second_virial_contribs(int i, int j, double T, const std::string& contribs){
+    set_internals(0, T, {1.});
+    const auto contribs_contain = [&](const std::string& c){return str_contains(contribs, c);};
+    std::map<char, double> B_contribs;
+    if (contribs_contain("i")){
+        B_contribs['i'] = 0;
+    }
+    if (contribs_contain("b")){
+        B_contribs['b'] = bound_second_virial(i, j, T);
+    }
+    if (contribs_contain("t")){
+        double B_bound = (contribs_contain("b")) ? B_contribs['b'] : bound_second_virial(i, j, T);
+        double B_tot = second_virial(i, j, T);
+        B_contribs['t'] = B_tot - B_bound;
+    }
+    return B_contribs;
 }
 
 double Spherical::get_r_min(int i, int j, double T){
@@ -185,6 +221,12 @@ double Spherical::get_alpha_eff(int i, int j, double T){
     std::cout << "Alpha (" << r0 << ", " << potential(i, j, r0 * sigma[i][j]) / eps[i][j] << ") : " << E << std::endl;
     E += simpson_inf(I, 2 * r0, 3 * r0);
     return - E / eps[i][j];
+}
+
+double Spherical::get_potential_root(int i, int j){
+    return newton([&](double r){return potential(i, j, r) / eps[i][j];},
+                  [&](double r){return potential_derivative_r(i, j, r) / eps[i][j];},
+                  sigma[i][j]);
 }
 
 /*

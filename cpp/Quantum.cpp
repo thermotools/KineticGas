@@ -196,14 +196,6 @@ void Quantum::set_de_boer_mass(int i, double de_boer){
     set_masses(); // Set- methods are responsible for clearing caches
 }
 
-double Quantum::de_broglie_wavelength(int i, double T){
-    return PLANCK / sqrt(PI * m[i] * BOLTZMANN * T);
-}
-
-double Quantum::de_broglie_wavelength(int i, int j, double T){
-    return PLANCK / sqrt(2 * PI * red_mass[i][j] * BOLTZMANN * T);
-}
-
 double Quantum::JKWB_upper_E_limit(int i, int j){
     double deBoer = get_de_boer(i, j);
     double margin = 5; // Some suitably large number ...
@@ -600,98 +592,107 @@ double Quantum::scattering_volume(int i, int j, double E){
 }
 
 double Quantum::second_virial(int i, int j, double T){
-    return (quantum_is_active) ? quantum_second_virial(i, j, T) : Spherical::second_virial(i, j, T);
-}
+    set_internals(0, T, {1.});
+    if (!quantum_is_active) return Spherical::second_virial(i, j, T);
 
-double Quantum::quantum_second_virial(int i, int j, double T){
-    auto [sym_wt, anti_wt] = get_symmetry_weights(i, j);
     double B = 0;
-    double B_s = 0; double B_a = 0;
-    if (sym_wt != 0){
-        std::vector<double> contribs = second_virial_contribs(i, j, T, StatisticType::BoseEinstein);
-        for (const double c : contribs){
-            B += sym_wt * c; B_s += sym_wt * c;
-            std::cout << sym_wt * c << ", ";
-        }
+    std::map<char, double> contribs = second_virial_contribs(i, j, T, "ibt");
+    for (const auto& [_, c] : contribs){
+        B += c;
     }
-    std::cout << std::endl;
-    if (anti_wt != 0){
-        std::vector<double> contribs = second_virial_contribs(i, j, T, StatisticType::FermiDirac);
-        for (const double c : contribs){
-            B += anti_wt * c; B_a += anti_wt * c;
-            std::cout << anti_wt * c << ", ";
-        }
-    }
-    std::cout << "\nSym / anti / tot : " << B_s << " / " << B_a << " / " << B << std::endl;
     return B;
 }
 
-vector1d Quantum::second_virial_contribs(int i, int j, double T, int istats){
+double Quantum::bound_second_virial(int i, int j, double T){
+    set_internals(0, T, {1.});
+    if (!quantum_is_active) return Spherical::bound_second_virial(i, j, T);
+    return second_virial_contribs(i, j, T, "b")['b'];
+}
+
+std::map<char, double> Quantum::second_virial_contribs(int i, int j, double T, const std::string& contribs){
     // See: Kilpatrick et al. Second virial coefficients of He3 and He4, Physical Review vol. 94, nr. 5 (1954)
     //      DOI: https://doi.org/10.1103/PhysRev.94.1103 
-    double beta = 1 / (BOLTZMANN * T);
-    double lamb = de_broglie_wavelength(i, j, T);
-    double V_th = pow(lamb, 3);
-    double B_id;
-    double B_bound = 0;
-    double B_th = 0;
-    const vector2d& Eb = E_bound[i][j];
-    size_t l_start;
-    size_t l_step = 2;
-    if (istats == StatisticType::BoseEinstein){
-        l_start = 0;
-        B_id = 1. / 16.;
+    set_internals(0, T, {1.});
+    
+    std::array<double, 2> wts = get_symmetry_weights(i, j);
+    const auto [sym_wt, anti_wt] = wts;
+
+    size_t l_start, l_step;
+    if (sym_wt == 0){
+        l_start = 1; l_step = 2;
     }
-    else if (istats == StatisticType::FermiDirac){
-        l_start = 1;
-        B_id = - 1. / 16.;
+    else if (anti_wt == 0){
+        l_start = 0; l_step = 2;
     }
     else {
-        throw std::runtime_error("Invalid statistic type!");
+        l_start = 0; l_step = 1;
     }
 
-    for (size_t vib_i = 0; vib_i < Eb.size(); vib_i++){
-        for (size_t l = l_start; l < Eb[vib_i].size(); l+=l_step){
-            B_bound += (2 * l + 1) * (exp(- beta * Eb[vib_i][l]) - 1.);
+    std::map<char, double> B_contribs;
+    const auto contribs_contain = [&](const std::string& c){return str_contains(contribs, c);};
+
+    if (contribs_contain("i")){
+        B_contribs['i'] = (sym_wt - anti_wt) / 16.;;
+    }
+
+    double beta = 1 / (BOLTZMANN * T);
+    if (contribs_contain("b")){
+        const vector2d& Eb = E_bound[i][j];
+        double B_bound = 0;
+        for (size_t vib_i = 0; vib_i < Eb.size(); vib_i++){
+            for (size_t l = l_start; l < Eb[vib_i].size(); l+=l_step){
+                B_bound += wts[l % 2] * (2 * l + 1) * (exp(- beta * Eb[vib_i][l]) - 1.);
+            }
         }
+        B_contribs['b'] = B_bound;
     }
 
-    size_t l = l_start;
-    double B_th_term;
-    do {
-        auto integrand = [&](double beta_E){
-            double delta = absolute_phase_shift(i, j, l, beta_E / (beta * eps[i][j]));
-            return delta * exp(- beta_E);
-        };
-        double I = simpson(integrand, 0, 0.2, 10) 
-                 + simpson(integrand, 0.2, 1, 10) 
-                 + simpson(integrand, 1, 3, 20) 
-                 + simpson_inf(integrand, 3, 7);
+    if (contribs_contain("t")){
+        double B_th = 0;
+        size_t l = l_start;
+        double B_th_term;
+        do {
+            auto integrand = [&](double beta_E){
+                double delta = absolute_phase_shift(i, j, l, beta_E / (beta * eps[i][j]));
+                return delta * exp(- beta_E);
+            };
+            double I = simpson(integrand, 0, 0.2, 10) 
+                    + simpson(integrand, 0.2, 1, 10) 
+                    + simpson(integrand, 1, 3, 20) 
+                    + simpson_inf(integrand, 3, 7);
 
-        B_th_term = (2 * l + 1) * I / PI;        
-        B_th += B_th_term;
-        l += l_step;
-    } while (abs(B_th_term / B_th) > 1e-3);
+            B_th_term = wts[l % 2] * (2 * l + 1) * I / PI;        
+            B_th += B_th_term;
+            l += l_step;
+        } while (abs(B_th_term / B_th) > 1e-3);
+        B_contribs['t'] = B_th;
+    }
 
-    double B = B_id + B_bound + B_th;
-    std::cout << "Contribs : " << B_id << ", " << B_bound << ", " << B_th << std::endl;
-    vector1d contribs = {B_id, B_bound, B_th};
-    for (double& c : contribs){
+    double lamb = de_broglie_wavelength(i, j, T);
+    double V_th = pow(lamb, 3);
+    for (auto& [_, c] : B_contribs){
         c *= - AVOGADRO * V_th;
     }
-    return  contribs;
+
+    return B_contribs;
 }
 
 double Quantum::semiclassical_second_virial(int i, int j, double T){
     double tmp_JKWB_E_limit = JKWB_E_limit;
     int tmp_JKWB_l_limit = JKWB_l_limit;
+    bool tmp_quantum_active = quantum_is_active;
     set_JKWB_limits(0, 0);
-    double B = quantum_second_virial(i, j, T);
+    set_quantum_active(true);
+    double B = second_virial(i, j, T);
+    set_quantum_active(tmp_quantum_active);
     set_JKWB_limits(tmp_JKWB_E_limit, tmp_JKWB_l_limit);
     return B;
 }
 
 void Quantum::set_quantum_active(bool active){
+    if (active && !quantum_supported){
+        std::cout << "WARNING : Some components do not support Quantum! (I'm letting you activate anyway at your own discretion ...)\n";
+    }
     if (active != quantum_is_active){
         clear_all_caches();
     }

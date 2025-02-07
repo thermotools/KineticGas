@@ -41,6 +41,7 @@ using vector2d = std::vector<vector1d>;
         .def("set_eos", py::overload_cast<py::object>(&Model::set_eos)) \
         .def("frame_of_reference_map", &Model::frame_of_reference_map) \
         .def("get_reducing_units", &Model::get_reducing_units) \
+        .def("de_broglie_wavelength", py::overload_cast<int, double>(&Model::de_broglie_wavelength)) \
         \
         .def("set_tl_model", &Model::set_transfer_length_model) \
         .def("get_tl_model", &Model::get_transfer_length_model) \
@@ -298,7 +299,6 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("get_de_boer", py::overload_cast<int, int>(&Quantum::get_de_boer))
         .def("get_de_boer", py::overload_cast<int>(&Quantum::get_de_boer))
         .def("set_de_boer_mass", &Quantum::set_de_boer_mass)
-        .def("de_broglie_wavelength", py::overload_cast<int, double>(&Quantum::de_broglie_wavelength))
         .def("JKWB_upper_E_limit", &Quantum::JKWB_upper_E_limit)
         .def("omega", &Quantum::omega)
         .def("quantum_omega", &Quantum::quantum_omega)

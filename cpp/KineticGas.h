@@ -109,8 +109,12 @@ public:
     Eigen::MatrixXd thermal_diffusion_factor(double T, double Vm, const std::vector<double>& x, int N=2);
     Eigen::MatrixXd interdiffusion_dependent_CoM(double T, double Vm, const std::vector<double>& x, int N=2);
     Eigen::VectorXd soret_coefficient(double T, double Vm, const std::vector<double>& x, int N, int dependent_idx=-1);
-    std::map<std::string, double> thermal_conductivity_contributions(double T, double Vm, const std::vector<double>& x, int N=2, std::string contribs="tdi");
+    std::map<std::string, double> thermal_conductivity_contributions(double T, double Vm, const std::vector<double>& x, int N=2, std::string contribs="tdi"); // (t)ranslational, (d)ensity, and (i)nternal contributions.
     virtual double second_virial(int i, int j, double T) = 0;
+    virtual double bound_second_virial(int i, int j, double T) = 0;
+    virtual std::map<char, double> second_virial_contribs(int i, int j, double T, const std::string& contribs="ibt") = 0; // (i)deal, (b)ound, and (t)hermal contributions.
+    double de_broglie_wavelength(int i, double T);
+    double de_broglie_wavelength(int i, int j, double T);
 
     // ------------------------------------------------------------------------------------------------------------------- //
     // ----------- TP-interface methods: These just compute molar volume and feed the call to the methods above ---------- //
@@ -217,6 +221,7 @@ protected:
 
     std::unique_ptr<GenericEoS> eos;
     const std::vector<json> compdata; // Fluid data for each component, 
+    const std::vector<std::string> comps;
 
     const int default_tl_model_id = TransferLengthModel::EWCA; // Default transfer length model
     int transfer_length_model_id = default_tl_model_id; // Currently active transfer length model

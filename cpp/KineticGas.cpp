@@ -17,6 +17,7 @@
 #include <math.h>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <chrono>
 
 
@@ -31,7 +32,16 @@ KineticGas::KineticGas(std::string comps, bool is_idealgas)
     is_singlecomp{std::count_if(comps.begin(), comps.end(), [](char c) {return c == ',';}) == 0},
     m(Ncomps, 0.), M(Ncomps, vector1d(Ncomps, 0.)), m0(Ncomps, vector1d(Ncomps, 0.)), red_mass(Ncomps, vector1d(Ncomps, 0.)),
     sigma(Ncomps, vector1d(Ncomps, 0.)), eps(Ncomps, vector1d(Ncomps, 0.)),
-    compdata(get_fluid_data(comps))
+    compdata(get_fluid_data(comps)),
+    comps([&](){
+            std::vector<std::string> compvec;
+            std::stringstream ss(comps);
+            std::string comp;
+            while (std::getline(ss, comp, ',')) {
+                compvec.push_back(comp);
+            }
+            return compvec;
+        }())
     {
         for (size_t i = 0; i < Ncomps; i++){
             m[i] = static_cast<double>(compdata[i]["mol_weight"]) * 1e-3 / AVOGADRO;
@@ -112,6 +122,14 @@ std::vector<double> KineticGas::get_wt_fracs(const std::vector<double> mole_frac
         wt_fracs[i] = mole_fracs[i] * m[i] / tmp;
     }
     return wt_fracs;
+}
+
+double KineticGas::de_broglie_wavelength(int i, double T){
+    return PLANCK / sqrt(PI * m[i] * BOLTZMANN * T);
+}
+
+double KineticGas::de_broglie_wavelength(int i, int j, double T){
+    return PLANCK / sqrt(2 * PI * red_mass[i][j] * BOLTZMANN * T);
 }
 
 vector1d KineticGas::sanitize_mole_fracs(const vector1d& x){

@@ -177,7 +177,9 @@ public:
     template<typename... Args>
     FH_Corrected(size_t FH_order, Args&&... args)
         : T(std::forward<Args>(args)...), FH_order{FH_order},
-        D_factors(T::Ncomps, vector1d(T::Ncomps))
+        D_factors(T::Ncomps, vector1d(T::Ncomps)),
+        current_sigma_eff(T::Ncomps, vector1d(T::Ncomps)),
+        current_eps_eff(T::Ncomps, vector1d(T::Ncomps))
     {
         set_D_factors();
     }
@@ -207,7 +209,7 @@ public:
         double u = 0;
         for (size_t n = 0; n <= FH_order; n++){
             double nfac = 1;
-            for (size_t ni = 2; ni <= n; ni++) nfac *= n;
+            for (size_t ni = 2; ni <= n; ni++) nfac *= ni;
             u += pow(D_factors[i][j] / (BOLTZMANN * current_T), n) * T::potential_dn(i, j, r, 2 * n) / nfac;
         }
         return u;
@@ -218,7 +220,7 @@ public:
         double ur = 0;
         for (size_t n = 0; n <= FH_order; n++){
             double nfac = 1;
-            for (size_t ni = 2; ni <= n; ni++) nfac *= n;
+            for (size_t ni = 2; ni <= n; ni++) nfac *= ni;
             ur += pow(D_factors[i][j] / (BOLTZMANN * current_T), n) * T::potential_dn(i, j, r, 2 * n + 1) / nfac;
         }
         return ur;
@@ -229,7 +231,7 @@ public:
         double urr = 0;
         for (size_t n = 0; n <= FH_order; n++){
             double nfac = 1;
-            for (size_t ni = 2; ni <= n; ni++) nfac *= n;
+            for (size_t ni = 2; ni <= n; ni++) nfac *= ni;
             urr += pow(D_factors[i][j] / (BOLTZMANN * current_T), n) * T::potential_dn(i, j, r, 2 * n + 2) / nfac;
         }
         return urr;
@@ -240,10 +242,22 @@ public:
         double un = 0;
         for (size_t k = 0; k <= FH_order; k++){
             double nfac = 1;
-            for (size_t ni = 2; ni <= n; ni++) nfac *= n;
+            for (size_t ni = 2; ni <= k; ni++) nfac *= ni;
             un += pow(D_factors[i][j] / (BOLTZMANN * current_T), n) * T::potential_dn(i, j, r, 2 * k + n) / nfac;
         }
         return un;
+    }
+
+    using T::get_sigma_eff;
+    double get_sigma_eff(int i, int j, double temp) override {
+        set_temperature(temp);
+        return current_sigma_eff[i][j];
+    }
+
+    using T::get_eps_eff;
+    double get_eps_eff(int i, int j, double temp) override {
+        set_temperature(temp);
+        return current_eps_eff[i][j];
     }
 
     inline size_t set_temperature(double temp) {
@@ -254,6 +268,7 @@ public:
         size_t r = T::set_internals(rho, temp, x);
         if (temp != current_T){
             current_T = temp;
+            set_effective_params();
             return r + 1;
         }
         return r;
@@ -279,8 +294,43 @@ public:
         }
     }
 
+    void set_effective_params(){
+        update_sigma_eff();
+        update_eps_eff();
+    }
+
+    void update_sigma_eff(){
+        for (size_t i = 0; i < T::Ncomps; i++){
+            for (size_t j = i; j < T::Ncomps; j++){
+                double r0 = 3.5 * T::sigma[i][j];
+                while (potential(i, j, r0) < 0){
+                    r0 -= 0.2 * T::sigma[i][j];
+                }
+                current_sigma_eff[i][j] 
+                    = current_sigma_eff[j][i] 
+                    = newton([&](double r){return potential(i, j, r) / T::eps[i][j];},
+                             [&](double r){return potential_derivative_r(i, j, r) / T::eps[i][j];},
+                             r0);
+            }
+        }
+    }
+
+    void update_eps_eff(){
+        for (size_t i = 0; i < T::Ncomps; i++){
+            for (size_t j = i; j < T::Ncomps; j++){
+                double r0 = newton([&](double r){return potential_derivative_r(i, j, r) * T::sigma[i][j] / T::eps[i][j];},
+                                   [&](double r){return potential_dblderivative_rr(i, j, r) * T::sigma[i][j] / T::eps[i][j];},
+                                   current_sigma_eff[i][j]);
+                current_eps_eff[i][j] = current_eps_eff[j][i] = - potential(i, j, r0);
+            }
+        }
+    }
+
 private:
     double current_T;
     size_t FH_order;
     vector2d D_factors;
+
+    vector2d current_sigma_eff;
+    vector2d current_eps_eff;
 };

@@ -14,8 +14,6 @@ public:
     double get_de_boer(int i, int j);
     double get_de_boer(int i){return get_de_boer(i, i);}
     void set_de_boer_mass(int i, double de_boer); // Set particle masses to obtain specified de Boer parameter
-    double de_broglie_wavelength(int i, double T);
-    double de_broglie_wavelength(int i, int j, double T); // NOTE: Does NOT reduce to the single-species de Broglie wavelength! (Uses the reduced two-particle mass)
 
     vector2d wave_function(int i, int j, int l, double E, double r_end, double dr);
     double JKWB_phase_shift(int i, int j, int l, double E);
@@ -35,12 +33,11 @@ public:
     double classical_cross_section(int i, int j, int l, double E);
 
     double second_virial(int i, int j, double T) override;
-    double classical_second_virial(int i, int j, double T){return Spherical::second_virial(i, j, T);};
     double semiclassical_second_virial(int i, int j, double T);
+    double bound_second_virial(int i, int j, double T) override;
 
     double scattering_volume(int i, int j, double E);
-    double quantum_second_virial(int i, int j, double T);
-    vector1d second_virial_contribs(int i, int j, double T, int istats);
+    std::map<char, double> second_virial_contribs(int i, int j, double T, const std::string& contribs) override;
 
     void set_quantum_active(bool active);
     bool get_quantum_active(){return quantum_is_active;}
@@ -64,6 +61,7 @@ protected:
     std::vector<std::vector<vector2d>> E_bound;
 
 private:
+    bool quantum_supported = true;
     bool quantum_is_active = true;
     double JKWB_E_limit = 120.;
     int JKWB_l_limit = 1000;

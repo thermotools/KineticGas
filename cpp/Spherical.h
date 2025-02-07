@@ -39,7 +39,9 @@ class Spherical : public KineticGas {
     virtual double potential(int i, int j, double r);
     virtual double potential_derivative_r(int i, int j, double r);
     virtual double potential_dblderivative_rr(int i, int j, double r);
-    virtual double potential_dn(int i, int j, double r, size_t n) { // n'th derivative of potential
+    virtual double potential_dn(int i, int j, double r, size_t n) { 
+        // n'th derivative of potential
+        // This must be overridden if you want to use the FH_Corrected template class to extend the class, otherwise it's not needed.
         throw std::runtime_error("Spherical::potential_dn has not been overriden by this class.");
     }
 
@@ -53,6 +55,8 @@ class Spherical : public KineticGas {
     vector2d model_etl(double rho, double T, const vector1d& x) override; // Energy transfer length
 
     double second_virial(int i, int j, double T) override;
+    double bound_second_virial(int i, int j, double T) override;
+    std::map<char, double> second_virial_contribs(int i, int j, double T, const std::string& contribs) override;
 
     // ------------------------------------------------------------------------------------------- //
     // -------------------- GENERIC METHODS DESCRIBING A COLLISION TRAJECTORY -------------------- //
@@ -77,6 +81,8 @@ class Spherical : public KineticGas {
     virtual double get_alpha_eff(int i, int j, double T);
 
 protected:
+    virtual double get_potential_root(int i, int j); // Protected, because assumes that set_internal_params has already been called.
+
     // ------------------------------------------------------------------------------------------- //
     // --------------------------------  TRANSFER LENGTH CACHING --------------------------------- //
     /*  
