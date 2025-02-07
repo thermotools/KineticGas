@@ -40,6 +40,7 @@ KineticGas::KineticGas(std::string comps, bool is_idealgas)
             while (std::getline(ss, comp, ',')) {
                 compvec.push_back(comp);
             }
+            if (compvec.size() == 1) compvec.push_back(compvec[0]);
             return compvec;
         }())
     {

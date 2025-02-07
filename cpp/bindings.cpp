@@ -229,45 +229,6 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("set_dd_lim", &IntegrationParam::set_dd_lim)
         ;
 
-    py::class_<TangToennisParam>(handle, "cpp_TangToennisParam")
-        .def(py::init<double, double, double, vector1d,
-                        double, double, double, double,
-                        vector1d>()
-             )
-        .def_readwrite("sigma", &TangToennisParam::sigma)
-        .def_readwrite("eps_div_k", &TangToennisParam::eps_div_k)
-        .def_readwrite("Re", &TangToennisParam::Re)
-        .def("__repr__",
-        [](const TangToennisParam &t) {
-            std::stringstream strm;
-            strm << "TangToennisParam\n"
-                 << "\tA       : " << t.A << "\n"
-                 << "\tb       : " << t.b << "\n"
-                 << "\tA_tilde : " << t.A_tilde << "\n"
-                 << "\ta_tilde : " << t.a_tilde << "\n"
-                 << "\ta       : [ " << t.am2 << ", " << t.am1 << ", " << t.a1 << ", " << t.a2 << " ]\n"
-                 << "\tC       : [ ";
-            for (size_t i = 0; i < 5; i++){
-                strm << t.C[i] << ", ";
-            }
-            strm << t.C[5] << " ]\n\t-----\n"
-                 << "\tsigma   : " << t.sigma << "\n"
-                 << "\teps_div_k : " << t.eps_div_k << "\n"
-                 << "\tRe      : " << t.Re << std::endl;
-            return strm.str();
-        })
-        ;
-
-    py::class_<ModTangToennis>(handle, "cpp_ModTangToennis")
-        .def(py::init<TangToennisParam, vector1d, bool>())
-        .def(py::init<std::string, bool, std::string>())
-        KineticGas_bindings(ModTangToennis)
-        .def("potential", py::overload_cast<int, int, double>(&ModTangToennis::potential))
-        .def("potential_r", &ModTangToennis::potential_derivative_r)
-        .def("potential_rr", &ModTangToennis::potential_dblderivative_rr)
-        .def("second_virial", &ModTangToennis::second_virial)
-        ;
-
     py::class_<HardSphere>(handle, "cpp_HardSphere")
         .def(py::init<
                         vector1d,
@@ -315,6 +276,44 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("w_integrand", &Quantum::w_integrand)
         ;
     
+    py::class_<TangToennisParam>(handle, "cpp_TangToennisParam")
+        .def(py::init<double, double, double, vector1d,
+                        double, double, double, double,
+                        vector1d>()
+             )
+        .def_readwrite("sigma", &TangToennisParam::sigma)
+        .def_readwrite("eps_div_k", &TangToennisParam::eps_div_k)
+        .def_readwrite("Re", &TangToennisParam::Re)
+        .def("__repr__",
+        [](const TangToennisParam &t) {
+            std::stringstream strm;
+            strm << "TangToennisParam\n"
+                 << "\tA       : " << t.A << "\n"
+                 << "\tb       : " << t.b << "\n"
+                 << "\tA_tilde : " << t.A_tilde << "\n"
+                 << "\ta_tilde : " << t.a_tilde << "\n"
+                 << "\ta       : [ " << t.am2 << ", " << t.am1 << ", " << t.a1 << ", " << t.a2 << " ]\n"
+                 << "\tC       : [ ";
+            for (size_t i = 0; i < 5; i++){
+                strm << t.C[i] << ", ";
+            }
+            strm << t.C[5] << " ]\n\t-----\n"
+                 << "\tsigma   : " << t.sigma << "\n"
+                 << "\teps_div_k : " << t.eps_div_k << "\n"
+                 << "\tRe      : " << t.Re << std::endl;
+            return strm.str();
+        })
+        ;
+
+    py::class_<ModTangToennis, Quantum>(handle, "cpp_ModTangToennis")
+        .def(py::init<std::string, bool, std::string>())
+        KineticGas_bindings(ModTangToennis)
+        .def("potential", py::overload_cast<int, int, double>(&ModTangToennis::potential))
+        .def("potential_r", &ModTangToennis::potential_derivative_r)
+        .def("potential_rr", &ModTangToennis::potential_dblderivative_rr)
+        .def("second_virial", &ModTangToennis::second_virial)
+        ;
+
     py::class_<HFD_B2, Quantum>(handle, "cpp_HFD_B2")
         .def(py::init<std::string>())
         KineticGas_bindings(HFD_B2)

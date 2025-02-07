@@ -2,17 +2,8 @@
 #include "Factorial.h"
 #include <algorithm>
 
-ModTangToennis::ModTangToennis(TangToennisParam param, vector1d mole_weights, bool is_idealgas)
-    : Spherical(mole_weights, 
-                vector2d(Ncomps, vector1d(Ncomps, param.sigma)), 
-                vector2d(Ncomps, vector1d(Ncomps, param.eps_div_k * BOLTZMANN)), 
-                is_idealgas, true), param{param}
-{
-    if (!is_idealgas) throw std::runtime_error("Modified Tang-Toennis only implemented for ideal gas!");
-}
-
 ModTangToennis::ModTangToennis(std::string comps, bool is_idealgas, std::string parameter_ref)
-    : Spherical(comps, is_idealgas), param()
+    : Quantum(comps), param()
 {
     const auto cdata = compdata[0]["ModTangToennis"][parameter_ref];
     const double A_div_k = cdata["A_div_k"];

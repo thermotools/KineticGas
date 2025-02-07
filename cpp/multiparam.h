@@ -24,11 +24,10 @@ struct TangToennisParam{
         }
 };
 
-class ModTangToennis : public Spherical {
+class ModTangToennis : public Quantum {
     public:
     TangToennisParam param;
 
-    ModTangToennis(TangToennisParam param, vector1d mole_weights, bool is_idealgas);
     ModTangToennis(std::string comps, bool is_idealgas, std::string parameter_ref="default");
 
     dual2 potential(int i, int j, dual2 r) override;

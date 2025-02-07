@@ -90,7 +90,7 @@ Quantum::Quantum(std::string comps_)
 {   
     for (size_t i = 0; i < Ncomps; i++){
         const auto qdata = compdata[i]["Quantum"];
-        bool has_quantum_params = static_cast<bool>(qdata["Quantum"]);
+        bool has_quantum_params = static_cast<bool>(qdata["has_quantum_params"]);
         if (!has_quantum_params) {
             std::cout << "WARNING : Component " << comps[i] << " does not support Quantum!\n";
             std::cout << "\tDeactivating Quantum as default behaviour. You can use `set_quantum_active` if you really want to ...\n";
@@ -101,7 +101,6 @@ Quantum::Quantum(std::string comps_)
         half_spin[i] = static_cast<unsigned int>(qdata["half_spin"]);
         spin[i] = static_cast<double>(half_spin[i]) / 2.;
         rot_ground_state[i] = static_cast<unsigned int>(qdata["rot_ground_state"]);
-        
         bool has_E_bound_file = static_cast<bool>(qdata["has_E_bound_file"]);
         if (has_E_bound_file){
             E_bound[i][i] = get_E_bound_from_file(comps[i]);
@@ -119,7 +118,6 @@ Quantum::Quantum(std::string comps_)
                 E_bound[i][i][v][l] *= BOLTZMANN;
             }
         }
-        
     }
 }
 
@@ -127,7 +125,6 @@ vector2d Quantum::get_E_bound_from_file(const std::string& comp){
     std::string filepath = get_fluid_dir() + "/E_bound/" + comp + ".dat";
     std::ifstream file(filepath);
     if (!file.is_open()) throw std::runtime_error("Failed to open E_bound file: " + filepath);
-    
     vector2d data;
     std::string line;
     size_t ri{0}, ci{0};
