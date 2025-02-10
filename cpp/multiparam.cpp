@@ -3,28 +3,15 @@
 #include <algorithm>
 
 ModTangToennis::ModTangToennis(std::string comps, bool is_idealgas, std::string parameter_ref)
-    : Quantum(comps), param()
-{
-    const auto cdata = compdata[0]["ModTangToennis"][parameter_ref];
-    const double A_div_k = cdata["A_div_k"];
-    const double b = cdata["b"];
-    const double A_tilde = cdata["A_tilde_div_k"];
-    const vector1d a = cdata["a"];
-    const double a_tilde = cdata["a_tilde"];
-    const double eps_div_k = cdata["eps_div_k"];
-    const double Re = cdata["Re"];
-    const double sigma_ = cdata["sigma"];
-    vector1d C = cdata["C"];
-
-    param = TangToennisParam(A_div_k, b, A_tilde, a, a_tilde, eps_div_k, Re, sigma_, C);
-    
+    : Quantum(comps), param(compdata[0]["ModTangToennis"][parameter_ref])
+{    
     eps = vector2d(Ncomps, vector1d(Ncomps, param.eps_div_k * BOLTZMANN));
     sigma = vector2d(Ncomps, vector1d(Ncomps, param.sigma));
 }
 
 dual2 ModTangToennis::potential(int i, int j, dual2 r){
-    r *= 1e9; // Using nm internally
-    if (r < 0.4 * param.Re){
+    r /= param.L_unit; // Convert to units used in parameter set (probably Å or nm)
+    if (r < param.short_range_lim){
         return (param.A_tilde / r) * exp(- param.a_tilde * r) * BOLTZMANN;
     }
     dual2 u = param.A * exp(param.a1 * r + param.a2 * pow(r, 2) + param.am1 * pow(r, -1) + param.am2 * pow(r, -2));
@@ -47,8 +34,8 @@ dual2 ModTangToennis::potential(int i, int j, dual2 r){
 }
 
 double ModTangToennis::potential(int i, int j, double r){
-    r *= 1e9; // Using nm internally
-    if (r < 0.4 * param.Re){
+    r /= param.L_unit; // Using nm internally
+    if (r < param.short_range_lim){
         return (param.A_tilde / r) * exp(- param.a_tilde * r) * BOLTZMANN;
     }
     double u = param.A * exp(param.a1 * r + param.a2 * pow(r, 2) + param.am1 * pow(r, -1) + param.am2 * pow(r, -2));

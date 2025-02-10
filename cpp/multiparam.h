@@ -9,19 +9,25 @@
 using namespace autodiff;
 
 struct TangToennisParam{
-    double A, b, A_tilde, a_tilde, eps_div_k, Re, sigma;
+    double A, b, A_tilde, a_tilde, a1, a2, am1, am2, eps_div_k, Re, sigma, L_unit, short_range_lim;
     // C = {C6, C8, C10, C12, C14, C16}
     vector1d C;
-    double a1, a2, am1, am2;
 
     TangToennisParam() = default;
     TangToennisParam(double A, double b, double A_tilde, vector1d a,
-                    double a_tilde, double eps_div_k, double Re, double sigma, vector1d C)
-                    : A{A}, b{b}, A_tilde{A_tilde}, a_tilde{a_tilde}, eps_div_k{eps_div_k}, Re{Re}, sigma{sigma}, C{C}
+                    double a_tilde, double eps_div_k, double Re, double sigma, double L_unit, vector1d C)
+                    : A{A}, b{b}, A_tilde{A_tilde}, a_tilde{a_tilde}, eps_div_k{eps_div_k}, Re{Re}, sigma{sigma}, L_unit{L_unit}, C{C}
         {
         a1 = a[0]; a2 = a[1];
         am1 = a[2]; am2 = a[3];
         }
+    TangToennisParam(const json& param)
+        : A{param["A_div_k"]}, b{param["b"]}, A_tilde{param["A_tilde_div_k"]}, a_tilde{param["a_tilde"]},
+        a1{param["a1"]}, a2{param["a2"]}, am1{param["am1"]}, am2{param["am2"]},
+        eps_div_k{param["eps_div_k"]}, Re{param["Re"]}, sigma{param["sigma"]}, L_unit{param["L_unit"]},
+        short_range_lim{param["short_range_lim"]},
+        C(param["C"])
+    {}
 };
 
 class ModTangToennis : public Quantum {

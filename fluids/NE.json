@@ -8,6 +8,14 @@
     ],
     "mol_weight": 20.183,
     "default_fh_order": 0,
+    "Quantum" :{
+        "has_quantum_params" : true,
+        "half_spin" : 0,
+        "rot_ground_state" : 0,
+        "has_E_bound_file" : false,
+        "E_bound_div_k" : [[]], 
+        "E_bound_reference" : "Calculated using MolCas VibRot : https://molcas.gitlab.io/OpenMolcas/sphinx/users.guide/programs/vibrot.html#ug-sec-vibrot"
+    },
     "Mie": {
         "default": {
             "sigma": 2.8019e-10,
@@ -163,5 +171,26 @@
             "bib_reference": "HYVA parameters with non-integer repulsive exponent"
         }
     },
-    "LJs": {}
+    "ModTangToennis": {
+        "default": {
+            "A_div_k": 0.183983018e8,
+            "a1" : -0.425209106e1, 
+            "a2" : -0.243585519e-1, 
+            "am1" : 0.218760060e1, 
+            "am2" : -0.929771828,
+            "b": 0.657237460e1,
+            "C": [0.439087458e5, 0.169024069e6, 0.806233710e6, 
+                 4.765277904e+06, 3.490039911e+07, 3.167287113e+08],
+            "A_tilde_div_k":  0.199298869e8,
+            "a_tilde": 0.379784233e1,
+            "eps_div_k": 41.99815,
+            "Re": 3.090350,
+            "sigma": 2.762e-10,
+            "L_unit" : 1e-10,
+            "short_range_lim" : 1.2,
+            "bib_reference": "Hellmann et al. J. Chem. Phys. (2021)",
+            "DOI": "10.1063/5.0047999",
+            "Note": "Potential parameters use kelvin for energies, and Å for lengths, with the exception of sigma, which uses meters."
+        }
+    }
 }

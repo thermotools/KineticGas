@@ -83,14 +83,9 @@ class ModTangToennies(MultiParam):
         super().__init__(comps)
 
         potential = self.fluids[0]['ModTangToennis'][parameter_ref]
-        param = cpp_TangToennisParam(potential['A_div_k'], potential['b'],
-                                     potential['A_tilde_div_k'], potential['a'],
-                                     potential['a_tilde'], potential['eps_div_k'], potential['Re'],
-                                     potential['sigma'], potential['C']
-                                     )
         self.eps_div_k = potential['eps_div_k']
         self.sigma = potential['sigma']
-        self.Re = potential['Re'] * 1e-9
+        self.Re = potential['Re'] * potential['L_unit']
         self.cpp_kingas = cpp_ModTangToennis(comps, True, 'default') # param, self.mole_weights, self.is_idealgas)
 
 class HFD_B2(MultiParam, Quantum):

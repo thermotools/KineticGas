@@ -277,10 +277,6 @@ PYBIND11_MODULE(libpykingas, handle){
         ;
     
     py::class_<TangToennisParam>(handle, "cpp_TangToennisParam")
-        .def(py::init<double, double, double, vector1d,
-                        double, double, double, double,
-                        vector1d>()
-             )
         .def_readwrite("sigma", &TangToennisParam::sigma)
         .def_readwrite("eps_div_k", &TangToennisParam::eps_div_k)
         .def_readwrite("Re", &TangToennisParam::Re)
