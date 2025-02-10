@@ -302,12 +302,21 @@ PYBIND11_MODULE(libpykingas, handle){
         ;
 
     py::class_<ModTangToennis, Quantum>(handle, "cpp_ModTangToennis")
-        .def(py::init<std::string, bool, std::string>())
+        .def(py::init<std::string, std::string>())
         KineticGas_bindings(ModTangToennis)
         .def("potential", py::overload_cast<int, int, double>(&ModTangToennis::potential))
         .def("potential_r", &ModTangToennis::potential_derivative_r)
         .def("potential_rr", &ModTangToennis::potential_dblderivative_rr)
+        .def("potential_dn", &ModTangToennis::potential_dn)
         .def("second_virial", &ModTangToennis::second_virial)
+        ;
+    
+    py::class_<FH_ModTangToennies, Quantum>(handle, "cpp_FH_ModTangToennies")
+        .def(py::init<std::string, size_t, std::string>())
+        .def("potential", py::overload_cast<int, int, double, double>(&FH_ModTangToennies::potential))
+        .def("potential_r", py::overload_cast<int, int, double, double>(&FH_ModTangToennies::potential_derivative_r))
+        .def("potential_rr", py::overload_cast<int, int, double, double>(&FH_ModTangToennies::potential_dblderivative_rr))
+        .def("set_FH_order", &FH_ModTangToennies::set_FH_order)
         ;
 
     py::class_<HFD_B2, Quantum>(handle, "cpp_HFD_B2")

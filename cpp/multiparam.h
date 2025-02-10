@@ -31,19 +31,33 @@ struct TangToennisParam{
 };
 
 class ModTangToennis : public Quantum {
-    public:
+public:
     TangToennisParam param;
 
-    ModTangToennis(std::string comps, bool is_idealgas, std::string parameter_ref="default");
+    ModTangToennis(std::string comps, std::string parameter_ref="default");
 
     dual2 potential(int i, int j, dual2 r) override;
     double potential(int i, int j, double r) override;
+    double potential_dn(int i, int j, double r, size_t n) override;
 
     vector2d model_rdf(double rho, double T, const vector1d& x) override {
         throw std::runtime_error("Modified Tang-Toennis only implemented for ideal gas!");
     }
 
     TangToennisParam get_param(){return param;};
+
+private:
+    std::vector<PolyExp> potential_terms;
+    PolyExp short_range_potential;
+};
+
+class FH_ModTangToennies : public FH_Corrected<ModTangToennis> {
+public:
+    FH_ModTangToennies(std::string comps, size_t FH_order, std::string parameter_ref)
+        : FH_Corrected<ModTangToennis>(FH_order, comps, parameter_ref)
+    {
+        set_quantum_active(false);
+    }
 };
 
 struct HFD_B2_Param {
@@ -96,30 +110,6 @@ protected:
     std::vector<PolyExp> potential_terms;
 };
 
-class PatowskiFH1 : public Patowski {
-public:
-
-    PatowskiFH1(std::string comps);
-
-    double potential(int i, int j, double r, double T) {
-        set_internals(0., T, {0.});
-        return potential(i, j, r);
-    }
-
-    double potential(int i, int j, double r) override;
-    double potential_derivative_r(int i, int j, double r) override;
-    double potential_dblderivative_rr(int i, int j, double r) override;
-
-    dual4th core_potential(int i, int j, dual4th r);
-
-    size_t set_internals(double rho, double T, const vector1d& x) override;
-
-private:
-    size_t set_current_T(double T);
-    double current_T;
-    vector2d D_factors;
-};
-
 class PatowskiFH : public FH_Corrected<Patowski> {
 public:
     PatowskiFH(std::string comps, size_t FH_order)
@@ -130,8 +120,3 @@ public:
 };
 
 using PatowskiTab = Tabulated<Patowski, 1000, 3>;
-// using PatowskiFH = FH_Corrected<Patowski>;
-// using PatowskiFH1 = FH_Corrected<Patowski, 1>; // Tabulated<PatowskiFH1, 1000, 3>;
-// using PatowskiFH2 = FH_Corrected<Patowski, 2>; // FH_Corrected<Splined<PatowskiCore, 1000, 6>, 2>;
-// using PatowskiFH3 = FH_Corrected<Patowski, 3>; // FH_Corrected<Splined<PatowskiCore, 1000, 8>, 3>;
-// using PatowskiFH5 = FH_Corrected<Splined<PatowskiCore, 500, 10>, 4>; // Spline degree must be at least 2 * FH_order + 2

@@ -75,6 +75,9 @@ class FH_Corrected:
     
     def potential_rr(self, r, T):
         return self.cpp_kingas.potential_rr(0, 0, r, T)
+    
+    def potential_dn(self, r, T, n):
+        return self.cpp_kingas.potential_dn(0, 0, r, T, n)
 
     def get_r_min_eff(self, T):
         return self.cpp_kingas.get_r_min(0, 0, T)

@@ -2,11 +2,31 @@
 #include "Factorial.h"
 #include <algorithm>
 
-ModTangToennis::ModTangToennis(std::string comps, bool is_idealgas, std::string parameter_ref)
-    : Quantum(comps), param(compdata[0]["ModTangToennis"][parameter_ref])
+ModTangToennis::ModTangToennis(std::string comps, std::string parameter_ref)
+    : Quantum(comps), param(compdata[0]["ModTangToennis"][parameter_ref]), 
+    short_range_potential(Polynomial(-1, -1, {param.A_tilde}), Polynomial::linear(- param.a_tilde))
 {    
     eps = vector2d(Ncomps, vector1d(Ncomps, param.eps_div_k * BOLTZMANN));
     sigma = vector2d(Ncomps, vector1d(Ncomps, param.sigma));
+
+    potential_terms.emplace_back(Polynomial::constant(param.A),
+                                 Polynomial(-2, 2, {param.am2, param.am1, 0., param.a1, param.a2}));
+    potential_terms.emplace_back(Polynomial(-16, -6, {-param.C[5], -param.C[4], -param.C[3], -param.C[2], -param.C[1], -param.C[0]}, 2),
+                                Polynomial::zero());
+
+    // The double sum over n and k in the attractive part of the potential can be compressed to a 
+    // single polynomial. That is what is going on here, it saves us some significant runtime.
+    vector1d coeff(17, 0.);
+    for (int n = 3; n <= 8; n++){
+        int k = 0;
+        for (; k <= 2 * n; k++){
+            coeff[2 * n - k] += param.C[n - 3] * pow(param.b, k) / partialfactorial(1, k);
+        }
+    }
+    vector1d coeff_r(coeff.rbegin(), coeff.rend());
+    potential_terms.emplace_back(Polynomial(-16, 0, coeff_r),
+                                Polynomial::linear(- param.b));
+    
 }
 
 dual2 ModTangToennis::potential(int i, int j, dual2 r){
@@ -52,6 +72,20 @@ double ModTangToennis::potential(int i, int j, double r){
         u -= (param.C[n - 3] / pow(r, 2 * n)) * (1 - exp_prefactor * tmp);
     }
     return u * BOLTZMANN;
+}
+
+double ModTangToennis::potential_dn(int i, int j, double r, size_t n){
+    r /= param.L_unit;
+    double val = 0;
+    if (r < param.short_range_lim){
+        val = short_range_potential.derivative(r, n);
+    }
+    else {
+        for (const PolyExp& term : potential_terms){
+            val += term.derivative(r, n);
+        }
+    }
+    return val * BOLTZMANN / pow(param.L_unit, n);
 }
 
 HFD_B2::HFD_B2(std::string comps) : Quantum(comps) {
@@ -242,65 +276,4 @@ double Patowski::potential_dn(int i, int j, double r, size_t n){
         val += t;
     }
     return val * BOLTZMANN * pow(1e10, n);
-}
-
-PatowskiFH1::PatowskiFH1(std::string comps) 
-    : Patowski(comps), D_factors(Ncomps, vector1d(Ncomps, 0.)) 
-{
-    set_quantum_active(false);
-}
-
-double PatowskiFH1::potential(int i, int j, double r){
-    dual4th rd = r;
-    auto [u, u1, u2, u3, u4] = autodiff::derivatives([&](dual4th r_){return core_potential(i, j, r_);}, autodiff::wrt(rd), autodiff::at(rd));
-    return u + D_factors[i][j] * u2;
-}
-
-double PatowskiFH1::potential_derivative_r(int i, int j, double r){
-    dual4th rd = r;
-    auto [u, u1, u2, u3, u4] = autodiff::derivatives([&](dual4th r_){return core_potential(i, j, r_);}, autodiff::wrt(rd), autodiff::at(rd));
-    return u1 + D_factors[i][j] * u3;
-}
-
-double PatowskiFH1::potential_dblderivative_rr(int i, int j, double r){
-    dual4th rd = r;
-    auto [u, u1, u2, u3, u4] = autodiff::derivatives([&](dual4th r_){return core_potential(i, j, r_);}, autodiff::wrt(rd), autodiff::at(rd));
-    return u2 + D_factors[i][j] * u4;
-}
-
-dual4th PatowskiFH1::core_potential(int i, int j, dual4th r){
-    r *= 1e10; // Working in Å internally
-    if (r < param.Rc){
-        // Potential is only valid for r > Rc, but we need a continuous extrapolation that is well behaved for numerical purposes.
-        // In practice, something is probably very wrong if we are ever at distances r < Rc, except when iterating some solver.
-        // This extension is made by requiring a contiuous potential and first derivative at r = Rc.
-        return param.Ac * exp(param.Bc * (r - param.Rc)) * BOLTZMANN;
-    }
-    dual4th p = (param.Csp1 + r * param.Csp2 + pow(r, 2) * param.Csp3 + pow(r, 3) * param.Csp4) * exp(param.Cex1 + param.Cex2 * r);
-    for (size_t n = 3; n <= 5; n++){
-        dual4th tmp = 0;
-        for (int k = 0; k <= 2 * n; k++){
-            tmp += pow(param.delta * r, k) / Fac(k).eval_d();
-        }
-        p += (param.Cn[n - 3] / pow(r, 2 * n)) * (1 - tmp * exp(- param.delta * r));
-    }
-    return p * BOLTZMANN;
-}
-
-size_t PatowskiFH1::set_internals(double rho, double T, const vector1d& x){
-    return set_current_T(T);
-}
-
-size_t PatowskiFH1::set_current_T(double T){
-    if (T != current_T){
-        double beta = 1 / (BOLTZMANN * T);
-        for (size_t i = 0; i < Ncomps; i++){
-            for (size_t j = 0; j < Ncomps; j++){
-                D_factors[i][j] = beta * pow(HBAR, 2) / (24 * red_mass[i][j]);
-            }
-        }
-        current_T = T;
-        return 1;
-    }
-    return 0;
 }
