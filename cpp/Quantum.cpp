@@ -475,10 +475,10 @@ double Quantum::absolute_phase_shift(int i, int j, int l, double E){
     // return phase_shift(i, j, l, E);
     double prev_delta;
     double Ei = 1e-6;
-    double dE = (l == 0) ? 1e-2 : 1e-1;
+    double dE = (l == 0) ? 1e-2 : 5e-2;
     int n = 0; // (l <= rot_ground_state[i]) ? 1 : 0;
     std::cout << "E, l : " << E << " / " << Ei << ", " << l << std::endl;
-    while (Ei < E){
+    while (Ei <= E){
         prev_delta = delta;
         delta = absolute_phase_shift(i, j, l, Ei, delta);
         if ((delta < - PI / 4) and (prev_delta > PI / 4)) {
@@ -489,6 +489,15 @@ double Quantum::absolute_phase_shift(int i, int j, int l, double E){
         }
         // std::cout << "Ei, delta : " << E << ", " << Ei << ", " << delta << std::endl;
         Ei += dE;
+    }
+    Ei = E;
+    prev_delta = delta;
+    delta = absolute_phase_shift(i, j, l, Ei, delta);
+    if ((delta < - PI / 4) and (prev_delta > PI / 4)) {
+        n += 1;
+    }
+    else if ((delta > PI / 4) && (prev_delta < - PI / 4)){
+        n -= 1;
     }
     // delta = absolute_phase_shift(i, j, l, E, delta);
     return delta + n * PI;
