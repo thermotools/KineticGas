@@ -355,11 +355,10 @@ double simpson_inf(std::function<double(double)> func, double x0, double init_en
     double I_part = 0;
     double part_tol = tol * 1e6;
     do {
-        // #ifdef DEBUG
-            if (isnan(I)) throw std::runtime_error("Encountered NAN in simpson_inf");
-        // #endif
+        if (isnan(I)) throw std::runtime_error("Encountered NAN in simpson_inf");
         x0 = init_end;
         init_end += 10 * dx;
+        // std::cout << "Start : " << x0 << " => " << init_end << std::endl;
         I_part = simpson(func, x0, init_end, 10);
         I += I_part;
         // std::cout << "simpson : " << x0 << " => " << init_end << " : " << I << ", " << I_part << ", " << part_tol << std::endl;
@@ -438,9 +437,13 @@ double tanh_sinh(std::function<double(double)> func, double h, double tol){
 
 double newton(const std::function<double(double)>& fun, const std::function<double(double)>& df, double x0, double tol){
     double f_val;
+    int niter = 0;
+    int max_iter = 50;
     do {
         f_val = fun(x0);
+        // std::cout << "Newton : " << x0 << ", " << f_val << ", " << df(x0) << std::endl;
         x0 -= f_val / df(x0);
+        if (niter++ > max_iter) throw std::runtime_error("Newton reached max iter!");
     } while (abs(f_val) > tol);
     return x0;
 }

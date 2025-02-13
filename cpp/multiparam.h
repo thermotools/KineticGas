@@ -12,6 +12,7 @@ struct TangToennisParam{
     double A, b, A_tilde, a_tilde, a1, a2, am1, am2, eps_div_k, Re, sigma, L_unit, short_range_lim;
     // C = {C6, C8, C10, C12, C14, C16}
     vector1d C;
+    vector1d C_exp;
 
     TangToennisParam() = default;
     TangToennisParam(double A, double b, double A_tilde, vector1d a,
@@ -26,8 +27,15 @@ struct TangToennisParam{
         a1{param["a1"]}, a2{param["a2"]}, am1{param["am1"]}, am2{param["am2"]},
         eps_div_k{param["eps_div_k"]}, Re{param["Re"]}, sigma{param["sigma"]}, L_unit{param["L_unit"]},
         short_range_lim{param["short_range_lim"]},
-        C(param["C"])
-    {}
+        C(param["C"]), C_exp(17, 0.)
+    {
+        for (int n = 3; n <= 8; n++){
+            int k = 0;
+            for (; k <= 2 * n; k++){
+                C_exp[2 * n - k] += C[n - 3] * pow(b, k) / partialfactorial(1, k);
+            }
+        }
+    }
 };
 
 class ModTangToennis : public Quantum {

@@ -3,10 +3,13 @@
 #include <vector>
 
 int main(){
-    Patowski kin("HE3");
-    std::cout << "Finished HE3 init, computing viscosity ..." << std::endl;
-    double visc = kin.thermal_conductivity(10., 0.08, {0.5, 0.5}, 1);
-    std::cout << "At 10 K : " << visc << std::endl;
+    ModTangToennis kin("NE");
+    // Patowski kin("O-H2");
+    std::vector<double> T_lst = {50.};
+    for (const double T : T_lst){
+        double B = kin.second_virial(0, 0, T);
+        std::cout << "Computed B(" << T << ") = " << B << std::endl;
+    }
     return 0;
     
     // MieKinGas mie2({MW, MW}, 

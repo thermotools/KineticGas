@@ -33,10 +33,13 @@ public:
     double classical_cross_section(int i, int j, int l, double E);
 
     double second_virial(int i, int j, double T) override;
+    vector1d second_virial(int i, int j, const vector1d& T);
     double semiclassical_second_virial(int i, int j, double T);
     double bound_second_virial(int i, int j, double T) override;
+    double dimer_constant(int i, int j, double T) override;
 
     double scattering_volume(int i, int j, double E);
+    double partial_scattering_volume(int i, int j, double E, int l_max);
     std::map<char, double> second_virial_contribs(int i, int j, double T, const std::string& contribs) override;
 
     void set_quantum_active(bool active);

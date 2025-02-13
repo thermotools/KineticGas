@@ -163,6 +163,8 @@ double Spherical::second_virial(int i, int j, double T){
 }
 
 double Spherical::bound_second_virial(int i, int j, double T){
+    // See: Dardi & Dahler, Classical and quantal calculations of the dimerization constant and second virial coefficient for argon, Theoret. Chim. Acta 82 (1992)
+    //        DOI: https://doi.org/10.1007/BF01113133
     set_internals(0, T, {1.});
     double beta = 1 / (BOLTZMANN * T);
     double r0 = get_potential_root(i, j);

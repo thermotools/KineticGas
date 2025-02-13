@@ -160,7 +160,9 @@ int Quantum::get_interaction_statistics(int i, int j){
 }
 
 std::array<double, 2> Quantum::get_symmetry_weights(int i, int j){
+    
     std::array<double, 2> wts;
+    if (is_singlecomp) i = j;
     if (i != j){
         wts[0] = wts[1] = 0.5;
     }
@@ -241,6 +243,9 @@ vector2d Quantum::wave_function(int i, int j, int l, double E, double r_end, dou
     E *= eps[i][j]; step_size *= sigma[i][j]; r_end *= sigma[i][j];
     const double k2 = 2. * red_mass[i][j] / (pow(HBAR, 2));
     const double k = sqrt(k2 * E);
+    if (step_size <= 0){
+        step_size = 0.025 / k;
+    }
     const double s2 = pow(step_size, 2) / 12.;
 
     const auto g_fun = [&](double r_i){return (l * (l + 1)) / pow(r_i, 2) + k2 * (potential(i, j, r_i) - E);};
@@ -253,34 +258,74 @@ vector2d Quantum::wave_function(int i, int j, int l, double E, double r_end, dou
         psi_n.push_back(next_psi);
     };
 
-    const auto local_phase_shift = [&](const vector1d& r, const vector1d& psi, const vector1d& g_vals) -> double {
+    const auto local_phase_shift = [&](const vector1d& r, const vector1d& psi, const vector1d& g_vals, bool cout) -> double {
         const size_t n_step = r.size() - 3;
         double A1 = 0.5 * (psi[n_step + 1] - psi[n_step - 1]);
         double A2 = 0.5 * (psi[n_step + 2] - psi[n_step - 2]);
         double B1 = s2 * (g_vals[n_step + 1] * psi[n_step + 1] - g_vals[n_step - 1] * psi[n_step - 1]);
         double B2 = s2 * (g_vals[n_step + 2] * psi[n_step + 2] - g_vals[n_step - 2] * psi[n_step - 2]);
         double dpsi = (16. / (21. * step_size)) * (- A1 + (37. * A2 / 32.) - (37. * B1 / 5.) - (17. * B2 / 40.)); // First derivative to order h^9
-
+        // double d2psi = (psi[n_step + 1] - 2 * psi[n_step] + psi[n_step - 1]) / pow(step_size, 2);
+        // double d2psi = (psi[n_step + 1] + psi[n_step - 1] - (15. / 8.) * psi[n_step] - (1. / 16.) * (psi[n_step + 2] + psi[n_step - 2])) * (4. / (3. * pow(step_size, 2)));
+        
         double gamma = (dpsi / psi[n_step]) - (1. / r[n_step]);
 
         double jl = sph_bessel(l, k * r[n_step]);
-        double djl = bessel_deriv(l, k * r[n_step], 1);
+        double djl = (l == 0) ? - sph_bessel(1, k * r[n_step]) : sph_bessel(l - 1, k * r[n_step]) - (l + 1) * jl / (k * r[n_step]); // bessel_deriv(l, k * r[n_step], 1);
         double yl = sph_neumann(l, k * r[n_step]);
-        double dyl = bessel_deriv(l, k * r[n_step], 2);
+        double dyl = (l == 0) ? - sph_neumann(1, k * r[n_step]) : sph_neumann(l - 1, k * r[n_step]) - (l + 1) * yl / (k * r[n_step]); // bessel_deriv(l, k * r[n_step], 2);
 
-        return atan((k * djl - gamma * jl) / (k * dyl - gamma * yl)); // local phase shift
+        if (cout) std::cout << "Calc phase shift : " << r.back() << ", " << k << ", " << gamma << ", " << jl << ", " << yl << ", " << djl << ", " << dyl << std::endl;
+        return atan((k * djl - gamma * jl) / (k * dyl - gamma * yl)); // local phase shift // pow(HBAR, 2) * (d2psi / psi[n_step]) / (2. * red_mass[i][j]); // 
     }; 
+    
+    const double L_unt = sigma[i][j];
+    const double E_unt = eps[i][j];
+    const auto r0_fun = [&](double r_val){return (potential(i, j, r_val * L_unt) + l * (l + 1) / (k2 * pow(r_val * sigma[i][j], 2)) - E) / E_unt;};
+    const auto r0_fun_d = [&](double r_val){return (L_unt * potential_derivative_r(i, j, r_val * L_unt) 
+                                                    - 2 * L_unt * l * (l + 1) / (k2 * pow(r_val * sigma[i][j], 3))) / E_unt;};
 
-    double r0 = 0.5 * sigma[i][j];
+    double r0_guess = 0.3;
+    while (r0_fun(r0_guess) > 0){r0_guess *= 1.1;}
+    while (r0_fun(r0_guess) < 0){r0_guess *= 0.9;}
+    std::cout << "r0 guess : " << r0_guess << std::endl;
+    double r_cf = newton(r0_fun, r0_fun_d, r0_guess) * sigma[i][j];
+    double r0 = std::max(r_cf - 3 * (2 * PI / k), r_cf / 2);
+
+    const auto particles_are_free = [&](double ri){return (abs(potential(i, j, ri) / E) < 1e-7)
+                                                       && (abs(potential_derivative_r(i, j, ri) / (k * E)) < 1e-7);};
+
+    if (particles_are_free(r_cf)) r_end = r_cf + 30 * (2 * PI / k);
+    // r_end = r_cf + 3 * sigma[i][j];
+
+    std::cout << "Checks : " << abs(potential(i, j, r_cf) / E) << ", " << abs(potential_derivative_r(i, j, r_cf) / (k * E)) << std::endl;
+    std::cout << "Starting : " << r0 / sigma[i][j] << ", " << r_cf / sigma[i][j] << ", " << step_size / sigma[i][j] << ", " << (2 * PI / k) / sigma[i][j] << ", " << r_end / sigma[i][j] << std::endl;
     vector1d r = {r0, r0 + step_size};
     vector1d g_vals = {g_fun(r[0]), g_fun(r[1])};
-    vector1d psi = {0., step_size};
+    vector1d psi = {0, step_size};
     vector1d phase_shifts;
+
+    int n = (l <= rot_ground_state[i]) ? 1 : 0;
+    double delta, prev_delta;
     for (size_t i = 0; i < 2; i++) numerov_step(r, psi, g_vals);
-    while (r.back() < r_end){
+    delta = local_phase_shift(r, psi, g_vals, false);
+    while ( (!particles_are_free(r.back()) ) || (r.back() < r_end) ){
+        prev_delta = delta;
         numerov_step(r, psi, g_vals);
-        phase_shifts.push_back(local_phase_shift(r, psi, g_vals));
+        delta = local_phase_shift(r, psi, g_vals, false);
+        if ((delta < - PI / 4) and (prev_delta > PI / 4)) {
+            n += 1;
+        }
+        else if ((delta > PI / 4) && (prev_delta < - PI / 4)){
+            n -= 1;
+        }
+        phase_shifts.push_back(delta + n * PI);
     }
+    std::cout << "Terminated at : " << abs(potential(i, j, r.back()) / E) 
+              << ", " << abs(potential_derivative_r(i, j, r.back()) / (k * E)) 
+              << ", " << r.back() / sigma[i][j] << " / " << r_end / sigma[i][j] << std::endl;
+    delta = local_phase_shift(r, psi, g_vals, true);
+    std::cout << "Result : " << delta << std::endl;
     r = vector1d(r.begin() + 2, r.end() - 2);
     psi = vector1d(psi.begin() + 2, psi.end() - 2);
     vector2d out = {r, psi, phase_shifts};
@@ -289,11 +334,13 @@ vector2d Quantum::wave_function(int i, int j, int l, double E, double r_end, dou
 
 double Quantum::quantum_phase_shift(int i, int j, int l, double E){
     // Input is reduced energy (E = E(Joule) / eps[i][j])
-    const double step_size = ((E < 1e-3) ? 1e-4 : 1e-3 * pow(E, 1. / 3.)) * sigma[i][j];
     E *= eps[i][j];
-    const double s2 = pow(step_size, 2) / 12.;
     double k2 = (2. * red_mass[i][j] / pow(HBAR, 2));
     double k = sqrt(k2 * E);
+    const double step_size = 0.025 / k;
+    const double s2 = pow(step_size, 2) / 12.; 
+
+    std::cout << "Start phase shift : " << E / eps[i][j] << ", " << step_size / sigma[i][j] << ", " << sigma[i][j] * k << std::endl;
 
     const auto g_fun = [&](double r_i){return (l * (l + 1)) / pow(r_i, 2) + k2 * (potential(i, j, r_i) - E);};
     const auto numerov_step = [&](std::array<double, 5>& r_n, std::array<double, 5>& psi_n, std::array<double, 5>& g_n) -> void {
@@ -302,11 +349,52 @@ double Quantum::quantum_phase_shift(int i, int j, int l, double E){
         r_n[n_step] = r_n[n_step - 1] + step_size;
         g_n[n_step] = g_fun(r_n[n_step]);
 
-        double next_psi = (psi_n[n_step - 1] * (2. + 10. * s2 * g_n[n_step - 1]) - psi_n[n_step - 2] * (1. - s2 * g_n[n_step - 2])) / (1 - s2 * g_n[n_step]);
-        psi_n[n_step] = next_psi;
+        psi_n[n_step] = (psi_n[n_step - 1] * (2. + 10. * s2 * g_n[n_step - 1]) - psi_n[n_step - 2] * (1. - s2 * g_n[n_step - 2])) / (1 - s2 * g_n[n_step]);
     };
 
-    double r0 = 0.5 * sigma[i][j];
+    /*
+        Determine the boundary of the classically forbidden region (solve r0_fun = 0).
+        The wavefunction decays exponentially inside the classically forbidden region, so we set the 
+        integration starting point a couple wavelengths inside this region.
+
+        Note: If the classical boundary is at a very large separation, we can safely set the phase shift to zero.
+        These collisions correspond to situations with very large angular momentum (large  l (quantum) or b (classical)),
+        and very low energy. Thus, in a classical perspective, these are essentially collisions where the particles trajectories are 
+        completely dominated by the centrifugal potential, meaning that they essentially behave as free particles, and we have zero 
+        phase shift.
+
+        In other words: When the classical boundary is at a very large distance (where the interaction potential is negligible), 
+        and the wavefunction decays exponentially inside this boundary, there is a near-zero probability of finding the particles 
+        at a separation where the interaction potential is non-negligible. Thus, we can safely treat them as free particles, 
+        and assign them a vanishing phase-shift.
+    */
+
+    const double L_unt = sigma[i][j];
+    const double E_unt = eps[i][j];
+    const auto r0_fun = [&](double r_val){return (potential(i, j, r_val * L_unt) + l * (l + 1) / (k2 * pow(r_val * sigma[i][j], 2)) - E) / E_unt;};
+    const auto r0_fun_d = [&](double r_val){return (L_unt * potential_derivative_r(i, j, r_val * L_unt) 
+                                                    - 2 * L_unt * l * (l + 1) / (k2 * pow(r_val * sigma[i][j], 3))) / E_unt;};
+
+    double r0_guess = 0.3;
+    while (r0_fun(r0_guess) > 0){r0_guess *= 1.1;}
+    while (r0_fun(r0_guess) < 0){r0_guess *= 0.9;}
+    double r_classical_forbidden = newton(r0_fun, r0_fun_d, r0_guess) * sigma[i][j];
+    double r_cf = r_classical_forbidden;
+    // True if the effect of the potential is negligible
+    const auto particles_are_free = [&](double ri){return (abs(potential(i, j, ri) / E) < 1e-7)
+                                                       && (abs(potential_derivative_r(i, j, ri) / (k * E)) < 1e-7);};
+
+    std::cout << "Checks : " << abs(potential(i, j, r_cf) / E) << ", " << abs(potential_derivative_r(i, j, r_cf) / (k * E)) << std::endl;
+
+    if (particles_are_free(r_classical_forbidden)) {std::cout << "Particles are free!" << std::endl; return 0;}
+    double r0 = std::max(r_classical_forbidden - 3 * (2 * PI / k), r_classical_forbidden / 2);
+
+    std::cout << "Starting :\n\tStart: " << r0 / sigma[i][j] 
+                       << "\n\tR_cf : " << r_cf / sigma[i][j] 
+                       << "\n\tStep : " << step_size / sigma[i][j] 
+                       << "\n\tWave : " << (2 * PI / k) / sigma[i][j] 
+                       << std::endl;
+
     std::array<double, 5> r = {0, 0, 0, r0, r0 + step_size};
     std::array<double, 5> g_vals = {0, 0, 0, g_fun(r[3]), g_fun(r[4])};
     std::array<double, 5> psi = {0, 0, 0, 0, step_size};
@@ -318,64 +406,49 @@ double Quantum::quantum_phase_shift(int i, int j, int l, double E){
         double B1 = s2 * (g_vals[n_step + 1] * psi[n_step + 1] - g_vals[n_step - 1] * psi[n_step - 1]);
         double B2 = s2 * (g_vals[n_step + 2] * psi[n_step + 2] - g_vals[n_step - 2] * psi[n_step - 2]);
         double dpsi = (16. / (21. * step_size)) * (- A1 + (37. * A2 / 32.) - (37. * B1 / 5.) - (17. * B2 / 40.)); // First derivative to order h^9
-
+        // double d2psi = (psi[n_step + 1] - 2 * psi[n_step] + psi[n_step - 1]) / pow(step_size, 2);
+        // double d2psi = (psi[n_step + 1] + psi[n_step - 1] - (15. / 8.) * psi[n_step] - (1. / 16.) * (psi[n_step + 2] + psi[n_step - 2])) * (4. / (3. * pow(step_size, 2)));
+        
         double gamma = (dpsi / psi[n_step]) - (1. / r[n_step]);
 
         double jl = sph_bessel(l, k * r[n_step]);
-        double djl = bessel_deriv(l, k * r[n_step], 1);
+        double djl = (l == 0) ? - sph_bessel(1, k * r[n_step]) : sph_bessel(l - 1, k * r[n_step]) - (l + 1) * jl / (k * r[n_step]); // bessel_deriv(l, k * r[n_step], 1);
         double yl = sph_neumann(l, k * r[n_step]);
-        double dyl = bessel_deriv(l, k * r[n_step], 2);
-
-        return atan((k * djl - gamma * jl) / (k * dyl - gamma * yl)); // local phase shift
+        double dyl = (l == 0) ? - sph_neumann(1, k * r[n_step]) : sph_neumann(l - 1, k * r[n_step]) - (l + 1) * yl / (k * r[n_step]); // bessel_deriv(l, k * r[n_step], 2);
+        // std::cout << "Calc phase shift : " << r.back() << ", " << k << ", " << gamma << ", " << jl << ", " << yl << ", " << djl << ", " << dyl << std::endl;
+        return atan((k * djl - gamma * jl) / (k * dyl - gamma * yl)); // local phase shift // pow(HBAR, 2) * (d2psi / psi[n_step]) / (2. * red_mass[i][j]); // 
     }; 
 
-    size_t nsteps_init = static_cast<size_t>((5 * sigma[i][j] - r0) / step_size);
-    for (size_t i = 0; i < nsteps_init; i++) numerov_step(r, psi, g_vals); // Do some steps computing phase shifts.
-    double prev_delta = 2 * PI;
-    double new_delta = - prev_delta;
-    double current_err;
-    // ---------------------------------- ITERATION TO SOLVE FOR PHASE SHIFT --------------------------------- //
-    // --- We integrate the wave function outwards, and at regular intervals compute the local phase shift (LPS). 
-    // --- When the change between two checks is below a tolerance, we terminate.
-    // --- Because the LPS oscillates, the change in the LPS between steps is periodic, with the same period as 
-    // --- the wave function. Therefore, we do as follows:
-    // --- (1) Iterate out to the first minimum in change, computing the LPS at each step. 
-    // --- (2) Iterate out to the first maximum in change, computing the LPS at each step.
-    // --- (3) Iterate one half period of the wave function before re-computing the LPS. Terminate when the change between two periods 
-    // ---      is below the tolerance.
-    // --- This ensures that we are checking the LPS at the point in the period wher it changes most rapidly, to ensure that we
-    // --- do not terminate the iteration prematurely because we are at a point in the period where it happens to change slowly. 
-    
-    // Find minimum in change (check at each step)
-    do { 
-        current_err = abs(new_delta - prev_delta); 
-        prev_delta = new_delta;
-        numerov_step(r, psi, g_vals);
-        new_delta = local_phase_shift(r, psi, g_vals);
-    } while (abs(new_delta - prev_delta) < current_err); 
-
-    // Find maximum in change (check at each step)
+    size_t nsteps_init = 2; // static_cast<size_t>((5.5 * 2 * PI / k) / step_size);
+    int n = (l <= rot_ground_state[i]) ? 1 : 0;
+    double delta, prev_delta;
+    for (size_t i = 0; i < nsteps_init; i++) {numerov_step(r, psi, g_vals);} // std::cout << "Init step : " << r[4] / sigma[0][0] << ", " << psi[4] << std::endl; // Do some steps computing phase shifts.
+    delta = local_phase_shift(r, psi, g_vals);
     do {
-        current_err = abs(new_delta - prev_delta); 
-        prev_delta = new_delta;
+        // const size_t nsteps_period = static_cast<size_t>(2 * PI / (k * step_size));
+        // for (size_t i = 0; i < nsteps_period; i++) 
+        // prev_delta = delta;
         numerov_step(r, psi, g_vals);
-        new_delta = local_phase_shift(r, psi, g_vals);
-    } while (abs(new_delta - prev_delta) > current_err);
+        // delta = local_phase_shift(r, psi, g_vals);
+        // if ((delta < - PI / 4) and (prev_delta > PI / 4)) {
+        //     n += 1;
+        // }
+        // else if ((delta > PI / 4) && (prev_delta < - PI / 4)){
+        //     n -= 1;
+        // }
 
-    // Find distance where change is below tolerance, only check once per period.
-    do {
-        size_t nsteps_period = static_cast<size_t>(PI / (k * step_size));
-        prev_delta = new_delta;
-        for (size_t i = 0; i < nsteps_period; i++) numerov_step(r, psi, g_vals);
-        new_delta = local_phase_shift(r, psi, g_vals);
-        // std::cout << "shift (" << E / eps[i][j] << ") : " << prev_delta / PI << ", " << new_delta / PI << std::endl;
-    } while (abs(new_delta - prev_delta) > 1e-5);
-    return new_delta;
+        // std::cout << "Local shift (" << l << ", " << E / eps[i][j] << ", " << r[4] / sigma[i][j] << ") : " << psi[4] << ", " << prev_delta / PI << ", " << new_delta / PI << std::endl;
+        // if (r[4] > step_size * 1e8) throw std::runtime_error("Reached max range for phase shift integration! Step size may be too large.");
+    } while ( ! particles_are_free(r.back())); // || (potential_derivative_r(i, j, r.back()) < 0) ); // while (l * (l + 1) / ( E * k2 * pow(r[4], 2)) > 1e-3); // (abs(new_delta - prev_delta) > 1e-5); // while (error > 1e-5); // 
+    // std::cout << "Converged at r = " << r[4] / sigma[i][j] << std::endl;
+    std::cout << "Terminate phase shift : " << abs(potential(i, j, r.back()) / E) 
+              << ", " << abs(potential_derivative_r(i, j, r.back()) / (k * E))  << ", " << r.back() / sigma[i][j] << std::endl;
+    delta = local_phase_shift(r, psi, g_vals);
+    std::cout << "Result : (" << delta / PI << " + " << n << ") pi" << std::endl;
+    return delta + 0 * n * PI;
 }
 
-double Quantum::phase_shift(int i, int j, int l, double E){
-    if (E < 5e-4) return 0;
-    
+double Quantum::phase_shift(int i, int j, int l, double E){    
     const std::pair<int, double> point(l, E);
     const auto pos = phase_shift_map.find(point);
     if (pos != phase_shift_map.end()) return pos->second;
@@ -398,22 +471,27 @@ double Quantum::absolute_phase_shift(int i, int j, int l, double E, double prev_
 
 double Quantum::absolute_phase_shift(int i, int j, int l, double E){
     if ((E > JKWB_E_limit) || (l > JKWB_l_limit)) return JKWB_phase_shift(i, j, l, E);
-    double delta = (l <= rot_ground_state[i]) ? PI : 0;
-    double Ei = 1e-1;
-    if (l <= 2) {
-        Ei = 1e-2;
-    }
-    else if (l > 10) {
-        Ei = 1.;
-    }
-    double dlnE = .25;
-    double dE = 1.15; // exp(dlnE);
+    double delta = 0;
+    // return phase_shift(i, j, l, E);
+    double prev_delta;
+    double Ei = 1e-6;
+    double dE = (l == 0) ? 1e-2 : 1e-1;
+    int n = 0; // (l <= rot_ground_state[i]) ? 1 : 0;
+    std::cout << "E, l : " << E << " / " << Ei << ", " << l << std::endl;
     while (Ei < E){
+        prev_delta = delta;
         delta = absolute_phase_shift(i, j, l, Ei, delta);
-        Ei *= dE;
+        if ((delta < - PI / 4) and (prev_delta > PI / 4)) {
+            n += 1;
+        }
+        else if ((delta > PI / 4) && (prev_delta < - PI / 4)){
+            n -= 1;
+        }
+        // std::cout << "Ei, delta : " << E << ", " << Ei << ", " << delta << std::endl;
+        Ei += dE;
     }
-    delta = absolute_phase_shift(i, j, l, E, delta);
-    return delta;
+    // delta = absolute_phase_shift(i, j, l, E, delta);
+    return delta + n * PI;
 }
 
 double Quantum::cross_section_A(int n, int l, size_t k){
@@ -463,33 +541,6 @@ double Quantum::cross_section(int i, int j, const int n, const double E){
     if (is_singlecomp) i = j;
     
     auto [sym_prefactor, anti_prefactor] = get_symmetry_weights(i, j);
-    // if ((i != j) && (!is_singlecomp)) {
-    //     sym_prefactor = anti_prefactor = .5;
-    // }
-    // else {
-    //     double S = half_spin[i] / 2.;
-    //     switch (half_spin[i]){
-    //     case 0:
-    //         sym_prefactor = 1;
-    //         anti_prefactor = 0;
-    //         break;
-    //     case 1:
-    //         sym_prefactor = 3. / 4.;
-    //         anti_prefactor = 1. / 4.;
-    //         break;
-    //     case 2:
-    //         sym_prefactor = 5. / 9.; // (S + 1) / (2 * S + 1);
-    //         anti_prefactor = 4. / 9.; // S / (2 * S + 1);
-    //         break;
-    //     default:
-    //         throw std::runtime_error("Invalid half-spin!");
-    //     }
-    //     if (half_spin[i] % 2 != 0) { // Odd Half-Integer spin, Fermions: Swap prefactors
-    //         double tmp = sym_prefactor;
-    //         sym_prefactor = anti_prefactor;
-    //         anti_prefactor = tmp;
-    //     }
-    // }
     double Q = 0;
     if (sym_prefactor > 0.){
         double Q_even = 0;
@@ -561,6 +612,32 @@ double Quantum::omega(int i, int j, int l, int r, double T) {
     return pos->second;
 }
 
+double Quantum::partial_scattering_volume(int i, int j, double E, int l_max){
+int l, l_step{2};
+    if (is_singlecomp) i = j;
+    if (i != j) {
+        l = 0; l_step = 1;
+    }
+    else {
+        switch (half_spin[i]){
+        case 0: l = 0; break;
+        case 2: l = 1; break;
+        default: throw std::runtime_error("Invalid half-spin!");
+        }
+    }
+
+    double S = 0;
+    double S_term = 0;
+    for (; l <= l_max; l += l_step) {
+        double delta = absolute_phase_shift(i, j, l, E);
+        S_term = (2 * l + 1) * delta;        
+        S += S_term;
+        // std::cout << "Converging (" << l << ", " << E << ") : " << S << " / " << S_term << std::endl;
+        // if (l > 100) break;
+    }
+    return S;
+}
+
 double Quantum::scattering_volume(int i, int j, double E){
     int l, l_step{2};
     if (is_singlecomp) i = j;
@@ -588,13 +665,32 @@ double Quantum::scattering_volume(int i, int j, double E){
     return S;
 }
 
+vector1d Quantum::second_virial(int i, int j, const vector1d& T){
+    const size_t Ncores = 8;
+    size_t T_idx = 0;
+    vector1d B_vals(T.size(), 0.);
+    while (T_idx < T.size()){
+        std::vector<std::thread> threads;
+        for (size_t thread_idx = 0; thread_idx < Ncores; thread_idx++){
+            threads.emplace_back([&](double T_val, double& B){B = second_virial(i, j, T_val);}, T[T_idx], std::ref(B_vals[T_idx]));
+            if (++T_idx >= T.size()) break;
+        }
+        for (auto& thread : threads){
+            thread.join();
+        }
+    }
+    return B_vals;
+}
+
 double Quantum::second_virial(int i, int j, double T){
     set_internals(0, T, {1.});
     if (!quantum_is_active) return Spherical::second_virial(i, j, T);
 
     double B = 0;
     std::map<char, double> contribs = second_virial_contribs(i, j, T, "ibt");
-    for (const auto& [_, c] : contribs){
+    std::cout << "Contribs : " << contribs['i'] << ", " << contribs['b'] << ", " << contribs['t'] << std::endl;
+    for (const auto& [key, c] : contribs){
+        std::cout << "Contrib (" << key << ") : " << c << std::endl;
         B += c;
     }
     return B;
@@ -604,6 +700,37 @@ double Quantum::bound_second_virial(int i, int j, double T){
     set_internals(0, T, {1.});
     if (!quantum_is_active) return Spherical::bound_second_virial(i, j, T);
     return second_virial_contribs(i, j, T, "b")['b'];
+}
+
+double Quantum::dimer_constant(int i, int j, double T){
+    set_internals(0, T, {1.});
+    if (!quantum_is_active) return Spherical::dimer_constant(i, j, T);
+    
+    std::array<double, 2> wts = get_symmetry_weights(i, j);
+    const auto [sym_wt, anti_wt] = wts;
+
+    size_t l_start, l_step;
+    if (sym_wt == 0){
+        l_start = 1; l_step = 2;
+    }
+    else if (anti_wt == 0){
+        l_start = 0; l_step = 2;
+    }
+    else {
+        l_start = 0; l_step = 1;
+    }
+
+    double K = 0;
+    double beta = 1 / (BOLTZMANN * T);
+    const vector2d& Eb = E_bound[i][j];
+    for (size_t vib_i = 0; vib_i < Eb.size(); vib_i++){
+        for (size_t l = l_start; l < Eb[vib_i].size(); l+=l_step){
+            K += wts[l % 2] * (2 * l + 1) * exp(- beta * Eb[vib_i][l]);
+        }
+    }
+    double lamb = de_broglie_wavelength(i, j, T);
+    double V_th = pow(lamb, 3);
+    return K * V_th * AVOGADRO;
 }
 
 std::map<char, double> Quantum::second_virial_contribs(int i, int j, double T, const std::string& contribs){
@@ -658,10 +785,12 @@ std::map<char, double> Quantum::second_virial_contribs(int i, int j, double T, c
                     + simpson(integrand, 1, 3, 20) 
                     + simpson_inf(integrand, 3, 7);
 
-            B_th_term = wts[l % 2] * (2 * l + 1) * I / PI;        
+            B_th_term = wts[l % 2] * (2 * l + 1) * I / PI; 
+            // std::cout << "Converging ... " << B_th << " / " << B_th_term << std::endl;    
             B_th += B_th_term;
             l += l_step;
         } while (abs(B_th_term / B_th) > 1e-3);
+        std::cout << "T = " << T << ", l_max = " << l << std::endl;
         B_contribs['t'] = B_th;
     }
 

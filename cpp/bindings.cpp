@@ -34,7 +34,9 @@ using vector2d = std::vector<vector1d>;
         .def("thermal_diffusion_ratio", &Model::thermal_diffusion_ratio) \
         .def("thermal_diffusion_coeff", &Model::thermal_diffusion_coeff) \
         .def("thermal_diffusion_factor", &Model::thermal_diffusion_factor) \
-        .def("second_virial", &Model::second_virial) \
+        .def("second_virial", py::overload_cast<int, int, double>(&Model::second_virial)) \
+        .def("bound_second_virial", &Model::bound_second_virial) \
+        .def("dimer_constant", &Model::dimer_constant) \
         .def("get_mtl", &Model::get_mtl) \
         .def("get_etl", &Model::get_etl) \
         .def("get_rdf", &Model::get_rdf) \
@@ -263,11 +265,13 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("JKWB_upper_E_limit", &Quantum::JKWB_upper_E_limit)
         .def("omega", &Quantum::omega)
         .def("quantum_omega", &Quantum::quantum_omega)
-        .def("second_virial", &Quantum::second_virial)
+        .def("second_virial", py::overload_cast<int, int, double>(&Quantum::second_virial))
+        .def("second_virial", py::overload_cast<int, int, const vector1d&>(&Quantum::second_virial))
         .def("second_virial_contribs", &Quantum::second_virial_contribs)
         .def("semiclassical_second_virial", &Quantum::semiclassical_second_virial)
         .def("classical_omega", &Quantum::classical_omega)
         .def("scattering_volume", &Quantum::scattering_volume)
+        .def("partial_scattering_volume", &Quantum::partial_scattering_volume)
         .def("set_quantum_active", &Quantum::set_quantum_active)
         .def("get_quantum_active", &Quantum::get_quantum_active)
         .def("set_JKWB_limits", &Quantum::set_JKWB_limits)
@@ -308,7 +312,7 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("potential_r", &ModTangToennis::potential_derivative_r)
         .def("potential_rr", &ModTangToennis::potential_dblderivative_rr)
         .def("potential_dn", &ModTangToennis::potential_dn)
-        .def("second_virial", &ModTangToennis::second_virial)
+        .def("second_virial", py::overload_cast<int, int, const vector1d&>(&ModTangToennis::second_virial))
         ;
     
     py::class_<FH_ModTangToennies, Quantum>(handle, "cpp_FH_ModTangToennies")

@@ -58,18 +58,18 @@ double ModTangToennis::potential(int i, int j, double r){
     if (r < param.short_range_lim){
         return (param.A_tilde / r) * exp(- param.a_tilde * r) * BOLTZMANN;
     }
-    double u = param.A * exp(param.a1 * r + param.a2 * pow(r, 2) + param.am1 * pow(r, -1) + param.am2 * pow(r, -2));
+    std::array<double, 17> rpow;
+    for (size_t n = 0; n < 17; n++){
+        rpow[n] = pow(r, n);
+    }
+
+    double u = param.A * exp(param.a1 * rpow[1] + param.a2 * rpow[2] + param.am1 / rpow[1] + param.am2 / rpow[2]);
     double exp_prefactor = exp(- param.b * r);
     for (int n = 3; n <= 8; n++){
-        double tmp = 0.;
-        int k = 0;
-        for (; k <= std::min(2 * n, 10); k++){
-            tmp += pow(param.b * r, k) / partialfactorial(1, k);
-        }
-        for (; k <= 2 * n; k++){ // Prevent factorial overflow
-            tmp += (pow(param.b * r, 10) / partialfactorial(1, 10)) * (pow(param.b * r, k - 10) / partialfactorial(10, k));
-        }
-        u -= (param.C[n - 3] / pow(r, 2 * n)) * (1 - exp_prefactor * tmp);
+        u -= (param.C[n - 3] / rpow[2 * n]);
+    }
+    for (int n = 0; n <= 16; n++){
+        u += param.C_exp[n] * exp_prefactor / rpow[n];
     }
     return u * BOLTZMANN;
 }
