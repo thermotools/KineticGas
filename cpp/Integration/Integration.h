@@ -190,3 +190,6 @@ std::pair<double, double> weighted_simpson(std::function<std::pair<double, doubl
 double tanh_sinh(std::function<double(double)> func, double dh, double tol=1e-5);
 
 double newton(const std::function<double(double)>& fun, const std::function<double(double)>& df, double x0, double tol=1e-10);
+
+std::array<double, 3> fit_quadric(const std::array<double, 3>& x, const std::array<double, 3>& y);
+std::array<double, 3> quadric_extrapolate_coeff(const std::vector<double>& x, const std::vector<double>& y);

@@ -24,6 +24,8 @@ public:
     double absolute_phase_shift(int i, int j, int l, double E);
     vector2d absolute_phase_shifts(int i, int j, int l, double k_max);
     void fill_absolute_phase_shifts(int i, int j, int l, double next_k, int& n, vector1d& k_vals, vector1d& phase_shifts);
+    void fill_absolute_phase_shifts_tail(int i, int j, int l, double next_k, int& n, vector1d& k_vals, vector1d& phase_shifts);
+    double integral_phase_shift(int i, int j, int l, double T);
     double r_classical_forbidden(int i, int j, int l, double E);
 
     double cross_section_A(int n, int l, size_t k);
@@ -77,6 +79,7 @@ private:
     std::vector<unsigned int> rot_ground_state; // Rotational ground state
     std::vector<std::vector<int>> interaction_statistics;
     std::map<std::pair<int, double>, double> phase_shift_map;
+    std::map<int, vector2d> absolute_phase_shift_map;
     
 
 };

@@ -12,6 +12,7 @@ Contains: Implementation of Integration.h
 #include <utility>
 #include <map>
 #include <math.h>
+#include <Eigen/Dense>
 
 #define FLTEPS 1e-12
 
@@ -446,4 +447,41 @@ double newton(const std::function<double(double)>& fun, const std::function<doub
         if (niter++ > max_iter) throw std::runtime_error("Newton reached max iter!");
     } while (abs(f_val) > tol);
     return x0;
+}
+
+std::array<double, 3> fit_quadric(const std::array<double, 3>& x, const std::array<double, 3>& y){
+    Eigen::MatrixXd A(3, 3);
+    Eigen::VectorXd b(3);
+    for (size_t i = 0; i < 3; i++){
+        A(i, 0) = x[i] * x[i];
+        A(i, 1) = x[i];
+        A(i, 2) = 1;
+        b(i) = y[i];
+    }
+
+    Eigen::VectorXd sol = A.partialPivLu().solve(b);
+    std::array<double, 3> coeff;
+    for (size_t i = 0; i < 3; i++){
+        coeff[i] = sol(i);
+    }
+    return coeff;
+}
+
+std::array<double, 3> quadric_extrapolate_coeff(const std::vector<double>& x, const std::vector<double>& y){
+    Eigen::MatrixXd A(3, 3);
+    Eigen::VectorXd b(3);
+    size_t N = x.size() - 3;
+    for (size_t i = 0; i < 3; i++){
+        double xi = x[N + i] - x.back();
+        A(i, 0) = xi * xi;
+        A(i, 1) = xi;
+        A(i, 2) = 1;
+        b(i) = y[N + i];
+    }
+    Eigen::VectorXd sol = A.partialPivLu().solve(b);
+    std::array<double, 3> coeff;
+    for (size_t i = 0; i < 3; i++){
+        coeff[i] = sol(i);
+    }
+    return coeff;
 }
