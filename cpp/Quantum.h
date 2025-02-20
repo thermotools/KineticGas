@@ -1,5 +1,6 @@
 #pragma once
 #include "Spherical.h"
+#include <mutex>
 
 class Quantum : public Spherical {
 public:
@@ -23,8 +24,14 @@ public:
     double absolute_phase_shift(int i, int j, int l, double E, double prev_delta);
     double absolute_phase_shift(int i, int j, int l, double E);
     vector2d absolute_phase_shifts(int i, int j, int l, double k_max);
+
+    void trace_absolute_phase_shifts(int i, int j, int l, double k_max);
     void fill_absolute_phase_shifts(int i, int j, int l, double next_k, int& n, vector1d& k_vals, vector1d& phase_shifts);
     void fill_absolute_phase_shifts_tail(int i, int j, int l, double next_k, int& n, vector1d& k_vals, vector1d& phase_shifts);
+
+    void trace_total_phase_shifts(int i, int j, double k_max);
+    vector2d total_phase_shifts(int i, int j, double k_max);
+
     double integral_phase_shift(int i, int j, int l, double T);
     double r_classical_forbidden(int i, int j, int l, double E);
 
@@ -80,6 +87,7 @@ private:
     std::vector<std::vector<int>> interaction_statistics;
     std::map<std::pair<int, double>, double> phase_shift_map;
     std::map<int, vector2d> absolute_phase_shift_map;
-    
+    std::mutex abs_phase_shift_map_mutex;
+    vector2d stored_total_phase_shifts;
 
 };

@@ -193,3 +193,5 @@ double newton(const std::function<double(double)>& fun, const std::function<doub
 
 std::array<double, 3> fit_quadric(const std::array<double, 3>& x, const std::array<double, 3>& y);
 std::array<double, 3> quadric_extrapolate_coeff(const std::vector<double>& x, const std::vector<double>& y);
+double interpolate_grid(const std::vector<double>& x, const std::vector<double>& y);
+std::vector<double> interpolate_grid(const std::vector<double>& new_x, const std::vector<double>& old_x, const std::vector<double>& y);

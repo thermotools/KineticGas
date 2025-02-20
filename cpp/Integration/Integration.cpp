@@ -485,3 +485,42 @@ std::array<double, 3> quadric_extrapolate_coeff(const std::vector<double>& x, co
     }
     return coeff;
 }
+
+double interpolate_grid(const double x_val, const std::vector<double>& x, const std::vector<double>& y){
+    if (x_val < x[0]) throw std::range_error("Interpolate grid: x_val < min(x)! (" + std::to_string(x_val) + " < " + std::to_string(x[0]) + ")");
+    if (x_val > x.back()) throw std::range_error("Interpolate grid: x_val > max(x)! (" + std::to_string(x_val) + " > " + std::to_string(x.back()) + ")");
+
+    if (x_val == x[0]) return y[0];
+
+    size_t i = 1;
+    double x1{x[0]}, x2{x[i]};
+    for (i = 2; i < x.size(); i++){
+        if (x2 > x_val) break;
+        x1 = x2;
+        x2 = x[i];
+    }
+    const double y1{y[i - 1]}, y2{y[i]};
+
+    return y1 + (y2 - y1) * (x_val - x1) / (x2 - x1);
+}
+
+std::vector<double> interpolate_grid(const std::vector<double>& new_x, const std::vector<double>& old_x, const std::vector<double>& y){
+    std::vector<double> new_y(new_x.size());
+    if (new_x[0] / old_x[0] - 1 < - 1e-12) throw std::range_error("Interpolate grid: new_x < old_x! (" + std::to_string(new_x[0]) + " < " + std::to_string(old_x[0]) + ")");
+    if (new_x.back() / old_x.back() - 1 > 1e-12) throw std::range_error("Interpolate grid: new_x > old_x! (" + std::to_string(new_x.back()) + " > " + std::to_string(old_x.back() - 1e-8) + ")");
+
+    double x1{old_x[0]}, x2{old_x[1]};
+    size_t old_idx = 1;
+    for (size_t new_idx = 0; new_idx < new_x.size(); new_idx++){
+        double x = new_x[new_idx];
+        while ((old_idx < old_x.size() - 1) && (x2 < x)){
+            old_idx++;
+            x1 = x2;
+            x2 = old_x[old_idx];
+        }
+        double y1{y[old_idx - 1]}, y2{y[old_idx]};
+        new_y[new_idx] = y1 + (y2 - y1) * (x - x1) / (x2 - x1);
+        // std::cout << "Interpolate : " << x1 << " < " << x << " < " << x2 << ", " << y1 / PI << ", " << y2 / PI << " (" << old_idx << ") " << std::endl;
+    }
+    return new_y;
+}
