@@ -71,7 +71,7 @@ class MultiParam(py_KineticGas):
         return - E / ((self.eps_div_k * Boltzmann) * self.sigma ** 3)
     
     def get_r_min(self, i, j):
-        return self.cpp_kingas.get_r_min(i, j)
+        return self.cpp_kingas.get_r_min(i, j, 1)
 
 class ModTangToennies(MultiParam, Quantum):
     

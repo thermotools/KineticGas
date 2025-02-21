@@ -123,6 +123,15 @@ Quantum::Quantum(std::string comps_)
             }
         }
     }
+    std::string phase_shift_filepath = get_fluid_dir() + "/E_bound/" + comps[0] + ".phase_shifts";
+    std::ifstream phase_shift_file(phase_shift_filepath);
+    if (phase_shift_file.is_open()){
+        json phase_shift_data = json::parse(phase_shift_file);
+        absolute_phase_shift_map = phase_shift_data.get<std::map<int, vector2d>>();
+    } 
+    else {
+        std::cout << "No phase shift data found for component : " << comps[0] << std::endl;
+    }
 }
 
 vector2d Quantum::get_E_bound_from_file(const std::string& comp){
@@ -216,18 +225,18 @@ double Quantum::JKWB_phase_shift(int i, int j, int l, double E){
     
     double R = get_R(i, j, T, g, b * sigma[i][j]) / sigma[i][j];
     while (1 - pow(b / R, 2) - potential(i, j, R * sigma[i][j]) / E < 0) {
-        R += 1e-3;
+        R += 1e-8;
     }
     
     const auto integrand1 = [&](double r){return sqrt(1 - pow(b / r, 2) - potential(i, j, r * sigma[i][j]) / E) - sqrt(1 - pow(b / r, 2));};
-    if (abs(R - b) < 1e-6){
-        double lower_lim = (R > b) ? R : b;
-        double I = k * simpson_inf(integrand1, lower_lim, 1.5 * lower_lim) * sigma[i][j];
-        return I;
-    }
+    // if (abs(R - b) < 1e-12){
+    //     double lower_lim = (R > b) ? R : b;
+    //     double I = k * simpson_inf(integrand1, lower_lim, 1.5 * lower_lim) * sigma[i][j];
+    //     return I;
+    // }
 
     double I1, I2;
-    if (b < R){
+    if (b <= R){
         const auto integrand2 = [&](double r){return sqrt(1 - pow(b / r, 2));};
         I1 = simpson_inf(integrand1, R, 1.5 * R);
         I2 = - simpson(integrand2, b, R, 10);
@@ -238,7 +247,7 @@ double Quantum::JKWB_phase_shift(int i, int j, int l, double E){
             return I;
         };
         I1 = simpson_inf(integrand1, b, 1.5 * b);
-        I2 = simpson(integrand2, R, b, 10);
+        I2 = - simpson(integrand2, R, b, 10);
     }
     return k * (I1 + I2) * sigma[i][j];
 }
@@ -512,6 +521,21 @@ vector2d Quantum::absolute_phase_shifts(int i, int j, int l, double k_max){
     return absolute_phase_shift_map[l];
 }
 
+void Quantum::dump_phase_shift_map(){
+    std::string filepath = get_fluid_dir() + "/E_bound/" + comps[0] + ".phase_shifts";
+    std::ofstream file(filepath);
+    if (!file.is_open()) throw std::runtime_error("Failed to open dumpfile: " + filepath);
+    json dump_data(absolute_phase_shift_map);
+    // dump_data["Total"] = stored_total_phase_shifts;
+    file << std::setw(4) << dump_data << std::endl;
+    std::cout << "Dumped absolute phase shifts to " << filepath << std::endl;
+}
+
+void Quantum::clear_phase_shift_maps(){
+    absolute_phase_shift_map.clear();
+    stored_total_phase_shifts.clear();
+}
+
 void Quantum::fill_absolute_phase_shifts(int i, int j, int l, double next_k, int& n, vector1d& k_vals, vector1d& phase_shifts){
     const auto E_from_k = [&](double k_val){return pow(k_val * HBAR, 2) / (2. * red_mass[i][j] * eps[i][j]);};
     double next_delta = phase_shift(i, j, l, E_from_k(next_k / sigma[i][j]));
@@ -600,14 +624,24 @@ void Quantum::fill_absolute_phase_shifts_tail(int i, int j, int l, double next_k
     phase_shifts.push_back(delta);
 }
 
+int Quantum::get_levinson_multiple(int i, int j, int l){
+    vector2d& Eb = E_bound[i][j];
+    int nl = 0;
+    for (size_t vib_i = 0; vib_i < Eb.size(); vib_i++){
+        if (Eb[vib_i].size() > l) nl++;
+    }
+    return nl;
+}
+
 void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
     const auto E_from_k = [&](double k_val){return pow(k_val * HBAR, 2) / (2. * red_mass[i][j] * eps[i][j]);};
+    int n = get_levinson_multiple(i, j, l);
     {
         std::lock_guard<std::mutex> loc(abs_phase_shift_map_mutex);
         const auto pos = absolute_phase_shift_map.find(l);
         if (pos == absolute_phase_shift_map.end()){
             vector1d k_vals = {0};
-            vector1d phase_shifts = {(l > 0) ? 0 : PI};
+            vector1d phase_shifts = {PI * n};
             absolute_phase_shift_map[l] = vector2d({k_vals, phase_shifts});
             std::cout << "Compute for l, k_max = " << l << ", " << k_max << std::endl; 
         }
@@ -626,11 +660,21 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
 
     if (k_vals.back() >= k_max) return;
 
+    if (l >= JKWB_l_limit){
+        double dk = 0.1;
+        while (k_vals.back() + dk < k_max){
+            k_vals.push_back(k_vals.back() + dk);
+            phase_shifts.push_back(JKWB_phase_shift(i, j, l, E_from_k(k_vals.back() / sigma[i][j])));
+        }
+        k_vals.push_back(k_max);
+        phase_shifts.push_back(JKWB_phase_shift(i, j, l, E_from_k(k_vals.back() / sigma[i][j])));
+        return;
+    }
+
     double k = (k_vals.size() == 1) ? 0.5 : k_vals.back();
     double dk = 0.01;
-    int n = 0;
 
-    if (k_vals.size() > 0){
+    if (k_vals.size() > 1){
         // std::cout << "Finding n start ... " << std::endl;
         while (phase_shifts.back() > PI * (n + 0.5)) n += 1;
         while (phase_shifts.back() < PI * (n - 0.5)) n -= 1;
@@ -640,6 +684,7 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
     for (; k_vals.size() < 5;){
         k += dk;
         delta = phase_shift(i, j, l, E_from_k(k / sigma[i][j]));
+        if (delta < PI / 4) delta += n * PI;
         k_vals.push_back(k);
         phase_shifts.push_back(delta);
     }
@@ -707,7 +752,7 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
 
         double tol_dk = pow(6 * extrapol_tol / abs(d3pdk3), 1. / 3.);
         dk = std::max(min_dk, std::min(tol_dk, max_dk));
-
+        // std::cout << "Using dk = " << dk << ", " << k << ", " << phase_shifts.back() << std::endl;
         k += dk;
 
         fill_absolute_phase_shifts(i, j, l, k, n, k_vals, phase_shifts);
@@ -718,7 +763,7 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
             is_linear = true;
         }
     }
-
+    // std::cout << "Entering tail... " << k << ", " << phase_shifts.back() << std::endl;
     max_dk = 5;
     min_dk = 0.5;
     std::array<double, 3> prev_dk_vals = dk_vals;
@@ -755,6 +800,9 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
 }
 
 void Quantum::trace_total_phase_shifts(int i, int j, double k_max){
+    if (stored_total_phase_shifts.size() > 0){
+        if (stored_total_phase_shifts[0].back() >= k_max) return;
+    }
     double dk = 0.1;
     size_t n_vals = static_cast<size_t>(k_max / dk);
     vector1d k_vals(n_vals);
@@ -774,7 +822,7 @@ void Quantum::trace_total_phase_shifts(int i, int j, double k_max){
         l += 2;
         trace_absolute_phase_shifts(i, j, l, k_max);
         phase_shift_l = interpolate_grid(k_vals, absolute_phase_shift_map[l][0], absolute_phase_shift_map[l][1]);
-    } while (abs(phase_shift_l.back() / phase_shifts.back()) > 1e-3);
+    } while (abs(phase_shift_l.back() * (2 * l + 1) / phase_shifts.back()) > 1e-6);
     stored_total_phase_shifts = vector2d({k_vals, phase_shifts});
 }
 
@@ -1109,21 +1157,21 @@ std::map<char, double> Quantum::second_virial_contribs(int i, int j, double T, c
             //         + simpson_inf(integrand, 3, 7);
             
 
-            constexpr int n_cores = 1;
-            std::vector<double> integrals(n_cores);
-            std::vector<std::thread> threads;
-            const auto thread_fun = [&](double& I, int li){I = integral_phase_shift(i, j, li, T);};
-            int l_tmp = l;
-            for (size_t ti = 0; ti < n_cores; ti++){
-                threads.push_back(std::thread(thread_fun, std::ref(integrals[ti]), l_tmp));
-                l_tmp += l_step;
-            }
-            for (size_t ti = 0; ti < n_cores; ti++){
-                threads[ti].join();
-                B_th_term = wts[l % 2] * (2 * l + 1) * integrals[ti] / PI;
-                B_th += B_th_term;
-                l += l_step;
-            }
+            // constexpr int n_cores = 1;
+            // std::vector<double> integrals(n_cores);
+            // std::vector<std::thread> threads;
+            // const auto thread_fun = [&](double& I, int li){I = integral_phase_shift(i, j, li, T);};
+            // int l_tmp = l;
+            // for (size_t ti = 0; ti < n_cores; ti++){
+            //     threads.push_back(std::thread(thread_fun, std::ref(integrals[ti]), l_tmp));
+            //     l_tmp += l_step;
+            // }
+            // for (size_t ti = 0; ti < n_cores; ti++){
+            //     threads[ti].join();
+            //     B_th_term = wts[l % 2] * (2 * l + 1) * integrals[ti] / PI;
+            //     B_th += B_th_term;
+            //     l += l_step;
+            // }
 
             // B_th_term = wts[l % 2] * (2 * l + 1) * integral_phase_shift(i, j, l, T) / PI; 
             // std::cout << "Converging ... " << B_th << " / " << B_th_term << std::endl;    

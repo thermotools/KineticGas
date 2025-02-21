@@ -29,8 +29,11 @@ public:
     void fill_absolute_phase_shifts(int i, int j, int l, double next_k, int& n, vector1d& k_vals, vector1d& phase_shifts);
     void fill_absolute_phase_shifts_tail(int i, int j, int l, double next_k, int& n, vector1d& k_vals, vector1d& phase_shifts);
 
+    int get_levinson_multiple(int i, int j, int l);
     void trace_total_phase_shifts(int i, int j, double k_max);
     vector2d total_phase_shifts(int i, int j, double k_max);
+    void dump_phase_shift_map();
+    void clear_phase_shift_maps();
 
     double integral_phase_shift(int i, int j, int l, double T);
     double r_classical_forbidden(int i, int j, int l, double E);
