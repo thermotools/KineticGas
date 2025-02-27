@@ -4,6 +4,7 @@ Contains : See Factorial.h for documentation and comments.
 */
 
 #include "Factorial.h"
+#include <shared_mutex>
 
 // Returns the exponential of an integer base as a Product.
 Product ipow(int base, int expo){
@@ -313,27 +314,109 @@ double binom(int n, int k) {
     return (Fac(n) / (Fac(k) * Fac(n - k))).eval();             
 }
 
+void fill_partitions(const int N, int m, std::vector<std::vector<int>>& partitions){
+    if (N == 0) {
+        partitions.resize(1); partitions[0].clear(); return; // There is exactly one partition of zero: The empty partition.
+    }
+    if (N == 1){
+        partitions.resize(1); partitions[0].resize(1); partitions[0][0] = 1; return;
+    }
+    if (m < 0) m = N;
+    if (m == N){
+        switch (N){
+        case 2: partitions = {{2}, {1, 1}}; return;
+        case 3: partitions = {{3}, {2, 1}, {1, 1, 1}}; return;
+        case 4: partitions = {{4}, {3, 1}, {2, 2}, {2, 1, 1}, {1, 1, 1, 1}}; return;
+        case 5: partitions = {{5}, {4, 1}, {3, 2}, {3, 1, 1}, {2, 2, 1}, {2, 1, 1, 1}, {1, 1, 1, 1, 1}}; return;
+        }
+    }
+    partitions.clear();
+    std::vector<std::vector<int>> sub_partitions(N);
+    // for (auto& sub_inner : sub_partitions){
+    //     sub_inner.reserve(N);
+    // }
+    int min_k = (N - m < 0) ? 0 : N - m;
+    for (int k = min_k; k < N; k++){
+        int n = N - k;
+        fill_partitions(k, n, sub_partitions);
+        partitions.reserve(partitions.size() + sub_partitions.size());
+        for (std::vector<int>& part : sub_partitions){
+            part.insert(part.begin(), n);
+            partitions.emplace_back(std::move(part));
+        }
+    }
+}
+
+void extend_partitions(int N, std::vector<std::vector<std::vector<int>>>& partitions){
+    if (partitions.size() >= N + 1) return;
+    int k0 = partitions.size();
+    partitions.resize(N + 1);
+    for (int k = k0; k <= N; k++){
+        for (size_t m = k; m > 0; m--){
+            for (const std::vector<int>& prev_part : partitions[k - m]){
+                bool include_part = true;
+                for (const int p : prev_part){
+                    if (p > m) {include_part=false; break;}
+                }
+                if (!include_part) continue;
+                partitions[k].push_back(prev_part);
+                partitions[k].back().insert(partitions[k].back().begin(), m);
+            }
+        }
+    }
+}
+
 std::vector<std::vector<int>> get_partitions(int N, int m){
     // Find all unique integer partitions of the number N, with largest value smaller than or equal to m
     // See: Memo on derivatives
-    if (N == 0) return std::vector<std::vector<int>>(1, std::vector<int>());
-    if (N == 1) return std::vector<std::vector<int>>(1, std::vector<int>(1, 1));
     if (m < 0) m = N;
-
     std::vector<std::vector<int>> partitions;
+    fill_partitions(N, m, partitions);
+    return partitions;
+
     int min_k = (N - m < 0) ? 0 : N - m;
     for (int k = min_k; k < N; k++){
         int n = N - k;
         std::vector<std::vector<int>> sub_partitions = get_partitions(k, n);
         for (std::vector<int>& part : sub_partitions){
             part.insert(part.begin(), n);
-            partitions.push_back(part);
+            partitions.push_back(std::move(part));
         }
     }
     return partitions;
 }
 
-long long partition_multiplicity(const std::vector<int>& partition){
+const std::vector<std::vector<int>>& get_partitions(int N) {
+    static std::vector<std::vector<std::vector<int>>> all_partitions = {{{}}};
+    static std::shared_mutex mtx;
+
+    {
+        std::shared_lock lock(mtx);
+        if (all_partitions.size() > static_cast<size_t>(N)) {
+            return all_partitions[N];
+        }
+    }
+
+    {
+        std::unique_lock lock(mtx);
+        if (all_partitions.size() <= static_cast<size_t>(N)) {
+            extend_partitions(N, all_partitions);
+        }
+        return all_partitions[N];
+    }
+}
+
+
+std::vector<std::vector<std::vector<int>>> build_partitions(int N, int maxval){
+    if (maxval < 0) maxval = N;
+    std::vector<std::vector<std::vector<int>>> partitions(1, std::vector<std::vector<int>>());
+    partitions.reserve(N + 1);
+    partitions[0] = {{}};
+    extend_partitions(N, partitions);
+    return partitions;
+}
+
+double partition_multiplicity(const std::vector<int>& partition){
     // The "Multiplicity" of a partition is the number of ways a set of N elements can be subdivided into subsets of k_1, k_2, ... elements
     // For N = k_1 + k_2 + ...
     // See: Memo on derivatives
@@ -342,20 +425,36 @@ long long partition_multiplicity(const std::vector<int>& partition){
         n += p;
     }
 
-    Fac num{n};
-    Product denom{1};
+    const auto factorial_d = [](int n){
+        double v = 1;
+        for (; n > 1; n--){v *= n;}
+        return v;
+        };
+
+    double num = factorial_d(n);
+    double denom = 1;
+
+    // Fac num{n};
+    // Product denom{1};
     for (int p : partition){
-        denom *= Fac(p);
+        denom *= factorial_d(p);
     }
 
-    std::vector<int> counted;
-    for (int p : partition){
-        if (std::count(counted.begin(), counted.end(), p) > 0) continue;
-        denom *= Fac(std::count(partition.begin(), partition.end(), p));
-        counted.push_back(p);
+    int prev_counted = -1;
+    // counted.reserve(partition.size());
+    for (const int p : partition){
+        if (p == prev_counted) continue;
+        // bool counted = false;
+        // for (const int c : counted){
+        //     if (c == p) {counted = true; break;}
+        // }
+        // if (counted) continue;
+        denom *= factorial_d(std::count(partition.begin(), partition.end(), p));
+        // counted.push_back(p);
+        prev_counted = p;
     }
 
-    return static_cast<long long>((num / denom).eval() + 0.5); // + 0.5 To ensure correct flooring in case of funky floating point error.
+    return num / denom; // + 0.5 To ensure correct flooring in case of funky floating point error.
 }
 
 
@@ -440,40 +539,55 @@ double PolyExp::derivative(double x, int n) const {
         return p * E;
     }
 
-    vector1d df(n + 1, 0);
-    vector1d dg(n + 1, 0);
+    vector1d df(n + 1);
+    vector1d dg(n + 1);
     for (int k = 0; k <= n; k++){
         df[k] = pref.derivative(x, k);
         dg[k] = expo.derivative(x, k);
     }
+
     double val = 0;
-    for (int k = 0; k <= n; k++){
+    double binom_val = 1;
+    int k_start = ((pref.k_min >= 0) && (pref.k_max < n)) ? n - pref.k_max : 0;
+    int k = 0;
+    for (; k < k_start; k++){
+        binom_val *= static_cast<double>(n - k) / (k + 1);
+    }
+    for (; k <= n; k++){
+        if (df[n - k] == 0){
+            binom_val *= static_cast<double>(n - k) / (k + 1); continue;
+        }
         double Gk = get_Gk(x, k, dg);
-        val += binom(n, k) * Gk * df[n - k];
+        val += binom_val * Gk * df[n - k];
+        binom_val *= static_cast<double>(n - k) / (k + 1);
     }
     return val * exp(dg[0]);
 }
 
-double PolyExp::get_Gk(double x, int k, const vector1d& dg) const {
+double PolyExp::get_Gk(double x, int k, const vector1d& dg, const std::vector<std::vector<int>>& partitions) const {
     if (k == 0) return 1;
     if (expo._is_linear) return pow(expo.derivative(x, 1), k);
-
-    // If expo only contains positive powers, we do not need to count partitions containing numbers larger than the largest exponent
     int max_dg_order = ((expo.k_min >= 0) && (expo.k_max < k)) ? expo.k_max : k;
-
-    std::vector<std::vector<int>> partitions = get_partitions(k, max_dg_order);
     double G = 0;
     for (const std::vector<int>& partition : partitions){
         double tmp = 1;
         for (int l : partition){
+            if (l > max_dg_order) break;
             tmp *= dg[l];
         }
         if (tmp != 0){
-            long long Z = partition_multiplicity(partition);
+            double Z = partition_multiplicity(partition);
             G += Z * tmp;
         }
     }
     return G;
+}
+
+double PolyExp::get_Gk(double x, int k, const vector1d& dg) const {
+    const std::vector<std::vector<int>>& partitions = get_partitions(k);
+    // int max_dg_order = ((expo.k_min >= 0) && (expo.k_max < k)) ? expo.k_max : k;
+    // const std::vector<std::vector<int>> partitions = get_partitions(k, max_dg_order);
+    return get_Gk(x, k, dg, partitions);
 }
 
 std::ostream& operator<<(std::ostream& strm, const PolyExp& p){

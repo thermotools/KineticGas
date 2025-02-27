@@ -113,8 +113,9 @@ int factorial_tests();
 double partialfactorial(int start, int stop);
 double binom(int n, int k);
 
-std::vector<std::vector<int>> get_partitions(int N, int m=-1);
-long long partition_multiplicity(const std::vector<int>& partition);
+std::vector<std::vector<int>> get_partitions(int N, int m);
+std::vector<std::vector<std::vector<int>>> build_partitions(int N, int maxval=-1);
+double partition_multiplicity(const std::vector<int>& partition);
 
 class Term{
 public:
@@ -167,7 +168,8 @@ public:
 
     double operator()(double x) const override;
     double derivative(double x, int n) const override;
-    double get_Gk(double x, int k, const vector1d& dg) const;
+    double get_Gk(double x, int k, const vector1d& dg, const std::vector<std::vector<int>>& partitions) const;
+    double get_Gk(double x, int k, const vector1d& dg) const; // Less efficient version, used if partitions are not known beforehand.
 
     friend std::ostream& operator<<(std::ostream& strm, const PolyExp& p);
 // private:
