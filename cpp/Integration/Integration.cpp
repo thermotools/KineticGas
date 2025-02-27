@@ -449,6 +449,27 @@ double newton(const std::function<double(double)>& fun, const std::function<doub
     return x0;
 }
 
+double bracket_positive(const std::function<double(double)>& fun, double x0, double x1, double tol){
+    double f0 = fun(x0);
+    double f1 = fun(x1);
+    if (f0 * f1 > 0){
+        throw std::runtime_error("Bracket solver (positive): Initial values have same sign!");
+    }
+    while ( (abs(f0) > tol) || (abs(f1) > tol) ){
+        double x_mid = 0.5 * (x0 + x1);
+        double f_mid = fun(x_mid);
+        if ((f0 * f_mid > 0)){ // f0 and f_mid have same sign
+            x0 = x_mid; f0 = f_mid;
+        }
+        else {
+            x1 = x_mid; f1 = f_mid;
+        }
+    }
+    if (f0 >= 0) return x0;
+    if (f1 < 0) throw std::runtime_error("Bracket solver (positive) : Both function values are negative!");
+    return x1;
+}
+
 std::array<double, 3> fit_quadric(const std::array<double, 3>& x, const std::array<double, 3>& y){
     Eigen::MatrixXd A(3, 3);
     Eigen::VectorXd b(3);
