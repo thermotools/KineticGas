@@ -47,6 +47,8 @@ public:
     dual2 potential(int i, int j, dual2 r) override;
     double potential(int i, int j, double r) override;
     double potential_dn(int i, int j, double r, size_t n) override;
+    double potential_derivative_r(int i, int j, double r) override {return potential_dn(i, j, r, 1);}
+    double potential_dblderivative_rr(int i, int j, double r) override {return potential_dn(i, j, r, 2);}
 
     vector2d model_rdf(double rho, double T, const vector1d& x) override {
         throw std::runtime_error("Modified Tang-Toennis only implemented for ideal gas!");

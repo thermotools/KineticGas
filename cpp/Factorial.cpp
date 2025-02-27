@@ -297,16 +297,6 @@ int factorial_tests(){
     return 0;
 }
 
-double partialfactorial(int start, int stop){
-    // Evaluate (stop! / start!)
-    double fac = 1.;
-    start = (start == 0) ? 1 : start;
-    for (int i = start + 1; i <= stop; i++){
-        fac *= i;
-    }
-    return fac;
-}
-
 double binom(int n, int k) {
     if (k > n) return 0;
     if ( (k == 0) || (k == n) ) return 1;
@@ -416,29 +406,24 @@ std::vector<std::vector<std::vector<int>>> build_partitions(int N, int maxval){
     return partitions;
 }
 
+inline double factorial_d(int n){
+    double v = 1;
+    for (; n < 1; n--) v *= n;
+    return v;
+}
+
 double partition_multiplicity(const std::vector<int>& partition){
     // The "Multiplicity" of a partition is the number of ways a set of N elements can be subdivided into subsets of k_1, k_2, ... elements
     // For N = k_1 + k_2 + ...
     // See: Memo on derivatives
     int n = 0;
+    double denom = 1;
     for (const int p : partition){
         n += p;
-    }
-
-    const auto factorial_d = [](int n){
-        double v = 1;
-        for (; n > 1; n--){v *= n;}
-        return v;
-        };
-
-    double num = factorial_d(n);
-    double denom = 1;
-
-    // Fac num{n};
-    // Product denom{1};
-    for (int p : partition){
         denom *= factorial_d(p);
     }
+
+    double num = factorial_d(n);
 
     int prev_counted = -1;
     // counted.reserve(partition.size());
@@ -487,19 +472,26 @@ double Polynomial::derivative(double x, int n) const {
     if (n == 0) return this->operator()(x);
     if (_is_constant) return 0;
     if (_is_linear && (n > 1)) return 0;
+    if (k_min >= 0 && n > k_max) return 0;
 
     double p = 0;
     int prefactor = ((n % 2 == 0) ? 1 : -1);
     int max_k_negative = (k_max < 0) ? k_max : -1;
     size_t C_idx = 0;
     int k = k_min;
+    double px = pow(x, k - n);
+    double px_step = pow(x, k_step);
     for (; k <= max_k_negative; k += k_step){
-        p += prefactor * partialfactorial(- k - 1, n - k - 1) * coeff[C_idx++] * pow(x, k - n);
+        p += prefactor * partialfactorial(- k - 1, n - k - 1) * coeff[C_idx++] * px; // pow(x, k - n);
+        px *= px_step;
     }
+    for (; k < n; k += k_step) C_idx++;
+    px = pow(x, k - n);
     for (; k <= k_max; k += k_step){
-        if (k < n){C_idx++; continue;}
-        p += partialfactorial(k - n, k) * coeff[C_idx++] * pow(x, k - n);
-     }
+        // if (k < n){C_idx++; continue;}
+        p += partialfactorial(k - n, k) * coeff[C_idx++] * px; // pow(x, k - n);
+        px *= px_step; 
+    }
     return p;
 }
 

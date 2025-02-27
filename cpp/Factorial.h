@@ -110,7 +110,15 @@ double operator+=(double& lhs, const Frac& rhs);
 Product ipow(int base, int expo);
 int factorial_tests();
 
-double partialfactorial(int start, int stop);
+inline double partialfactorial(int start, int stop){
+    // Evaluate (stop! / start!)
+    double fac = 1.;
+    for (; stop > start; stop--){
+        fac *= stop;
+    }
+    return fac;
+}
+
 double binom(int n, int k);
 
 std::vector<std::vector<int>> get_partitions(int N, int m);

@@ -206,8 +206,8 @@ public:
 
     using T::potential;
     double potential(int i, int j, double r) override {
-        double u = 0;
-        for (size_t n = 0; n <= FH_order; n++){
+        double u = T::potential(i, j, r);
+        for (size_t n = 1; n <= FH_order; n++){
             double nfac = 1;
             for (size_t ni = 2; ni <= n; ni++) nfac *= ni;
             u += pow(D_factors[i][j] / (BOLTZMANN * current_T), n) * T::potential_dn(i, j, r, 2 * n) / nfac;
@@ -239,8 +239,8 @@ public:
 
     using T::potential_dn;
     double potential_dn(int i, int j, double r, size_t n) override {
-        double un = 0;
-        for (size_t k = 0; k <= FH_order; k++){
+        double un = T::potential_dn(i, j, r, n);
+        for (size_t k = 1; k <= FH_order; k++){
             double nfac = 1;
             for (size_t ni = 2; ni <= k; ni++) nfac *= ni;
             un += pow(D_factors[i][j] / (BOLTZMANN * current_T), n) * T::potential_dn(i, j, r, 2 * k + n) / nfac;
