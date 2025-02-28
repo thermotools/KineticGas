@@ -189,8 +189,24 @@ std::pair<double, double> weighted_simpson(std::function<std::pair<double, doubl
 */
 double tanh_sinh(std::function<double(double)> func, double dh, double tol=1e-5);
 
-double newton(const std::function<double(double)>& fun, const std::function<double(double)>& df, double x0, double tol=1e-10);
+double newton_usafe(const std::function<double(double)>& fun, const std::function<double(double)>& df, double x0, double ftol, double dtol, int& ierr);
+inline double newton(const std::function<double(double)>& fun, const std::function<double(double)>& df, double x0, double ftol=1e-10, double dtol=-1){
+    int ierr = 0;
+    double r = newton_usafe(fun, df, x0, ftol, dtol, ierr);
+    if (ierr == 0) return r;
+    if (ierr == 1) throw std::runtime_error("Newton reached max iter!");
+    if (ierr == 2) throw std::runtime_error("Newton encountered NAN!");
+    if (ierr == 3) throw std::runtime_error("Newton encountered INF!");
+    throw std::runtime_error("Unknown Newton error : " + std::to_string(ierr));
+}
+
 double bracket_positive(const std::function<double(double)>& fun, double x0, double x1, double tol=1e-10);
+void bracket_root(const std::function<double(double)>& fun, double& x0, double& x1, double& f0, double& f1, double tol=1e-5, double ftol=1e-10);
+inline double bracket_root(const std::function<double(double)>& fun, double x0, double x1, double tol=1e-5, double ftol=1e-10){
+    double f0, f1;
+    bracket_root(fun, x0, x1, f0, f1, tol, ftol);
+    return x0;
+}
 
 std::array<double, 3> fit_quadric(const std::array<double, 3>& x, const std::array<double, 3>& y);
 std::array<double, 3> quadric_extrapolate_coeff(const std::vector<double>& x, const std::vector<double>& y);

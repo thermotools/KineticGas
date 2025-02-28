@@ -102,8 +102,19 @@ void KineticGas::precompute_viscosity(int N, double T, double rho){
     for (int i = 0; i < true_Ncomps; i++){
         for (int j = i; j < true_Ncomps; j++){
             for (int l = 1; l <= N + 1; l++){
-                if ((l % 2 == 1) && (is_singlecomp)) continue;
                 for (int r = l; r <= 2 * (N - 1) + 4 - l; r++){
+                    bool do_compute = false;
+                    for (int p = 0; p < N; p++){
+                        for (int q = 0; q < N; q++) {
+                            double B_dblprime_val = B_dblprime(p, q, r, l, M[i][j], M[j][i]);
+                            double B_prime_val = B_prime(p, q, r, l, M[i][j], M[j][i]);
+                            if ((B_dblprime_val != 0) || (B_prime_val != 0)){
+                                do_compute = true; break;
+                            }
+                        }
+                        if (do_compute) break;
+                    }
+                    if (!do_compute) continue;
                     i_vec.push_back(i);
                     j_vec.push_back(j);
                     l_vec.push_back(l);

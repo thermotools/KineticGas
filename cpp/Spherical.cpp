@@ -37,7 +37,7 @@ double Spherical::omega(int i, int j, int l, int r, double T){
     OmegaPoint point = get_omega_point(i, j, l, r, T);
     OmegaPoint sympoint = get_omega_point(j, i, l, r, T);
     const std::map<OmegaPoint, double>::iterator pos = omega_map.find(point);
-    
+
     if (pos != omega_map.end()) return pos->second;
 
     double w = w_integral(i, j, T, l, r);
@@ -344,7 +344,7 @@ double Spherical::get_R_rootfunc(int i, int j, double T, double g, double b, dou
 }
 
 double Spherical::get_R_rootfunc_derivative(int i, int j, double T, double g, double b, double& r){
-    return (potential_derivative_r(i, j, r) / (BOLTZMANN * T * pow(g, 2))) - 2 * pow(b, 2) / pow(r, 3);
+    return (potential_derivative_r(i, j, r) / (BOLTZMANN * T * pow(g, 2))) - (2 / b) * pow(b / r, 3);
 }
 
 double Spherical::get_R(int i, int j, double T, double g, double b){
@@ -354,17 +354,72 @@ double Spherical::get_R(int i, int j, double T, double g, double b){
         - g : Dimensionless relative velocity
         - b : Impact parameter (m)
     */
-    if ((b / sigma[i][j] < 1e-5) || (g < 1e-6)) return get_R0(i, j, T, g); // Treat separately (set b = 0, and handle g = 0 case)
+    b /= sigma[i][j];
+    if ((b < 1e-5) || (g < 1e-6)) return get_R0(i, j, T, g); // Treat separately (set b = 0, and handle g = 0 case)
+
+    const auto rootfun = [&](double ri){return (potential(i, j, ri * sigma[i][j]) / (BOLTZMANN * T * pow(g, 2))) + pow(b / ri, 2) - 1;};
+    const auto d_rootfun = [&](double ri){return (sigma[i][j] * potential_derivative_r(i, j, ri * sigma[i][j]) / (BOLTZMANN * T * pow(g, 2))) - (2 / b) * pow(b / ri, 3);};
+
+    double r0, r1;
+    double f0, f1;
+    double bracket_dtol;
+    double bracket_ftol = -1;
+    double newton_ftol = -1;
+    double newton_dtol = 1e-6;
+    if (b > 1){
+        r0 = r1 = b;
+        bracket_dtol = 0.1;
+        // std::cout << "Start get R (b > 1) : " << b << ", " << T * g << std::endl;
+        while (rootfun(r0) < 0){
+            // std::cout << "\tReduce initial R : " << r0 << ", " << rootfun(r0) << std::endl;
+            r0 *= 0.95;
+        }
+        // std::cout << "\tStart bracket : " << r0 << ", " << r1 << ", " << rootfun(r0) << ", " << rootfun(r1) << std::endl;
+        if (r1 - r0 > 0.1) bracket_root(rootfun, r0, r1, f0, f1, bracket_dtol, bracket_ftol);
+    }
+    else {
+        r0 = r1 = 1;
+        bracket_dtol = 0.05;
+        // std::cout << "Start get R (b < 1) : " << b << ", " << T * g << std::endl;
+        while (rootfun(r0) < 0){
+            // std::cout << "\tReduce initial R : " << r0 << ", " << rootfun(r0) << std::endl;
+            r0 *= 0.95;
+        }
+        // std::cout << "\tStart bracket (" << r1 - r0 << ") : " << r0 << ", " << r1 << ", " << rootfun(r0) << ", " << rootfun(r1) << std::endl;
+        if (r1 - r0 > 0.05) bracket_root(rootfun, r0, r1, f0, f1, bracket_dtol, bracket_ftol);
+        // std::cout << "\t\tFinished bracket (" << r1 - r0 << ") : " << r0 << ", " << r1 << ", " << rootfun(r0) << ", " << rootfun(r1) << std::endl;
+
+    }
+    // std::cout << "\tStart Newton : " << r0 << ", " << rootfun(r0) << ", " << d_rootfun(r0) << std::endl;
+    int ierr = 0;
+    double R = newton_usafe(rootfun, d_rootfun, r0, newton_ftol, newton_dtol, ierr);
+    if (ierr != 0) {
+        ierr = 0;
+        R = newton_usafe(rootfun, d_rootfun, r1, newton_ftol, newton_dtol, ierr);
+    }
+    if (ierr != 0) f0 = rootfun(r0);
+    while (ierr != 0){
+        double prev_r0 = r0;
+        while ((prev_r0 == r0) && (bracket_dtol > 1e-10)){
+            if (abs(r1 - r0) < bracket_dtol) bracket_dtol /= 2;
+            // std::cout << "Refine bracket : " << r0 << ", " << r1 << ", " << f0 << ", " << f1 << std::endl;
+            bracket_root(rootfun, r0, r1, f0, f1, bracket_dtol, bracket_ftol);
+        }
+        ierr = 0;
+        // std::cout << "More newton: " << r0 << std::endl;
+        R = newton_usafe(rootfun, d_rootfun, r0, newton_ftol, newton_dtol, ierr);
+    }
+    return R * sigma[i][j];
+
     // Newtons method
+    b *= sigma[i][j];
     double tol = 1e-5; // Relative to sigma[i][j]
     double init_guess_factor = 1.0;
     double r = init_guess_factor * b;
     double f = get_R_rootfunc(i, j, T, g, b, r);
     double dfdr = get_R_rootfunc_derivative(i, j, T, g, b, r);
     double next_r = r - f / dfdr;
-    #ifdef DEBUG
-        int niter = 0;
-    #endif
+    int niter = 0;
     while (abs((r - next_r) / sigma[i][j]) > tol){
         if (next_r < 0){
             init_guess_factor *= 0.95;
@@ -380,13 +435,14 @@ double Spherical::get_R(int i, int j, double T, double g, double b){
         f = get_R_rootfunc(i, j, T, g, b, r);
         dfdr = get_R_rootfunc_derivative(i, j, T, g, b, r);
         next_r = r - f / dfdr;
-        #ifdef DEBUG
-            if (niter++ > 10000) throw std::runtime_error("get_R exceeded 10000 iterations! (T, g, b) : " 
-                                                        + std::to_string(T) + ", " + std::to_string(g) + ", " + std::to_string(b / sigma[i][j]) + " : " + std::to_string(next_r / sigma[i][j]));
-            if (isnan(next_r)) throw std::runtime_error("Encountered NAN in get_R! (T, g, b) : " 
+        if (niter++ > 10000) throw std::runtime_error("get_R exceeded 100 iterations! (T, g, b) : " 
+                                                    + std::to_string(T) + ", " + std::to_string(g) + ", " + std::to_string(b / sigma[i][j]) + " : " + std::to_string(next_r / sigma[i][j]));
+        if (isnan(next_r)) throw std::runtime_error("Encountered NAN in get_R! (T, g, b) : " 
                                                         + std::to_string(T) + ", " + std::to_string(g) + ", " + std::to_string(b));
-        #endif
+        // std::cout << "\tIter R : " << niter << ", " << next_r / sigma[i][j] << ", " << f << ", " << dfdr << std::endl;
     }
+    std::cout << "Old val : " << next_r / sigma[i][j] << std::endl;
+    if (abs(r0 - next_r / sigma[i][j] > 1e-6)) throw std::runtime_error("Approaches differ too much...");
     return next_r;
 }
 

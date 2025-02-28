@@ -436,16 +436,20 @@ double tanh_sinh(std::function<double(double)> func, double h, double tol){
     return I;
 }
 
-double newton(const std::function<double(double)>& fun, const std::function<double(double)>& df, double x0, double tol){
+double newton_usafe(const std::function<double(double)>& fun, const std::function<double(double)>& df, double x0, double ftol, double dtol, int& ierr){
     double f_val;
     int niter = 0;
     int max_iter = 50;
+    double prev_x;
     do {
+        prev_x = x0;
         f_val = fun(x0);
-        // std::cout << "Newton : " << x0 << ", " << f_val << ", " << df(x0) << std::endl;
+        // std::cout << "\tNewton : " << x0 << ", " << f_val << ", " << df(x0) << std::endl;
         x0 -= f_val / df(x0);
-        if (niter++ > max_iter) throw std::runtime_error("Newton reached max iter!");
-    } while (abs(f_val) > tol);
+        if (niter++ > max_iter) {ierr = 1; return x0;}
+    } while (abs(f_val) > ftol && abs(x0 - prev_x) > dtol);
+    if (isnan(x0)) {ierr = 2; return x0;}
+    if (isinf(x0)) {ierr = 3; return x0;}
     return x0;
 }
 
@@ -468,6 +472,29 @@ double bracket_positive(const std::function<double(double)>& fun, double x0, dou
     if (f0 >= 0) return x0;
     if (f1 < 0) throw std::runtime_error("Bracket solver (positive) : Both function values are negative!");
     return x1;
+}
+
+void bracket_root(const std::function<double(double)>& fun, double& x0, double& x1, double& f0, double& f1, double tol, double ftol){
+    f0 = fun(x0);
+    f1 = fun(x1);
+    if (f0 * f1 > 0){
+        throw std::runtime_error("Bracket solver: Initial values have same sign!");
+    }
+    while ( (abs(x0 - x1) > tol) && (abs(f0) > ftol) && (abs(f1) > ftol)){
+        double x_mid = 0.5 * (x0 + x1);
+        double f_mid = fun(x_mid);
+        if ((f0 * f_mid > 0)){ // f0 and f_mid have same sign
+            x0 = x_mid; f0 = f_mid;
+        }
+        else {
+            x1 = x_mid; f1 = f_mid;
+        }
+        // std::cout << "\t\tBracket solver : " << x0 << ", " << x1 << ", " << f0 << ", " << f1 << ", " << tol << std::endl;
+    }
+    // std::cout << "\t\tFinished bracket_root : " << x0 << ", " << x1 << ", " << f0 << ", " << f1 << ", " << tol << std::endl;
+    if (abs(f0) > abs(f1)) {
+        std::swap(x0, x1); std::swap(f0, f1);
+    }
 }
 
 std::array<double, 3> fit_quadric(const std::array<double, 3>& x, const std::array<double, 3>& y){
