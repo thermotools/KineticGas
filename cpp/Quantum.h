@@ -1,6 +1,7 @@
 #pragma once
 #include "Spherical.h"
 #include <mutex>
+#include <shared_mutex>
 
 class Quantum : public Spherical {
 public:
@@ -92,5 +93,8 @@ private:
     std::map<int, vector2d> absolute_phase_shift_map;
     std::mutex abs_phase_shift_map_mutex;
     vector2d stored_total_phase_shifts;
+
+    std::shared_mutex cross_section_map_mutex;
+    std::unordered_map<CrossSectionPoint, double, CrossSectionHash> cross_section_map;
 
 };

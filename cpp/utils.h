@@ -68,6 +68,24 @@ struct OmegaPoint{
     }
 };
 
+struct CrossSectionPoint{
+    int i, j, l, E;
+    CrossSectionPoint(int i, int j, int l, double E)
+        : i{i}, j{j}, l{l}, E{static_cast<int>(std::round(100 * E))} 
+    {}
+
+    bool operator==(const CrossSectionPoint& other) const{
+        return (i == other.i) && (j == other.j) && (l == other.l) && (E == other.E);
+    }
+};
+
+struct CrossSectionHash {
+    size_t operator()(const CrossSectionPoint& s) const {
+        return std::hash<int>()(s.i) ^ (std::hash<int>()(s.j) << 1) ^
+               (std::hash<int>()(s.l) << 2) ^ (std::hash<double>()(s.E) << 3);
+    }
+};
+
 enum FrameOfReference{
     CoM,
     CoN,
