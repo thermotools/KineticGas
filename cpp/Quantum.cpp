@@ -224,31 +224,55 @@ double Quantum::JKWB_phase_shift(int i, int j, int l, double E){
     double g = sqrt(E / (BOLTZMANN * T));
     double b = ((l + 0.5) / k) / sigma[i][j];
     
-    const bool verbose = false; // (k * sigma[i][j] > 65) && (k * sigma[i][j] < 80);
+    constexpr bool verbose = false; // (k * sigma[i][j] > 65) && (k * sigma[i][j] < 80);
     if (verbose) std::cout << "JKWB : " << l << ", " << k * sigma[i][j] << std::endl;
 
     double R = get_R(i, j, T, g, b * sigma[i][j]) / sigma[i][j]; // r_classical_forbidden(i, j, l, E / eps[i][j])
+    
+    // const auto integrand = [&](double r){
+    //     double v1 = 1 - pow(b / r, 2);
+    //     double v2 = v1 - potential(i, j, r * sigma[i][j]) / E;
+    //     double I = (v2 > 0) ? sqrt(v2) : 0;
+    //     if (v1 > 0) I -= sqrt(v1);
+    //     return I;
+    //     };
+    // 
+    // double r0 = std::min(R, b);
+    // double r1 = std::max(std::max(R, b), 1.5 * r0);
+    // double I = simpson(integrand, r0, r1, 50);
+    // double r2 = 1.1 * r1;
+    // double Ival = integrand(r1);
+    // while (abs(integrand(r2) / Ival) < 0.5) {
+    //     r2 = 0.5 * (r1 + r2);
+    //     std::cout << "Reduced r2 : " << r2 / r1 - 1. << std::endl;
+    // }
+    // double I_tail = simpson_inf(integrand, r1, r2, 1e-8, I);
+    // if (verbose) std::cout << "Integrated : " << r0 << " => " << r1 << " => " << r2 << " : " << I << ", " << I_tail - I << std::endl;
+    // return k * sigma[i][j] * (I_tail);
+
     const auto R_fun = [&](double r){return 1 - pow(b / r, 2) - potential(i, j, r * sigma[i][j]) / E;};
     // if ( (b > 100) && (potential(i, j, R * sigma[i][j]) / E > - 1e-12) ){
     //     R = b;
     // }
-    if (R < b){
+    double s0 = get_potential_root(i, j) / sigma[i][j];
+    if (b > s0){
         double R2 = R;
         if (verbose) std::cout << "Increase R ? " << R_fun(R2) << std::endl;
-        while (R_fun(R2) < 0) {
-            if (verbose) std::cout << "Increasing R2 : " << R2 << ", " << b << ", " << R2 / b - 1 << ", " << R_fun(R2) << std::endl;
-            R2 = 0.5 * (b + R2);
-            if (abs(R / b - 1) < 1e-10) {
-                if (R_fun(b) < 0) {
-                    throw std::runtime_error("JKWB phase shift: Could not find integration limit...");
-                }
-                else {
-                    R2 = b; break;
-                }
-            }
-        }
-        if (verbose) std::cout << "Increased R2 : " << R2 << ", " << b << ", " << R2 / b - 1 << ", " << R_fun(R2) << std::endl;
-        if (R2 != R) R = bracket_positive(R_fun, R, R2);
+        // while (R_fun(R2) < 0) {
+        //     if (verbose) std::cout << "Increasing R2 : " << R2 << ", " << b << ", " << R2 / b - 1 << ", " << R_fun(R2) << std::endl;
+        //     R2 = 0.5 * (b + R2);
+        //     if (abs(R2 / b - 1) < 1e-10) {
+        //         if (R_fun(b) < 0) {
+        //             throw std::runtime_error("JKWB phase shift: Could not find integration limit...");
+        //         }
+        //         else {
+        //             R2 = b; break;
+        //         }
+        //     }
+        // }
+        // if (verbose) std::cout << "Increased R2 : " << R2 << ", " << b << ", " << R2 / b - 1 << ", " << R_fun(R2) << std::endl;
+        // if (R2 != R) R = bracket_positive(R_fun, R, R2);
+        if (R_fun(R) < 0) R = bracket_positive(R_fun, R, b);
         if (verbose) std::cout << "Increasing R : " << R2 << ", " << b << ", " << R2 / b - 1 << ", " << R_fun(R) << std::endl;
     }
     else if (R_fun(R) < 0) {
@@ -298,7 +322,7 @@ double Quantum::JKWB_phase_shift(int i, int j, int l, double E){
         I1 = simpson_inf(integrand1, b, b2); // (b2 / b - 1 > 1e-3) ?  : simpson(integrand1, b, 3 * b2, 100);
         I2 = simpson(integrand2, R, b, 10);
     }
-    if (verbose) std::cout << "\t =>" << I1 << ", " << I2 << std::endl;
+    if (verbose) std::cout << "\t =>" << I1 << ", " << I2 << " : " << k * (I1 + I2) * sigma[i][j] << std::endl;
     return k * (I1 + I2) * sigma[i][j];
 }
 
@@ -711,6 +735,7 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
     if (k_vals.back() >= k_max) return;
 
     if (l >= JKWB_l_limit){
+        std::cout << "Use JKWB (" << l << " > " << JKWB_l_limit << ")" << std::endl;
         double dk = k_max / 100.0;
         while ((k_vals.back() + dk) / k_max < 1 - 1e-12){
             k_vals.push_back(k_vals.back() + dk);
@@ -731,12 +756,26 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
     }
 
     double delta{0};
+    // if (k < 1){
+    //     delta = phase_shift(i, j, l, E_from_k(k / sigma[i][j]));
+    //     while (delta > PI / 4) {
+    //         k -= 0.1;
+    //         if (k <= 0) throw std::runtime_error("Could not find smallest phase shift!")
+    //     }
+    // }
+    double prev_delta = phase_shift(i, j, l, E_from_k(k / sigma[i][j]));
     for (; k_vals.size() < 5;){
         k += dk;
         delta = phase_shift(i, j, l, E_from_k(k / sigma[i][j]));
-        if (delta < PI / 4) delta += n * PI;
+        if (prev_delta < 0 && delta > 0){
+            n -= 1;
+        }
+        else if (prev_delta > 0 && delta < 0){
+            n += 1;
+        }
+        prev_delta = delta;
         k_vals.push_back(k);
-        phase_shifts.push_back(delta);
+        phase_shifts.push_back(delta + n * PI);
     }
     int n_step = k_vals.size() - 1;
     
@@ -882,7 +921,7 @@ void Quantum::trace_total_phase_shifts(int i, int j, double k_max){
     if (stored_total_phase_shifts.size() > 0){
         if (stored_total_phase_shifts[0].back() >= k_max) return;
     }
-    double dk = 0.1;
+    double dk = 0.01;
     size_t n_vals = static_cast<size_t>(k_max / dk);
     vector1d k_vals(n_vals);
     
@@ -898,11 +937,11 @@ void Quantum::trace_total_phase_shifts(int i, int j, double k_max){
         for (size_t idx = 0; idx < phase_shifts.size(); idx++){
             phase_shifts[idx] += (2 * l + 1) * phase_shift_l[idx];
         }
-        // if (l > 2300) break;
+        // if (l > 100) break;
         l += 2;
         trace_absolute_phase_shifts(i, j, l, k_max);
         phase_shift_l = interpolate_grid(k_vals, absolute_phase_shift_map[l][0], absolute_phase_shift_map[l][1]);
-    } while (abs(phase_shift_l.back() * (2 * l + 1) / phase_shifts.back()) > 1e-6);
+    } while (abs(phase_shift_l.back() * (2 * l + 1) / phase_shifts.back()) > 1e-5);
     stored_total_phase_shifts = vector2d({k_vals, phase_shifts});
 }
 
@@ -1060,7 +1099,7 @@ double Quantum::classical_omega(int i, int j, int l, int r, double T){
     return val;
 }
 
-double Quantum::omega(int i, int j, int l, int r, double T) {
+double Quantum::omega(int i, int j, int l, int r, double T){
     OmegaPoint point = get_omega_point(i, j, l, r, T);
     OmegaPoint sympoint = get_omega_point(j, i, l, r, T);
     const std::map<OmegaPoint, double>::iterator pos = omega_map.find(point);
@@ -1206,6 +1245,7 @@ double Quantum::dimer_constant(int i, int j, double T){
 std::map<char, double> Quantum::second_virial_contribs(int i, int j, double T, const std::string& contribs){
     // See: Kilpatrick et al. Second virial coefficients of He3 and He4, Physical Review vol. 94, nr. 5 (1954)
     //      DOI: https://doi.org/10.1103/PhysRev.94.1103 
+    if (!quantum_is_active) return Spherical::second_virial_contribs(i, j, T, contribs);
     set_internals(0, T, {1.});
     
     std::array<double, 2> wts = get_symmetry_weights(i, j);
@@ -1234,8 +1274,8 @@ std::map<char, double> Quantum::second_virial_contribs(int i, int j, double T, c
         const vector2d& Eb = E_bound[i][j];
         double B_bound = 0;
         for (size_t vib_i = 0; vib_i < Eb.size(); vib_i++){
-            for (size_t l = l_start; l < Eb[vib_i].size(); l+=l_step){
-                B_bound += wts[l % 2] * (2 * l + 1) * (exp(- beta * Eb[vib_i][l]) - 1.);
+            for (size_t l = l_start; l < Eb[vib_i].size(); l += l_step){
+                B_bound += wts[l % 2] * (2 * l + 1) * exp(- beta * Eb[vib_i][l]);
             }
         }
         B_contribs['b'] = B_bound;
@@ -1246,39 +1286,6 @@ std::map<char, double> Quantum::second_virial_contribs(int i, int j, double T, c
         size_t l = l_start;
         double B_th_term;
         std::cout << "Starting at T = " << T << std::endl;
-        do {
-            // auto integrand = [&](double beta_E){
-            //     double delta = absolute_phase_shift(i, j, l, beta_E / (beta * eps[i][j]));
-            //     return delta * exp(- beta_E);
-            // };
-            // double I = simpson(integrand, 0, 0.2, 10) 
-            //         + simpson(integrand, 0.2, 1, 10) 
-            //         + simpson(integrand, 1, 3, 20) 
-            //         + simpson_inf(integrand, 3, 7);
-            
-
-            // constexpr int n_cores = 1;
-            // std::vector<double> integrals(n_cores);
-            // std::vector<std::thread> threads;
-            // const auto thread_fun = [&](double& I, int li){I = integral_phase_shift(i, j, li, T);};
-            // int l_tmp = l;
-            // for (size_t ti = 0; ti < n_cores; ti++){
-            //     threads.push_back(std::thread(thread_fun, std::ref(integrals[ti]), l_tmp));
-            //     l_tmp += l_step;
-            // }
-            // for (size_t ti = 0; ti < n_cores; ti++){
-            //     threads[ti].join();
-            //     B_th_term = wts[l % 2] * (2 * l + 1) * integrals[ti] / PI;
-            //     B_th += B_th_term;
-            //     l += l_step;
-            // }
-
-            // B_th_term = wts[l % 2] * (2 * l + 1) * integral_phase_shift(i, j, l, T) / PI; 
-            // std::cout << "Converging ... " << B_th << " / " << B_th_term << std::endl;    
-            // B_th += B_th_term;
-            // l += l_step;
-        } while (false); // while (abs(B_th_term / B_th) > 1e-3);
-        // std::cout << "Thermal Second virial : T = " << T << ", l_max = " << l << std::endl;
 
         double tol = 1e-8;
         double beta = 1 / (BOLTZMANN * T);
@@ -1299,7 +1306,26 @@ std::map<char, double> Quantum::second_virial_contribs(int i, int j, double T, c
             I += I_term;
         }
         B_th = I / (PI * BOLTZMANN * T * sigma[i][j]);
+        std::cout << "Bth : " << B_th << ", ";
+        const vector2d& Eb = E_bound[i][j];
+        for (size_t vib_i = 0; vib_i < Eb.size(); vib_i++){
+            for (size_t l = l_start; l < Eb[vib_i].size(); l += l_step){
+                B_th -= wts[l % 2] * (2 * l + 1);
+            }
+        }
+        std::cout << B_th << std::endl;
         B_contribs['t'] = B_th;
+    }
+
+    if (contribs_contain("l")){
+        B_contribs['l'] = 0;
+        const vector2d& Eb = E_bound[i][j];
+        for (size_t vib_i = 0; vib_i < Eb.size(); vib_i++){
+            for (size_t l = l_start; l < Eb[vib_i].size(); l += l_step){
+                B_contribs['l'] -= wts[l % 2] * (2 * l + 1);
+                std::cout << "Bl : " << l << ", " << B_contribs['l'] << std::endl;
+            }
+        }
     }
 
     double lamb = de_broglie_wavelength(i, j, T);

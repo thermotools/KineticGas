@@ -128,7 +128,11 @@ double Spherical::cross_section(int i, int j, int l, double E){
         double chi_val = chi(i, j, T, g, b * sigma[i][j]);
         return (1. - pow(cos(chi_val), l)) * b;
     };
-    return pow(sigma[i][j], 2) * simpson_inf(integrand, 1e-6, 0.5); // Integration carried out in reduced units.
+    double b0 = bracket_root([&](double bi){return chi(i, j, T, g, bi * sigma[i][j]);}, 0.9, 5, 1e-5, -1);
+    double I = simpson(integrand, 1e-7, b0, 20);
+    I += simpson(integrand, b0, b0 + 0.5, 50);
+    I = simpson_inf(integrand, b0 + 0.5, b0 + 1, 1e-8, I);
+    return pow(sigma[i][j], 2) * I; // * simpson_inf(integrand, 1e-6, 0.5); // Integration carried out in reduced units.
 }
 
 double Spherical::hs_cross_section(int i, int j, int l){
@@ -317,7 +321,9 @@ double Spherical::theta_integral(int i, int j, double T, double R, double g, dou
 }
 
 double Spherical::theta_integrand(int i, int j, double T, double r, double g, double b){
-    return pow((pow(r, 4) / pow(b, 2)) * (1.0 - potential(i, j, r) / (BOLTZMANN * T * pow(g, 2))) - pow(r, 2), -0.5);
+    // return pow((pow(r, 4) / pow(b, 2)) * (1.0 - potential(i, j, r) / (BOLTZMANN * T * pow(g, 2))) - pow(r, 2), -0.5);
+    const double L = de_broglie_wavelength(i, j, T);
+    return pow( (pow(pow(r, 2) + pow(L, 2), 2) / pow(b, 2)) * (1.0 - potential(i, j, r) / (BOLTZMANN * T * pow(g, 2))) - pow(r, 2) - pow(L, 2), -0.5);
 }
 
 double Spherical::transformed_theta_integrand(int i, int j, double T, double u, double R, double g, double b){
@@ -357,57 +363,79 @@ double Spherical::get_R(int i, int j, double T, double g, double b){
     b /= sigma[i][j];
     if ((b < 1e-5) || (g < 1e-6)) return get_R0(i, j, T, g); // Treat separately (set b = 0, and handle g = 0 case)
 
-    const auto rootfun = [&](double ri){return (potential(i, j, ri * sigma[i][j]) / (BOLTZMANN * T * pow(g, 2))) + pow(b / ri, 2) - 1;};
-    const auto d_rootfun = [&](double ri){return (sigma[i][j] * potential_derivative_r(i, j, ri * sigma[i][j]) / (BOLTZMANN * T * pow(g, 2))) - (2 / b) * pow(b / ri, 3);};
+    // const auto rootfun = [&](double ri){return (potential(i, j, ri * sigma[i][j]) / (BOLTZMANN * T * pow(g, 2))) + pow(b / ri, 2) - 1;};
+    // const auto d_rootfun = [&](double ri){return (sigma[i][j] * potential_derivative_r(i, j, ri * sigma[i][j]) / (BOLTZMANN * T * pow(g, 2))) - (2 / b) * pow(b / ri, 3);};
+
+    const double E = BOLTZMANN * T * pow(g, 2);
+    const double L = de_broglie_wavelength(i, j, T) / sigma[i][j];
+    const auto rootfun = [&](double ri){return (potential(i, j, ri * sigma[i][j]) / E) + pow(b, 2) / (pow(ri, 2) + pow(L, 2)) - 1;};
+    const auto d_rootfun = [&](double ri){
+        double rl = pow(ri, 2) + pow(L, 2);
+        return (sigma[i][j] * potential_derivative_r(i, j, ri * sigma[i][j]) / E) - 2 * ri * pow(b / rl, 2); //  - 4 * pow(ri / rl, 3) * pow(b, 2);
+    };
+
+    constexpr bool verbose = false;
 
     double r0, r1;
-    double f0, f1;
     double bracket_dtol;
+    double newton_dtol = 1e-6;
     double bracket_ftol = -1;
     double newton_ftol = -1;
-    double newton_dtol = 1e-6;
+    
     if (b > 1){
         r0 = r1 = b;
         bracket_dtol = 0.1;
-        // std::cout << "Start get R (b > 1) : " << b << ", " << T * g << std::endl;
-        while (rootfun(r0) < 0){
-            // std::cout << "\tReduce initial R : " << r0 << ", " << rootfun(r0) << std::endl;
-            r0 *= 0.95;
-        }
-        // std::cout << "\tStart bracket : " << r0 << ", " << r1 << ", " << rootfun(r0) << ", " << rootfun(r1) << std::endl;
-        if (r1 - r0 > 0.1) bracket_root(rootfun, r0, r1, f0, f1, bracket_dtol, bracket_ftol);
+        if (verbose) std::cout << "Start get R (b > 1) : " << b << ", " << T * g << std::endl;
+        
     }
     else {
         r0 = r1 = 1;
         bracket_dtol = 0.05;
-        // std::cout << "Start get R (b < 1) : " << b << ", " << T * g << std::endl;
-        while (rootfun(r0) < 0){
-            // std::cout << "\tReduce initial R : " << r0 << ", " << rootfun(r0) << std::endl;
-            r0 *= 0.95;
-        }
-        // std::cout << "\tStart bracket (" << r1 - r0 << ") : " << r0 << ", " << r1 << ", " << rootfun(r0) << ", " << rootfun(r1) << std::endl;
-        if (r1 - r0 > 0.05) bracket_root(rootfun, r0, r1, f0, f1, bracket_dtol, bracket_ftol);
-        // std::cout << "\t\tFinished bracket (" << r1 - r0 << ") : " << r0 << ", " << r1 << ", " << rootfun(r0) << ", " << rootfun(r1) << std::endl;
-
+        if (verbose) std::cout << "Start get R (b < 1) : " << b << ", " << T * g << std::endl;
     }
-    // std::cout << "\tStart Newton : " << r0 << ", " << rootfun(r0) << ", " << d_rootfun(r0) << std::endl;
+    double f0 = rootfun(r0);
+    double f1 = f0;
+    while (f0 < 0){
+        if (verbose) std::cout << "\tReduce initial R : " << r0 << ", " << f0 << std::endl;
+        r0 *= 0.95; f0 = rootfun(r0);
+    }
+    if (verbose) std::cout << "\tStart bracket : " << r0 << ", " << r1 << ", " << f0 << ", " << f1 << std::endl;
+    if (r1 - r0 > bracket_dtol) bracket_root_usafe(rootfun, r0, r1, f0, f1, bracket_dtol, bracket_ftol);
+    if (verbose) std::cout << "\tFinished bracket : " << r0 << ", " << r1 << ", " << f0 << ", " << f1 << std::endl;
+
+    if (abs(f0) < 1e-8){ // We got lucky with the bracket solver, just return.
+        return r0 * sigma[i][j];
+    }
+
+    if (verbose) std::cout << "\tStart Newton : " << r0 << ", " << f0 << ", " << d_rootfun(r0) << std::endl;
     int ierr = 0;
     double R = newton_usafe(rootfun, d_rootfun, r0, newton_ftol, newton_dtol, ierr);
-    if (ierr != 0) {
+    if (ierr != 0) { // Newton failed: Try starting from other side of bracket.
         ierr = 0;
         R = newton_usafe(rootfun, d_rootfun, r1, newton_ftol, newton_dtol, ierr);
     }
-    if (ierr != 0) f0 = rootfun(r0);
+    if (ierr != 0) { // Newton failed: Try starting from middle of bracket.
+        ierr = 0;
+        R = newton_usafe(rootfun, d_rootfun, 0.5 * (r0 + r1), newton_ftol, newton_dtol, ierr);
+    }
+
+    // Newton is having a hard time: Progressively refine using bracket solver, and re-try Newton every now and then. 
+    int niter = 0;
     while (ierr != 0){
         double prev_r0 = r0;
-        while ((prev_r0 == r0) && (bracket_dtol > 1e-10)){
+        while ((prev_r0 == r0) && (bracket_dtol > newton_dtol)){
             if (abs(r1 - r0) < bracket_dtol) bracket_dtol /= 2;
-            // std::cout << "Refine bracket : " << r0 << ", " << r1 << ", " << f0 << ", " << f1 << std::endl;
-            bracket_root(rootfun, r0, r1, f0, f1, bracket_dtol, bracket_ftol);
+            if (verbose) std::cout << "Refine bracket : " << r0 << ", " << r1 << ", " << f0 << ", " << f1 << std::endl;
+            bracket_root_usafe(rootfun, r0, r1, f0, f1, bracket_dtol, bracket_ftol);
+        }
+        if (bracket_dtol < newton_dtol) {
+            R = r0;
+            break;
         }
         ierr = 0;
-        // std::cout << "More newton: " << r0 << std::endl;
+        if (verbose) std::cout << "More newton: " << r0 << ", " << r1 << ", " << f0 << ", " << f1 << std::endl;
         R = newton_usafe(rootfun, d_rootfun, r0, newton_ftol, newton_dtol, ierr);
+        if (niter++ > 50) throw std::runtime_error("get_R reached max iter!");
     }
     return R * sigma[i][j];
 
@@ -419,7 +447,7 @@ double Spherical::get_R(int i, int j, double T, double g, double b){
     double f = get_R_rootfunc(i, j, T, g, b, r);
     double dfdr = get_R_rootfunc_derivative(i, j, T, g, b, r);
     double next_r = r - f / dfdr;
-    int niter = 0;
+    niter = 0;
     while (abs((r - next_r) / sigma[i][j]) > tol){
         if (next_r < 0){
             init_guess_factor *= 0.95;

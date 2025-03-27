@@ -284,6 +284,8 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("get_JKWB_limits", &Quantum::get_JKWB_limits)
         .def("omega_tester", &Quantum::omega_tester)
         .def("w_integrand", &Quantum::w_integrand)
+        .def("theta", &Quantum::theta)
+        .def("get_R", &Quantum::get_R)
         ;
     
     py::class_<TangToennisParam>(handle, "cpp_TangToennisParam")

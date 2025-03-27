@@ -343,14 +343,14 @@ double simpson(std::function<double(double)> func, double x0, double xN, int N_i
     return val;
 }
 
-double simpson_inf(std::function<double(double)> func, double x0, double init_end, double tol){
+double simpson_inf(std::function<double(double)> func, double x0, double init_end, double tol, double I){
     /*
         For evaluating infinite integrals using Simpsons rule:
         To start: Integrate from x0 to init_end with 10 subintervals 
         Then: Progressively increase the integration interval while integrating outwards
         Return once the change over an interval is small enough.
     */
-    double I = simpson(func, x0, init_end, 10);
+    I += simpson(func, x0, init_end, 10);
     // std::cout << "start : " << I << std::endl;
     double dx = (init_end - x0) / 10.;
     double I_part = 0;
@@ -436,7 +436,7 @@ double tanh_sinh(std::function<double(double)> func, double h, double tol){
     return I;
 }
 
-double newton_usafe(const std::function<double(double)>& fun, const std::function<double(double)>& df, double x0, double ftol, double dtol, int& ierr){
+double newton_usafe(const std::function<double(double)>& fun, const std::function<double(double)>& df, double x0, double ftol, double dtol, int& ierr) noexcept {
     double f_val;
     int niter = 0;
     int max_iter = 50;
@@ -474,13 +474,8 @@ double bracket_positive(const std::function<double(double)>& fun, double x0, dou
     return x1;
 }
 
-void bracket_root(const std::function<double(double)>& fun, double& x0, double& x1, double& f0, double& f1, double tol, double ftol){
-    f0 = fun(x0);
-    f1 = fun(x1);
-    if (f0 * f1 > 0){
-        throw std::runtime_error("Bracket solver: Initial values have same sign!");
-    }
-    while ( (abs(x0 - x1) > tol) && (abs(f0) > ftol) && (abs(f1) > ftol)){
+void bracket_root_usafe(const std::function<double(double)>& fun, double& x0, double& x1, double& f0, double& f1, double dtol, double ftol) noexcept {
+    while ( (abs(x0 - x1) > dtol) && (abs(f0) > ftol) && (abs(f1) > ftol)){
         double x_mid = 0.5 * (x0 + x1);
         double f_mid = fun(x_mid);
         if ((f0 * f_mid > 0)){ // f0 and f_mid have same sign

@@ -2,14 +2,44 @@
 #include <iostream>
 #include <vector>
 
-int main(){
-    ModTangToennis kin("NE");
-    // Patowski kin("O-H2");
-    std::vector<double> T_lst = {50.};
-    for (const double T : T_lst){
-        double B = kin.second_virial(0, 0, T);
-        std::cout << "Computed B(" << T << ") = " << B << std::endl;
+void print_partitions(const std::vector<std::vector<int>>& partitions){
+    for (const auto& p : partitions){
+        for (int i : p) {
+            std::cout << i << ", ";
+        }
+        std::cout << std::endl;
     }
+}
+
+void do_partitions(){
+    std::vector<std::vector<int>> partitions = get_partitions(3, 3);
+    std::cout << "Unique : \n";
+    print_partitions(partitions);
+
+    std::vector<std::vector<std::vector<int>>> built = build_partitions(6, 3);
+    std::cout << "Build : " << std::endl;
+    print_partitions(built[3]);
+}
+
+int main(){
+    // do_partitions();
+    // return 0;
+    // FH_HFD_B2 kin("HE", 2);
+    // FH_ModTangToennies kin("AR", 1, "default");
+    ModTangToennis kin("AR");
+    // PatowskiFH kin("P-H2", 2);
+    // std::vector<double> T_lst = {20};
+    // for (const double T : T_lst){
+    //     double B = kin.viscosity(T, 1, {0.5, 0.5}, 1);
+    //     std::cout << "Computed visc(" << T << ") = " << B << std::endl;
+    // }
+    // Patowski kin("P-H2");
+    kin.set_JKWB_limits(1e9, 100);
+    for (int l = 0; l < 101; l += 2){
+        kin.trace_absolute_phase_shifts(0, 0, l, 325.);
+    }
+    // kin.dump_phase_shift_map();
+    std::cout << "Second virial : " << kin.second_virial(0, 0, 600.) << std::endl;
     return 0;
     
     // MieKinGas mie2({MW, MW}, 

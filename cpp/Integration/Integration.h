@@ -159,7 +159,7 @@ double simpson(std::function<double(double)> func, double x0, double xN, int N_i
     double I2 = simpson_inf(func, 2, 3); // This will continue outward to capture the tail of the function
     double I = I1 + I2; // Total integral
 */
-double simpson_inf(std::function<double(double)> func, double x0, double init_end, double tol=1e-8);
+double simpson_inf(std::function<double(double)> func, double x0, double init_end, double tol=1e-8, double I=0);
 
 
 /*
@@ -189,7 +189,7 @@ std::pair<double, double> weighted_simpson(std::function<std::pair<double, doubl
 */
 double tanh_sinh(std::function<double(double)> func, double dh, double tol=1e-5);
 
-double newton_usafe(const std::function<double(double)>& fun, const std::function<double(double)>& df, double x0, double ftol, double dtol, int& ierr);
+double newton_usafe(const std::function<double(double)>& fun, const std::function<double(double)>& df, double x0, double ftol, double dtol, int& ierr) noexcept;
 inline double newton(const std::function<double(double)>& fun, const std::function<double(double)>& df, double x0, double ftol=1e-10, double dtol=-1){
     int ierr = 0;
     double r = newton_usafe(fun, df, x0, ftol, dtol, ierr);
@@ -201,10 +201,14 @@ inline double newton(const std::function<double(double)>& fun, const std::functi
 }
 
 double bracket_positive(const std::function<double(double)>& fun, double x0, double x1, double tol=1e-10);
-void bracket_root(const std::function<double(double)>& fun, double& x0, double& x1, double& f0, double& f1, double tol=1e-5, double ftol=1e-10);
-inline double bracket_root(const std::function<double(double)>& fun, double x0, double x1, double tol=1e-5, double ftol=1e-10){
-    double f0, f1;
-    bracket_root(fun, x0, x1, f0, f1, tol, ftol);
+void bracket_root_usafe(const std::function<double(double)>& fun, double& x0, double& x1, double& f0, double& f1, double dtol, double ftol) noexcept;
+inline double bracket_root(const std::function<double(double)>& fun, double x0, double x1, double dtol=1e-5, double ftol=1e-10){
+    double f0 = fun(x0);
+    double f1 = fun(x1);
+    if (f0 * f1 > 0){
+        throw std::runtime_error("Bracket solver: Initial values have same sign!");
+    }
+    bracket_root_usafe(fun, x0, x1, f0, f1, dtol, ftol);
     return x0;
 }
 

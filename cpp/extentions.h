@@ -241,9 +241,9 @@ public:
     double potential_dn(int i, int j, double r, size_t n) override {
         double un = T::potential_dn(i, j, r, n);
         for (size_t k = 1; k <= FH_order; k++){
-            double nfac = 1;
-            for (size_t ni = 2; ni <= k; ni++) nfac *= ni;
-            un += pow(D_factors[i][j] / (BOLTZMANN * current_T), n) * T::potential_dn(i, j, r, 2 * k + n) / nfac;
+            double kfac = 1;
+            for (size_t ki = 2; ki <= k; ki++) kfac *= ki;
+            un += pow(D_factors[i][j] / (BOLTZMANN * current_T), k) * T::potential_dn(i, j, r, 2 * k + n) / kfac;
         }
         return un;
     }
