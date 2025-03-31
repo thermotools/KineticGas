@@ -331,7 +331,7 @@ vector2d Quantum::wave_function(int i, int j, int l, double E, double r_end, dou
     const double k2 = 2. * red_mass[i][j] / (pow(HBAR, 2));
     const double k = sqrt(k2 * E);
     if (step_size <= 0){
-        step_size = 0.025 / k;
+        step_size = 0.025 * std::min(1 / k, sigma[i][j]);
     }
     const double s2 = pow(step_size, 2) / 12.;
 
@@ -413,12 +413,12 @@ vector2d Quantum::wave_function(int i, int j, int l, double E, double r_end, dou
     return out;
 }
 
-double Quantum::quantum_phase_shift(int i, int j, int l, double E){
+double Quantum::quantum_phase_shift(int i, int j, int l, double E, double& n_nodes){
     // Input is reduced energy (E = E(Joule) / eps[i][j])
     E *= eps[i][j];
     double k2 = (2. * red_mass[i][j] / pow(HBAR, 2));
     double k = sqrt(k2 * E);
-    const double step_size = 0.025 / k;
+    const double step_size = 0.025 * std::min(1 / k, sigma[i][j]);
     const double s2 = pow(step_size, 2) / 12.; 
 
     // std::cout << "Start phase shift : " << E / eps[i][j] << ", " << step_size / sigma[i][j] << ", " << sigma[i][j] * k << std::endl;
@@ -456,7 +456,7 @@ double Quantum::quantum_phase_shift(int i, int j, int l, double E){
 
     // std::cout << "Checks : " << abs(potential(i, j, r_cf) / E) << ", " << abs(potential_derivative_r(i, j, r_cf) / (k * E)) << std::endl;
 
-    if (particles_are_free(r_cf)) {return 0;}
+    if (particles_are_free(r_cf)) {n_nodes = (l + 0.5) / k; return 0;}
     double r0 = std::max(r_cf - 3 * (2 * PI / k), r_cf / 2);
 
     // std::cout << "Starting :\n\tStart: " << r0 / sigma[i][j] 
@@ -489,33 +489,45 @@ double Quantum::quantum_phase_shift(int i, int j, int l, double E){
         return atan((k * djl - gamma * jl) / (k * dyl - gamma * yl)); // local phase shift // pow(HBAR, 2) * (d2psi / psi[n_step]) / (2. * red_mass[i][j]); // 
     }; 
 
-    size_t nsteps_init = 2; // static_cast<size_t>((5.5 * 2 * PI / k) / step_size);
-    int n = (l <= rot_ground_state[i]) ? 1 : 0;
+    size_t nsteps_init = 2;
     double delta, prev_delta;
-    for (size_t i = 0; i < nsteps_init; i++) {numerov_step(r, psi, g_vals);} // std::cout << "Init step : " << r[4] / sigma[0][0] << ", " << psi[4] << std::endl; // Do some steps computing phase shifts.
+    int nl = get_levinson_multiple(i, j, l) + 1;
+    n_nodes = (l + 0.5) / k;
+    int node_count = 0;
+    bool first_node_found = false;
+
+    for (size_t i = 0; i < nsteps_init; i++) {
+        numerov_step(r, psi, g_vals);
+        if (psi[3] * psi[4] < 0 && r.back() > 0.9 * sigma[i][j]){
+            node_count++;
+            if (node_count == nl + 1){
+                double a = (psi[4] - psi[3]) / (r[4] - r[3]);
+                double b = psi[4] - a * r[4];
+                n_nodes = - b / a;
+                first_node_found = true;
+            }
+        }
+    }
     delta = local_phase_shift(r, psi, g_vals);
     do {
-        // const size_t nsteps_period = static_cast<size_t>(2 * PI / (k * step_size));
-        // for (size_t i = 0; i < nsteps_period; i++) 
-        // prev_delta = delta;
         numerov_step(r, psi, g_vals);
-        // delta = local_phase_shift(r, psi, g_vals);
-        // if ((delta < - PI / 4) and (prev_delta > PI / 4)) {
-        //     n += 1;
-        // }
-        // else if ((delta > PI / 4) && (prev_delta < - PI / 4)){
-        //     n -= 1;
-        // }
-
-        // std::cout << "Local shift (" << l << ", " << E / eps[i][j] << ", " << r[4] / sigma[i][j] << ") : " << psi[4] << ", " << prev_delta / PI << ", " << new_delta / PI << std::endl;
-        // if (r[4] > step_size * 1e8) throw std::runtime_error("Reached max range for phase shift integration! Step size may be too large.");
+        if (!first_node_found && psi[3] * psi[4] < 0 && r.back() > 0.9 * sigma[i][j]){
+            node_count++;
+            if (node_count == nl + 1){
+                double a = (psi[4] - psi[3]) / (r[4] - r[3]);
+                double b = psi[4] - a * r[4];
+                n_nodes = - b / a;
+                first_node_found = true;
+            }
+        }
+        // if (r.back() <= rmax_node_count && psi[3] * psi[4] < 0) n_nodes += 1;
     } while ( ! particles_are_free(r.back())); // || (potential_derivative_r(i, j, r.back()) < 0) ); // while (l * (l + 1) / ( E * k2 * pow(r[4], 2)) > 1e-3); // (abs(new_delta - prev_delta) > 1e-5); // while (error > 1e-5); // 
     // std::cout << "Converged at r = " << r[4] / sigma[i][j] << std::endl;
     // std::cout << "Terminate phase shift : " << abs(potential(i, j, r.back()) / E) 
     //           << ", " << abs(potential_derivative_r(i, j, r.back()) / (k * E))  << ", " << r.back() / sigma[i][j] << std::endl;
     delta = local_phase_shift(r, psi, g_vals);
     // std::cout << "Result : (" << delta / PI << " + " << n << ") pi" << std::endl;
-    return delta + 0 * n * PI;
+    return delta;
 }
 
 double Quantum::phase_shift(int i, int j, int l, double E){    
@@ -524,8 +536,8 @@ double Quantum::phase_shift(int i, int j, int l, double E){
     // const std::pair<int, double> point(l, E);
     // const auto pos = phase_shift_map.find(point);
     // if (pos != phase_shift_map.end()) return pos->second;
-
-    double delta = quantum_phase_shift(i, j, l, E);
+    double n_nodes;
+    double delta = quantum_phase_shift(i, j, l, E, n_nodes);
     // phase_shift_map[point] = delta;
     return delta;
 }
@@ -610,9 +622,27 @@ void Quantum::clear_phase_shift_maps(){
     stored_total_phase_shifts.clear();
 }
 
-void Quantum::fill_absolute_phase_shifts(int i, int j, int l, double next_k, int& n, vector1d& k_vals, vector1d& phase_shifts){
+vector1d Quantum::get_node_count(int i, int j, int l, const vector1d k_vals){
+    vector1d node_counts;
+    for (double k : k_vals) {
+        // std::cout << "Count nodes (k, l) = " << k << ", " << l << " : ";
+        node_counts.push_back(get_levinson_multiple(i, j, l) + 1); // (l + 0.5) * sigma[i][j] / k);
+        if (k == 0) {
+            // std::cout << 0 << std::endl;
+            node_counts[0] = (l + 0.5) * sigma[i][j] / k;
+            continue;
+        }
+        double E = pow(k * HBAR / sigma[i][j], 2) / (2. * red_mass[i][j] * eps[i][j]);
+        quantum_phase_shift(i, j, l, E, node_counts.back());
+        // std::cout << node_counts.back() << std::endl;
+    }
+    return node_counts;
+}
+
+void Quantum::fill_absolute_phase_shifts(int i, int j, int l, double next_k, int& n, vector1d& k_vals, vector1d& phase_shifts, vector1d& node_count){
     const auto E_from_k = [&](double k_val){return pow(k_val * HBAR, 2) / (2. * red_mass[i][j] * eps[i][j]);};
-    double next_delta = phase_shift(i, j, l, E_from_k(next_k / sigma[i][j]));
+    double n_nodes = n;
+    double next_delta = quantum_phase_shift(i, j, l, E_from_k(next_k / sigma[i][j]), n_nodes);
     double delta, extrapol_delta;
     int local_n = n;
     do {
@@ -640,18 +670,20 @@ void Quantum::fill_absolute_phase_shifts(int i, int j, int l, double next_k, int
             // std::cout << "\tNext(" << next_k << ", " << n << ") : " << phase_shifts.back() / PI << std::endl;
         }
         delta = next_delta + local_n * PI;
-        if (k_step < 1e-3 || n > 15){
+        if (k_step < 1e-6 || n > 15){
+            // std::cout << "Reached maximum recursion ... " << k_vals.back() << ", " << k_step << std::endl;
             break; throw std::runtime_error("Unable to resolve absolute phase shift!");
         }
-        if (abs(extrapol_delta - delta) > 0.2){
+        if (abs(extrapol_delta - delta) > 0.01){
             // std::cout << "Backstepping to : " << k_vals.back() + k_step / 2 << std::endl;
-            fill_absolute_phase_shifts(i, j, l, k_vals.back() + k_step / 2, n, k_vals, phase_shifts);
+            fill_absolute_phase_shifts(i, j, l, k_vals.back() + k_step / 2, n, k_vals, phase_shifts, node_count);
         }
-    } while (abs(extrapol_delta - delta) > 0.2);
+    } while (abs(extrapol_delta - delta) > 0.01);
     // std::cout << "Completed recursion : " << next_k << std::endl;
     n = local_n;
     k_vals.push_back(next_k);
     phase_shifts.push_back(delta);
+    node_count.push_back(n_nodes);
 }
 
 void Quantum::fill_absolute_phase_shifts_tail(int i, int j, int l, double next_k, int& n, vector1d& k_vals, vector1d& phase_shifts){
@@ -731,6 +763,8 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
 
     vector1d& k_vals = absolute_phase_shift_map[l][0];
     vector1d& phase_shifts = absolute_phase_shift_map[l][1];
+    double n_nodes = n;
+    vector1d node_count(k_vals.size());
 
     if (k_vals.back() >= k_max) return;
 
@@ -746,8 +780,8 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
         return;
     }
 
-    double k = (k_vals.size() == 1) ? 0.5 : k_vals.back();
-    double dk = 0.01;
+    double k = (k_vals.size() == 1) ? 0.01 : k_vals.back();
+    double dk = 0.001;
 
     if (k_vals.size() > 1){
         // std::cout << "Finding n start ... " << std::endl;
@@ -763,19 +797,28 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
     //         if (k <= 0) throw std::runtime_error("Could not find smallest phase shift!")
     //     }
     // }
-    double prev_delta = phase_shift(i, j, l, E_from_k(k / sigma[i][j]));
-    for (; k_vals.size() < 5;){
+    constexpr bool verbose = true;
+    // if (verbose) std::cout << "Starting trace : " << l << ", " << k_max << std::endl;
+    // if (verbose) std::cout << "n0, d0 : " << n << ", " << k_vals[0] << ", " << phase_shifts[0] / PI << std::endl;
+    if (k_vals.size() == 1) node_count[0] = NAN;
+    double prev_delta = quantum_phase_shift(i, j, l, E_from_k(k / sigma[i][j]), node_count.back());
+    // if (verbose) std::cout << "n, d : " << n << ", " << prev_delta / PI << std::endl;
+    for (; k_vals.size() < 5;){ // k < 0.5; ){ // 
+        
         k += dk;
-        delta = phase_shift(i, j, l, E_from_k(k / sigma[i][j]));
-        if (prev_delta < 0 && delta > 0){
+        n_nodes = n;
+        delta = quantum_phase_shift(i, j, l, E_from_k(k / sigma[i][j]), n_nodes);
+        if (prev_delta < - PI / 4 && delta > 0){
             n -= 1;
         }
-        else if (prev_delta > 0 && delta < 0){
+        else if (prev_delta > PI / 4 && delta < 0){
             n += 1;
         }
+        // if (verbose) std::cout << "n, d : " << n << ", " << delta / PI << ", " << n + delta / PI << std::endl;
         prev_delta = delta;
         k_vals.push_back(k);
         phase_shifts.push_back(delta + n * PI);
+        node_count.push_back(n_nodes);
     }
     int n_step = k_vals.size() - 1;
     
@@ -784,9 +827,9 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
     const Eigen::Vector3d b3 = {0, 0, 1};
 
     std::array<double, 3> dk_vals;
-    dk_vals[0] = k_vals[1] - k_vals[0];
-    dk_vals[1] = k_vals[2] - k_vals[0];
-    dk_vals[2] = k_vals[3] - k_vals[0];
+    dk_vals[0] = k_vals[2] - k_vals[1];
+    dk_vals[1] = k_vals[3] - k_vals[1];
+    dk_vals[2] = k_vals[4] - k_vals[1];
     Eigen::Matrix3d A(3, 3);
     for (unsigned int dki = 0; dki < 3; dki++){
         for (unsigned int fi = 0; fi < 3; fi++){
@@ -796,24 +839,28 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
     Eigen::PartialPivLU<Eigen::Matrix3d> A_piv(A);
     Eigen::Vector3d c = A_piv.solve(b1);
     double c0 = - (c(0) + c(1) + c(2));
-    double dpdk = (c0 * phase_shifts[0] + c(0) * phase_shifts[1] + c(1) * phase_shifts[2] + c(2) * phase_shifts[3]);
-    c = A_piv.solve(b2);
-    c0 = - (c(0) + c(1) + c(2));
-    double d2pdk2 = 4 * (c0 * phase_shifts[0] + c(0) * phase_shifts[1] + c(1) * phase_shifts[2] + c(2) * phase_shifts[3]);
-    c = A_piv.solve(b3);
-    c0 = - (c(0) + c(1) + c(2));
-    double d3pdk3 = 6 * (c0 * phase_shifts[0] + c(0) * phase_shifts[1] + c(1) * phase_shifts[2] + c(2) * phase_shifts[3]);
-    {
-        const auto extrapol0 = [&](){return phase_shifts[1] + dpdk * dk_vals[0] + (d2pdk2 / 2) * pow(dk_vals[0], 2) + (d3pdk3 / 3) * pow(dk_vals[0], 3);};
-        // std::cout << "Derivatives : " << dpdk << ", " << d2pdk2 << ", " << d3pdk3 << std::endl;
-        // std::cout << "Extrapolated : " << extrapol0() / PI << ", " << phase_shifts[0] / PI << std::endl;
-        if (abs(extrapol0() - phase_shifts[0]) > PI / 2){
+    double dpdk = (c0 * phase_shifts[1] + c(0) * phase_shifts[2] + c(1) * phase_shifts[3] + c(2) * phase_shifts[4]);
+    double d2pdk2 = 4 * (c0 * phase_shifts[1] + c(0) * phase_shifts[2] + c(1) * phase_shifts[3] + c(2) * phase_shifts[4]);
+    double d3pdk3 = 6 * (c0 * phase_shifts[1] + c(0) * phase_shifts[2] + c(1) * phase_shifts[3] + c(2) * phase_shifts[4]);
+    if (false) {
+        c = A_piv.solve(b1);
+        c0 = - (c(0) + c(1) + c(2));
+        dpdk = (c0 * phase_shifts[1] + c(0) * phase_shifts[2] + c(1) * phase_shifts[3] + c(2) * phase_shifts[4]);
+        c = A_piv.solve(b2);
+        c0 = - (c(0) + c(1) + c(2));
+        d2pdk2 = 4 * (c0 * phase_shifts[1] + c(0) * phase_shifts[2] + c(1) * phase_shifts[3] + c(2) * phase_shifts[4]);
+        c = A_piv.solve(b3);
+        c0 = - (c(0) + c(1) + c(2));
+        d3pdk3 = 6 * (c0 * phase_shifts[1] + c(0) * phase_shifts[2] + c(1) * phase_shifts[3] + c(2) * phase_shifts[4]);
+        double extrapol0 = phase_shifts[1] - dpdk * k_vals[1] + (d2pdk2 / 2) * pow(k_vals[1], 2) - (d3pdk3 / 3) * pow(k_vals[1], 3);
+        std::cout << "Derivatives : " << dpdk << ", " << d2pdk2 << ", " << d3pdk3 << std::endl;
+        std::cout << "Extrapolated : " << phase_shifts[1] / PI << " => " << extrapol0 / PI << ", " << phase_shifts[0] / PI << std::endl;
+        if (abs(extrapol0 - phase_shifts[0]) > PI / 2){
             for (size_t idx = 1; idx < 5; idx++){
                 phase_shifts[idx] -= PI;
             }
             n -= 1;
         }
-
     }
     dk_vals[0] = k_vals[n_step] - k_vals[n_step - 1];
     dk_vals[1] = k_vals[n_step] - k_vals[n_step - 2];
@@ -840,9 +887,17 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
                       && (phase_shifts.back() < - PI / 8) 
                      );
 
-    const double extrapol_tol = 1e-3;
-    double max_dk = 0.5;
-    double min_dk = 0.05;
+    double extrapol_tol = 1e-2;
+    double max_dk = 5e-1;
+    double min_dk = 1e-2;
+    bool resonance_found{false}, resonance_passed{false};
+    bool prepare_jump{false}, done_jump{false};
+    size_t n_jump = 0;
+    bool worst_is_over{false};
+    double dr0_k, dr0_k2, dr0_k3;
+    // extrapol_tol = 1e-5;
+    // max_dk = 1e-2;
+    // min_dk = 1e-6;
     while ((k + max_dk < k_max) && (!is_linear)){
         // std::array<double, 3> extrapol_coeff = quadric_extrapolate_coeff(k_vals, phase_shifts);
         n_step = k_vals.size() - 1;
@@ -860,30 +915,124 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
         c0 = - (c(0) + c(1) + c(2));
         dpdk = - (c0 * phase_shifts[n_step] + c(0) * phase_shifts[n_step - 1] + c(1) * phase_shifts[n_step - 2] + c(2) * phase_shifts[n_step - 3]);
         
-        // c = A_piv.solve(b2);
-        // c0 = - (c(0) + c(1) + c(2));
-        // d2pdk2 = 2 * (c0 * phase_shifts[n_step] + c(0) * phase_shifts[n_step - 1] + c(1) * phase_shifts[n_step - 2] + c(2) * phase_shifts[n_step - 3]);
+        dr0_k = - (c0 * node_count[n_step] + c(0) * node_count[n_step - 1] + c(1) * node_count[n_step - 2] + c(2) * node_count[n_step - 3]);
+        c = A_piv.solve(b2);
+        c0 = - (c(0) + c(1) + c(2));
+        dr0_k2 = 2 * (c0 * node_count[n_step] + c(0) * node_count[n_step - 1] + c(1) * node_count[n_step - 2] + c(2) * node_count[n_step - 3]);
+        d2pdk2 = 2 * (c0 * phase_shifts[n_step] + c(0) * phase_shifts[n_step - 1] + c(1) * phase_shifts[n_step - 2] + c(2) * phase_shifts[n_step - 3]);
 
         c = A_piv.solve(b3);
         c0 = - (c(0) + c(1) + c(2));
         d3pdk3 = - 6 * (c0 * phase_shifts[n_step] + c(0) * phase_shifts[n_step - 1] + c(1) * phase_shifts[n_step - 2] + c(2) * phase_shifts[n_step - 3]);
+        dr0_k3 = - 6 * (c0 * node_count[n_step] + c(0) * node_count[n_step - 1] + c(1) * node_count[n_step - 2] + c(2) * node_count[n_step - 3]);
 
         double tol_dk = pow(6 * extrapol_tol / abs(d3pdk3), 1. / 3.);
         dk = std::max(min_dk, std::min(tol_dk, max_dk));
         // std::cout << "Using dk = " << dk << ", " << k << ", " << phase_shifts.back() << std::endl;
         k += dk;
+        if (dk != max_dk && !resonance_found){
+            resonance_found = true;
+            resonance_passed = false;
+            if (verbose) std::cout << "Resonance found at (l, k) = " << l << ", " << k - dk << ", " << phase_shifts.back() / PI << std::endl;
+        }
+        if (dk == max_dk && resonance_found && !resonance_passed){
+            resonance_passed = true;
+            if (verbose) std::cout << "Resonance passed at (l, k) = " << l << ", " << k - dk << ", " << phase_shifts.back() / PI << std::endl;
+        }
+        // if (resonance_passed){
+        //     min_dk = 0.1; max_dk = 0.5; extrapol_tol = 1e-3;
+        // }
+        // if (resonance_found && !resonance_passed){
+        //     std::cout << "In resonance : " << k << ", " << dk << ", " << phase_shifts.back() / PI << std::endl;
+        // }
+        // if (node_count.back() == n && !prepare_jump){
+        //     prepare_jump = true;
+        //     if (verbose) std::cout << "Prepare jump at " << l << ", " << k << std::endl;
+        // }
 
-        fill_absolute_phase_shifts(i, j, l, k, n, k_vals, phase_shifts);
-        // std::cout << "Got value : " << k << ", " << n << ", " << phase_shifts.back() / PI << std::endl;
-        // std::cout << "Check : " << abs(d3pdk3) << ", " << dpdk << ", " << phase_shifts.back() << std::endl;
-        if ((pow(dk, 3) / 6) * abs(d3pdk3) < 1e-3 && dpdk < 0 && phase_shifts.back() < - PI / 8) {
-            // std::cout << "Entering tail : " << abs(d3pdk3) << ", " << dpdk << ", " << phase_shifts.back() / PI << std::endl;
+        double prev_r0 = node_count.back();
+        int prev_n = n;
+        double prev_delta = phase_shifts.back();
+        fill_absolute_phase_shifts(i, j, l, k, n, k_vals, phase_shifts, node_count);
+        dk_vals[0] = k_vals[n_step] - k_vals[n_step - 1];
+        dk_vals[1] = k_vals[n_step] - k_vals[n_step - 2];
+        dk_vals[2] = k_vals[n_step] - k_vals[n_step - 3];
+        for (unsigned int dki = 0; dki < 3; dki++){
+            for (unsigned int fi = 0; fi < 3; fi++){
+                A(fi, dki) = pow(dk_vals[dki], fi + 1);
+            }
+        }
+        A_piv.compute(A);
+        c = A_piv.solve(b1);
+        c0 = - (c(0) + c(1) + c(2));
+        dr0_k = - (c0 * node_count[n_step] + c(0) * node_count[n_step - 1] + c(1) * node_count[n_step - 2] + c(2) * node_count[n_step - 3]);
+
+        c = A_piv.solve(b2);
+        c0 = - (c(0) + c(1) + c(2));
+        dr0_k2 = 2 * (c0 * node_count[n_step] + c(0) * node_count[n_step - 1] + c(1) * node_count[n_step - 2] + c(2) * node_count[n_step - 3]);
+
+        c = A_piv.solve(b3);
+        c0 = - (c(0) + c(1) + c(2));
+        dr0_k3 = - 6 * (c0 * node_count[n_step] + c(0) * node_count[n_step - 1] + c(1) * node_count[n_step - 2] + c(2) * node_count[n_step - 3]);
+        double prev_k = *(k_vals.end() - 2);
+        int n_step = node_count.size() - 1;
+        double extrapol1 = prev_r0 + dk * dr0_k;
+        double extrapol2 = extrapol1 + pow(dk, 2) * dr0_k2 / 2;
+        double extrapol3 = extrapol2 + pow(dk, 3) * dr0_k3 / 6;
+        double extrapol_r0 = extrapol2;
+
+        if (verbose) std::cout << "Do jump " << k << ", " << dk << ", " << prev_k << " ?"
+            << "\n\t\t r : " << node_count[n_step - 2] / sigma[i][j] << ", " << node_count[n_step - 1] / sigma[i][j] << ", " << node_count[n_step] / sigma[i][j]
+            << "\n\t\t r : " << prev_r0 / sigma[i][j] << ", " << node_count.back() / sigma[i][j] 
+            << "\n\t\t ex : " << extrapol1 / sigma[i][j] << ", " << extrapol2 / sigma[i][j] << ", " << extrapol3 / sigma[i][j] 
+            << "\n\t\t e : " << (extrapol1 - node_count.back()) / prev_r0 << ", " << (extrapol2 - node_count.back()) / prev_r0 << ", " << abs(extrapol3 - node_count.back()) / prev_r0
+            << "\n\t\t e : " << abs(node_count.back() - extrapol_r0) / prev_r0 << " / " << abs(prev_r0 - extrapol_r0) / prev_r0
+            << "\n\t\t dr : " << dr0_k / sigma[i][j] << ", " << dr0_k2 / sigma[i][j] << ", " << dr0_k3 / sigma[i][j] 
+            << "\n\t\t n : " << prev_n << ", " << n
+            << "\n\t\t k : " << *(k_vals.end() - 2) << ", " << k_vals.back() << std::endl;
+
+        if ( abs(node_count.back() - extrapol_r0) > abs(prev_r0 - extrapol_r0) 
+             && abs(phase_shifts.back() - prev_delta) < PI 
+             && node_count.back() < 10 * sigma[i][j]
+             && node_count.back() < prev_r0
+             && !worst_is_over
+             && (*(k_vals.end() - 2)) - (*(k_vals.end() - 3)) > min_dk){
+            done_jump = true; n_jump++;
+            n += 1;
+            if (verbose) std::cout << "Jumping resonance at (" << l << ", " << k << ") : " << prev_r0 / sigma[i][j] << ", " << node_count.back() / sigma[i][j] 
+                                    << ", " << extrapol_r0 / sigma[i][j] << ", " << dr0_k / sigma[i][j] 
+                                    << " / " << prev_n << " => " << n << std::endl;
+            for (size_t jmp_idx = 0; jmp_idx < 5; jmp_idx++){
+                k += min_dk / 10;
+                n_nodes = n;
+                delta = quantum_phase_shift(i, j, l, E_from_k(k / sigma[i][j]), n_nodes);
+                k_vals.push_back(k);
+                phase_shifts.push_back(delta + n * PI);
+                node_count.push_back(n_nodes);
+            }
+            if (verbose) std::cout << "Finished resonance jump : " << l << ", " << k << std::endl;
+            // extrapol_tol = 1e-5;
+            // max_dk = 1e-2;
+            // min_dk = 1e-6;
+        }
+
+        if (d2pdk2 < 0 && done_jump && !worst_is_over){
+            worst_is_over = true;
+            extrapol_tol = 1e-2;
+            max_dk = 1.0;
+            min_dk = 1e-3;
+        }
+
+        // std::cout << "Check tail " << k << " : " << d2pdk2 << ", " << dpdk << ", " << d2pdk2 / dpdk << " / " << phase_shifts.back() / PI << ", " << n << ", " << nl0 << std::endl;
+        if (( d2pdk2 / dpdk < 0.1 && d2pdk2 < 0 && dpdk < 0) || n < prev_n) {
+            if (verbose) std::cout << "Entering tail : " << k << ", " << dpdk << ", " << d2pdk2 / dpdk << ", " << phase_shifts.back() / PI << std::endl;
             is_linear = true;
         }
     }
     // std::cout << "Entering tail... " << k << ", " << phase_shifts.back() << std::endl;
     max_dk = 5;
     min_dk = 0.5;
+    extrapol_tol = 1e-2;
     std::array<double, 3> prev_dk_vals = dk_vals;
     while (k + max_dk < k_max){
         // std::array<double, 3> extrapol_coeff = quadric_extrapolate_coeff(k_vals, phase_shifts);
@@ -912,36 +1061,65 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
         fill_absolute_phase_shifts_tail(i, j, l, k, n, k_vals, phase_shifts);
     }
 
-    if (abs(k - k_max) > 1e-8) fill_absolute_phase_shifts(i, j, l, k_max, n, k_vals, phase_shifts);
+    if (abs(k - k_max) > 1e-8) fill_absolute_phase_shifts(i, j, l, k_max, n, k_vals, phase_shifts, node_count);
 
     std::cout << "\tFinished : " << l << ", " << k_max << std::endl;
 }
 
-void Quantum::trace_total_phase_shifts(int i, int j, double k_max){
+void Quantum::trace_total_phase_shifts(int i, int j, double T){
+    double tol = 1e-8;
+    double beta = 1 / (BOLTZMANN * T);
+    double pre_exp = - beta * pow(HBAR, 2) / (2 * red_mass[i][j] * pow(sigma[i][j], 2));
+    double pre_k = pow(HBAR, 2) / (red_mass[i][j] * sigma[i][j]);
+    double k_max = sqrt(log(tol) / pre_exp);
+
     if (stored_total_phase_shifts.size() > 0){
         if (stored_total_phase_shifts[0].back() >= k_max) return;
     }
     double dk = 0.01;
     size_t n_vals = static_cast<size_t>(k_max / dk);
     vector1d k_vals(n_vals);
+    std::vector<double> wts(n_vals);
+    
     
     k_vals[0] = 0;
     for (size_t k_idx = 1; k_idx < k_vals.size(); k_idx++){
         k_vals[k_idx] = k_vals[k_idx - 1] + dk;
+        wts[k_idx] = exp(pre_exp * pow(k_vals[k_idx], 2)) * pre_k * k_vals[k_idx];
     }
-    vector1d phase_shifts(n_vals, 0);
-    int l = 0;
-    trace_absolute_phase_shifts(i, j, l, k_max);
-    vector1d phase_shift_l = interpolate_grid(k_vals, absolute_phase_shift_map[l][0], absolute_phase_shift_map[l][1]);
-    do {
-        for (size_t idx = 0; idx < phase_shifts.size(); idx++){
-            phase_shifts[idx] += (2 * l + 1) * phase_shift_l[idx];
+
+    double tot = 0;
+    double part_sum = 0;
+    double L = de_broglie_wavelength(i, j, T);
+    double B0 = 0;
+    const vector2d& Eb = E_bound[i][j];
+    for (size_t vib_i = 0; vib_i < Eb.size(); vib_i++){
+        for (size_t j = 0; j < Eb[vib_i].size(); j += 2){
+            B0 += (2 * j + 1) * pow(L, 3) * AVOGADRO;
         }
-        // if (l > 100) break;
-        l += 2;
+    }
+    vector1d integrand(n_vals);
+    vector1d phase_shifts(n_vals, 0);
+    vector1d phase_shift_l(n_vals);
+    int l = 0;
+    do {
         trace_absolute_phase_shifts(i, j, l, k_max);
         phase_shift_l = interpolate_grid(k_vals, absolute_phase_shift_map[l][0], absolute_phase_shift_map[l][1]);
-    } while (abs(phase_shift_l.back() * (2 * l + 1) / phase_shifts.back()) > 1e-5);
+        for (size_t idx = 0; idx < phase_shifts.size(); idx++){
+            phase_shifts[idx] += (2 * l + 1) * phase_shift_l[idx];
+            integrand[idx] = (2 * l + 1) * phase_shift_l[idx] * wts[idx];
+        }
+        part_sum = trapezoid(dk, integrand);
+        tot += part_sum;
+        // if (l > 100) break;
+        double B_th = B0 - tot * pow(L, 3) * AVOGADRO  / (PI * BOLTZMANN * T * sigma[i][j]);
+        double B_part = - part_sum * pow(L, 3) * AVOGADRO  / (PI * BOLTZMANN * T * sigma[i][j]);
+        double B_th_tot = - tot * pow(L, 3) * AVOGADRO  / (PI * BOLTZMANN * T * sigma[i][j]);
+        std::cout << "Converging total : " << B_th_tot << ", " << B_part << ", " 
+                    << B_part / B_th_tot << ", " << B0 << ", " << B_th << std::endl;
+        l += 2;
+        
+    } while (abs(part_sum / tot) > 1e-4); // abs(phase_shift_l.back() * (2 * l + 1) / phase_shifts.back()) > 1e-5);
     stored_total_phase_shifts = vector2d({k_vals, phase_shifts});
 }
 
@@ -1292,7 +1470,7 @@ std::map<char, double> Quantum::second_virial_contribs(int i, int j, double T, c
         double pre_exp = - beta * pow(HBAR, 2) / (2 * red_mass[i][j] * pow(sigma[i][j], 2));
         double pre_k = pow(HBAR, 2) / (red_mass[i][j] * sigma[i][j]);
         double k_max = sqrt(log(tol) / pre_exp);
-        trace_total_phase_shifts(i, j, k_max);
+        trace_total_phase_shifts(i, j, T);
 
         const vector1d& k_vals = stored_total_phase_shifts[0];
         const vector1d& phase_shifts = stored_total_phase_shifts[1];

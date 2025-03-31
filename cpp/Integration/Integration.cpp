@@ -436,6 +436,23 @@ double tanh_sinh(std::function<double(double)> func, double h, double tol){
     return I;
 }
 
+double trapezoid(const std::vector<double>& x, const std::vector<double>& y){
+    double I = 0;
+    for (size_t i = 1; i < y.size(); i++){
+        I += (x[i] - x[i - 1]) * (y[i] + y[i - 1]);
+    }
+    return 0.5 * I;
+}
+
+double trapezoid(const double dx, const std::vector<double>& y){
+    double I = 0;
+    for (size_t i = 1; i < y.size() - 1; i++){
+        I += y[i];
+    }
+    I += 0.5 * (y.front() + y.back());
+    return I * dx;
+}
+
 double newton_usafe(const std::function<double(double)>& fun, const std::function<double(double)>& df, double x0, double ftol, double dtol, int& ierr) noexcept {
     double f_val;
     int niter = 0;

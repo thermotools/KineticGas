@@ -212,6 +212,9 @@ inline double bracket_root(const std::function<double(double)>& fun, double x0, 
     return x0;
 }
 
+double trapezoid(const std::vector<double>& x, const std::vector<double>& y);
+double trapezoid(const double dx, const std::vector<double>& y);
+
 std::array<double, 3> fit_quadric(const std::array<double, 3>& x, const std::array<double, 3>& y);
 std::array<double, 3> quadric_extrapolate_coeff(const std::vector<double>& x, const std::vector<double>& y);
 double interpolate_grid(const std::vector<double>& x, const std::vector<double>& y);

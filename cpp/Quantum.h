@@ -20,14 +20,15 @@ public:
     vector2d wave_function(int i, int j, int l, double E, double r_end, double dr);
     double JKWB_phase_shift(int i, int j, int l, double E);
     double JKWB_upper_E_limit(int i, int j);
-    double quantum_phase_shift(int i, int j, int l, double E);
+    double quantum_phase_shift(int i, int j, int l, double E, double& n_nodes);
+    vector1d get_node_count(int i, int j, int l, const vector1d k_vals);
     double phase_shift(int i, int j, int l, double E);
     double absolute_phase_shift(int i, int j, int l, double E, double prev_delta);
     double absolute_phase_shift(int i, int j, int l, double E);
     vector2d absolute_phase_shifts(int i, int j, int l, double k_max);
 
     void trace_absolute_phase_shifts(int i, int j, int l, double k_max);
-    void fill_absolute_phase_shifts(int i, int j, int l, double next_k, int& n, vector1d& k_vals, vector1d& phase_shifts);
+    void fill_absolute_phase_shifts(int i, int j, int l, double next_k, int& n, vector1d& k_vals, vector1d& phase_shifts, vector1d& node_count);
     void fill_absolute_phase_shifts_tail(int i, int j, int l, double next_k, int& n, vector1d& k_vals, vector1d& phase_shifts);
 
     int get_levinson_multiple(int i, int j, int l);
