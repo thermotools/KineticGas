@@ -259,7 +259,7 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("absolute_phase_shift", py::overload_cast<int, int, int, double, double>(&Quantum::absolute_phase_shift))
         .def("absolute_phase_shift", py::overload_cast<int, int, int, double>(&Quantum::absolute_phase_shift))
         .def("absolute_phase_shifts", &Quantum::absolute_phase_shifts)
-        .def("get_node_count", &Quantum::get_node_count)
+        .def("get_levinson_r", &Quantum::get_levinson_r)
         .def("integral_phase_shift", &Quantum::integral_phase_shift)
         .def("total_phase_shifts", &Quantum::total_phase_shifts)
         .def("dump_phase_shift_map", &Quantum::dump_phase_shift_map)
