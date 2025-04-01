@@ -890,6 +890,9 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
     double extrapol_tol = 1e-2;
     double max_dk = 5e-1;
     double min_dk = 1e-2;
+    if (l == 14){
+        max_dk /= 2; min_dk /= 2; extrapol_tol /= 2;
+    }
     bool resonance_found{false}, resonance_passed{false};
     bool prepare_jump{false}, done_jump{false};
     size_t n_jump = 0;
@@ -993,10 +996,12 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
 
         if ( abs(node_count.back() - extrapol_r0) > abs(prev_r0 - extrapol_r0) 
              && abs(phase_shifts.back() - prev_delta) < PI 
-             && node_count.back() < 10 * sigma[i][j]
+             && node_count.back() < 15 * sigma[i][j]
              && node_count.back() < prev_r0
              && !worst_is_over
-             && (*(k_vals.end() - 2)) - (*(k_vals.end() - 3)) > min_dk){
+             && (*(k_vals.end() - 2)) - (*(k_vals.end() - 3)) > min_dk
+             && l != 0
+             && 2 * red_mass[i][j] > 30e-3 / AVOGADRO){
             done_jump = true; n_jump++;
             n += 1;
             if (verbose) std::cout << "Jumping resonance at (" << l << ", " << k << ") : " << prev_r0 / sigma[i][j] << ", " << node_count.back() / sigma[i][j] 
@@ -1025,6 +1030,7 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
 
         // std::cout << "Check tail " << k << " : " << d2pdk2 << ", " << dpdk << ", " << d2pdk2 / dpdk << " / " << phase_shifts.back() / PI << ", " << n << ", " << nl0 << std::endl;
         if (( d2pdk2 / dpdk < 0.1 && d2pdk2 < 0 && dpdk < 0) || n < prev_n) {
+            if (l == 0 && phase_shifts.back() > 0) continue;
             if (verbose) std::cout << "Entering tail : " << k << ", " << dpdk << ", " << d2pdk2 / dpdk << ", " << phase_shifts.back() / PI << std::endl;
             is_linear = true;
         }
