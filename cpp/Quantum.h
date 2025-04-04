@@ -54,6 +54,7 @@ public:
     vector1d second_virial(int i, int j, const vector1d& T);
     double semiclassical_second_virial(int i, int j, double T);
     double bound_second_virial(int i, int j, double T) override;
+    double bound_second_virial_lim(int i, int j) override;
     double dimer_constant(int i, int j, double T) override;
 
     double scattering_volume(int i, int j, double E);

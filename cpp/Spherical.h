@@ -56,6 +56,7 @@ class Spherical : public KineticGas {
 
     double second_virial(int i, int j, double T) override;
     double bound_second_virial(int i, int j, double T) override;
+    virtual double bound_second_virial_lim(int i, int j);
     std::map<char, double> second_virial_contribs(int i, int j, double T, const std::string& contribs) override;
 
     // ------------------------------------------------------------------------------------------- //

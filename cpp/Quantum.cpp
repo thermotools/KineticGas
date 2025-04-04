@@ -1361,6 +1361,18 @@ double Quantum::bound_second_virial(int i, int j, double T){
     return second_virial_contribs(i, j, T, "b")['b'];
 }
 
+double Quantum::bound_second_virial_lim(int i, int j){
+    if (!quantum_is_active) return Spherical::bound_second_virial_lim(i, j);
+    double Bb = 0;
+    const vector2d& Eb = E_bound[i][j];
+    for (size_t v = 0; v < E_bound.size(); v++){
+        for (size_t l = 0; l < E_bound[v].size(); l+=2){
+            Bb += 2 * l + 1;
+        }
+    }
+    return Bb;
+}
+
 double Quantum::dimer_constant(int i, int j, double T){
     set_internals(0, T, {1.});
     if (!quantum_is_active) return Spherical::dimer_constant(i, j, T);

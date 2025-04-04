@@ -166,6 +166,18 @@ double Spherical::second_virial(int i, int j, double T){
     return - 0.5 * 4 * PI * pow(r_scale, 3) * AVOGADRO * I;
 }
 
+double Spherical::bound_second_virial_lim(int i, int j){
+    set_internals(0, 1e12, {1.});
+    double r0 = sigma[i][j];
+    const auto integrand = [&](double r){
+                                    const double u = potential(i, j, r * r0);
+                                    return pow(r, 2) * pow(- u, 3. / 2.);
+                                };
+    double I0 = simpson(integrand, 1 + 1e-6, 1.5, 50);
+    double I = simpson_inf(integrand, 1.5, 2.0, 1e-8, I0);
+    return - 4 * sqrt(PI) * pow(2 * PI * red_mass[i][j] / pow(PLANCK, 2), 3. / 2.) * pow(r0, 3) * I * 2. / 3.;
+}
+
 double Spherical::bound_second_virial(int i, int j, double T){
     // See: Dardi & Dahler, Classical and quantal calculations of the dimerization constant and second virial coefficient for argon, Theoret. Chim. Acta 82 (1992)
     //        DOI: https://doi.org/10.1007/BF01113133

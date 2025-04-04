@@ -275,6 +275,7 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("second_virial", py::overload_cast<int, int, double>(&Quantum::second_virial))
         .def("second_virial", py::overload_cast<int, int, const vector1d&>(&Quantum::second_virial))
         .def("second_virial_contribs", &Quantum::second_virial_contribs)
+        .def("bound_second_virial_lim", &Quantum::bound_second_virial_lim)
         .def("semiclassical_second_virial", &Quantum::semiclassical_second_virial)
         .def("classical_omega", &Quantum::classical_omega)
         .def("scattering_volume", &Quantum::scattering_volume)
