@@ -45,6 +45,7 @@ class MieKinGas : public Spherical {
     double omega(int i, int j, int l, int r, double T) override;
     double omega_correlation(int i, int j, int l, int r, double T_star);
     double omega_recursive_factor(int i, int j, int l, int r, double T);
+    void set_omega_correlation_active(bool active);
     // The hard sphere integrals are used as the reducing factor for the correlations.
     // So we need to compute the hard-sphere integrals to convert the reduced collision integrals from the
     // Correlation by Fokin et. al. to the "real" collision integrals.
@@ -194,6 +195,7 @@ class MieKinGas : public Spherical {
 
     std::vector<double> f_corr(double alpha);
 
+    bool omega_correlation_active = true;
     static constexpr double omega_correlation_factors[2][6][4] =
     {
         {

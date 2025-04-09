@@ -63,6 +63,7 @@ using vector2d = std::vector<vector1d>;
         .def("get_ksi_factors", &Model::get_ksi_factors) \
         \
         .def("precompute_ideal_diffusion", &Model::precompute_ideal_diffusion) \
+        .def("omega", &Model::omega) \
         \
         
 #define Spherical_potential_bindings(Model) \
@@ -75,7 +76,9 @@ using vector2d = std::vector<vector1d>;
         .def("get_r_min", &Model::get_r_min) \
         .def("get_sigma_eff", &Model::get_sigma_eff) \
         .def("get_eps_eff", &Model::get_eps_eff) \
-        .def("get_alpha_eff", &Model::get_alpha_eff)
+        .def("get_alpha_eff", &Model::get_alpha_eff) \
+        .def("omega_tester", &Model::omega_tester) \
+        .def("w_integrand", &Model::w_integrand)
 
 PYBIND11_MODULE(libpykingas, handle){
     handle.doc() = "Is this documentation? This is documentation.";
@@ -171,6 +174,7 @@ PYBIND11_MODULE(libpykingas, handle){
         .def(py::init<std::string, bool>())
         KineticGas_bindings(MieKinGas)
         Spherical_potential_bindings(MieKinGas)
+        .def("set_omega_correlation_active", &MieKinGas::set_omega_correlation_active)
         .def("get_BH_diameters", &MieKinGas::get_BH_diameters)
         .def("get_vdw_alpha", &MieKinGas::get_vdw_alpha)
         .def("saft_rdf", &MieKinGas::saft_rdf)
@@ -249,6 +253,7 @@ PYBIND11_MODULE(libpykingas, handle){
         // .def(py::init<std::string>())
         KineticGas_bindings(Quantum)
         Spherical_potential_bindings(Quantum)
+        .def("get_E_bound", &Quantum::get_E_bound)
         .def("cross_section", &Quantum::cross_section)
         .def("classical_cross_section", &Quantum::classical_cross_section)
         .def("reduced_cross_section", &Quantum::reduced_cross_section)
