@@ -335,9 +335,7 @@ double Spherical::theta_integral(int i, int j, double T, double R, double g, dou
 }
 
 double Spherical::theta_integrand(int i, int j, double T, double r, double g, double b){
-    // return pow((pow(r, 4) / pow(b, 2)) * (1.0 - potential(i, j, r) / (BOLTZMANN * T * pow(g, 2))) - pow(r, 2), -0.5);
-    const double L = de_broglie_wavelength(i, j, T);
-    return pow( (pow(pow(r, 2) + pow(L, 2), 2) / pow(b, 2)) * (1.0 - potential(i, j, r) / (BOLTZMANN * T * pow(g, 2))) - pow(r, 2) - pow(L, 2), -0.5);
+    return pow((pow(r, 4) / pow(b, 2)) * (1.0 - potential(i, j, r) / (BOLTZMANN * T * pow(g, 2))) - pow(r, 2), -0.5);
 }
 
 double Spherical::transformed_theta_integrand(int i, int j, double T, double u, double R, double g, double b){
@@ -377,16 +375,8 @@ double Spherical::get_R(int i, int j, double T, double g, double b){
     b /= sigma[i][j];
     if ((b < 1e-5) || (g < 1e-6)) return get_R0(i, j, T, g); // Treat separately (set b = 0, and handle g = 0 case)
 
-    // const auto rootfun = [&](double ri){return (potential(i, j, ri * sigma[i][j]) / (BOLTZMANN * T * pow(g, 2))) + pow(b / ri, 2) - 1;};
-    // const auto d_rootfun = [&](double ri){return (sigma[i][j] * potential_derivative_r(i, j, ri * sigma[i][j]) / (BOLTZMANN * T * pow(g, 2))) - (2 / b) * pow(b / ri, 3);};
-
-    const double E = BOLTZMANN * T * pow(g, 2);
-    const double L = de_broglie_wavelength(i, j, T) / sigma[i][j];
-    const auto rootfun = [&](double ri){return (potential(i, j, ri * sigma[i][j]) / E) + pow(b, 2) / (pow(ri, 2) + pow(L, 2)) - 1;};
-    const auto d_rootfun = [&](double ri){
-        double rl = pow(ri, 2) + pow(L, 2);
-        return (sigma[i][j] * potential_derivative_r(i, j, ri * sigma[i][j]) / E) - 2 * ri * pow(b / rl, 2); //  - 4 * pow(ri / rl, 3) * pow(b, 2);
-    };
+    const auto rootfun = [&](double ri){return (potential(i, j, ri * sigma[i][j]) / (BOLTZMANN * T * pow(g, 2))) + pow(b / ri, 2) - 1;};
+    const auto d_rootfun = [&](double ri){return (sigma[i][j] * potential_derivative_r(i, j, ri * sigma[i][j]) / (BOLTZMANN * T * pow(g, 2))) - (2 / b) * pow(b / ri, 3);};
 
     constexpr bool verbose = false;
 
