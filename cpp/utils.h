@@ -14,6 +14,9 @@ References:
 #include <Eigen/Dense>
 #include <array>
 #include <stdexcept>
+#include <shared_mutex>
+#include <optional>
+#include <map>
 
 
 struct StatePoint{
@@ -84,6 +87,33 @@ struct CrossSectionHash {
         return std::hash<int>()(s.i) ^ (std::hash<int>()(s.j) << 1) ^
                (std::hash<int>()(s.l) << 2) ^ (std::hash<double>()(s.E) << 3);
     }
+};
+
+class KineticGasCache {
+
+    bool has_omega(const OmegaPoint& point) const;
+    bool has_mtl(const StatePoint& stp) const;
+    bool has_etl(const StatePoint& stp) const;
+
+    std::optional<double> get_omega(const OmegaPoint& point) const;
+    std::optional<vector2d> get_mtl(const StatePoint& stp) const;
+    std::optional<vector2d> get_etl(const StatePoint& stp) const;
+
+    void store_omega(const OmegaPoint& point, const double omega);
+    void store_mtl(const StatePoint& stp, const vector2d& mtl);
+    void store_etl(const StatePoint& stp, const vector2d& etl);
+
+    void clear();
+
+private:
+    std::map<OmegaPoint, double> omega_map;
+    mutable std::shared_mutex omega_mutex;
+
+    std::map<StatePoint, vector2d> mtl_map;
+    mutable std::shared_mutex mtl_mutex;
+
+    std::map<StatePoint, vector2d> etl_map;
+    mutable std::shared_mutex etl_mutex;
 };
 
 enum FrameOfReference{

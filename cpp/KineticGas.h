@@ -207,6 +207,9 @@ protected:
 
     vector1d m; // Particle masses (kg)
     vector2d M, m0, red_mass; // Various combinations of particle masses that show up often
+    
+    mutable KineticGasCache cache; // This is going to replace the various *_map members ...
+    
     std::map<OmegaPoint, double> omega_map;
     std::map<StatePoint, vector2d> mtl_map;
     std::map<StatePoint, vector2d> etl_map;
