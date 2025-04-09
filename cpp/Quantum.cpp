@@ -161,6 +161,10 @@ vector2d Quantum::get_E_bound_from_file(const std::string& comp){
     return data;
 }
 
+vector2d Quantum::get_E_bound(int i, int j){
+    return E_bound[i][j];
+}
+
 void Quantum::clear_all_caches(){
     Spherical::clear_all_caches();
     phase_shift_map.clear();
@@ -1363,11 +1367,26 @@ double Quantum::bound_second_virial(int i, int j, double T){
 
 double Quantum::bound_second_virial_lim(int i, int j){
     if (!quantum_is_active) return Spherical::bound_second_virial_lim(i, j);
+
+    std::array<double, 2> wts = get_symmetry_weights(i, j);
+    const auto [sym_wt, anti_wt] = wts;
+
+    size_t l_start, l_step;
+    if (sym_wt == 0){
+        l_start = 1; l_step = 2;
+    }
+    else if (anti_wt == 0){
+        l_start = 0; l_step = 2;
+    }
+    else {
+        l_start = 0; l_step = 1;
+    }
+
     double Bb = 0;
     const vector2d& Eb = E_bound[i][j];
-    for (size_t v = 0; v < E_bound.size(); v++){
-        for (size_t l = 0; l < E_bound[v].size(); l+=2){
-            Bb += 2 * l + 1;
+    for (size_t v = 0; v < Eb.size(); v++){
+        for (size_t l = l_start; l < Eb[v].size(); l += l_step){
+            Bb -= wts[l % 2] * (2 * l + 1);
         }
     }
     return Bb;

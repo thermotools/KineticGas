@@ -1,5 +1,6 @@
 #include "Spherical.h"
 #include "Integration/Integration.h"
+#include <limits>
 
 Spherical::Spherical(vector1d mole_weights,
                     vector2d sigma,
@@ -167,15 +168,16 @@ double Spherical::second_virial(int i, int j, double T){
 }
 
 double Spherical::bound_second_virial_lim(int i, int j){
-    set_internals(0, 1e12, {1.});
+    set_internals(0, std::numeric_limits<double>::infinity(), {1.});
     double r0 = sigma[i][j];
     const auto integrand = [&](double r){
                                     const double u = potential(i, j, r * r0);
+                                    if (u > 0) return 0.;
                                     return pow(r, 2) * pow(- u, 3. / 2.);
                                 };
-    double I0 = simpson(integrand, 1 + 1e-6, 1.5, 50);
-    double I = simpson_inf(integrand, 1.5, 2.0, 1e-8, I0);
-    return - 4 * sqrt(PI) * pow(2 * PI * red_mass[i][j] / pow(PLANCK, 2), 3. / 2.) * pow(r0, 3) * I * 2. / 3.;
+    double I0 = simpson(integrand, 1, 1.5, 100);
+    double I = simpson_inf(integrand, 1.5, 1.75, 1e-10, I0);
+    return - 4 * sqrt(PI) * pow(2 * PI * red_mass[i][j] / pow(PLANCK, 2), 3. / 2.) * pow(r0, 3) * (2. / 3.) * I;
 }
 
 double Spherical::bound_second_virial(int i, int j, double T){
