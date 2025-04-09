@@ -78,6 +78,7 @@ using vector2d = std::vector<vector1d>;
         .def("get_eps_eff", &Model::get_eps_eff) \
         .def("get_alpha_eff", &Model::get_alpha_eff) \
         .def("omega_tester", &Model::omega_tester) \
+        .def("w_integral_tester", &Model::w_integral_tester) \
         .def("w_integrand", &Model::w_integrand)
 
 PYBIND11_MODULE(libpykingas, handle){
