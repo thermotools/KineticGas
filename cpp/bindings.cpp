@@ -4,6 +4,8 @@
 #include "HardSphere.h"
 #include "PseudoHardSphere.h"
 #include "ModTangToennis.h"
+#include "LJSpline.h"
+#include "LJTS.h"
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 #include "pybind11/operators.h"
@@ -53,7 +55,13 @@ using vector2d = std::vector<vector1d>;
         .def("get_chemical_potential_factors", &Model::get_chemical_potential_factors) \
         .def("get_ksi_factors", &Model::get_ksi_factors)
         \
-        
+        .def("thermal_conductivity", &Model::thermal_conductivity) \
+        .def("thermal_conductivity_tp", &Model::thermal_conductivity_tp) \
+        .def("viscosity", &Model::viscosity) \
+        .def("interdiffusion", &Model::interdiffusion) \
+        .def("selfdiffusion", &Model::selfdiffusion) \
+
+
 #define Spherical_potential_bindings(Model) \
         .def("potential", py::overload_cast<int, int, double>(&Model::potential)) \
         .def("potential_derivative_r", &Model::potential_derivative_r) \
@@ -224,5 +232,30 @@ PYBIND11_MODULE(libpykingas, handle){
                     >()
             )
         KineticGas_bindings(PseudoHardSphere)
-        ;
+        Spherical_bindings(PseudoHardSphere);
+
+    py::class_<LJSpline>(handle, "cpp_LJSpline")
+        .def(py::init<
+                        vector1d,
+                        vector2d,
+                        vector2d,
+                        bool, bool
+                    >()
+            )
+        KineticGas_bindings(LJSpline)
+        Spherical_bindings(LJSpline)
+        .def("omega", &LJSpline::omega)
+        .def("omega_star", &LJSpline::omega_star)
+        .def("omega_star_approx", &LJSpline::omega_star_approx);
+
+    py::class_<LJTS>(handle, "cpp_LJTS")
+        .def(py::init<
+                        vector1d,
+                        vector2d,
+                        vector2d,
+                        bool, bool
+                    >()
+            )
+        KineticGas_bindings(LJSpline)
+        Spherical_bindings(LJSpline);
 }

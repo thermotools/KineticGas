@@ -108,9 +108,11 @@ private:
 
     double theta_integral(int i, int j, const double T, const double R, const double g, const double b); // Evaluate Eq. (49) in Ref. (II)
 
-    double theta_lim(int i, int j, const double T, const double g); // Get theta for very large b
-    double theta_integrand(int i, int j, double T, double r, double g, double b); // Eq. (48) in Ref. (II)
-    double transformed_theta_integrand(int i, int j, double T, double u, double R, double g, double b); // Integrand of Eq. (50) in Ref. (II)
+    double theta_r(int i, int j, double R, double r, double T, double g, double b); 
+    double theta_integral(int i, int j, const double T, const double R, const double g, const double b);
+    double theta_lim(int i, int j, const double T, const double g);
+    virtual double theta_integrand(int i, int j, double T, double r, double g, double b);
+    double transformed_theta_integrand(int i, int j, double T, double u, double R, double g, double b);
     double theta_integrand_dblderivative(int i, int j, double T, double r, double g, double b);
     double get_R_rootfunc(int i, int j, double T, double g, double b, double& r); // Eq. (45) in Ref. (II)
     double get_R_rootfunc_derivative(int i, int j, double T, double g, double b, double& r);

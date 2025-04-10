@@ -5,9 +5,9 @@
 #include <vector>
 
 int main(){
-    std::cout << "Default fluid dir : " << get_fluid_dir() << std::endl;
-    set_fluid_dir("../fluids");
-    std::cout << "Reading from fluid dir : " << get_fluid_dir() << std::endl;
+    // std::cout << "Default fluid dir : " << get_fluid_dir() << std::endl;
+    // set_fluid_dir("../fluids");
+    // std::cout << "Reading from fluid dir : " << get_fluid_dir() << std::endl;
 
     double T = 300;
     double Vm = 20e-3;
