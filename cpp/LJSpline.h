@@ -9,17 +9,6 @@
 #include "cppThermopack/ljs.h"
 #include "HardSphere.h"
 
-class IdealDummy{
-    public:
-    int VAPPH;
-    IdealDummy() {};
-    inline std::vector<std::vector<double>> dmudn(double T, double V, const std::vector<double> n) const {return {{GAS_CONSTANT*T/n[0]}};}
-    inline double Cp_ideal(double T, int ci) const {return 5. * GAS_CONSTANT / 2.;}
-    inline double pressure_tv(double T, double V, const std::vector<double> n) const {throw std::runtime_error("pressure_tv not implemented!");}
-    inline double specific_volume(double t, double p, const std::vector<double> n, int phase) const {throw std::runtime_error("specific_volume not implemented!");}
-    inline std::vector<double> dvdn(double t, double p, const std::vector<double> n, int phase) const {throw std::runtime_error("dvdn not implemented!");}
-};
-
 class LJSpline : public Spherical {
     public:
     double a, b, rs, rc; 

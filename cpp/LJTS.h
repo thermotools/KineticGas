@@ -6,6 +6,7 @@ only for dilute gas transport properties.
 #pragma once
 #include "Spherical.h"
 #include "LJSpline.h"
+
 class LJTS : public Spherical {
     public:
     double rc; 
@@ -16,7 +17,7 @@ class LJTS : public Spherical {
         // lag eos//LJs_bh bh_eos{"Default",1.0};
         // GenericEoS ljs_eos{ThermoWrapper(std::move(bh_eos))};
         //this -> set_eos(std::move(ljs_eos));
-        eos = std::make_unique<GenericEoS>(IdealDummy());
+        // eos = std::make_unique<GenericEoS>(Ideal());
         if ((sigmaij.size() > 2) | (mole_weights.size() > 2) | (eps.size() > 2)) 
         {
             throw std::invalid_argument("The Lennard-Jones/spline is not implemented for multicomponent systems (yet)!");

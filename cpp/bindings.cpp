@@ -53,7 +53,7 @@ using vector2d = std::vector<vector1d>;
         .def("get_K_factors", &Model::get_K_factors) \
         .def("get_K_prime_factors", &Model::get_K_prime_factors) \
         .def("get_chemical_potential_factors", &Model::get_chemical_potential_factors) \
-        .def("get_ksi_factors", &Model::get_ksi_factors)
+        .def("get_ksi_factors", &Model::get_ksi_factors) \
         \
         .def("thermal_conductivity", &Model::thermal_conductivity) \
         .def("thermal_conductivity_tp", &Model::thermal_conductivity_tp) \
@@ -232,7 +232,7 @@ PYBIND11_MODULE(libpykingas, handle){
                     >()
             )
         KineticGas_bindings(PseudoHardSphere)
-        Spherical_bindings(PseudoHardSphere);
+        Spherical_potential_bindings(PseudoHardSphere);
 
     py::class_<LJSpline>(handle, "cpp_LJSpline")
         .def(py::init<
@@ -243,7 +243,7 @@ PYBIND11_MODULE(libpykingas, handle){
                     >()
             )
         KineticGas_bindings(LJSpline)
-        Spherical_bindings(LJSpline)
+        Spherical_potential_bindings(LJSpline)
         .def("omega", &LJSpline::omega)
         .def("omega_star", &LJSpline::omega_star)
         .def("omega_star_approx", &LJSpline::omega_star_approx);
@@ -256,6 +256,6 @@ PYBIND11_MODULE(libpykingas, handle){
                         bool, bool
                     >()
             )
-        KineticGas_bindings(LJSpline)
-        Spherical_bindings(LJSpline);
+        KineticGas_bindings(LJTS)
+        Spherical_potential_bindings(LJTS);
 }
