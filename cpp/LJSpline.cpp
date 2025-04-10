@@ -76,6 +76,7 @@ double LJSpline::J2(double rho_star, double T) {
 }
 
 double LJSpline::K_HS(double rho, double T) {
+    // Isothermal compressibility of HS fluid from Carnahan-Starling EOS
     double eta = get_eta(T, rho);
     return pow((1-eta),4)/(1.+4.*eta+4.*pow(eta,2)-4.*pow(eta,3)+pow(eta,4));
 }

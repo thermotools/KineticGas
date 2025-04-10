@@ -159,7 +159,7 @@ protected:
     // Helper functions for computing dimentionless collision integrals
 
     double theta_lim(int i, int j, const double T, const double g);
-    double theta_integrand(int i, int j, double T, double r, double g, double b);
+    virtual double theta_integrand(int i, int j, double T, double r, double g, double b);
     double transformed_theta_integrand(int i, int j, double T, double u, double R, double g, double b);
     double theta_integrand_dblderivative(int i, int j, double T, double r, double g, double b);
     double get_R_rootfunc(int i, int j, double T, double g, double b, double& r);

@@ -68,8 +68,8 @@ int main(){
     MieKinGas mie({MW, MW}, {{sig, sig}, {sig, sig}}, {{ep, ep}, {ep, ep}}, {{6., 6.}, {6., 6.}}, {{12., 12.}, {12., 12.}}, false, true);
     GenericEoS eos(ThermoWrapper(Saftvrmie("AR")));
     mie.set_eos(std::move(eos));
-    //std::cout << "VISCOSITY MIE: " << mie.viscosity(T,Vm,x) << std::endl;
-    //std::cout << "CONDUCTIVITY MIE: " << mie.thermal_conductivity(T,Vm,x) << std::endl;
+    std::cout << "VISCOSITY MIE: " << mie.viscosity(T,Vm,x) << std::endl;
+    std::cout << "CONDUCTIVITY MIE: " << mie.thermal_conductivity(T,Vm,x) << std::endl;
     //std::cout << "SELFDIFF MIE: " << mie.interdiffusion(T,Vm,x) << std::endl;
     return 0;
 }

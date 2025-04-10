@@ -1,4 +1,7 @@
 /*Author: Johannes Salomonsen Løken
+  Description: Revised Enskog theory for the Lennard-Jones/spline (LJ/s) fluid. The implementation uses the RDF at contact model of Lafitte et al. (https://doi.org/10.1063/1.4819786)
+               adapted to suit the LJ/s fluid. For more details, see (Løken, Johannes Salomonsen. Revised Enskog theory and extended corresponding states models for the transport 
+               properties of the Lennard-Jones/Spline fluid, MS thesis. NTNU, 2025)
 */
 
 #pragma once
@@ -20,7 +23,6 @@ class IdealDummy{
 class LJSpline : public Spherical {
     public:
     double a, b, rs, rc; 
-    //
     LJSpline(std::vector<double> mole_weights, std::vector<std::vector<double>> sigmaij, std::vector<std::vector<double>> eps, bool is_idealgas, bool is_singlecomp)
     : Spherical(mole_weights, sigmaij, eps, is_idealgas, is_singlecomp), a{-24192. / 3211.}, b{-387072. / 61009.},
     rs{pow(26./7. , 1./6.)*sigma[0][0]}, rc{67. * rs / 48.} 
@@ -31,9 +33,18 @@ class LJSpline : public Spherical {
         this -> set_eos(std::move(ljs_eos));
         if ((sigmaij.size() > 2) | (mole_weights.size() > 2) | (eps.size() > 2)) 
         {
-            throw std::invalid_argument("The Lennard-Jones/spline is not implemented for multicomponent systems (yet)!");
+            throw std::invalid_argument("The Lennard-Jones/spline is not implemented for multicomponent systems.");
         }
     }   
+
+    //Chainging Spherical::theta_integrand, such that a 0 / 0 error is avoided when potential is exactly 0.
+    double theta_integrand(int i, int j, double T, double r, double g, double b) override{
+        double t = pow((pow(r, 4) / pow(b, 2)) * (1.0 - potential(i, j, r) / (BOLTZMANN * T * pow(g, 2))) - pow(r, 2), -0.5);
+        if (t != t) {    
+            return 0;}
+        return pow((pow(r, 4) / pow(b, 2)) * (1.0 - potential(i, j, r) / (BOLTZMANN * T * pow(g, 2))) - pow(r, 2), -0.5);
+    }
+
     //Potential definitions:
     dual2 potential(int i, int j, dual2 r) override {
         if (r < rs) {
@@ -75,13 +86,12 @@ class LJSpline : public Spherical {
     }
 
     // HS-RDF functions 
+
     double get_BH_diameter(double T);
     double get_eta(double T, double rho) {return PI*rho*pow(get_BH_diameter(T),3)/6.;}
     double get_x0(double T) {return sigma[0][0]/get_BH_diameter(T);}
 
-    //
     // g at contact functions. Calclulates the g(\sigma) = g_0 + (beta*epsilon)*g_1 + (beta*epsilon)²*g_2
-    //
 
     inline std::vector<std::vector<double>> model_rdf(double rho, double T, const std::vector<double>& x) override {
         return saft_rdf(rho, T, 2);
@@ -118,7 +128,8 @@ class LJSpline : public Spherical {
         return rdf_vec;
     };
 
-    // Collision integral - related functions. 
+    // Collision integral - parametrizations. 
+
     double omega(int i, int j, int l, int r, double T) override;
     double omega_correlation(int i, int j, int l, int r, double T_star);
     double omega_recursive_factor(int i, int j, int l, int r, double T);
@@ -127,6 +138,7 @@ class LJSpline : public Spherical {
     // The hard sphere integrals are used as the reducing factor for the correlations.
     // So we need to compute the hard-sphere integrals to convert the reduced collision integrals from 
     // a modified version of the correlation by Fokin et. al. to the "real" collision integrals.
+    
     static constexpr double omega_correlation_factors[2][6] =
         {
          {0.12381066, -0.19473855, -0.12605004,  1.42026419, -1.14753069,  0.25563792},
@@ -177,6 +189,8 @@ constexpr double gl_w[20] = {0.017614007139152742, 0.040601429800386134,
                             0.11819453196151845, 0.1019301198172403,
                             0.08327674157670514, 0.06267204833410799,
                             0.040601429800386134, 0.017614007139152742};
+
+// Constants for integral parametrizations in the RDF at contact model.
 
 constexpr double q_I1[11] = {-0.53572874, -0.37806724,  -0.23016988,   0.34630713,   0.07308556,   5.27289035,
                             -6.43165849, -1.63392187,  16.74650716, -27.36299942,  -0.43778915};
