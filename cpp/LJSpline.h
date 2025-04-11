@@ -26,12 +26,12 @@ class LJSpline : public Spherical {
         }
     }   
 
-    //Chainging Spherical::theta_integrand, such that a 0 / 0 error is avoided when potential is exactly 0.
+    //Changing Spherical::theta_integrand, such that a 0 / 0 error is avoided when potential is exactly 0.
     double theta_integrand(int i, int j, double T, double r, double g, double b) override{
         if (g == 0) return 0;
         double t = (pow(r, 4) / pow(b, 2)) * (1.0 - potential(i, j, r) / (BOLTZMANN * T * pow(g, 2))) - pow(r, 2);
         if (t < 0) return 0;
-        return sqrt(t); 
+        return pow(t,-0.5); 
     }
 
     //Potential definitions:
