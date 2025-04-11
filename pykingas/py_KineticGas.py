@@ -624,6 +624,8 @@ class py_KineticGas:
         """
         x = self.check_valid_composition(x)
         N = self.default_N if (N is None) else N
+        idealgas = self.is_idealgas if (idealgas is None) else idealgas
+        Vm = Vm if (idealgas is False) else 1e12
         if (contributions != 'all'):
             return self.cpp_kingas.thermal_conductivity_contributions(T, Vm, x, N, contributions)
         return self.cpp_kingas.thermal_conductivity(T, Vm, x, N)
@@ -718,6 +720,7 @@ class py_KineticGas:
         """
         x = self.check_valid_composition(x)
         N = self.default_N if (N is None) else N
+        idealgas = self.is_idealgas if (idealgas is None) else idealgas
         Vm = Vm if (idealgas is False) else 1e12
         return self.cpp_kingas.viscosity(T, Vm, x, N)
         if N is None:
