@@ -207,46 +207,70 @@ public:
     using T::potential;
     double potential(int i, int j, double r) override {
         double u = T::potential(i, j, r);
+        double Dn = 1;
+        const double Db = D_factors[i][j] / (BOLTZMANN * current_T);
         for (size_t n = 1; n <= FH_order; n++){
-            double nfac = 1;
-            for (size_t ni = 2; ni <= n; ni++) nfac *= ni;
-            u += pow(D_factors[i][j] / (BOLTZMANN * current_T), n) * T::potential_dn(i, j, r, 2 * n) / nfac;
+            Dn *= Db / n;
+            u += Dn * (T::potential_dn(i, j, r, 2 * n) + 2 * n * T::potential_dn(i, j, r, 2 * n - 1) / r);
+            // double nfac = 1;
+            // for (size_t ni = 2; ni <= n; ni++) nfac *= ni;
+            // u += pow(D_factors[i][j] / (BOLTZMANN * current_T), n) * T::potential_dn(i, j, r, 2 * n) / nfac;
         }
         return u;
     }
 
     using T::potential_derivative_r;
     double potential_derivative_r(int i, int j, double r) override {
-        double ur = 0;
-        for (size_t n = 0; n <= FH_order; n++){
-            double nfac = 1;
-            for (size_t ni = 2; ni <= n; ni++) nfac *= ni;
-            ur += pow(D_factors[i][j] / (BOLTZMANN * current_T), n) * T::potential_dn(i, j, r, 2 * n + 1) / nfac;
+        double ur = T::potential_derivative_r(i, j, r);
+        double Dn = 1;
+        const double Db = D_factors[i][j] / (BOLTZMANN * current_T);
+        std::vector<double> du(2 * FH_order + 2);
+        for (size_t n = 0; n <= 2 * FH_order + 1; n++){
+            du[n] = T::potential_dn(i, j, r, n);
+        }
+        for (size_t n = 1; n <= FH_order; n++){
+            Dn *= Db / n;
+            ur += Dn * (du[2 * n + 1]
+                        + 2 * n * (du[2 * n] / r - du[2 * n - 1] / pow(r, 2))
+                      );
+            // double nfac = 1;
+            // for (size_t ni = 2; ni <= n; ni++) nfac *= ni;
+            // ur += pow(D_factors[i][j] / (BOLTZMANN * current_T), n) * T::potential_dn(i, j, r, 2 * n + 1) / nfac;
         }
         return ur;
     }
 
     using T::potential_dblderivative_rr;
     double potential_dblderivative_rr(int i, int j, double r) override {
-        double urr = 0;
-        for (size_t n = 0; n <= FH_order; n++){
-            double nfac = 1;
-            for (size_t ni = 2; ni <= n; ni++) nfac *= ni;
-            urr += pow(D_factors[i][j] / (BOLTZMANN * current_T), n) * T::potential_dn(i, j, r, 2 * n + 2) / nfac;
+        double urr = T::potential_dblderivative_rr(i, j, r);
+        double Dn = 1;
+        const double Db = D_factors[i][j] / (BOLTZMANN * current_T);
+        std::vector<double> du(2 * FH_order + 3);
+        for (size_t n = 0; n <= 2 * FH_order + 2; n++){
+            du[n] = T::potential_dn(i, j, r, n);
+        }
+        for (size_t n = 1; n <= FH_order; n++){
+            Dn *= Db / n;
+            urr += Dn * (du[2 * n + 2]
+                         + 2 * n * (du[2 * n + 1] / r - 2 * du[2 * n] / pow(r, 2) + 2 * du[2 * n - 1] / pow(r, 3))
+                        );
+            // double nfac = 1;
+            // for (size_t ni = 2; ni <= n; ni++) nfac *= ni;
+            // urr += pow(D_factors[i][j] / (BOLTZMANN * current_T), n) * T::potential_dn(i, j, r, 2 * n + 2) / nfac;
         }
         return urr;
     }
 
     using T::potential_dn;
-    double potential_dn(int i, int j, double r, size_t n) override {
-        double un = T::potential_dn(i, j, r, n);
-        for (size_t k = 1; k <= FH_order; k++){
-            double kfac = 1;
-            for (size_t ki = 2; ki <= k; ki++) kfac *= ki;
-            un += pow(D_factors[i][j] / (BOLTZMANN * current_T), k) * T::potential_dn(i, j, r, 2 * k + n) / kfac;
-        }
-        return un;
-    }
+    // double potential_dn(int i, int j, double r, size_t n) override {
+    //     double un = T::potential_dn(i, j, r, n);
+    //     for (size_t k = 1; k <= FH_order; k++){
+    //         double kfac = 1;
+    //         for (size_t ki = 2; ki <= k; ki++) kfac *= ki;
+    //         un += pow(D_factors[i][j] / (BOLTZMANN * current_T), k) * T::potential_dn(i, j, r, 2 * k + n) / kfac;
+    //     }
+    //     return un;
+    // }
 
     using T::get_sigma_eff;
     double get_sigma_eff(int i, int j, double temp) override {
