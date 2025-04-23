@@ -185,5 +185,27 @@
             "bib_reference": "R A Aziz and M J Slaman 1990 Metrologia 27 211",
             "Note": "Length units are reduced using rm (position of minimum in nm). Energies are in units of eps (i.e. eps_div_k * Boltzmann)"
         }
+    },
+    "ModTangToennis": {
+        "default": {
+            "A_div_k": 2.83379199e6,
+            "a1" : -1.986231822,
+            "a2" : -5.034284240e-2,
+            "am1" : -0.3514929118, 
+            "am2" : 0.1101468439,
+            "b": 2.00788607,
+            "C": [4.61339753e+05, 4.45806072e+06, 5.80050402e+07, 
+                  1.03100423e+09, 2.41378142e+10, 7.18387329e+11],
+            "A_tilde_div_k": 4.86211480e+05,
+            "a_tilde": 0.40944977284199885,
+            "eps_div_k": 11.064023706224583,
+            "Re": 5.60350504,
+            "sigma": 2.63903617e-10,
+            "L_unit": 5.29177210e-11,
+            "short_range_lim": 0.5,
+            "bib_reference": "J. J. Hurly and M. R. Moldover, J. Res. Natl. Inst. Stand. Technol. 105, 667-688 (2000)",
+            "DOI": "https://doi.org/10.6028/jres.105.054",
+            "Note": "Potential parameters use kelvin for energies, and Bohr for lengths, with the exception of sigma, which uses meters."
+        }
     }
 }
