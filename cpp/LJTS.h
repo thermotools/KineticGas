@@ -56,7 +56,4 @@ class LJTS : public Spherical {
             return 0;
         }
     }
-    inline std::vector<std::vector<double>> model_rdf(double rho, double T, const std::vector<double>& x) override {
-        return {{1.,1.},{1.,1.}};
-    }
 };

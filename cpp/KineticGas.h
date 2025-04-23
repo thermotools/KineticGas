@@ -108,8 +108,8 @@ public:
     Eigen::VectorXd thermal_diffusion_ratio(double T, double Vm, const std::vector<double>& x, int N=2);
     Eigen::MatrixXd thermal_diffusion_factor(double T, double Vm, const std::vector<double>& x, int N=2);
     Eigen::MatrixXd interdiffusion_dependent_CoM(double T, double Vm, const std::vector<double>& x, int N=2);
-    double selfdiffusion(double T, double Vm, const std::vector<double>& x, int N=2, int frame_of_reference=FrameOfReference::CoN, int dependent_idx=-1, int solvent_idx=-1, bool do_compress=true){
-        return *(interdiffusion(T, Vm, x, N,frame_of_reference, dependent_idx, solvent_idx,do_compress).data());}
+    double selfdiffusion(double T, double Vm, int N=2){
+        return *(interdiffusion(T, Vm, {0.5,0.5}, N).data());}
     Eigen::VectorXd soret_coefficient(double T, double Vm, const std::vector<double>& x, int N, int dependent_idx=-1);
     std::map<std::string, double> thermal_conductivity_contributions(double T, double Vm, const std::vector<double>& x, int N=2, std::string contribs="tdi");
 
@@ -239,10 +239,9 @@ protected:
        is initialized with is_idealgas=false. If a potential model is implemented only for the ideal gas state, its
        implementation of model_rdf should throw an std::invalid_argument error.
     */
-    virtual vector2d model_rdf(double rho, double T, const vector1d& mole_fracs) = 0;
-
-    virtual vector2d model_mtl(double rho, double T, const vector1d& x) = 0;
-    virtual vector2d model_etl(double rho, double T, const vector1d& x) = 0;
+    virtual vector2d model_rdf(double rho, double T, const vector1d& mole_fracs) {throw std::runtime_error("RDF model is not implemented. Model is only available for ideal gas!");}
+    virtual vector2d model_mtl(double rho, double T, const vector1d& x) {throw std::runtime_error("MTL model is not implemented. Model is only available for ideal gas!");}
+    virtual vector2d model_etl(double rho, double T, const vector1d& x) {throw std::runtime_error("MTL model is not implemented. Model is only available for ideal gas!");}
 
 // ----------------------------------------------------------------------------------------------------------------------------------- //
 // --------------------------------------- Methods to facilitate multithreading ------------------------------------------------------ //

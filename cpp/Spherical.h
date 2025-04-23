@@ -41,7 +41,6 @@ class Spherical : public KineticGas {
     virtual double potential_dblderivative_rr(int i, int j, double r);
 
     double omega(int i, int j, int l, int r, double T) override;
-    vector2d model_rdf(double rho, double T, const vector1d& mole_fracs) override = 0;
     vector2d model_mtl(double rho, double T, const vector1d& x) override; // Momentum transfer length
     vector2d model_etl(double rho, double T, const vector1d& x) override; // Energy transfer length
 
