@@ -113,7 +113,7 @@ double LJSpline::gamma_corr(double rho, double T) {
     double x0 = get_x0(T);
     double T_reduced = T*BOLTZMANN/eps[0][0];
     double theta = exp(1/T_reduced)-1;
-    double gamma = phi[0]*eta*pow(x0,3)*theta*exp(phi[1]*eta*pow(x0,3)+phi[2]*pow(eta,2)*pow(x0,6))*(1+phi[3]*theta+phi[4]*eta*pow(x0,3));
+    double gamma = phi[0]*eta*pow(x0,3)*theta*exp(phi[1]*eta*pow(x0,3)+phi[2]*pow(eta,2)*pow(x0,6))*exp(phi[3]/T_reduced);
     return gamma;
 }
 
