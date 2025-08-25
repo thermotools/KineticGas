@@ -1095,7 +1095,7 @@ void Quantum::trace_total_phase_shifts(int i, int j, double T){
                     << B_part / B_th_tot << ", " << B0 << ", " << B_th << std::endl;
         l += 2;
         
-    } while (abs(part_sum / tot) > 1e-4); // abs(phase_shift_l.back() * (2 * l + 1) / phase_shifts.back()) > 1e-5);
+    } while (abs(part_sum / tot) > 5e-5); // abs(phase_shift_l.back() * (2 * l + 1) / phase_shifts.back()) > 1e-5);
     stored_total_phase_shifts = vector2d({k_vals, phase_shifts});
 }
 

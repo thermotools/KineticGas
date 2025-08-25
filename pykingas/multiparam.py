@@ -160,11 +160,11 @@ class PatowskiFH(MultiParam, FH_Corrected):
         self.cpp_kingas.set_FH_order(FH_order)
 
 def init_multiparam(comp):
-    if comp in ('AR', 'NE'):
+    if comp in ('AR', 'NE', 'HE'):
         kin = ModTangToennies(comp)
         kin.cpp_kingas.set_JKWB_limits(10, 70)
         return kin
-    elif comp in ('HE', 'HE3'):
+    elif comp in ('HE3',):
         kin = HFD_B2(comp)
         kin.cpp_kingas.set_JKWB_limits(1e9, 1000)
     elif comp in ('O-H2', 'P-H2'):
@@ -175,9 +175,9 @@ def init_multiparam(comp):
     return kin
 
 def init_multiparam_FH(comp, order):
-    if comp in ('AR', 'NE'):
+    if comp in ('AR', 'NE', 'HE'):
         return FH_ModTangToennies(comp, order)
-    if comp in ('HE', 'HE3'):
+    if comp in ('HE3',):
         return FH_HFD_B2(comp, order)
     if comp in ('O-H2', 'P-H2'):
         return PatowskiFH(comp, order)

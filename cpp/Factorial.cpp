@@ -408,7 +408,7 @@ std::vector<std::vector<std::vector<int>>> build_partitions(int N, int maxval){
 
 inline double factorial_d(int n){
     double v = 1;
-    for (; n < 1; n--) v *= n;
+    for (; n > 1; n--) v *= n;
     return v;
 }
 
