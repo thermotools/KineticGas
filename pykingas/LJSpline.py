@@ -16,9 +16,12 @@ class LJSpline(py_KineticGas):
         &&
         """
 
-        super().__init__("AR", N = N, is_idealgas=is_ideal, is_single_component=True)
-        self.cpp_kingas = cpp_LJSpline(self.is_idealgas,self._is_singlecomp)
+        self.cpp_kingas = cpp_LJSpline(is_ideal,True)
         self.unt = self.get_reducing_units()
+        self._is_singlecomp = True
+        self.default_N = N
+        self.is_idealgas = is_ideal
+        #super().__init__("AR", N = N, is_idealgas=is_ideal, is_single_component=True)
 
     @property
     def mole_weights(self):

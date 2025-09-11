@@ -288,8 +288,8 @@ class py_KineticGas:
     #             return D[independent_idx][independent_idx] # Return the independent fluxes response to the independent force
     #     return D
 
-    def selfdiff_ljs(self,T,Vm,x,N=2,FoR=1,dependent_index=-1,solvent_index=-1,do_compress=True):
-        return self.cpp_kingas.selfdiffusion(T,Vm,x,N,FoR,dependent_index,solvent_index,do_compress)
+    def selfdiffusion(self,T,Vm,N=2):
+        return self.cpp_kingas.selfdiffusion(T,Vm,N)
 
     def interdiffusion_general(self, T, Vm, x, N=None):
         r"""TV-property
