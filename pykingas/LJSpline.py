@@ -4,9 +4,6 @@ Purpose: Wrapper for the LJ/Spline class.
 '''
 
 import numpy as np
-from numpy import pi
-from scipy.constants import Avogadro, Boltzmann as kB
-from scipy.optimize import root
 from .libpykingas import cpp_LJSpline
 from pykingas.py_KineticGas import py_KineticGas
 
@@ -21,18 +18,23 @@ class LJSpline(py_KineticGas):
 
         super().__init__("AR", N = N, is_idealgas=is_ideal, is_single_component=True)
         self.cpp_kingas = cpp_LJSpline(self.is_idealgas,self._is_singlecomp)
+        self.unt = self.get_reducing_units()
 
     @property
     def mole_weights(self):
-        raise ValueError("Use the get_reducing_units struct")
+        return np.array([self.unt.m, self.unt.m])
+
+    @mole_weights.setter
+    def mole_weights(self, value):
+        pass
 
     @property
     def sigma(self):
-        raise ValueError("Use the get_reducing_units struct")
+        return np.ones((2, 2)) * self.unt.L
 
     @property
     def eps_div_k(self):
-        raise ValueError("Use the get_reducing_units struct")
+        return np.ones((2, 2)) * self.unt.T
 
     def get_omega_star(self, T, r, l, i = 0, j = 0):
         return self.cpp_kingas.omega_star(i,j,T,r,l)

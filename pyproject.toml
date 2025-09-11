@@ -12,7 +12,7 @@ RECOMPILE_PYLIB = {env="RECOMPILE_PYLIB", default="OFF"}
 
 [project]
 name = "pykingas"
-version = "2.1b0"
+version = "2.2.0"
 description = "Revised Enskog theory for Mie fluids, and other spherical potentials. Allows prediction of transport coefficients such as diffusion coefficients, viscosities, thermal diffusion coefficients and thermal conductivities in dense, multicomponent gas mixtures and supercritical mixtures."
 readme = "README.md"
 authors = [
@@ -30,8 +30,8 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
 ]
-dependencies = ["numpy~=1.22", 
-                "scipy~=1.7"]#, 
+dependencies = []# "numpy~=1.22",
+                # "scipy~=1.7"]#,
                # "thermopack~=2.2"]
 
 [project.optional-dependencies]
