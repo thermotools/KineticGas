@@ -37,8 +37,8 @@ def test_very_repulse(lr):
     visc = mie.viscosity(T, 1 / rho, [0.5, 0.5], N=2) / unt.visc
     cond = mie.thermal_conductivity(T, 1 / rho, [0.5, 0.5], N=2) / unt.tcond
 
-    assert check_eq(visc, test_visc_vals[lr], tol=1e-4)
-    assert check_eq(cond, test_cond_vals[lr], tol=1e-4)
+    assert check_eq(visc, test_visc_vals[lr], tol=1e-4), f'{visc}, {test_visc_vals[lr]}'
+    assert check_eq(cond, test_cond_vals[lr], tol=1e-4), f'{cond}, {test_cond_vals[lr]}'
 
 @pytest.mark.parametrize('m', [10, 30])
 @pytest.mark.parametrize('sigma', [2.9e-10, 3.5e-10])

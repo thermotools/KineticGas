@@ -86,7 +86,7 @@ def test_ljs():
     sig = 3.42e-10
     eps_div_k = 124.0
     mw = 40.0
-    ljs = LJSpline(sig,eps_div_k,mw)
+    ljs = LJSpline()
     data = pd.read_csv(f'{os.path.dirname(__file__)}/data/transport_properties_ljs.csv')
     unchanged = True
     for t, r, cond_old, visc_old, Drho_old in zip(data['T'], data['rho'], data['cond'], data['visc'], data['Drho']):
@@ -98,6 +98,9 @@ def test_ljs():
         if not (check_eq_rel(cond_new, cond_old) and check_eq_rel(visc_new, visc_old) and check_eq_rel(Drho_new, Drho_old)):
             unchanged = False
             print('Failure at : T =', t, ' rho =', r)
+            print(cond_new, cond_old)
+            print(visc_new, visc_old)
+            print(Drho_new, Drho_old)
     assert unchanged
 
 #############################################################################################################################

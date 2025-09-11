@@ -42,7 +42,6 @@ def test_vs_thermopack(T, rho, lr):
 
 @pytest.mark.parametrize('T', [0.5, 0.8, 1.0, 1.3, 2.0, 3.0])
 @pytest.mark.parametrize('lr', [12, 15, 30])
-
 def test_rdf_dilution_limit_mie(T, lr):
     sigma = 3e-10
     eps_div_k = 100
@@ -53,13 +52,12 @@ def test_rdf_dilution_limit_mie(T, lr):
     assert check_eq(mie_rdf[0][0],1.,1e-5)
 
 @pytest.mark.parametrize('T', [0.5, 0.8, 1.0, 1.3, 2.0, 3.0])
-
 def test_rdf_dilutaion_limit_ljs(T):
     sig = 3.42e-10
     eps_div_k = 124.0
     mw = 40.0
     rho = 1e-10
-    ljs = LJSpline(sig,eps_div_k,mw)
+    ljs = LJSpline()
     rdf_ljs = ljs.get_rdf(rho / (sig**3), T * eps_div_k, [0.5,0.5])
     assert check_eq(rdf_ljs[0][0],1.,1e-5)
 
