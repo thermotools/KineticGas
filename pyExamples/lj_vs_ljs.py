@@ -2,28 +2,22 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pykingas.LJSpline import LJSpline
 from pykingas.MieKinGas import MieKinGas
-from pykingas.LJTS import LJTS
 from matplotlib import colormaps
 from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
-from scipy.constants import Boltzmann as kB
-from scipy.constants import Avogadro as Na 
 
 # Potential parameters
 sig = 3.42e-10
 eps_div_k = 124.0
-eps = eps_div_k*kB
 mw = 40.0
-m = mw*1e-3/Na
 
-# Conversion factors to get transport coefficients to LJ units
-fac = [(m*eps)**0.5/sig**2,
-         kB/sig**2*(eps/m)**0.5,
-         sig*(eps/m)**0.5]
 
 #Ititalizing KineticGas objects
-ljs = LJSpline(sig,eps_div_k,mw)
+ljs = LJSpline(N = 2)
 lj = MieKinGas('LJF', mole_weights=[mw, mw], sigma=[sig, sig], eps_div_k=[eps_div_k, eps_div_k], la=[6, 6], lr=[12, 12])
+
+units_ljs = ljs.get_reducing_units()
+units_lj = lj.get_reducing_units()
 
 # Some densities and temperatures in LJ units
 T_stars = np.array([1.5,2.0,3.0])
@@ -46,14 +40,12 @@ for T in T_stars:
     visc_current = [[],[]] # Lists of shear viscosities for current isotherm
     Drho_current = [[],[]] # Lists of selfdiffusivity*density for current isotherm
     for R in rho_stars:
-        v_si = sig**3 * Na / R # Molar volume in SI units
-        t_si = T * eps_div_k # Temperature in SI units
-        cond_current[0].append(lj.thermal_conductivity(t_si,v_si, [0.5,0.5]) / fac[1])
-        cond_current[1].append(ljs.thermal_conductivity(t_si,v_si, [0.5,0.5]) / fac[1])
-        visc_current[0].append(lj.viscosity(t_si,v_si, [0.5,0.5]) / fac[0])
-        visc_current[1].append(ljs.viscosity(t_si,v_si, [0.5,0.5]) / fac[0])
-        Drho_current[0].append(lj.selfdiffusion(t_si,v_si) * R / fac[2])
-        Drho_current[1].append(ljs.selfdiffusion(t_si,v_si) * R / fac[2])
+        cond_current[0].append(lj.thermal_conductivity(T * units_lj.T,1/(R*units_lj.rho), [0.5,0.5]) / units_lj.tcond)
+        cond_current[1].append(ljs.thermal_conductivity(T*units_ljs.T,1/(R*units_ljs.rho), [0.5,0.5]) / units_ljs.tcond)
+        visc_current[0].append(lj.viscosity(T*units_lj.T,1/(R*units_lj.rho), [0.5,0.5]) / units_lj.visc)
+        visc_current[1].append(ljs.viscosity(T*units_ljs.T,1/(R*units_ljs.rho), [0.5,0.5]) / units_ljs.visc)
+        Drho_current[0].append(lj.selfdiffusion(T*units_lj.T,1/(R*units_lj.rho)) * R / units_lj.D)
+        Drho_current[1].append(ljs.selfdiffusion(T*units_ljs.T,1/(R*units_ljs.rho)) * R / units_lj.D)
     ax[0].plot(rho_stars, cond_current[0], "--", color = cmap(norm(float(T))))
     ax[0].plot(rho_stars, cond_current[1], color = cmap(norm(float(T))))
     ax[1].plot(rho_stars, visc_current[0], "--", color = cmap(norm(float(T))))
