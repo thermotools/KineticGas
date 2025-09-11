@@ -175,7 +175,6 @@ Eigen::MatrixXd KineticGas::interdiffusion(double T, double Vm, const vector1d& 
     if (dependent_idx < 0 && frame_of_reference == FrameOfReference::solvent) dependent_idx = solvent_idx;
     while (dependent_idx < 0) dependent_idx += Ncomps;
     if (frame_of_reference == FrameOfReference::zarate_x){
-        if (!is_idealgas) throw std::runtime_error("Zarate relation for diffusion only implemented for ideal gas!");
         Eigen::MatrixXd D = interdiffusion(T, Vm, x, N, FrameOfReference::CoN, dependent_idx, dependent_idx, true);
         return D;
     }
@@ -258,7 +257,6 @@ Eigen::VectorXd KineticGas::thermal_diffusion_coeff(double T, double Vm, const v
     DT /= AVOGADRO;
 
     if (use_zarate){
-        if (!is_idealgas) throw std::runtime_error("Zarate relation for thermal diffusion only implemented for ideal gas!");
         Eigen::VectorXd DT_indep(Ncomps - 1);
         Eigen::MatrixXd D_indep = interdiffusion(T, Vm, x, N, frame_of_reference, dependent_idx, solvent_idx);
 
