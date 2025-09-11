@@ -12,9 +12,16 @@
 class LJSpline : public Spherical {
     public:
     double a, b, rs, rc; 
-    LJSpline(std::vector<double> mole_weights, std::vector<std::vector<double>> sigmaij, std::vector<std::vector<double>> eps, bool is_idealgas, bool is_singlecomp)
-    : Spherical(mole_weights, sigmaij, eps, is_idealgas, is_singlecomp), a{-24192. / 3211.}, b{-387072. / 61009.},
-    rs{pow(26./7. , 1./6.)*sigma[0][0]}, rc{67. * rs / 48.} 
+    LJSpline(bool is_idealgas, bool is_singlecomp)
+    : Spherical({6.64e-26, 6.64e-26},
+                {{3.42e-10, 3.42e-10}, {3.42e-10, 3.42e-10}},
+                {{1.71200476e-21, 1.71200476e-21}, {1.71200476e-21, 1.71200476e-21}},
+                is_idealgas, is_singlecomp),
+
+                a{-24192. / 3211.},
+                b{-387072. / 61009.},
+                rs{pow(26./7. , 1./6.)*sigma[0][0]},
+                rc{67. * rs / 48.}
     {
         LJs_uv uv_eos{"Default",1.0};
         // bh_eos.set_sigma_eps(sigma[0][0],eps[0][0]);
