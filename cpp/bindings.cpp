@@ -235,12 +235,7 @@ PYBIND11_MODULE(libpykingas, handle){
         Spherical_potential_bindings(PseudoHardSphere);
 
     py::class_<LJSpline>(handle, "cpp_LJSpline")
-        .def(py::init<
-                        vector1d,
-                        vector2d,
-                        vector2d,
-                        bool, bool
-                    >()
+        .def(py::init<bool, bool>()
             )
         KineticGas_bindings(LJSpline)
         Spherical_potential_bindings(LJSpline)
