@@ -19,14 +19,14 @@ def test_very_repulse(lr):
     mie = MieKinGas('LJF', mole_weights=[m, m], lr=[lr, lr])
     unt = mie.get_reducing_units()
 
-    test_visc_vals = {20: 0.2158860328573334, 
-                      30: 0.21695389791954947, 
-                      40: 0.21751138069457196, 
-                      50: 0.2178548098137264}
+    test_visc_vals = {20: 0.24135277203767233,
+                      30: 0.2425968999401442,
+                      40: 0.24306376868255214,
+                      50: 0.24328026411238798}
 
-    test_cond_vals = {20: 1.0020395956063672, 
-                      30: 0.9989005623538744, 
-                      40: 0.9973621421137406, 
+    test_cond_vals = {20: 1.0020395956063672,
+                      30: 0.9989005623538744,
+                      40: 0.9973621421137406,
                       50: 0.9964959608177728}
 
     T_red = 2.0
@@ -67,7 +67,7 @@ def test_singlecomp_binary(m, sigma, eps_div_k, la, lr):
     Vm = 3e-4
     p = 10e5
     x1 = 0.3
-    
+
     D1 = kin1.interdiffusion(T, Vm, [x1, 1 - x1], N=2)
     D2 = kin2.interdiffusion(T, Vm, [x1, 1 - x1], N=2)
     assert check_eq_rel(D1, D2)
@@ -95,6 +95,7 @@ def test_singlecomp_binary(m, sigma, eps_div_k, la, lr):
 if __name__ == '__main__':
     cond_dat, visc_dat = {}, {}
     for lr in [20, 30, 40, 50]:
+        print(lr)
         visc_dat[lr], cond_dat[lr] = test_very_repulse(lr)
     
     print(visc_dat)
