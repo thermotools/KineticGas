@@ -1,5 +1,5 @@
 <!--- 
-Generated at: 2025-09-12T17:38:31.298658
+Generated at: 2025-09-12T17:43:51.253469
 This is an auto-generated file, generated using the script at KineticGas/docs/join_docs.py
 The file is created by joining the contents of the files
     KineticGas/docs/markdown/
@@ -59,6 +59,7 @@ KineticGas has been developed throughout several works. If you are referencing t
   * [Predicting viscosities and thermal conductivities from dilute gas to dense liquid: Deriving fundamental transfer lengths for momentum and energy exchange in revised Enskog theory](https://pubs.aip.org/aip/jcp/article/161/23/234106/3325824/Predicting-viscosities-and-thermal-conductivities) (V. G. Jervell and Ø. Wilhelmsen, J. Chem. Phys. 2024)
 * The Lennard-Jones spline fluid
   * [Viscosity, thermal conductivity and self-diffusion coefficient of the Lennard Jones spline fluid: Evaluation of theories for a short-ranged potential](https://doi.org/10.1016/j.fluid.2025.114584) (J. S. Løken, V. G. Jervell, M. Hammer, B. Hafskjold, T. T. Trinh and Ø. Wilhelmsen, 2025)
+  * [Revised Enskog theory and extended corresponding states models for the transport properties of the Lennard-Jones/spline fluid](https://ntnuopen.ntnu.no/ntnu-xmlui/handle/11250/3182899) (Johannes S. Løken, 2025)
 
 Cite this repository as
 
