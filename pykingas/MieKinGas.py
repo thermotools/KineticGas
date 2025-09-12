@@ -23,7 +23,7 @@ class MieKinGas(MieType.MieType):
             comps (str) : Comma-separated list of components
             mole_weights (1D array) : Molar weights [g/mol]
             sigma (1D array) : sigma-parameters [m]
-            eps_div_k (1D array) : epsilon parameter / Boltzmann constant [-]
+            eps_div_k (1D array) : epsilon parameter / Boltzmann constant [K]
             la, lr (1D array) : attractive and repulsive exponent of the pure components [-]
             lij (float) : Mixing parameter for sigma (lij > 0 => smaller sigma_12, lij < 0 => larger sigma_12)
             kij (float) : Mixing parameter for epsilon (kij > 0 => favours mixing, kij < 0 => favours separation)

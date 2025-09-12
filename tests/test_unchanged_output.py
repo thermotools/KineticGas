@@ -1,8 +1,11 @@
 import pandas as pd
 import numpy as np
 import os, ast
+from argparse import ArgumentParser
+from scipy.constants import Avogadro
 from tools import models, check_eq_arr, check_eq_rel
 from pykingas.py_KineticGas import py_KineticGas
+from pykingas.LJSpline import LJSpline
 import pytest
 
 @pytest.mark.parametrize('__model', models)
@@ -56,8 +59,8 @@ def __test_scalar(__model, method, overwrite=False):
             val = method(model, T, 1 / rho, x, N=2)
             
             if (overwrite is False) and (check_eq_rel(val, oldval) is False):
-                is_unchanged = False
-                print('Failure at : ', mix, T, rho_red, x, rho, ': \n\t', oldval, ' => ', val, ', Relative error : ', (val - oldval) / oldval)
+                ostr = 'Failure at : ', mix, T, rho_red, x, rho, ': \n\t', oldval, ' => ', val, ', Relative error : ', (val - oldval) / oldval
+                assert False, ostr
             else:
                 val_new[i] = val
         print(f'Finished {mix}')
@@ -78,10 +81,33 @@ def test_viscosity(__model, overwrite=False):
     method = py_KineticGas.viscosity
     __test_scalar(__model, method, overwrite=overwrite)
 
-##############################################################################################################################
-##############      METHODS BELOW HAVE BEEN USED TO GENERATE THE TEST GRIDS BUT SHOULD NOT BE NEEDED IN THE FUTURE ###########
-##############      TO RE-GENERATE TEST-GRIDS, CALL THE TEST FUNCTIONS WITH `overwrite=True`                       ###########
-##############################################################################################################################
+## LJ/Spline Tests ###
+
+def test_ljs():
+    sig = 3.42e-10
+    eps_div_k = 124.0
+    mw = 40.0
+    ljs = LJSpline()
+    data = pd.read_csv(f'{os.path.dirname(__file__)}/data/transport_properties_ljs.csv')
+    unchanged = True
+    for t, r, cond_old, visc_old, Drho_old in zip(data['T'], data['rho'], data['cond'], data['visc'], data['Drho']):
+        T_SI = t*eps_div_k
+        V_SI = Avogadro * sig**3 / r
+        cond_new = ljs.thermal_conductivity(T_SI, V_SI, [0.5,0.5])
+        visc_new = ljs.viscosity(T_SI, V_SI, [0.5,0.5])
+        Drho_new = ljs.selfdiffusion(T_SI, V_SI) / V_SI 
+        if not (check_eq_rel(cond_new, cond_old) and check_eq_rel(visc_new, visc_old) and check_eq_rel(Drho_new, Drho_old)):
+            unchanged = False
+            print('Failure at : T =', t, ' rho =', r)
+            print(cond_new, cond_old)
+            print(visc_new, visc_old)
+            print(Drho_new, Drho_old)
+    assert unchanged
+
+#############################################################################################################################
+#############      METHODS BELOW HAVE BEEN USED TO GENERATE THE TEST GRIDS BUT SHOULD NOT BE NEEDED IN THE FUTURE ###########
+#############      TO RE-GENERATE TEST-GRIDS, CALL THE TEST FUNCTIONS WITH `overwrite=True`                       ###########
+#############################################################################################################################
 
 def __compute_scalar(__model, method):
     data = {'mix' : [], 'T' : [], 'rho*' : [], 'x' : [], 'value' : []}
@@ -173,21 +199,44 @@ def __compute_diffusion(__model):
 
 if __name__ == '__main__':
 
-    # test_conductivity(models[1], overwrite=False)
-    # test_viscosity(models[1], overwrite=False)
-    # test_diffusion(models[1], overwrite=False)
+    parser = ArgumentParser()
+    parser.add_argument('-c', '--cond', action='store_true')
+    parser.add_argument('-v', '--visc', action='store_true')
+    parser.add_argument('-d', '--diff', action='store_true')
+    parser.add_argument('--write', action='store_true')
+    args = parser.parse_args()
 
-    mixtures = ['AR', 'H2,O2', 'CO2,C1,N2']
-    T_lst = np.linspace(150, 800, 5)
-    rho_red_lst = np.linspace(0.01, 0.7, 10)
-    x1_lst = np.linspace(1e-3, 1 - 1e-3, 5)
-    x2_x3_ratios = np.linspace(0.1, 0.9, 3)
+    test = not args.write
+    if test:
+        if args.cond:
+            test_conductivity(models[1], overwrite=False)
+        if args.visc:
+            test_viscosity(models[1], overwrite=False)
+        if args.diff:
+            test_diffusion(models[1], overwrite=False)
 
-    __compute_diffusion(models[0])
-    print('Finished Diffusion')
-    __compute_tcond(models[0])
-    print('Finished Tcond')
-    __compute_visc(models[0])
-    print('Finished Visc')
+        exit(0)
+
+    if args.write:
+        print('Starting overwrite of results ...')
+
+        mixtures = ['AR', 'H2,O2', 'CO2,C1,N2']
+        T_lst = np.linspace(150, 800, 5)
+        rho_red_lst = np.linspace(0.01, 0.7, 10)
+        x1_lst = np.linspace(1e-3, 1 - 1e-3, 5)
+        x2_x3_ratios = np.linspace(0.1, 0.9, 3)
+
+        if args.diff:
+            print('Start overwrite diffusion ...')
+            __compute_diffusion(models[0])
+            print('Finished Diffusion')
+        if args.cond:
+            print('Start overwrite thermal conductivity ...')
+            __compute_tcond(models[0])
+            print('Finished Tcond')
+        if args.visc:
+            print('Start overwrite viscosity ...')
+            __compute_visc(models[0])
+            print('Finished Visc')
     
     exit(0)
