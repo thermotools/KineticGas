@@ -27,7 +27,7 @@ class LJSpline : public Spherical {
         // bh_eos.set_sigma_eps(sigma[0][0],eps[0][0]);
         GenericEoS ljs_eos{ThermoWrapper(std::move(uv_eos))};
         this -> set_eos(std::move(ljs_eos));
-        if ((sigma.size() > 2) | (m.size() > 2) | (eps.size() > 2))
+        if ((sigma.size() > 2) || (m.size() > 2) || (eps.size() > 2))
         {
             throw std::invalid_argument("The Lennard-Jones/spline is not implemented for multicomponent systems.");
         }

@@ -30,9 +30,7 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
 ]
-dependencies = []# "numpy~=1.22",
-                # "scipy~=1.7"]#,
-               # "thermopack~=2.2"]
+dependencies = ['numpy', 'scipy']
 
 [project.optional-dependencies]
 test = ["pytest", "matplotlib", "pandas"]

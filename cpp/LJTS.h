@@ -18,7 +18,7 @@ class LJTS : public Spherical {
         // GenericEoS ljs_eos{ThermoWrapper(std::move(bh_eos))};
         //this -> set_eos(std::move(ljs_eos));
         // eos = std::make_unique<GenericEoS>(Ideal());
-        if ((sigmaij.size() > 2) | (mole_weights.size() > 2) | (eps.size() > 2)) 
+        if ((sigmaij.size() > 2) || (mole_weights.size() > 2) || (eps.size() > 2))
         {
             throw std::invalid_argument("The Lennard-Jones/spline is not implemented for multicomponent systems (yet)!");
         }
