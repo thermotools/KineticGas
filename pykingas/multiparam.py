@@ -55,6 +55,14 @@ class MultiParam(py_KineticGas):
         return self.cpp_kingas.potential_rr(0, 0, r)
     
     def potential_dn(self, r, n):
+        """Utility
+        Calculate the `n`'th derivative of the potential wrt. distance.
+        Args:
+            r (float) : Distance (m)
+        
+        Returns:
+            float : Potential n'th derivative wrt. distance (J / m^n)
+        """
         return self.cpp_kingas.potential_dn(0, 0, r, n)
 
     def vdw_alpha(self):
@@ -71,6 +79,14 @@ class MultiParam(py_KineticGas):
         return - E / ((self.eps_div_k * Boltzmann) * self.sigma ** 3)
     
     def get_r_min(self, i, j):
+        """Utility
+        Compute the position of the potential minimum.
+        &&
+        Args:
+            i, j (int): Species indices
+        Returns:
+            float : r_min (m)
+        """
         return self.cpp_kingas.get_r_min(i, j, 1)
 
 class ModTangToennies(MultiParam, Quantum):
@@ -135,6 +151,9 @@ class FH_HFD_B2(MultiParam, FH_Corrected):
 class Patowski(MultiParam, Quantum):
 
     def __init__(self, comps, quantum_active=True):
+        """Constructor
+        Initialize Patowski potential (used for H2)
+        """
         super().__init__(comps)
         self.cpp_kingas = cpp_Patowski(comps)
         self.param = self.cpp_kingas.get_param()

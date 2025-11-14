@@ -1,23 +1,23 @@
 ---
 layout: default
 version: 
-title: Methods in the ModTangToennies class
-permalink: /vcurrent/modtangtoennies_methods.html
+title: Methods in the Patowski class
+permalink: /vcurrent/patowski_methods.html
 ---
 
 <!--- 
-Generated at: 2025-11-14T17:17:20.219037
+Generated at: 2025-11-14T17:17:20.220042
 This is an auto-generated file, generated using the script at KineticGas/pyUtils/markdown_from_docstrings.py
 The file is created by parsing the docstrings of the methods in the 
-ModTangToennies class. For instructions on how to use the parser routines, see the
+Patowski class. For instructions on how to use the parser routines, see the
 file KineticGas/pyUtils/markdown_from_docstrings.py--->
 
-The `ModTangToennies` class, found in `pykingas/multiparam.py`, inherrits from the py_KineticGas class, and  is the interface to the 
-Modified Tang-Toennies Model. This class implements utility methods to access mixing parameters etc.
+The `Patowski` class, found in `pykingas/multiparam.py`, inherrits from the py_KineticGas class, and  is the interface to the 
+Patowski Model. This class implements utility methods to access mixing parameters etc.
 
 ## Table of contents
   * [Constructor](#constructor)
-    * [\_\_init\_\_](#__init__self-comps-quantum_activetrue-parameter_refdefault)
+    * [\_\_init\_\_](#__init__self-comps-quantum_activetrue)
   * [Utility methods](#utility-methods)
     * [JKWB_phase_shift](#jkwb_phase_shiftself-i-j-l-e)
     * [JKWB_upper_E_limit](#jkwb_upper_e_limitself-i0-jnone)
@@ -41,26 +41,16 @@ Modified Tang-Toennies Model. This class implements utility methods to access mi
 
 ## Constructor
 
-Methods to initialise Modified Tang-Toennies model.
+Methods to initialise Patowski model.
 
 ### Table of contents
   * [Constructor](#constructor)
-    * [\_\_init\_\_](#__init__self-comps-quantum_activetrue-parameter_refdefault)
+    * [\_\_init\_\_](#__init__self-comps-quantum_activetrue)
 
 
-### `__init__(self, comps, quantum_active=True, parameter_ref='default')`
-Initialize modified Tang-Toennies potential
+### `__init__(self, comps, quantum_active=True)`
+Initialize Patowski potential (used for H2)
  
-
-#### Args:
-
-&nbsp;&nbsp;&nbsp;&nbsp; **comps (str) :** 
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Single component identifier
-
-&nbsp;&nbsp;&nbsp;&nbsp; **parameter_ref (str, optional) :** 
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Identifier for parameter set to use 
 
 ## Utility methods
 

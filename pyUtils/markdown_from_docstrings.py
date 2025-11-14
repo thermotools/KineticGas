@@ -88,7 +88,9 @@ from pykingas.py_KineticGas import py_KineticGas
 from pykingas.MieType import MieType
 from pykingas.MieKinGas import MieKinGas
 from pykingas.HardSphere import HardSphere
-from pykingas.multiparam import ModTangToennis
+from pykingas.multiparam import ModTangToennies, Patowski
+from pykingas.Quantum import Quantum
+from pykingas.Quantum import FH_Corrected
 
 DOC_VERSION = 'Current'
 KINETICGAS_ROOT, MARKDOWN_DIR = get_root_and_markdown_dir(DOC_VERSION)
@@ -272,7 +274,7 @@ def get_toc(sections, section_headers, method_dict, is_subsection=False):
         toc_text += '  * [' + sec_name + '](#' + sec_id + ')\n'
 
         for meth in method_dict[sec]:
-            method_name = meth[0].replace('__', '\_\_')
+            method_name = meth[0].replace('__', r'\_\_')
             method_id = meth[0] + str(inspect.signature(meth[1]))
             method_id = remove_illegal_link_chars(method_id)
             toc_text += '    * [' + method_name + '](#' + method_id + ')\n'
@@ -412,10 +414,32 @@ def modtangtoennies_to_markdown():
     classname = 'ModTangToennies'
     eosname = 'Modified Tang-Toennies'
 
-    class_methods = inspect.getmembers(ModTangToennis, predicate=inspect.isfunction)
+    class_methods = inspect.getmembers(ModTangToennies, predicate=inspect.isfunction)
     parent_methods = inspect.getmembers(py_KineticGas, predicate=inspect.isfunction)
     specific_methods = sorted(list(set(class_methods) - set(parent_methods)))
     basic_class_to_markdown(classname, eosname, specific_methods, inherits='py_KineticGas', filename='multiparam')
+
+def patowski_to_markdown():
+    classname = 'Patowski'
+    eosname = 'Patowski'
+
+    class_methods = inspect.getmembers(Patowski, predicate=inspect.isfunction)
+    parent_methods = inspect.getmembers(py_KineticGas, predicate=inspect.isfunction)
+    specific_methods = sorted(list(set(class_methods) - set(parent_methods)))
+    basic_class_to_markdown(classname, eosname, specific_methods, inherits='py_KineticGas', filename='multiparam')
+
+def quantum_to_markdown():
+    classname = 'Quantum'
+    eosname = 'Quantum'
+
+    class_methods = inspect.getmembers(Quantum, predicate=inspect.isfunction)
+    parent_methods = inspect.getmembers(py_KineticGas, predicate=inspect.isfunction)
+    specific_methods = sorted(list(set(class_methods) - set(parent_methods)))
+    intro_text = "The Quantum class is an abstract base class that contains all the interfaces to quantum mechanical calculations for Spherical potentials." \
+    "Any spherical potential model can be made to inherrit from the Quantum class instead of inherriting directly from `py_KineticGas` in order to gain access to" \
+    "quantum mechanical calculation of collision integrals and other stuff. **NOTE**: That the `Quantum` class has the attribute `quantum_active` which is used to" \
+    "turn quantal calculations on/off. So even if a class inherits from `Quantum`, the classical calculations can be accessed by turning off the quantal calculations."
+    basic_class_to_markdown(classname, eosname, specific_methods, inherits='py_KineticGas', filename='Quantum', intro_text=intro_text)
 
 def hardsphere_to_markdown():
     classname = 'HardSphere'
@@ -434,3 +458,5 @@ if __name__ == '__main__':
     miekingas_to_markdown()
     hardsphere_to_markdown()
     modtangtoennies_to_markdown()
+    patowski_to_markdown()
+    quantum_to_markdown()

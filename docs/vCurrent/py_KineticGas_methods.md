@@ -6,7 +6,7 @@ permalink: /vcurrent/py_kineticgas_methods.html
 ---
 
 <!--- 
-Generated at: 2024-11-07T12:55:22.196680
+Generated at: 2025-11-14T16:38:13.683495
 This is an auto-generated file, generated using the script at KineticGas/pyUtils/markdown_from_docstrings.py
 The file is created by parsing the docstrings of the methods in the 
 py_KineticGas class. For instructions on how to use the parser routines, see the
@@ -16,7 +16,7 @@ The `py_KineticGas` class, found in `pykingas/py_KineticGas.py`, is the core of 
 
 ## Table of contents
   * [The constructor](#the-constructor)
-    * [\_\_init\_\_](#__init__self-comps-mole_weightsnone-n3-is_idealgasfalse)
+    * [\_\_init\_\_](#__init__self-comps-mole_weightsnone-n3-is_idealgasfalse-is_single_componentfalse)
   * [TV-property interfaces](#tv-property-interfaces)
     * [bulk_viscosity](#bulk_viscosityself-t-vm-x-nnone)
     * [conductivity_matrix](#conductivity_matrixself-t-vm-x-n2-formulationt-psi-frame_of_referencecom-use_thermal_conductivitynone)
@@ -24,15 +24,17 @@ The `py_KineticGas` class, found in `pykingas/py_KineticGas.py`, is the core of 
     * [interdiffusion_general](#interdiffusion_generalself-t-vm-x-nnone)
     * [kinematic_viscosity](#kinematic_viscosityself-t-vm-x-nnone)
     * [resistivity_matrix](#resistivity_matrixself-t-vm-x-n2-formulationt-psi-frame_of_referencecom-use_thermal_conductivitynone)
+    * [second_virial](#second_virialself-ci-cj-t)
+    * [selfdiffusion](#selfdiffusionself-t-vm-n2)
     * [soret_coefficient](#soret_coefficientself-t-vm-x-nnone-use_zaratetrue-dependent_idx-1)
     * [thermal_conductivity](#thermal_conductivityself-t-vm-x-nnone-idealgasnone-contributionsall)
     * [thermal_diffusion_coeff](#thermal_diffusion_coeffself-t-vm-x-nnone-use_independentfalse-dependent_idx-1-frame_of_referencecon-solvent_idx-1)
     * [thermal_diffusion_factor](#thermal_diffusion_factorself-t-vm-x-nnone)
     * [thermal_diffusion_ratio](#thermal_diffusion_ratioself-t-vm-x-nnone)
     * [thermal_diffusivity](#thermal_diffusivityself-t-vm-x-nnone)
-    * [viscosity](#viscosityself-t-vm-x-nnone-idealgasnone)
+    * [viscosity](#viscosityself-t-vm-x-nnone)
   * [Tp-property interfaces](#tp-property-interfaces)
-    * [interdiffusion_tp](#interdiffusion_tpself-t-p-x-nnone-use_independenttrue-dependent_idxnone-frame_of_referencecon-use_binarytrue-solvent_idxnone)
+    * [interdiffusion_tp](#interdiffusion_tpself-t-p-x-nnone-use_independenttrue-dependent_idx-1-frame_of_referencecon-use_binarytrue-solvent_idx-1)
     * [kinematic_viscosity_tp](#kinematic_viscosity_tpself-t-p-x-nnone)
     * [thermal_conductivity_tp](#thermal_conductivity_tpself-t-p-x-nnone-contributionsall)
     * [thermal_diffusion_coeff_tp](#thermal_diffusion_coeff_tpself-t-p-x-nnone-use_independentfalse-dependent_idxnone-frame_of_referencecon-solvent_idxnone)
@@ -55,6 +57,7 @@ The `py_KineticGas` class, found in `pykingas/py_KineticGas.py`, is the core of 
     * [get_mtl](#get_mtlself-particle_density-t-x)
     * [get_rdf](#get_rdfself-particle_density-t-x)
   * [Utility methods](#utility-methods)
+    * [compute_bulk_visc_vector](#compute_bulk_visc_vectorself-t-particle_density-mole_fracs-nnone)
     * [get_reducing_units](#get_reducing_unitsself-ci0-cjnone)
     * [get_tl_model](#get_tl_modelself)
     * [get_valid_tl_models](#get_valid_tl_modelsself)
@@ -62,7 +65,6 @@ The `py_KineticGas` class, found in `pykingas/py_KineticGas.py`, is the core of 
   * [Deprecated methods](#deprecated-methods)
     * [thermal_coductivity_tp](#thermal_coductivity_tpself-t-p-x-nnone)
   * [Internal methods](#internal-methods)
-    * [check_valid_composition](#check_valid_compositionself-x)
     * [compute_cond_vector](#compute_cond_vectorself-particle_density-t-mole_fracs-nnone)
     * [compute_diffusion_coeff_vector](#compute_diffusion_coeff_vectorself-particle_density-t-mole_fracs-nnone)
     * [compute_dth_vector](#compute_dth_vectorself-particle_density-t-mole_fracs-nnone)
@@ -70,6 +72,7 @@ The `py_KineticGas` class, found in `pykingas/py_KineticGas.py`, is the core of 
     * [get_Eij](#get_eijself-vm-t-x)
     * [get_P_factors](#get_p_factorsself-vm-t-x)
     * [reshape_diffusion_coeff_vector](#reshape_diffusion_coeff_vectorself-d)
+    * [validate_and_sanitize_composition](#validate_and_sanitize_compositionself-x)
 
 ## The constructor
 
@@ -77,10 +80,10 @@ The constructor
 
 ### Table of contents
   * [The constructor](#the-constructor)
-    * [\_\_init\_\_](#__init__self-comps-mole_weightsnone-n3-is_idealgasfalse)
+    * [\_\_init\_\_](#__init__self-comps-mole_weightsnone-n3-is_idealgasfalse-is_single_componentfalse)
 
 
-### `__init__(self, comps, mole_weights=None, N=3, is_idealgas=False)`
+### `__init__(self, comps, mole_weights=None, N=3, is_idealgas=False, is_single_component=False)`
  
 
 #### Args:
@@ -109,13 +112,15 @@ Computing properties as a function of temperature and volume.
     * [interdiffusion_general](#interdiffusion_generalself-t-vm-x-nnone)
     * [kinematic_viscosity](#kinematic_viscosityself-t-vm-x-nnone)
     * [resistivity_matrix](#resistivity_matrixself-t-vm-x-n2-formulationt-psi-frame_of_referencecom-use_thermal_conductivitynone)
+    * [second_virial](#second_virialself-ci-cj-t)
+    * [selfdiffusion](#selfdiffusionself-t-vm-n2)
     * [soret_coefficient](#soret_coefficientself-t-vm-x-nnone-use_zaratetrue-dependent_idx-1)
     * [thermal_conductivity](#thermal_conductivityself-t-vm-x-nnone-idealgasnone-contributionsall)
     * [thermal_diffusion_coeff](#thermal_diffusion_coeffself-t-vm-x-nnone-use_independentfalse-dependent_idx-1-frame_of_referencecon-solvent_idx-1)
     * [thermal_diffusion_factor](#thermal_diffusion_factorself-t-vm-x-nnone)
     * [thermal_diffusion_ratio](#thermal_diffusion_ratioself-t-vm-x-nnone)
     * [thermal_diffusivity](#thermal_diffusivityself-t-vm-x-nnone)
-    * [viscosity](#viscosityself-t-vm-x-nnone-idealgasnone)
+    * [viscosity](#viscosityself-t-vm-x-nnone)
 
 
 ### `bulk_viscosity(self, T, Vm, x, N=None)`
@@ -187,55 +192,55 @@ mass frame of reference. The formulation is only implemented for ideal gases.
 ### `interdiffusion(self, T, Vm, x, N=None, use_independent=True, dependent_idx=-1, frame_of_reference='CoN', use_binary=True, solvent_idx=-1)`
 Compute the interdiffusion coefficients [m^2 / s]. Default definition is
 
-$$ J_i^{(n, n)} = - \sum_{j \neq l} D_{ij} \nabla n_j, \nabla T = \nabla p = F_k = 0 \forall k $$
+#     $$ J_i^{(n, n)} = - \sum_{j \neq l} D_{ij} \nabla n_j, \nabla T = \nabla p = F_k = 0 \forall k $$
 
-where the flux, $J_i^{(n, n)}$ is on a molar basis, in the molar frame of reference, and $j \neq l$ is an
-independent set of forces with $l=$ `dependent_idx`.
-For fluxes in other frames of reference, use the `frame_of_reference` kwarg.
-For the diffusion coefficients describing the fluxes' response to all forces (not independent) the definition
-is:
+#     where the flux, $J_i^{(n, n)}$ is on a molar basis, in the molar frame of reference, and $j \neq l$ is an
+#     independent set of forces with $l=$ `dependent_idx`.
+#     For fluxes in other frames of reference, use the `frame_of_reference` kwarg.
+#     For the diffusion coefficients describing the fluxes' response to all forces (not independent) the definition
+#     is:
 
-$$ J_i^{(n, n)} = - \sum_j D_{ij} \nabla n_j, \nabla T = \nabla p = F_k = 0 \forall k $$
+#     $$ J_i^{(n, n)} = - \sum_j D_{ij} \nabla n_j, \nabla T = \nabla p = F_k = 0 \forall k $$
 
-use the `use_independent` and `dependent_idx` kwargs to switch between these definitions.
-See: Eq. (17-20) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
- 
+#     use the `use_independent` and `dependent_idx` kwargs to switch between these definitions.
+#     See: Eq. (17-20) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
+# 
 
-#### Args:
+#### #     Args:
 
-&nbsp;&nbsp;&nbsp;&nbsp; **T (float) :** 
+&nbsp;&nbsp;&nbsp;&nbsp; **#         T (float) :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Temperature (K)
 
-&nbsp;&nbsp;&nbsp;&nbsp; **Vm (float) :** 
+&nbsp;&nbsp;&nbsp;&nbsp; **#         Vm (float) :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Molar volume (m3 / mol)
 
-&nbsp;&nbsp;&nbsp;&nbsp; **x (array_like) :** 
+&nbsp;&nbsp;&nbsp;&nbsp; **#         x (array_like) :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  composition (mole fractions)
 
-&nbsp;&nbsp;&nbsp;&nbsp; **N (int, optional) :** 
+&nbsp;&nbsp;&nbsp;&nbsp; **#         N (int, optional) :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Enskog approximation order. Default set on model initialisation.
 
-&nbsp;&nbsp;&nbsp;&nbsp; **use_binary (bool, optional) :** 
+&nbsp;&nbsp;&nbsp;&nbsp; **#         use_binary (bool, optional) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  If the mixture is binary, and an independent set of fluxes and forces is considered, i.e.`use_independent=True`, the diffusion coefficients will be exactly equal with opposite sign. Setting `use_binary=True` will in that case only return the coefficient describing the independent flux-force relation. 
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  If the mixture is binary, and an independent set of fluxes and forces is considered, i.e.#             `use_independent=True`, the diffusion coefficients will be exactly equal with opposite sign. Setting #             `use_binary=True` will in that case only return the coefficient describing the independent flux-force relation. 
 
-&nbsp;&nbsp;&nbsp;&nbsp; **use_independent (bool, optional) :** 
+&nbsp;&nbsp;&nbsp;&nbsp; **#         use_independent (bool, optional) :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Return diffusion coefficients for independent set of forces.
 
-&nbsp;&nbsp;&nbsp;&nbsp; **dependent_idx (int, optional) :** 
+&nbsp;&nbsp;&nbsp;&nbsp; **#         dependent_idx (int, optional) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Index of the dependent molar density gradient (only if `use_independent=True`, the default behaviour).Defaults to last component, except when `frame_of_reference='solvent'`, in which case default is equal to `solvent_idx`. 
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Index of the dependent molar density gradient (only if `use_independent=True`, the default behaviour).#             Defaults to last component, except when `frame_of_reference='solvent'`, in which case default is equal #             to `solvent_idx`. 
 
-&nbsp;&nbsp;&nbsp;&nbsp; **frame_of_reference (str, optional) :** 
+&nbsp;&nbsp;&nbsp;&nbsp; **#         frame_of_reference (str, optional) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Which frame of reference the diffusion coefficients apply to. Defaultis `'CoN'`. Can be `'CoN'` (molar FoR), `'CoM'` (barycentric FoR), `'solvent'` (solvent FoR), `'zarate'` (See Memo on definitions of the diffusion coefficient), `'zarate_x'` ($D^{(x)}$ as defined by Ortiz de Zárate, doi 10.1140/epje/i2019-11803-2) or `'zarate_w'` ($D^{(w)}$ as defined by Ortiz de Zárate). 
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Which frame of reference the diffusion coefficients apply to. Default#             is `'CoN'`. Can be `'CoN'` (molar FoR), `'CoM'` (barycentric FoR), `'solvent'` (solvent FoR), `'zarate'` (See Memo on #             definitions of the diffusion coefficient), `'zarate_x'` ($D^{(x)}$ as defined by Ortiz de Zárate, doi 10.1140/epje/i2019-11803-2) #             or `'zarate_w'` ($D^{(w)}$ as defined by Ortiz de Zárate). 
 
-&nbsp;&nbsp;&nbsp;&nbsp; **solvent_idx (int, optional) :** 
+&nbsp;&nbsp;&nbsp;&nbsp; **#         solvent_idx (int, optional) :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Index of component identified as solvent (only when using `frame_of_reference='solvent'`) 
 
@@ -365,6 +370,26 @@ mass frame of reference. The formulation is only implemented for ideal gases.
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The resistivity matrix, contents will vary depending on the `formulation` kwarg. 
 
+### `second_virial(self, ci, cj, T)`
+Compute second virial coefficient
+ 
+
+#### Args:
+
+&nbsp;&nbsp;&nbsp;&nbsp; **T (float) :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Temperature (K) 
+
+#### Returns:
+
+&nbsp;&nbsp;&nbsp;&nbsp; **float :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Second virial coefficient 
+
+### `selfdiffusion(self, T, Vm, N=2)`
+Simple wrapper for the `interdiffusion` method so that mole fractions don't need to be supplied
+ 
+
 ### `soret_coefficient(self, T, Vm, x, N=None, use_zarate=True, dependent_idx=-1)`
 Compute the Soret coefficients, $S_{T, ij}$. If `use_zarate=False`, the Soret coefficient is defined by
 
@@ -450,7 +475,7 @@ See Eq. (13) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
 
 &nbsp;&nbsp;&nbsp;&nbsp; **N (int, optional) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Enskog approximation order (>= 2)
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Enskog approximation order
 
 &nbsp;&nbsp;&nbsp;&nbsp; **idealgas (bool, optional) :** 
 
@@ -458,11 +483,11 @@ See Eq. (13) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
 
 &nbsp;&nbsp;&nbsp;&nbsp; **contributions (str, optional) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Return only specific contributions, can be ('all' (default), '(i)nternal','(t)ranslational', '(d)ensity', or several of the above, such as 'tid' or 'td'. If several contributions are selected, these are returned in an array of contributions in the same order as indicated in the supplied flag.  
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Return specific contributions, can be ('all' (default), '(i)nternal','(t)ranslational', '(d)ensity', or several of the above, such as 'tid' or 'td'. If anything other than 'all' is used, the contriutions are returned as a `dict`  
 
 #### Returns:
 
-&nbsp;&nbsp;&nbsp;&nbsp; **(float) :** 
+&nbsp;&nbsp;&nbsp;&nbsp; **(float or dict) :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The thermal conductivity of the mixture [W / m K]. 
 
@@ -632,7 +657,7 @@ Compute the thermal diffusivity
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Thermal diffusivity of the mixture [m2 / s]. 
 
-### `viscosity(self, T, Vm, x, N=None, idealgas=None)`
+### `viscosity(self, T, Vm, x, N=None)`
 Compute the shear viscosity, $\eta$. For models initialized with `is_idealgas=True`, the shear viscosity
 is not a function of density (i.e. $d \eta / d V_m = 0). See Eq. (12) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
  
@@ -653,11 +678,7 @@ is not a function of density (i.e. $d \eta / d V_m = 0). See Eq. (12) in RET for
 
 &nbsp;&nbsp;&nbsp;&nbsp; **N (int, optional) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Enskog approximation order
-
-&nbsp;&nbsp;&nbsp;&nbsp; **idealgas (bool, optional) :** 
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Use infinite dilution value? Defaults to model default value (set on init) 
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Enskog approximation order 
 
 #### Returns:
 
@@ -671,7 +692,7 @@ Computing properties as a function of temperature and pressure. Simply forwards 
 
 ### Table of contents
   * [Tp-property interfaces](#tp-property-interfaces)
-    * [interdiffusion_tp](#interdiffusion_tpself-t-p-x-nnone-use_independenttrue-dependent_idxnone-frame_of_referencecon-use_binarytrue-solvent_idxnone)
+    * [interdiffusion_tp](#interdiffusion_tpself-t-p-x-nnone-use_independenttrue-dependent_idx-1-frame_of_referencecon-use_binarytrue-solvent_idx-1)
     * [kinematic_viscosity_tp](#kinematic_viscosity_tpself-t-p-x-nnone)
     * [thermal_conductivity_tp](#thermal_conductivity_tpself-t-p-x-nnone-contributionsall)
     * [thermal_diffusion_coeff_tp](#thermal_diffusion_coeff_tpself-t-p-x-nnone-use_independentfalse-dependent_idxnone-frame_of_referencecon-solvent_idxnone)
@@ -680,7 +701,7 @@ Computing properties as a function of temperature and pressure. Simply forwards 
     * [viscosity_tp](#viscosity_tpself-t-p-x-nnone)
 
 
-### `interdiffusion_tp(self, T, p, x, N=None, use_independent=True, dependent_idx=None, frame_of_reference='CoN', use_binary=True, solvent_idx=None)`
+### `interdiffusion_tp(self, T, p, x, N=None, use_independent=True, dependent_idx=-1, frame_of_reference='CoN', use_binary=True, solvent_idx=-1)`
 Compute molar volume using the internal equation of state (`self.eos`), assuming vapour, and pass the call to
 `self.interdiffusion`. See `self.interdiffusion` for documentation.
  
@@ -1070,11 +1091,54 @@ Methods for various helper computations
 
 ### Table of contents
   * [Utility methods](#utility-methods)
+    * [compute_bulk_visc_vector](#compute_bulk_visc_vectorself-t-particle_density-mole_fracs-nnone)
     * [get_reducing_units](#get_reducing_unitsself-ci0-cjnone)
     * [get_tl_model](#get_tl_modelself)
     * [get_valid_tl_models](#get_valid_tl_modelsself)
     * [set_tl_model](#set_tl_modelself-model)
 
+
+### `compute_bulk_visc_vector(self, T, particle_density, mole_fracs, N=None)`
+Compute the bulk viscous response function Sonine polynomial expansion coefficients by solving the set of equations
+
+$$\Gamma h = \gamma$$
+
+Corresponding to Eqs. (38 b, 45 a) in Enskog Theory for Multicomponent mixtures I (doi https://doi.org/10.1063/1.444985)
+Where $\Gamma$ is the matrix returned by the c++ method `get_bulk_viscosity_matrix`, and $\gamma$ is the vector
+returned by the c++ method `get_bulk_viscosity_vector`.
+ 
+
+#### Args:
+
+&nbsp;&nbsp;&nbsp;&nbsp; **particle_density (float) :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Particle density (not molar!) [1 / m3]
+
+&nbsp;&nbsp;&nbsp;&nbsp; **T (float) :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Temperature [K]
+
+&nbsp;&nbsp;&nbsp;&nbsp; **mole_fracs (list<float>) :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Molar composition [-]
+
+&nbsp;&nbsp;&nbsp;&nbsp; **N (Optional, int) :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Enskog approximation order. 
+
+#### Returns:
+
+&nbsp;&nbsp;&nbsp;&nbsp; **1D array :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  ($N N_c$,) vector, where $N$ is the Enskog approximation order and $N_c$ isthe number of components, ordered as 
+
+&nbsp;&nbsp;&nbsp;&nbsp; **h[:** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; N_c] = [h_1^{(0)}, h_2^{(0)}, ..., h_{N_c}^{(0)}]
+
+&nbsp;&nbsp;&nbsp;&nbsp; **h[N_c:** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  2 * N_c] = [h_1^{(1)}, h_2^{(1)}, ..., h_{N_c}^{(1)}]... etc ... where subscripts denote component indices and superscripts denote Enskog approximation summation indices.  
 
 ### `get_reducing_units(self, ci=0, cj=None)`
 Get reducing units for this model, as a `Units` struct. See `units.py`.
@@ -1153,7 +1217,6 @@ Internal methods are not intended for use by end-users.
 
 ### Table of contents
   * [Internal methods](#internal-methods)
-    * [check_valid_composition](#check_valid_compositionself-x)
     * [compute_cond_vector](#compute_cond_vectorself-particle_density-t-mole_fracs-nnone)
     * [compute_diffusion_coeff_vector](#compute_diffusion_coeff_vectorself-particle_density-t-mole_fracs-nnone)
     * [compute_dth_vector](#compute_dth_vectorself-particle_density-t-mole_fracs-nnone)
@@ -1161,35 +1224,8 @@ Internal methods are not intended for use by end-users.
     * [get_Eij](#get_eijself-vm-t-x)
     * [get_P_factors](#get_p_factorsself-vm-t-x)
     * [reshape_diffusion_coeff_vector](#reshape_diffusion_coeff_vectorself-d)
+    * [validate_and_sanitize_composition](#validate_and_sanitize_compositionself-x)
 
-
-### `check_valid_composition(self, x)`
-Check that enough mole fractions are supplied for the initialised model. Also check that they sum to unity.
-for single-component mixtures, returns [0.5, 0.5], such that [1] can be supplied, even though single-component
-fluids are treated as binaries internally.
- 
-
-#### Args:
-
-&nbsp;&nbsp;&nbsp;&nbsp; **x (array_like) :** 
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Molar composition 
-
-#### Raises:
-
-&nbsp;&nbsp;&nbsp;&nbsp; **IndexError :** 
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  If wrong number of mole fractions is supplied.
-
-&nbsp;&nbsp;&nbsp;&nbsp; **RuntimeWarning :** 
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  If mole fractions do not sum to unity. 
-
-#### Returns:
-
-&nbsp;&nbsp;&nbsp;&nbsp; **x (1d array) :** 
-
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Sanitized composition 
 
 ### `compute_cond_vector(self, particle_density, T, mole_fracs, N=None)`
 Compute the thermal response function Sonine polynomial expansion coefficients by solving the set of equations
@@ -1411,4 +1447,32 @@ as `d[i][q][j]` where i and j are component indices, and q refferes to the appro
 &nbsp;&nbsp;&nbsp;&nbsp; **3D array :** 
 
 &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  The matrix of $d_{i, j}^{(q)}$ coefficients ordered as `d[i][q][j]` 
+
+### `validate_and_sanitize_composition(self, x)`
+Check that enough mole fractions are supplied for the initialised model. Also check that they sum to unity.
+for single-component mixtures, returns [0.5, 0.5], such that [1] can be supplied, even though single-component
+fluids are treated as binaries internally.
+ 
+
+#### Args:
+
+&nbsp;&nbsp;&nbsp;&nbsp; **x (array_like) :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Molar composition 
+
+#### Raises:
+
+&nbsp;&nbsp;&nbsp;&nbsp; **IndexError :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  If wrong number of mole fractions is supplied.
+
+&nbsp;&nbsp;&nbsp;&nbsp; **RuntimeWarning :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  If mole fractions do not sum to unity. 
+
+#### Returns:
+
+&nbsp;&nbsp;&nbsp;&nbsp; **x (1d array) :** 
+
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  Sanitized composition 
 

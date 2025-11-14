@@ -288,8 +288,11 @@ class py_KineticGas:
     #             return D[independent_idx][independent_idx] # Return the independent fluxes response to the independent force
     #     return D
 
-    def selfdiffusion(self,T,Vm,N=2):
-        return self.cpp_kingas.selfdiffusion(T,Vm,N)
+    def selfdiffusion(self, T, Vm, N=2):
+        r"""TV-property
+        Simple wrapper for the `interdiffusion` method so that mole fractions don't need to be supplied
+        """
+        return self.cpp_kingas.selfdiffusion(T, Vm, N)
 
     def interdiffusion_general(self, T, Vm, x, N=None):
         r"""TV-property
@@ -1471,7 +1474,7 @@ class py_KineticGas:
         return b
 
     def compute_bulk_visc_vector(self, T, particle_density, mole_fracs, N=None):
-        """Utility
+        r"""Utility
         Compute the bulk viscous response function Sonine polynomial expansion coefficients by solving the set of equations
 
         $$\Gamma h = \gamma$$
