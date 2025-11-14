@@ -93,7 +93,7 @@ def gen_file_str(files):
 def get_header(files):
     header = '<!--- \n'
     header += 'Generated at: ' + datetime.today().isoformat() + '\n'
-    header += 'This is an auto-generated file, generated using the script at KineticGas/docs/join_docs.py\n'
+    header += 'This is an auto-generated file, generated using the script at KineticGas/pyUtils/join_docs.py\n'
     header += 'The file is created by joining the contents of the files\n'
     header += '    KineticGas/docs/markdown/\n'
     for fname in files:
