@@ -48,8 +48,6 @@ if (DEFINED ENV{THERMOPACK_DIR})
   set(THERMOPACK_DIR $ENV{THERMOPACK_DIR})
   message(STATUS "Searching for thermopack in THERMOPACK_DIR: $ENV{THERMOPACK_DIR}")
 else()
-  message(STATUS "THERMOPACK_DIR is not defined!")
-  set(THERMOPACK_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cpp/external/thermopack)
   message(STATUS "Setting THERMOPACK_DIR: ${THERMOPACK_DIR}")
 endif()
 

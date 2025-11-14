@@ -17,7 +17,7 @@ def test_diffusion(model, N, FoR, silent=True):
     D12_lst = [None, None]
     for i in range(2):
         x = comps.get_x(i)
-        kin = model(comps.get_comps(i))
+        kin = model(comps.get_comps(i), is_idealgas=True if ('zarate' in FoR) else False)
         D12_lst[i] = kin.interdiffusion(T, Vm, x, N=N, frame_of_reference=FoR, dependent_idx=i, solvent_idx=i,
                                         use_independent=True, use_binary=True)
 
@@ -38,7 +38,7 @@ def test_th_diffusion(model, N, FoR, silent=True):
 
     for i in range(2):
         x = comps.get_x(i)
-        kin = model(comps.get_comps(i))
+        kin = model(comps.get_comps(i), is_idealgas=True if ('zarate' in FoR) else False)
         DT = kin.thermal_diffusion_coeff(T, Vm, x, N=N, frame_of_reference=FoR, dependent_idx=i, solvent_idx=i,
                                                  use_independent=True)
         if FoR != 'zarate':

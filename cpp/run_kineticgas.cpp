@@ -1,15 +1,15 @@
-#include "multiparam.h"
+#include "MieKinGas.h"
+#include "cppThermopack/saftvrmie.h"
+#include "LJSpline.h"
+#include "LJTS.h"
+#include "HardSphere.h"
 #include <iostream>
 #include <vector>
 
-void print_partitions(const std::vector<std::vector<int>>& partitions){
-    for (const auto& p : partitions){
-        for (int i : p) {
-            std::cout << i << ", ";
-        }
-        std::cout << std::endl;
-    }
-}
+int main(){
+    // std::cout << "Default fluid dir : " << get_fluid_dir() << std::endl;
+    // set_fluid_dir("../fluids");
+    // std::cout << "Reading from fluid dir : " << get_fluid_dir() << std::endl;
 
 void do_partitions(){
     std::vector<std::vector<int>> partitions = get_partitions(3, 3);
@@ -21,26 +21,23 @@ void do_partitions(){
     print_partitions(built[3]);
 }
 
-int main(){
-    // do_partitions();
-    // return 0;
-    // FH_HFD_B2 kin("HE", 2);
-    // FH_ModTangToennies kin("AR", 1, "default");
-    ModTangToennis kin("AR");
-    // PatowskiFH kin("P-H2", 2);
-    // std::vector<double> T_lst = {20};
-    // for (const double T : T_lst){
-    //     double B = kin.viscosity(T, 1, {0.5, 0.5}, 1);
-    //     std::cout << "Computed visc(" << T << ") = " << B << std::endl;
-    // }
-    // Patowski kin("P-H2");
-    kin.set_JKWB_limits(1e9, 100);
-    for (int l = 0; l < 101; l += 2){
-        kin.trace_absolute_phase_shifts(0, 0, l, 325.);
-    }
-    // kin.dump_phase_shift_map();
-    std::cout << "Second virial : " << kin.second_virial(0, 0, 600.) << std::endl;
-    return 0;
+    //HardSphere hs({MW, MW}, {{sig, sig}, {sig, sig}}, false, false);
+    //std::cout << hs.interdiffusion(T, Vm, x, 2, FrameOfReference::CoN, 0, 0, true);
+    //return 0;
+    //LJTS ljts{{MW,MW},{{sig, sig}, {sig, sig}}, {{ep, ep}, {ep, ep}}, false, true};
+    MieKinGas mie2({MW, MW}, 
+                    {{sig, sig}, {sig, sig}}, 
+                    {{ep, ep}, {ep, ep}}, 
+                    {{6., 6.}, {6., 6.}}, 
+                    {{12., 12.}, {12., 12.}},
+                    false, true);
+    
+    GenericEoS eos(ThermoWrapper(Saftvrmie("AR")));
+    mie2.set_eos(std::move(eos));                
+    std::cout << mie2.thermal_conductivity(T, Vm, {0.5,0.5}) << std::endl;
+
+    //std::cout << ljts.viscosity(T, Vm, x) << std::endl;
+    //std::cout << ljts.get_rdf(T, Vm, x)[0][0] << std::endl;
     
     // MieKinGas mie2({MW, MW}, 
     //                 {{sig, sig}, {sig, sig}}, 
