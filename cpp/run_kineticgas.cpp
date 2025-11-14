@@ -7,20 +7,13 @@
 #include <vector>
 
 int main(){
-    // std::cout << "Default fluid dir : " << get_fluid_dir() << std::endl;
-    // set_fluid_dir("../fluids");
-    // std::cout << "Reading from fluid dir : " << get_fluid_dir() << std::endl;
+    std::cout << "Default fluid dir : " << get_fluid_dir() << std::endl;
+    set_fluid_dir("../fluids");
+    std::cout << "Reading from fluid dir : " << get_fluid_dir() << std::endl;
 
-void do_partitions(){
-    std::vector<std::vector<int>> partitions = get_partitions(3, 3);
-    std::cout << "Unique : \n";
-    print_partitions(partitions);
-
-    std::vector<std::vector<std::vector<int>>> built = build_partitions(6, 3);
-    std::cout << "Build : " << std::endl;
-    print_partitions(built[3]);
-}
-
+    double MW = 10 * 1e-3 / AVOGADRO;
+    double sig = 3e-10;
+    double ep = 150 * BOLTZMANN;
     //HardSphere hs({MW, MW}, {{sig, sig}, {sig, sig}}, false, false);
     //std::cout << hs.interdiffusion(T, Vm, x, 2, FrameOfReference::CoN, 0, 0, true);
     //return 0;
@@ -34,6 +27,9 @@ void do_partitions(){
     
     GenericEoS eos(ThermoWrapper(Saftvrmie("AR")));
     mie2.set_eos(std::move(eos));                
+    
+    double T = 300;
+    double Vm = 1;
     std::cout << mie2.thermal_conductivity(T, Vm, {0.5,0.5}) << std::endl;
 
     //std::cout << ljts.viscosity(T, Vm, x) << std::endl;
