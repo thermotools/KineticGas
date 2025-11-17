@@ -245,7 +245,6 @@ double Quantum::JKWB_phase_shift(int i, int j, int l, double E){
         if (verbose) std::cout << "Increasing R : " << R2 << ", " << b << ", " << R2 / b - 1 << ", " << R_fun(R) << std::endl;
     }
     else if (R_fun(R) < 0) {
-        const auto dR_fun = [&](double r){return (2. / b) * pow(b / r, 3) - potential_derivative_r(i, j, r * sigma[i][j]) * (sigma[i][j] / E);};
         if (verbose) std::cout << "R_fun < 0 : " << R_fun(R) << std::endl;
         if (verbose) std::cout << "Increasing R (> b) : " << R << ", " << b << ", " << R / b - 1 << std::endl;
         double R2 = R;
@@ -364,12 +363,10 @@ vector2d Quantum::wave_function(int i, int j, int l, double E, double r_end, dou
     vector1d psi = {0, step_size};
     vector1d phase_shifts;
 
-    int n = (l <= rot_ground_state[i]) ? 1 : 0;
-    double delta, prev_delta;
+    double delta;
     for (size_t i = 0; i < 2; i++) numerov_step(r, psi, g_vals);
     delta = local_phase_shift(r, psi, g_vals, false);
     while ( (!particles_are_free(r.back()) ) || (r.back() < r_end) ){
-        prev_delta = delta;
         numerov_step(r, psi, g_vals);
         delta = local_phase_shift(r, psi, g_vals, false);
         phase_shifts.push_back(delta);
@@ -457,7 +454,7 @@ double Quantum::quantum_phase_shift(int i, int j, int l, double E, double& r_lev
     }; 
 
     size_t nsteps_init = 2;
-    double delta, prev_delta;
+    double delta;
     int nl = get_levinson_multiple(i, j, l);
     r_lev = (l + 0.5) / k;
     int node_count = 0;
@@ -870,10 +867,10 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
         max_dk /= 2; min_dk /= 2; extrapol_tol /= 2;
     }
     bool resonance_found{false}, resonance_passed{false};
-    bool prepare_jump{false}, done_jump{false};
+    bool done_jump{false};
     size_t n_jump = 0;
     bool worst_is_over{false};
-    double dr0_k, dr0_k2, dr0_k3;
+    double dr0_k, dr0_k2;
 
     // When the phase shifts are "linear", we've entered the well-behaved "tail" and can move to a cheaper tracing method, where we know that the phase shifts are strictly decreasing (no more resonances)
     while ((k + max_dk < k_max) && (!is_linear)){
@@ -901,7 +898,6 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
         c = A_piv.solve(b3);
         c0 = - (c(0) + c(1) + c(2));
         d3pdk3 = - 6 * (c0 * phase_shifts[n_step] + c(0) * phase_shifts[n_step - 1] + c(1) * phase_shifts[n_step - 2] + c(2) * phase_shifts[n_step - 3]);
-        dr0_k3 = - 6 * (c0 * r_levinson[n_step] + c(0) * r_levinson[n_step - 1] + c(1) * r_levinson[n_step - 2] + c(2) * r_levinson[n_step - 3]);
 
         double tol_dk = pow(6 * extrapol_tol / abs(d3pdk3), 1. / 3.);
         dk = std::max(min_dk, std::min(tol_dk, max_dk));
@@ -939,12 +935,9 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
 
         c = A_piv.solve(b3);
         c0 = - (c(0) + c(1) + c(2));
-        dr0_k3 = - 6 * (c0 * r_levinson[n_step] + c(0) * r_levinson[n_step - 1] + c(1) * r_levinson[n_step - 2] + c(2) * r_levinson[n_step - 3]);
-        double prev_k = *(k_vals.end() - 2);
-        int n_step = r_levinson.size() - 1;
+
         double extrapol1 = prev_r0 + dk * dr0_k;
         double extrapol2 = extrapol1 + pow(dk, 2) * dr0_k2 / 2;
-        double extrapol3 = extrapol2 + pow(dk, 3) * dr0_k3 / 6;
         double extrapol_r0 = extrapol2;
 
         if ( abs(r_levinson.back() - extrapol_r0) > abs(prev_r0 - extrapol_r0) 
@@ -1027,6 +1020,7 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
     The upper limit for the wavevector of relative motion is determined from the temperature and a Boltzmann factor
 */
 void Quantum::trace_total_phase_shifts(int i, int j, double T){
+    constexpr bool verbose = false;
     double tol = 1e-8;
     double beta = 1 / (BOLTZMANN * T);
     double pre_exp = - beta * pow(HBAR, 2) / (2 * red_mass[i][j] * pow(sigma[i][j], 2));
@@ -1071,10 +1065,12 @@ void Quantum::trace_total_phase_shifts(int i, int j, double T){
         }
         part_sum = trapezoid(dk, integrand);
         tot += part_sum;
-        // if (l > 100) break;
-        double B_th = B0 - tot * pow(L, 3) * AVOGADRO  / (PI * BOLTZMANN * T * sigma[i][j]);
-        double B_part = - part_sum * pow(L, 3) * AVOGADRO  / (PI * BOLTZMANN * T * sigma[i][j]);
-        double B_th_tot = - tot * pow(L, 3) * AVOGADRO  / (PI * BOLTZMANN * T * sigma[i][j]);
+        if (verbose) {
+            double B_th = B0 - tot * pow(L, 3) * AVOGADRO  / (PI * BOLTZMANN * T * sigma[i][j]);
+            double B_part = - part_sum * pow(L, 3) * AVOGADRO  / (PI * BOLTZMANN * T * sigma[i][j]);
+            double B_th_tot = - tot * pow(L, 3) * AVOGADRO  / (PI * BOLTZMANN * T * sigma[i][j]);
+            std::cout << "Tracing total: " << l << " : " << B_th << ", " << B_part << ", " << B_th_tot << ", " << B_part / B_th_tot << std::endl;
+        }
         l += 2;
         
     } while (abs(part_sum / tot) > 5e-5); // abs(phase_shift_l.back() * (2 * l + 1) / phase_shifts.back()) > 1e-5);
@@ -1100,7 +1096,7 @@ double Quantum::integral_phase_shift(int i, int j, int l, double T){
     const auto integrand = [&](size_t idx){return phase_shifts[idx] * exp(pre_exp * pow(k_vals[idx], 2)) * pre_k * k_vals[idx];};
     const auto integrand_term = [&](size_t idx){return integrand(idx) + integrand(idx - 1);};
     double I = 0;
-    double I_term;
+    double I_term = 0;
     size_t I_idx = 1;
     for (; I_idx < phase_shifts.size(); I_idx++){
         I_term = 0.5 * (k_vals[I_idx] - k_vals[I_idx - 1]) * integrand_term(I_idx);
@@ -1446,14 +1442,10 @@ std::map<char, double> Quantum::second_virial_contribs(int i, int j, double T, c
 
     if (contribs_contain("t")){
         double B_th = 0;
-        size_t l = l_start;
-        double B_th_term;
 
-        double tol = 1e-8;
         double beta = 1 / (BOLTZMANN * T);
         double pre_exp = - beta * pow(HBAR, 2) / (2 * red_mass[i][j] * pow(sigma[i][j], 2));
         double pre_k = pow(HBAR, 2) / (red_mass[i][j] * sigma[i][j]);
-        double k_max = sqrt(log(tol) / pre_exp);
         trace_total_phase_shifts(i, j, T);
 
         const vector1d& k_vals = stored_total_phase_shifts[0];
