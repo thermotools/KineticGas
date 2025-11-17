@@ -1,6 +1,24 @@
 /*
 Various utility structures and enums
 
+    * StatePoint and OmegaPoint: Use for lookup of collision integrals and transfer lengths
+
+    * FrameOfReference: Enum for frames of reference
+    
+    * TransferLengthModel: Enum for transfer length models
+
+    * Units: Struct to hold reducing units (i.e. Lennard-Jones units) of a species.
+            See: KineticGas::get_reducing_units
+    
+    * StatisticType: Enum for Bose-Einstein/Fermi-Dirac/Boltzmann statistics
+
+    * FuncTable: Callable class for creating a tabulated function from some single-variate function
+                See: extensions.h::Tabulated for example usage.
+    * FuncSpline: Same as FuncTable, but uses splines
+
+    * KineticGasCache: There's currently a bunch of really messy caching going on. I'm in the process of isolating all this this class, so that management of thread-safe 
+        access to the caches can be centralized. That will also make it a lot easier to manage a `const`/`mutable` structure, since we can just have a `mutable` cache
+
 References:
     (I) The Kinetic Gas theory of Mie fluids, V. G. Jervell, Norwegian university of science and technology (2022)
     (II) Revised Enskog theory for Mie fluids: Prediction of diffusion coefficients, thermal diffusion coefficients,
@@ -185,6 +203,13 @@ inline bool str_contains(const std::string& str, const std::string& sub){
     return (str.find(sub) != std::string::npos);
 }
 
+/*
+    Create a tabulated version of a function
+
+    Tabulation uses N points, and when the tabulated function is called, uses an interpolation of degree "deg" between the points.
+
+    The interpolation degree "deg" must be odd.
+*/
 template<size_t N, size_t deg>
 class FuncTable{
 public:
@@ -274,6 +299,11 @@ private:
 
 };
 
+/*
+    Create a segmented spline from a function
+
+    Basically the FuncTable, except it uses N points, and creates splines of degree "deg".
+*/
 template<size_t N, size_t deg>
 class FuncSpline {
 public:
@@ -330,11 +360,9 @@ public:
 private:
     double x_min, x_max, dx;
 
-    // Compute sizes of knots and coefficients based on spline degree
     static constexpr size_t num_knots = N + deg + 1;
     static constexpr size_t num_coefficients = N;
 
-    // Spline knots and coefficients
     std::array<double, num_knots> knots{};
     std::array<double, num_coefficients> coefficients{};
 
@@ -351,7 +379,6 @@ private:
             }
         }
 
-        // Solve for B-spline coefficients using least squares
         Eigen::MatrixXd basis(N, N);
         for (size_t i = 0; i < N; ++i) {
             for (size_t j = 0; j < N; ++j) {
@@ -402,6 +429,6 @@ private:
             term2 = k * b_spline_basis_derivative(x, i + 1, k - 1, n - 1) / (knots[i + k + 1] - knots[i + 1]);
         }
 
-        return term1 - term2; // Derivative adjusts the recursive contributions
+        return term1 - term2;
     }
 };

@@ -6,6 +6,11 @@ Contains : See Factorial.h for documentation and comments.
 #include "Factorial.h"
 #include <shared_mutex>
 
+// ------------------------------------------------------------------------------------------------------------------------------------
+// *                                                FACTORIALS                                                                        *
+// * See further down for derivative-related code                                                                                     *
+// ------------------------------------------------------------------------------------------------------------------------------------
+
 // Returns the exponential of an integer base as a Product.
 Product ipow(int base, int expo){
     if (expo == 0){
@@ -106,7 +111,7 @@ Frac::Frac(Fac f) : numerator{f}, denominator{1} {}
 // denominator are equal), the numerator index is incremented, and the inner loop continues. Thus, a numerator and
 // denominator of [1, 2, 3, 4, 5], [1, 2, 3, 4, 5] will only require 5 equality checks, rather than 25, because once
 // the first factors are detected to cancel, the inner loop continues incrementing the outer loop while cancelling
-// the remaining factors. Similarly, the numerator/denominator of [1, 2, 3, 5, 5, 5], [1, 2, 3, 5, 5, 5] will require 9
+// the remaining factors. Similarly, the numerator/denominator of [1, 2, 3, 5, 5, 5], [1, 2, 3, 5, 5, 5] will require 6
 // equality checks, rather than the naive 36.
 double Frac::eval(){
     for (int ni = 0; ni < numerator.isize; ni++){
@@ -297,6 +302,15 @@ int factorial_tests(){
     return 0;
 }
 
+/* -------------------------------------------------------------------------------------------------------------------------------------
+                                                 DERIVATIVES                                                                        
+ Note: The integer-partition code is called *a lot* during evaluation of FH-corrected potentials. At some point, it was uncovered   
+        that a major bottleneck was simply all the calls to `new` incurred by building partitions recursively. This was resolved by
+        the slightly more convoluted code that is here now.
+        This code is basically built around the hunt for minimizing the number of vectors we need to initialize, keep that in mind while reading,
+        as it can make some of the choices a bit more comprehensible.
+ ------------------------------------------------------------------------------------------------------------------------------------- */
+
 double binom(int n, int k) {
     if (k > n) return 0;
     if ( (k == 0) || (k == n) ) return 1;
@@ -304,6 +318,7 @@ double binom(int n, int k) {
     return (Fac(n) / (Fac(k) * Fac(n - k))).eval();             
 }
 
+// Recursively fill the `partitions` vector with the integer partitions of N, with largest value <= m.
 void fill_partitions(const int N, int m, std::vector<std::vector<int>>& partitions){
     if (N == 0) {
         partitions.resize(1); partitions[0].clear(); return; // There is exactly one partition of zero: The empty partition.
@@ -322,9 +337,6 @@ void fill_partitions(const int N, int m, std::vector<std::vector<int>>& partitio
     }
     partitions.clear();
     std::vector<std::vector<int>> sub_partitions(N);
-    // for (auto& sub_inner : sub_partitions){
-    //     sub_inner.reserve(N);
-    // }
     int min_k = (N - m < 0) ? 0 : N - m;
     for (int k = min_k; k < N; k++){
         int n = N - k;
@@ -337,6 +349,8 @@ void fill_partitions(const int N, int m, std::vector<std::vector<int>>& partitio
     }
 }
 
+// Fill up the list of partitions `partitions` until we've added the element partitions[N].
+// See: get_partitions(int N), that's probably the function you're looking for. This is just a helper function.
 void extend_partitions(int N, std::vector<std::vector<std::vector<int>>>& partitions){
     if (partitions.size() >= N + 1) return;
     int k0 = partitions.size();
@@ -356,6 +370,7 @@ void extend_partitions(int N, std::vector<std::vector<std::vector<int>>>& partit
     }
 }
 
+// You're probably looking for the other one (below)
 std::vector<std::vector<int>> get_partitions(int N, int m){
     // Find all unique integer partitions of the number N, with largest value smaller than or equal to m
     // See: Memo on derivatives
@@ -363,20 +378,15 @@ std::vector<std::vector<int>> get_partitions(int N, int m){
     std::vector<std::vector<int>> partitions;
     fill_partitions(N, m, partitions);
     return partitions;
-
-    int min_k = (N - m < 0) ? 0 : N - m;
-    for (int k = min_k; k < N; k++){
-        int n = N - k;
-        std::vector<std::vector<int>> sub_partitions = get_partitions(k, n);
-        for (std::vector<int>& part : sub_partitions){
-            part.insert(part.begin(), n);
-            partitions.push_back(std::move(part));
-        }
-    }
-    return partitions;
 }
 
+// This function holds a static vector of all computed partitions, and returns const references to that vector.
+// As mentioned in the leading comment, this turned out to massively improve performance, since the major bottleneck of doing
+// calculations with FH-corrected potentials turned out to be the shitload of heap allocation that was being done to compute 
+// all the integer partitions.
 const std::vector<std::vector<int>>& get_partitions(int N) {
+    // all_partitions is organised such that all_partitions[N] = integer partitions of N
+    //  where each element of all_partitions[N] is a list corresponding to a specific partition.
     static std::vector<std::vector<std::vector<int>>> all_partitions = {{{}}};
     static std::shared_mutex mtx;
 
@@ -426,20 +436,13 @@ double partition_multiplicity(const std::vector<int>& partition){
     double num = factorial_d(n);
 
     int prev_counted = -1;
-    // counted.reserve(partition.size());
     for (const int p : partition){
         if (p == prev_counted) continue;
-        // bool counted = false;
-        // for (const int c : counted){
-        //     if (c == p) {counted = true; break;}
-        // }
-        // if (counted) continue;
         denom *= factorial_d(std::count(partition.begin(), partition.end(), p));
-        // counted.push_back(p);
         prev_counted = p;
     }
 
-    return num / denom; // + 0.5 To ensure correct flooring in case of funky floating point error.
+    return num / denom;
 }
 
 
@@ -577,8 +580,6 @@ double PolyExp::get_Gk(double x, int k, const vector1d& dg, const std::vector<st
 
 double PolyExp::get_Gk(double x, int k, const vector1d& dg) const {
     const std::vector<std::vector<int>>& partitions = get_partitions(k);
-    // int max_dg_order = ((expo.k_min >= 0) && (expo.k_max < k)) ? expo.k_max : k;
-    // const std::vector<std::vector<int>> partitions = get_partitions(k, max_dg_order);
     return get_Gk(x, k, dg, partitions);
 }
 

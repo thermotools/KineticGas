@@ -1,39 +1,22 @@
 /*
 Author: Vegard Gjeldvik Jervell
 Contains: 
-          - Classes to facilitate analytic simplification of fractions containing factorials to prevent overflow.
-          - Classes to compute analytical derivatives of functions of the form t(x) = f(x) exp[g(x)]
+        - Classes to facilitate analytic simplification of fractions containing factorials to prevent overflow.
+        - Classes to compute analytical derivatives of functions of the form t(x) = f(x) exp[g(x)]
 
-          -------------------------------    Factorials    ------------------------------------------------------
-          The Fac, Product and Frac classes represent analytic factorials, products and fractions. They overload
-          the relevant arithmetic operators (* and /), and are simplified analytically before numerical evaluation when
-          evaluated with <expression.eval()>
+    -------------------------------------------    Factorials    ------------------------------------------------------
+        The Fac, Product and Frac classes represent analytic factorials, products and fractions. They overload
+        the relevant arithmetic operators (* and /), and are simplified analytically before numerical evaluation when
+        evaluated with <expression.eval()>
 
-          Frac can be initialized from both Fac and Product, as a fraction with denominator = 1. Thus, all arithmetic
-          is only defined for the Frac class, and when eg. computing Fac * Product, the result is implicitly converted
-          to a fraction.
+        Frac can be initialized from both Fac and Product, as a fraction with denominator = 1. Thus, all arithmetic
+        is only defined for the Frac class, and when eg. computing Fac * Product, the result is implicitly converted
+        to a fraction.
 
-          The function 'ipow(int, int) is also defined. This function is an exponential that returns a Product (not
-          evaluated to an int), to ensure that Fractions containing powers can be simplified before evaluation.
+        The function 'ipow(int, int) is also defined. This function is an exponential that returns a Product (not
+        evaluated to an int), to ensure that Fractions containing powers can be simplified before evaluation.
 
-          -------------------------------    Derivatives    ------------------------------------------------------
-          The Polynomial and PolyExp classes represent polynomials with arbitrary (both positive and negative) integer
-          exponents and "t-functions" respectively, where "t-functions" refer to functions of the form t(x) = f(x) exp[g(x)],
-          with f(x) and g(x) polynomials.
-
-          Both the Polynomial and PolyExp class inherit from the "Term" abstract class, such that one can create 
-          pointers to "Term" in order to hold combinations of Polynomials and t-functions. However, note that the 
-          PolyExp class is implemented with specific handling of the case where g(x) = 0, such that there should be
-          no performance difference between using the objects
-
-          Polynomial f(<params>); // Just a polynomial
-          PolyExp t(f, Polynomial::zero()); // Exactly the same as f (because g(x) = 0).
-
-          The functions get_partition(int, int) and get_partition_multiplicity(const std::vector<int>&) are defined,
-          the first finds all integer partitions of a given number N, with largest element smaller than or equal to m.
-          The second computes the "multiplicity" of a given partition (see derivative memo for details).
-
-Working principle (Factorials):
+        Working principle (Factorials):
         A factorial is represented as a list of integers, up until the point of evaluation. Similarly, a Product is
         represented as a list of integers, and a single double, up until evaluation. A fraction is represented as
         a numerator and a denominator that are both Products.
@@ -45,10 +28,27 @@ Working principle (Factorials):
         This makes it possible to eg. evaluate Fac(100) / Fac(99) without any fear of overflow, and with minimal
         performance issues.
 
-Note: The max number of integers in a Product or a factorial (Fac) is 1000. Exceeding this number leads to undefined
-      behaviour (likely a segfault).
-      The 'Frac' class cannot contain a sum of products in the numerator or the denominator. Both the numerator and the
-      denominator must be pure products.
+        Note: The max number of integers in a Product or a factorial (Fac) is 1000. Exceeding this number leads to undefined
+            behaviour (likely a segfault).
+            The 'Frac' class cannot contain a sum of products in the numerator or the denominator. Both the numerator and the
+            denominator must be pure products.
+
+    -------------------------------------------    Derivatives    ------------------------------------------------------
+        The Polynomial and PolyExp classes represent polynomials with arbitrary (both positive and negative) integer
+        exponents and "t-functions" respectively, where "t-functions" refer to functions of the form t(x) = f(x) exp[g(x)],
+        with f(x) and g(x) polynomials.
+
+        Both the Polynomial and PolyExp class inherit from the "Term" abstract class, such that one can create 
+        pointers to "Term" in order to hold combinations of Polynomials and t-functions. However, note that the 
+        PolyExp class is implemented with specific handling of the case where g(x) = 0, such that there should be
+        no performance difference between using the objects
+
+        Polynomial f(<params>); // Just a polynomial
+        PolyExp t(f, Polynomial::zero()); // Exactly the same as f (because g(x) = 0).
+
+        The functions get_partition(int, int) and get_partition_multiplicity(const std::vector<int>&) are defined,
+        the first finds all integer partitions of a given number N, with largest element smaller than or equal to m.
+        The second computes the "multiplicity" of a given partition (see derivative memo for details).
 */
 #pragma once
 #include "KineticGas.h"

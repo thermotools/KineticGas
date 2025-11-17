@@ -291,6 +291,16 @@ double Quantum::JKWB_phase_shift(int i, int j, int l, double E){
     return k * (I1 + I2) * sigma[i][j];
 }
 
+/*
+    Solve the Schrödinger equation for the (i, j) interaction with angular momentum l and energy E
+    The innermost distance (r_0) is determined from the classically forbidden radius (distance of closest approach)
+    Args:
+        E : Dimensionless energy (E / eps[i][j])
+        r_end : Dimensionless outer distance (r / sigma[i][j])
+        step_size: Dimensionless step size (dr / sigma[i][j])
+    Returns:
+        [r, psi, delta] : position, wavefunction, local phase shift 
+*/
 vector2d Quantum::wave_function(int i, int j, int l, double E, double r_end, double step_size){
     E *= eps[i][j]; step_size *= sigma[i][j]; r_end *= sigma[i][j];
     const double k2 = 2. * red_mass[i][j] / (pow(HBAR, 2));
@@ -373,8 +383,14 @@ vector2d Quantum::wave_function(int i, int j, int l, double E, double r_end, dou
     return out;
 }
 
+/*
+    Compute the phase shift for the (i, j) interaction with angular momentum quantum number l, 
+    and reduced energy (E / eps[i][j]) E. 
+
+    r_lev seems to be a remnant for some method for detecting resonances, I'm highly unsure of whether it's actually used for anything anymore.
+    It looks like r_lev is the radial position of a node (root of the wave function) that indicates a resonance.
+*/
 double Quantum::quantum_phase_shift(int i, int j, int l, double E, double& r_lev){
-    // Input is reduced energy (E = E(Joule) / eps[i][j])
     E *= eps[i][j];
     double k2 = (2. * red_mass[i][j] / pow(HBAR, 2));
     double k = sqrt(k2 * E);
@@ -408,12 +424,15 @@ double Quantum::quantum_phase_shift(int i, int j, int l, double E, double& r_lev
         and assign them a vanishing phase-shift.
     */
     double r_cf = r_classical_forbidden(i, j, l, E / eps[i][j]);
-    // True if the effect of the potential is negligible
+    
+    // If the effect of the potential is negligible, the particles are "free"
     const auto particles_are_free = [&](double ri){return (abs(potential(i, j, ri) / E) < 1e-7)
                                                        && (abs(potential_derivative_r(i, j, ri) / (k * E)) < 1e-7);};
 
 
     if (particles_are_free(r_cf)) {r_lev = (l + 0.5) / k; return 0;}
+
+    // Set the starting point for integration based on the classically forbidden region (r < r_cf)
     double r0 = std::max(r_cf - 3 * (2 * PI / k), r_cf / 2);
 
     std::array<double, 5> r = {0, 0, 0, r0, r0 + step_size};
@@ -431,10 +450,10 @@ double Quantum::quantum_phase_shift(int i, int j, int l, double E, double& r_lev
         double gamma = (dpsi / psi[n_step]) - (1. / r[n_step]);
 
         double jl = sph_bessel(l, k * r[n_step]);
-        double djl = (l == 0) ? - sph_bessel(1, k * r[n_step]) : sph_bessel(l - 1, k * r[n_step]) - (l + 1) * jl / (k * r[n_step]); // bessel_deriv(l, k * r[n_step], 1);
+        double djl = (l == 0) ? - sph_bessel(1, k * r[n_step]) : sph_bessel(l - 1, k * r[n_step]) - (l + 1) * jl / (k * r[n_step]);
         double yl = sph_neumann(l, k * r[n_step]);
-        double dyl = (l == 0) ? - sph_neumann(1, k * r[n_step]) : sph_neumann(l - 1, k * r[n_step]) - (l + 1) * yl / (k * r[n_step]); // bessel_deriv(l, k * r[n_step], 2);
-        return atan((k * djl - gamma * jl) / (k * dyl - gamma * yl)); // local phase shift // pow(HBAR, 2) * (d2psi / psi[n_step]) / (2. * red_mass[i][j]); // 
+        double dyl = (l == 0) ? - sph_neumann(1, k * r[n_step]) : sph_neumann(l - 1, k * r[n_step]) - (l + 1) * yl / (k * r[n_step]); 
+        return atan((k * djl - gamma * jl) / (k * dyl - gamma * yl)); // local phase shift
     }; 
 
     size_t nsteps_init = 2;
@@ -483,6 +502,13 @@ double Quantum::phase_shift(int i, int j, int l, double E){
     return delta;
 }
 
+/*
+    Innermost radius of the classically forbidden regoion.
+
+    Basically: The distance of closest approach, computed using a classical interpretation of the angular momentum quantum number.
+
+    E : Dimensionless energy (E / eps[i][j])
+*/
 double Quantum::r_classical_forbidden(int i, int j, int l, double E){
     E *= eps[i][j];
     const double k2 = (2. * red_mass[i][j] / pow(HBAR, 2));
@@ -577,7 +603,16 @@ vector1d Quantum::get_levinson_r(int i, int j, int l, const vector1d k_vals){
     return r_levinson;
 }
 
+// See: Quantum::trace_absolute_phase_shifts
 void Quantum::fill_absolute_phase_shifts(int i, int j, int l, double next_k, int& n, vector1d& k_vals, vector1d& phase_shifts, vector1d& r_levinson){
+    /*
+        Recursively fill the vectors k_vals and phase_shifts to get a smooth curve spanning from the last existing value in k_vals to next_k.
+
+        Basically: Use the existing values to extrapolate to the next phase shift. Then, actually compute the next phase shift, and try to get the local "Levinson multiple" (n) right.
+        If our extrapolation misses the actual value by too much, something is wrong (we probably missed a resonance). In that case, recursively do half a step, and try the extrapolation again.
+
+        This procedure ensures that we can get absurdly high resolution just around the resonances, to make sure that we catch funny stuff like the tightly-spaced double resonances for argon.
+    */
     const auto E_from_k = [&](double k_val){return pow(k_val * HBAR, 2) / (2. * red_mass[i][j] * eps[i][j]);};
     double r_lev;
     double next_delta = quantum_phase_shift(i, j, l, E_from_k(next_k / sigma[i][j]), r_lev);
@@ -616,6 +651,7 @@ void Quantum::fill_absolute_phase_shifts(int i, int j, int l, double next_k, int
     r_levinson.push_back(r_lev);
 }
 
+// See: Quantum::trace_absolute_phase_shifts
 void Quantum::fill_absolute_phase_shifts_tail(int i, int j, int l, double next_k, int& n, vector1d& k_vals, vector1d& phase_shifts){
     const auto E_from_k = [&](double k_val){return pow(k_val * HBAR, 2) / (2. * red_mass[i][j] * eps[i][j]);};
     double next_delta = phase_shift(i, j, l, E_from_k(next_k / sigma[i][j]));
@@ -669,10 +705,52 @@ int Quantum::get_levinson_multiple(int i, int j, int l){
     return nl;
 }
 
+/*
+    Compute the absolute phase shift for wavevectors from k = 0 to k_max, with angular momentum l
+
+    k_max is in LJ units: pow(sigma[i][j], 2)
+
+    Result is stored in the `absolute_phase_shift_map` attribute.
+*/
 void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
+    /*
+        Be warned: The tracing of absolute phase shifts is probably the most convoluted code to follow in here. I'll try to explain what the major issues are, and how we handle them here.
+
+        The big picture: 
+            - When we compute a relative phase shift using Quantum::phase_shift, we get a number in (- pi / 2, pi / 2).
+            - The absolute phase shift at E = 0 ( <=> k = 0) is determined from the "Levinson multiple".
+            - The phase shifts are continious functions of energy (or, equivalently, the wavevector k)
+
+            We start at a very small energy (wavevector), and compute the relative phase shift at progressively higher energies. When we see a "jump", we adjust our offset such that
+            we get a smooth function. Further, at high energies, the calculation of single phase shifts becomes more expensive, while the absolute phase shifts become better behaved,
+            so we want to increase our step size at high energies (hence, the "tail"- methods).
+
+            Finally, we can have what are known as "resonances", which become especially prevalent for e.g. Argon (as compared to helium or hydrogen). 
+            These "resonances" are sudden jumps (not discontinuities) in the absolute phase shift, that can easily span a distance of more than pi. It is these resonances that make life
+            hard for us. See the reference by Dardi and Dahler for more on the resonances.
+        
+        The details:
+            In the following, I'll refer to the jumps caused by the arctan-function cutting at (-pi / 2, pi / 2) as "pi-boundaries".
+
+            What we do here is essentially the following: Start at a very low energy, and make some initial steps, while praying to god that we don't hit a resonance at absurdly low energies.
+
+            Once we've made some steps, we can create a second order linear extrapolation from our existing points, and use that to predict whether we will cross a pi-boundary at the next step or not.
+
+            When we make a step, we do it recursively, using Quantum::fill_absolute_phase_shifts. This function takes our current list of phase shifts and energies, as well as our current pi-offset,
+            and computes the next phase shift. HOWEVER: It checks how well our extrapolation worked, and will recursively refine our k-grid between our last step and the next step, until we get
+            a smooth curve. This means that our k-grid is *NOT* uniformly spaced (which makes the extrapolation slightly more messy).
+
+            As an additional tracking to detect resonances, we track the "Levinson radius". This is the outermost root of the wavefunction that is inside the classically forbidden region.
+            This radius will make a discontiuous jump of about one wavelength at the point where there is a resonance.  
+
+            Finally, in order to improve our step sizes, we use the (numerical) third derivative of the phase shifts to estimate our extrapolation error. Thus, we can reduce our step
+            size when we have a large third derivative in order to prevent unexpected massive extrapolation errors. 
+    */
     constexpr bool verbose = false;
     const auto E_from_k = [&](double k_val){return pow(k_val * HBAR, 2) / (2. * red_mass[i][j] * eps[i][j]);};
     int n = get_levinson_multiple(i, j, l);
+
+    // First, create the element in the cache if it doesn't exist.
     {
         std::lock_guard<std::mutex> loc(abs_phase_shift_map_mutex);
         const auto pos = absolute_phase_shift_map.find(l);
@@ -683,12 +761,14 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
         }
     }
 
+    // References for easy access later
     vector1d& k_vals = absolute_phase_shift_map[l][0];
     vector1d& phase_shifts = absolute_phase_shift_map[l][1];
     double r_lev;
     vector1d r_levinson(k_vals.size());
 
     if (k_vals.back() >= k_max) return;
+
 
     if (l >= JKWB_l_limit){
         double dk = k_max / 100.0;
@@ -713,9 +793,13 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
     
     if (verbose) std::cout << "Starting trace : " << l << ", " << k_max << std::endl;
     if (verbose) std::cout << "n0, d0 : " << n << ", " << k_vals[0] << ", " << phase_shifts[0] / PI << std::endl;
+    
     if (k_vals.size() == 1) r_levinson[0] = NAN;
     double prev_delta = quantum_phase_shift(i, j, l, E_from_k(k / sigma[i][j]), r_levinson.back());
+
     if (verbose) std::cout << "n, d : " << n << ", " << prev_delta / PI << std::endl;
+
+    // Do some initial steps, hope that we don't hit any resonances
     for (; k_vals.size() < 5;){
         k += dk;
         r_lev = n;
@@ -733,10 +817,12 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
     }
     int n_step = k_vals.size() - 1;
     
+    // Need to solve some linear equations later when we do second order extrapolation
     const Eigen::Vector3d b1 = {1, 0, 0};
     const Eigen::Vector3d b2 = {0, 1, 0};
     const Eigen::Vector3d b3 = {0, 0, 1};
 
+    // Our step sizes aren't uniform (because of the recursive filling in fill_absolute_phase_shifts)
     std::array<double, 3> dk_vals;
     dk_vals[0] = k_vals[2] - k_vals[1];
     dk_vals[1] = k_vals[3] - k_vals[1];
@@ -766,10 +852,6 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
     c0 = - (c(0) + c(1) + c(2));
     dpdk = - (c0 * phase_shifts[n_step] + c(0) * phase_shifts[n_step - 1] + c(1) * phase_shifts[n_step - 2] + c(2) * phase_shifts[n_step - 3]);
     
-    // c = A_piv.solve(b2);
-    // c0 = - (c(0) + c(1) + c(2));
-    // double d2pdk2 = 2 * (c0 * phase_shifts[n_step] + c(0) * phase_shifts[n_step - 1] + c(1) * phase_shifts[n_step - 2] + c(2) * phase_shifts[n_step - 3]);
-
     c = A_piv.solve(b3);
     c0 = - (c(0) + c(1) + c(2));
     d3pdk3 = - 6 * (c0 * phase_shifts[n_step] + c(0) * phase_shifts[n_step - 1] + c(1) * phase_shifts[n_step - 2] + c(2) * phase_shifts[n_step - 3]);
@@ -779,6 +861,8 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
                       && (phase_shifts.back() < - PI / 8) 
                      );
 
+    // Our attempted step size will be between the min_dk and max_dk, and determined based on our extrapolation quality.
+    // The extrapolation quality is estimated from the third derivative, which gives us an error estimate on the extrapolation.
     double extrapol_tol = 1e-2;
     double max_dk = 5e-1;
     double min_dk = 1e-2;
@@ -790,11 +874,9 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
     size_t n_jump = 0;
     bool worst_is_over{false};
     double dr0_k, dr0_k2, dr0_k3;
-    // extrapol_tol = 1e-5;
-    // max_dk = 1e-2;
-    // min_dk = 1e-6;
+
+    // When the phase shifts are "linear", we've entered the well-behaved "tail" and can move to a cheaper tracing method, where we know that the phase shifts are strictly decreasing (no more resonances)
     while ((k + max_dk < k_max) && (!is_linear)){
-        // std::array<double, 3> extrapol_coeff = quadric_extrapolate_coeff(k_vals, phase_shifts);
         n_step = k_vals.size() - 1;
 
         dk_vals[0] = k_vals[n_step] - k_vals[n_step - 1];
@@ -873,6 +955,9 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
              && (*(k_vals.end() - 2)) - (*(k_vals.end() - 3)) > min_dk
              && l != 0
              && 2 * red_mass[i][j] > 30e-3 / AVOGADRO){
+            
+            // The Levinson radius has just jumped, and we haven't caught the resonance in any other way. Now we need to "manually" jump the resonance.
+
             done_jump = true; n_jump++;
             n += 1;
             if (verbose) std::cout << "Jumping resonance at (" << l << ", " << k << ") : " << prev_r0 / sigma[i][j] << ", " << r_levinson.back() / sigma[i][j] 
@@ -903,6 +988,7 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
         }
     }
 
+    // Now we're in the "tail", where the phase shifts are well behaved, strictly decreasing functions, and we don't have any resonances
     max_dk = 5;
     min_dk = 0.5;
     extrapol_tol = 1e-2;
@@ -932,10 +1018,14 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
     }
 
     if (abs(k - k_max) > 1e-8) fill_absolute_phase_shifts(i, j, l, k_max, n, k_vals, phase_shifts, r_levinson);
-
-
 }
 
+/*
+    Compute the "total phase shift" (i.e. the sum of the absolute phase shifts)
+    And store the result in the "stored_total_phase_shifts"
+
+    The upper limit for the wavevector of relative motion is determined from the temperature and a Boltzmann factor
+*/
 void Quantum::trace_total_phase_shifts(int i, int j, double T){
     double tol = 1e-8;
     double beta = 1 / (BOLTZMANN * T);
@@ -1027,6 +1117,7 @@ double Quantum::integral_phase_shift(int i, int j, int l, double T){
     return I / pow(sigma[i][j], 3);
 }
 
+// The elements of the "A" vector given by Meeks et al. for the calculation of quantum mechanical collision integrals.
 double Quantum::cross_section_A(int n, int l, size_t k){
     switch (k) {
     case 0:
@@ -1045,8 +1136,9 @@ double Quantum::cross_section_A(int n, int l, size_t k){
     }
 }
 
+// The integrand of the quantum mechanical cross section
+// Input is reduced energy (E = E(Joule) / eps[i][j])
 double Quantum::cross_section_kernel(int i, int j, int n, int l, double E){
-    // Input is reduced energy (E = E(Joule) / eps[i][j])
     switch (n){
     case 0: return (2 * l + 1) * pow(sin(phase_shift(i, j, l, E)), 2);
     case 1: return (l + 1) * pow(sin(phase_shift(i, j, l, E) - phase_shift(i, j, l + 1, E)), 2);
@@ -1068,8 +1160,9 @@ double Quantum::cross_section_kernel(int i, int j, int n, int l, double E){
     }
 }
 
+// Quantum mechanical cross section.
+// Input is reduced energy (E = E(Joule) / eps[i][j])
 double Quantum::cross_section(int i, int j, const int n, const double E){
-    // Input is reduced energy (E = E(Joule) / eps[i][j])
     if (E < 5e-4) return cross_section(i, j, n, 5e-4); // Cross sections approach constant value at small E, but numerical solver fails for very small E
     if (is_singlecomp) i = j;
     
@@ -1129,7 +1222,7 @@ double Quantum::quantum_omega(int i, int j, int n, int s, double T){
         double pref = exp(- Eb) * pow(Eb, s + 1);
         return pref * Q;
     };
-    double maxpoint = s + 1.;
+    double maxpoint = s + 1.; // Approximately the location of the peak of the integrand
     double I = simpson_inf(kernel, 0, maxpoint / 3);
     double val = I * sqrt(2. / (PI * beta * red_mass[i][j]));
     return val;
@@ -1162,6 +1255,9 @@ double Quantum::omega(int i, int j, int l, int r, double T){
     return pos->second;
 }
 
+/*
+    The "scattering volume" is the sum over the phase shifts from l = 0 to l_max at energy E
+*/
 double Quantum::partial_scattering_volume(int i, int j, double E, int l_max){
     int l, l_step{2};
     if (is_singlecomp) i = j;
@@ -1186,6 +1282,7 @@ double Quantum::partial_scattering_volume(int i, int j, double E, int l_max){
     return S;
 }
 
+// Sums the partial_scattering volume until convergence
 double Quantum::scattering_volume(int i, int j, double E){
     int l, l_step{2};
     if (is_singlecomp) i = j;
@@ -1211,6 +1308,8 @@ double Quantum::scattering_volume(int i, int j, double E){
     return S;
 }
 
+// Compute the second virial coefficient at a bunch of different temperatures. 
+// Multithreads the different calculations.
 vector1d Quantum::second_virial(int i, int j, const vector1d& T){
     const size_t Ncores = 8;
     size_t T_idx = 0;
@@ -1246,6 +1345,7 @@ double Quantum::bound_second_virial(int i, int j, double T){
     return second_virial_contribs(i, j, T, "b")['b'];
 }
 
+// The high-temperature limit of the bound contribution to the second virial coefficient.
 double Quantum::bound_second_virial_lim(int i, int j){
     if (!quantum_is_active) return Spherical::bound_second_virial_lim(i, j);
 
@@ -1273,6 +1373,7 @@ double Quantum::bound_second_virial_lim(int i, int j){
     return Bb;
 }
 
+// Basically the negative of the bound second virial coefficient. See the Dardi & Dahler article on the second virial of argon
 double Quantum::dimer_constant(int i, int j, double T){
     set_internals(0, T, {1.});
     if (!quantum_is_active) return Spherical::dimer_constant(i, j, T);
@@ -1395,6 +1496,7 @@ std::map<char, double> Quantum::second_virial_contribs(int i, int j, double T, c
     return B_contribs;
 }
 
+// Second virial using JKWB for all phase shifts
 double Quantum::semiclassical_second_virial(int i, int j, double T){
     double tmp_JKWB_E_limit = JKWB_E_limit;
     int tmp_JKWB_l_limit = JKWB_l_limit;

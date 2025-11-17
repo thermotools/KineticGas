@@ -19,7 +19,7 @@ E (\mathrm{cm}^{-1})  = E (\mathrm{K}) \cdot 10^{-2} \cdot \mathrm{Boltzmann} / 
 $$
 
 The files are organised such that each line indicates a vibrational state, with the first line being the ground state. 
-Each column indicates a rotational state, with the first column being the ground state.
+Each column indicates a rotational state, with the first column being the l = 0 state.
 
 The file
 

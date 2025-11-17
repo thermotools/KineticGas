@@ -10,6 +10,23 @@ Model classes such as `MieKinGas` implement a pair potential and, if they are to
 the function `model_rdf`, which returns the RDF at contact. Note that specifically `MieKinGas` also overrides the 
 collision integrals (`omega`) in `Spherical` to use a correlation when applicable.
 
+* Various "multiparameter" potentials (typically used for fitting to ab initio data) are found in `multiparam.h`
+* Feynman-Hibbs corrections: See `extensions.h` (the `FH_Corrected` template class)
+* `Quantum` is an abstract class implementing quantum-mechanical calculations
+  * Any class implementing a spherical potential can inherit from `Quantum` instead of `Spherical` to get access to this stuff
+
+The `KineticGas` implementation is split up a bit:
+* KineticGas.cpp: "base-functionality", which basically consists of obtaining the Sonine polynomial expansion coefficients
+* KineticGas_properties.cpp: The actual transport-property methods
+* KineticGas_mthr.cpp: Multithreading-related stuff (pre-calculation of expensive stuff)
+
+The `Spherical` class is also split in two files:
+* Spherical.cpp: All the base-algorithms for working with spherical potentials
+* transfer_lengths.cpp: Transfer length models
+
+We also have `eos_interface.h`, which contains some abstract templated stuff that lets us cleanly wrap an equation of state implemented some other place.
+This is used when wrapping thermopack, and also if we use an equation of state implemented in python.
+
 # Utility modules
 
 ## Global parameters and utility structs

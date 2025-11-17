@@ -1,6 +1,23 @@
+/*
+    Various template classes that can be used to extend a KineticGas class
+
+    Tabulated: 
+        A template that will tabulate the potential and derivatives
+    
+    Splined:
+        Same as above, but uses splines
+    
+    FH_Corrected:
+        Modifies a class to use an FH corrected potential. Requires that the base class implements `potential_dn`, the n'th derivative of the potential
+*/
 #pragma once
 #include "utils.h"
 
+/*
+    T: A class inheritting from KineticGas
+    N: The number of tabulated points
+    deg: Will use interpolation of degree "deg" between points
+*/
 template<typename T, size_t N, size_t deg>
 class Tabulated : public T {
 public:
@@ -171,6 +188,9 @@ private:
 
 };
 
+/*
+    FH-corrected models are created by using this template in combination with the base model
+*/
 template<typename T>
 class FH_Corrected : public T {
 public:
@@ -212,9 +232,6 @@ public:
         for (size_t n = 1; n <= FH_order; n++){
             Dn *= Db / n;
             u += Dn * (T::potential_dn(i, j, r, 2 * n) + 2 * n * T::potential_dn(i, j, r, 2 * n - 1) / r);
-            // double nfac = 1;
-            // for (size_t ni = 2; ni <= n; ni++) nfac *= ni;
-            // u += pow(D_factors[i][j] / (BOLTZMANN * current_T), n) * T::potential_dn(i, j, r, 2 * n) / nfac;
         }
         return u;
     }
@@ -233,9 +250,6 @@ public:
             ur += Dn * (du[2 * n + 1]
                         + 2 * n * (du[2 * n] / r - du[2 * n - 1] / pow(r, 2))
                       );
-            // double nfac = 1;
-            // for (size_t ni = 2; ni <= n; ni++) nfac *= ni;
-            // ur += pow(D_factors[i][j] / (BOLTZMANN * current_T), n) * T::potential_dn(i, j, r, 2 * n + 1) / nfac;
         }
         return ur;
     }
@@ -254,23 +268,11 @@ public:
             urr += Dn * (du[2 * n + 2]
                          + 2 * n * (du[2 * n + 1] / r - 2 * du[2 * n] / pow(r, 2) + 2 * du[2 * n - 1] / pow(r, 3))
                         );
-            // double nfac = 1;
-            // for (size_t ni = 2; ni <= n; ni++) nfac *= ni;
-            // urr += pow(D_factors[i][j] / (BOLTZMANN * current_T), n) * T::potential_dn(i, j, r, 2 * n + 2) / nfac;
         }
         return urr;
     }
 
     using T::potential_dn;
-    // double potential_dn(int i, int j, double r, size_t n) override {
-    //     double un = T::potential_dn(i, j, r, n);
-    //     for (size_t k = 1; k <= FH_order; k++){
-    //         double kfac = 1;
-    //         for (size_t ki = 2; ki <= k; ki++) kfac *= ki;
-    //         un += pow(D_factors[i][j] / (BOLTZMANN * current_T), k) * T::potential_dn(i, j, r, 2 * k + n) / kfac;
-    //     }
-    //     return un;
-    // }
 
     using T::get_sigma_eff;
     double get_sigma_eff(int i, int j, double temp) override {
