@@ -6,7 +6,7 @@ permalink: /vcurrent/miekingas_methods.html
 ---
 
 <!--- 
-Generated at: 2024-10-16T17:34:53.825106
+Generated at: 2025-11-14T16:38:13.687700
 This is an auto-generated file, generated using the script at KineticGas/pyUtils/markdown_from_docstrings.py
 The file is created by parsing the docstrings of the methods in the 
 MieKinGas class. For instructions on how to use the parser routines, see the
@@ -58,7 +58,7 @@ value
 
 &nbsp;&nbsp;&nbsp;&nbsp; **eps_div_k (1D array) :** 
 
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  epsilon parameter / Boltzmann constant [-]
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;  epsilon parameter / Boltzmann constant [K]
 
 &nbsp;&nbsp;&nbsp;&nbsp; **la, lr (1D array) :** 
 

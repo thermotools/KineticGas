@@ -8,6 +8,7 @@ permalink: /vcurrent/advanced.html
 * [Selecting transfer length models](#selecting-transfer-length-models)
 * [Modifying and adding fluids](#modifying-and-adding-fluids)
 * [Implementing new potentials](#implementing-new-potentials)
+* [Adjusting available cores](#adjusting-available-cores)
 
 ## Selecting transfer length models
 
@@ -112,3 +113,17 @@ class MyNewPotential(py_KineticGas)
         self.cpp_kingas = cpp_MyNewPotential(self.mole_weights, self.fluids['param 1'], self.fluids['param 2'], '... etc')
         self.eos = <Some ThermoPack EoS>(comps)
 ```
+
+# Adjusting available cores
+
+The limiting factors for computational speed when computing transport properties is the computation of collision integrals, and the computation of transfer lengths. 
+Both collision integrals and transfer lengths are set up with caching mechanisms, such that they will be re-computed as seldom as possible. Additionally, their
+computation is split among several threads whenever a transport property is computed. The general procedure is
+
+- Start computation of Transport property
+- Identify neccessary collision integrals and transfer lengths
+- Send computation of each collision integral and transfer length to a new thread, storing results in the cache
+- Join threads
+- Proceed with transport property computation, retrieving values from cache as needed.
+
+The number of threads to split the computation among is set in the variable `Ncores` in `KineticGas_mthr.cpp`.

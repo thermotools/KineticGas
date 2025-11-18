@@ -1,6 +1,6 @@
 <!--- 
-Generated at: 2025-09-12T17:43:51.253469
-This is an auto-generated file, generated using the script at KineticGas/docs/join_docs.py
+Generated at: 2025-11-14T16:26:58.430173
+This is an auto-generated file, generated using the script at KineticGas/pyUtils/join_docs.py
 The file is created by joining the contents of the files
     KineticGas/docs/markdown/
         readme_parts/header.md
@@ -45,7 +45,7 @@ on `PyPI`.
    * [File system](#file-system)
    * [Fluid indentifiers](#fluid-identifiers)
 
-# Please Cite
+# References
 
 KineticGas has been developed throughout several works. If you are referencing the package, please cite one or more of the associated works
 
@@ -60,6 +60,10 @@ KineticGas has been developed throughout several works. If you are referencing t
 * The Lennard-Jones spline fluid
   * [Viscosity, thermal conductivity and self-diffusion coefficient of the Lennard Jones spline fluid: Evaluation of theories for a short-ranged potential](https://doi.org/10.1016/j.fluid.2025.114584) (J. S. Løken, V. G. Jervell, M. Hammer, B. Hafskjold, T. T. Trinh and Ø. Wilhelmsen, 2025)
   * [Revised Enskog theory and extended corresponding states models for the transport properties of the Lennard-Jones/spline fluid](https://ntnuopen.ntnu.no/ntnu-xmlui/handle/11250/3182899) (Johannes S. Løken, 2025)
+* Quantum mechanical methods and Feynman-Hibbs corrections
+  * [The limits of Feynman–Hibbs corrections in capturing quantum-nuclear contributions to thermophysical properties](https://doi.org/10.1063/5.0295049) (V. G. Jervell and Ø. Wilhelmsen, J. Chem. Phys. 2025)
+* Ab initio reference potentials
+  * Argon, Neon, Hydrogen and Helium: [The limits of Feynman–Hibbs corrections in capturing quantum-nuclear contributions to thermophysical properties](https://doi.org/10.1063/5.0295049) (V. G. Jervell and Ø. Wilhelmsen, J. Chem. Phys. 2025)
 
 Cite this repository as
 
@@ -580,6 +584,7 @@ recommended to use it instead of manually specifying , in case keys for differen
 * [Selecting transfer length models](#selecting-transfer-length-models)
 * [Modifying and adding fluids](#modifying-and-adding-fluids)
 * [Implementing new potentials](#implementing-new-potentials)
+* [Adjusting available cores](#adjusting-available-cores)
 
 ## Selecting transfer length models
 
@@ -684,6 +689,20 @@ class MyNewPotential(py_KineticGas)
         self.cpp_kingas = cpp_MyNewPotential(self.mole_weights, self.fluids['param 1'], self.fluids['param 2'], '... etc')
         self.eos = <Some ThermoPack EoS>(comps)
 ```
+
+# Adjusting available cores
+
+The limiting factors for computational speed when computing transport properties is the computation of collision integrals, and the computation of transfer lengths. 
+Both collision integrals and transfer lengths are set up with caching mechanisms, such that they will be re-computed as seldom as possible. Additionally, their
+computation is split among several threads whenever a transport property is computed. The general procedure is
+
+- Start computation of Transport property
+- Identify neccessary collision integrals and transfer lengths
+- Send computation of each collision integral and transfer length to a new thread, storing results in the cache
+- Join threads
+- Proceed with transport property computation, retrieving values from cache as needed.
+
+The number of threads to split the computation among is set in the variable `Ncores` in `KineticGas_mthr.cpp`.
 
 # Structure
 

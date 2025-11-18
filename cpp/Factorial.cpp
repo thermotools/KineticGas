@@ -4,6 +4,12 @@ Contains : See Factorial.h for documentation and comments.
 */
 
 #include "Factorial.h"
+#include <shared_mutex>
+
+// ------------------------------------------------------------------------------------------------------------------------------------
+// *                                                FACTORIALS                                                                        *
+// * See further down for derivative-related code                                                                                     *
+// ------------------------------------------------------------------------------------------------------------------------------------
 
 // Returns the exponential of an integer base as a Product.
 Product ipow(int base, int expo){
@@ -40,6 +46,17 @@ long long Fac::eval(){
         }
         return r;
     }
+}
+
+double Fac::eval_d(){
+    if (val == 0 || val == 1){
+        return 1;
+    }
+    double r = 1;
+    for (int x = 1; x <= val; x++){
+        r *= x;
+    }
+    return r;
 }
 
 Product::Product(){
@@ -94,7 +111,7 @@ Frac::Frac(Fac f) : numerator{f}, denominator{1} {}
 // denominator are equal), the numerator index is incremented, and the inner loop continues. Thus, a numerator and
 // denominator of [1, 2, 3, 4, 5], [1, 2, 3, 4, 5] will only require 5 equality checks, rather than 25, because once
 // the first factors are detected to cancel, the inner loop continues incrementing the outer loop while cancelling
-// the remaining factors. Similarly, the numerator/denominator of [1, 2, 3, 5, 5, 5], [1, 2, 3, 5, 5, 5] will require 9
+// the remaining factors. Similarly, the numerator/denominator of [1, 2, 3, 5, 5, 5], [1, 2, 3, 5, 5, 5] will require 6
 // equality checks, rather than the naive 36.
 double Frac::eval(){
     for (int ni = 0; ni < numerator.isize; ni++){
@@ -283,4 +300,290 @@ int factorial_tests(){
         return 26;
     }
     return 0;
+}
+
+/* -------------------------------------------------------------------------------------------------------------------------------------
+                                                 DERIVATIVES                                                                        
+ Note: The integer-partition code is called *a lot* during evaluation of FH-corrected potentials. At some point, it was uncovered   
+        that a major bottleneck was simply all the calls to `new` incurred by building partitions recursively. This was resolved by
+        the slightly more convoluted code that is here now.
+        This code is basically built around the hunt for minimizing the number of vectors we need to initialize, keep that in mind while reading,
+        as it can make some of the choices a bit more comprehensible.
+ ------------------------------------------------------------------------------------------------------------------------------------- */
+
+double binom(int n, int k) {
+    if (k > n) return 0;
+    if ( (k == 0) || (k == n) ) return 1;
+    if ( (k == 1) || (k == n - 1) ) return n;
+    return (Fac(n) / (Fac(k) * Fac(n - k))).eval();             
+}
+
+// Recursively fill the `partitions` vector with the integer partitions of N, with largest value <= m.
+void fill_partitions(const int N, int m, std::vector<std::vector<int>>& partitions){
+    if (N == 0) {
+        partitions.resize(1); partitions[0].clear(); return; // There is exactly one partition of zero: The empty partition.
+    }
+    if (N == 1){
+        partitions.resize(1); partitions[0].resize(1); partitions[0][0] = 1; return;
+    }
+    if (m < 0) m = N;
+    if (m == N){
+        switch (N){
+        case 2: partitions = {{2}, {1, 1}}; return;
+        case 3: partitions = {{3}, {2, 1}, {1, 1, 1}}; return;
+        case 4: partitions = {{4}, {3, 1}, {2, 2}, {2, 1, 1}, {1, 1, 1, 1}}; return;
+        case 5: partitions = {{5}, {4, 1}, {3, 2}, {3, 1, 1}, {2, 2, 1}, {2, 1, 1, 1}, {1, 1, 1, 1, 1}}; return;
+        }
+    }
+    partitions.clear();
+    std::vector<std::vector<int>> sub_partitions(N);
+    int min_k = (N - m < 0) ? 0 : N - m;
+    for (int k = min_k; k < N; k++){
+        int n = N - k;
+        fill_partitions(k, n, sub_partitions);
+        partitions.reserve(partitions.size() + sub_partitions.size());
+        for (std::vector<int>& part : sub_partitions){
+            part.insert(part.begin(), n);
+            partitions.emplace_back(std::move(part));
+        }
+    }
+}
+
+// Fill up the list of partitions `partitions` until we've added the element partitions[N].
+// See: get_partitions(int N), that's probably the function you're looking for. This is just a helper function.
+void extend_partitions(int N, std::vector<std::vector<std::vector<int>>>& partitions){
+    if (partitions.size() >= N + 1) return;
+    int k0 = partitions.size();
+    partitions.resize(N + 1);
+    for (int k = k0; k <= N; k++){
+        for (size_t m = k; m > 0; m--){
+            for (const std::vector<int>& prev_part : partitions[k - m]){
+                bool include_part = true;
+                for (const int p : prev_part){
+                    if (p > m) {include_part=false; break;}
+                }
+                if (!include_part) continue;
+                partitions[k].push_back(prev_part);
+                partitions[k].back().insert(partitions[k].back().begin(), m);
+            }
+        }
+    }
+}
+
+// You're probably looking for the other one (below)
+std::vector<std::vector<int>> get_partitions(int N, int m){
+    // Find all unique integer partitions of the number N, with largest value smaller than or equal to m
+    // See: Memo on derivatives
+    if (m < 0) m = N;
+    std::vector<std::vector<int>> partitions;
+    fill_partitions(N, m, partitions);
+    return partitions;
+}
+
+// This function holds a static vector of all computed partitions, and returns const references to that vector.
+// As mentioned in the leading comment, this turned out to massively improve performance, since the major bottleneck of doing
+// calculations with FH-corrected potentials turned out to be the shitload of heap allocation that was being done to compute 
+// all the integer partitions.
+const std::vector<std::vector<int>>& get_partitions(int N) {
+    // all_partitions is organised such that all_partitions[N] = integer partitions of N
+    //  where each element of all_partitions[N] is a list corresponding to a specific partition.
+    static std::vector<std::vector<std::vector<int>>> all_partitions = {{{}}};
+    static std::shared_mutex mtx;
+
+    {
+        std::shared_lock lock(mtx);
+        if (all_partitions.size() > static_cast<size_t>(N)) {
+            return all_partitions[N];
+        }
+    }
+
+    {
+        std::unique_lock lock(mtx);
+        if (all_partitions.size() <= static_cast<size_t>(N)) {
+            extend_partitions(N, all_partitions);
+        }
+        return all_partitions[N];
+    }
+}
+
+
+std::vector<std::vector<std::vector<int>>> build_partitions(int N, int maxval){
+    if (maxval < 0) maxval = N;
+    std::vector<std::vector<std::vector<int>>> partitions(1, std::vector<std::vector<int>>());
+    partitions.reserve(N + 1);
+    partitions[0] = {{}};
+    extend_partitions(N, partitions);
+    return partitions;
+}
+
+inline double factorial_d(int n){
+    double v = 1;
+    for (; n > 1; n--) v *= n;
+    return v;
+}
+
+double partition_multiplicity(const std::vector<int>& partition){
+    // The "Multiplicity" of a partition is the number of ways a set of N elements can be subdivided into subsets of k_1, k_2, ... elements
+    // For N = k_1 + k_2 + ...
+    // See: Memo on derivatives
+    int n = 0;
+    double denom = 1;
+    for (const int p : partition){
+        n += p;
+        denom *= factorial_d(p);
+    }
+
+    double num = factorial_d(n);
+
+    int prev_counted = -1;
+    for (const int p : partition){
+        if (p == prev_counted) continue;
+        denom *= factorial_d(std::count(partition.begin(), partition.end(), p));
+        prev_counted = p;
+    }
+
+    return num / denom;
+}
+
+
+Polynomial::Polynomial(int k_min, int k_max, std::vector<double> coeff, int k_step) 
+    : k_min{k_min}, k_max{k_max}, k_step{k_step},
+    _is_linear{((k_min == 0) || (k_min == 1)) && (k_max == 1)}, 
+    _is_constant{(k_min == 0) && (k_max == 0)}, 
+    coeff(coeff)
+    {
+        if ((k_max - k_min) % k_step != 0) {
+            throw std::out_of_range("Polynomial: k_min - k_max is not a multiple of k_step : (" + std::to_string(k_min) + ", " + std::to_string(k_max) + ", " + std::to_string(k_step) + ")");
+        }
+        if (((k_max - k_min) / k_step) + 1 != coeff.size()) {
+            throw std::out_of_range("Polynomial: Wrong number of coefficients (Expected " + std::to_string(((k_max - k_min) / k_step) + 1) + ", got " + std::to_string(coeff.size())
+                                    + ")\n(min, max, step) = (" + std::to_string(k_min) + ", " + std::to_string(k_max) + ", " + std::to_string(k_step) + ")");
+        }
+    }
+
+double Polynomial::operator()(double x) const {
+    if (_is_constant) return coeff[0];
+    double p = 0;
+    size_t C_idx = 0;
+    for (int k = k_min; k <= k_max; k += k_step){
+        p += coeff[C_idx++] * pow(x, k);
+    }
+    return p;
+}
+
+double Polynomial::derivative(double x, int n) const {
+    if (n == 0) return this->operator()(x);
+    if (_is_constant) return 0;
+    if (_is_linear && (n > 1)) return 0;
+    if (k_min >= 0 && n > k_max) return 0;
+
+    double p = 0;
+    int prefactor = ((n % 2 == 0) ? 1 : -1);
+    int max_k_negative = (k_max < 0) ? k_max : -1;
+    size_t C_idx = 0;
+    int k = k_min;
+    double px = pow(x, k - n);
+    double px_step = pow(x, k_step);
+    for (; k <= max_k_negative; k += k_step){
+        p += prefactor * partialfactorial(- k - 1, n - k - 1) * coeff[C_idx++] * px; // pow(x, k - n);
+        px *= px_step;
+    }
+    for (; k < n; k += k_step) C_idx++;
+    px = pow(x, k - n);
+    for (; k <= k_max; k += k_step){
+        // if (k < n){C_idx++; continue;}
+        p += partialfactorial(k - n, k) * coeff[C_idx++] * px; // pow(x, k - n);
+        px *= px_step; 
+    }
+    return p;
+}
+
+std::ostream& operator<<(std::ostream& strm, const Polynomial& p){
+    size_t C_idx = 0;
+    for (int k = p.k_min; k < p.k_max; k += p.k_step){
+        strm << "(" << p.coeff[C_idx++] << ", " << k << ") + ";
+    }
+    strm << "(" << p.coeff[C_idx++] << ", " << p.k_max << ")";
+    return strm;
+}
+
+PolyExp::PolyExp(Polynomial pref, Polynomial expo)
+    : pref{pref}, expo{expo}
+    {}
+
+PolyExp::PolyExp(Polynomial pref, double expo)
+    : pref{pref}, expo{Polynomial::constant(expo)}
+    {}
+
+PolyExp::PolyExp(double pref, Polynomial expo)
+    : pref{Polynomial::constant(pref)}, expo{expo}
+    {}
+
+double PolyExp::operator()(double x) const {
+    return pref(x) * exp(expo(x));
+}
+
+double PolyExp::derivative(double x, int n) const {
+    if (expo._is_constant){
+        if (expo.coeff[0] == 0) return pref.derivative(x, n);
+        return pref.derivative(x, n) * exp(expo.coeff[0]);
+    }
+    if (n == 0) {
+        double p = pref(x);
+        double E = exp(expo(x));
+        return p * E;
+    }
+
+    vector1d df(n + 1);
+    vector1d dg(n + 1);
+    for (int k = 0; k <= n; k++){
+        df[k] = pref.derivative(x, k);
+        dg[k] = expo.derivative(x, k);
+    }
+
+    double val = 0;
+    double binom_val = 1;
+    int k_start = ((pref.k_min >= 0) && (pref.k_max < n)) ? n - pref.k_max : 0;
+    int k = 0;
+    for (; k < k_start; k++){
+        binom_val *= static_cast<double>(n - k) / (k + 1);
+    }
+    for (; k <= n; k++){
+        if (df[n - k] == 0){
+            binom_val *= static_cast<double>(n - k) / (k + 1); continue;
+        }
+        double Gk = get_Gk(x, k, dg);
+        val += binom_val * Gk * df[n - k];
+        binom_val *= static_cast<double>(n - k) / (k + 1);
+    }
+    return val * exp(dg[0]);
+}
+
+double PolyExp::get_Gk(double x, int k, const vector1d& dg, const std::vector<std::vector<int>>& partitions) const {
+    if (k == 0) return 1;
+    if (expo._is_linear) return pow(expo.derivative(x, 1), k);
+    int max_dg_order = ((expo.k_min >= 0) && (expo.k_max < k)) ? expo.k_max : k;
+    double G = 0;
+    for (const std::vector<int>& partition : partitions){
+        double tmp = 1;
+        for (int l : partition){
+            if (l > max_dg_order) break;
+            tmp *= dg[l];
+        }
+        if (tmp != 0){
+            double Z = partition_multiplicity(partition);
+            G += Z * tmp;
+        }
+    }
+    return G;
+}
+
+double PolyExp::get_Gk(double x, int k, const vector1d& dg) const {
+    const std::vector<std::vector<int>>& partitions = get_partitions(k);
+    return get_Gk(x, k, dg, partitions);
+}
+
+std::ostream& operator<<(std::ostream& strm, const PolyExp& p){
+    strm << "[ " << p.pref << " ] * exp[ " << p.expo << " ]";
+    return strm;
 }

@@ -73,19 +73,19 @@ double KineticGas::thermal_conductivity(double T, double Vm, const vector1d& x, 
 
 std::map<std::string, double> KineticGas::thermal_conductivity_contributions(double T, double Vm, const std::vector<double>& x, int N, std::string contribs){
     #ifdef DEBUG
-        if (!eos.get()) throw std::runtime_error("EoS is not set (in get_chemical_potential_factors)");
+        if (!eos.get()) throw std::runtime_error("EoS is not set (in thermal_conductivity_contributions)");
     #endif
     double rho = AVOGADRO / Vm;
 
     std::map<std::string, double> computed_contribs;
-    const auto contains = [&](std::string substr){return (contribs.find(substr) != std::string::npos);};
+    const auto contribs_contain = [&](std::string substr){return str_contains(contribs, substr);};
 
-    if (contains("t")){
+    if (contribs_contain("t")){
         Eigen::VectorXd th_expansion_coeff{compute_thermal_expansion_coeff(rho, T, x, N)};
         vector1d K = get_K_factors(rho, T, x);
         vector3d diff_expansion_coeff(N, vector2d(Ncomps, vector1d(Ncomps, 0.)));
         Eigen::VectorXd dth = Eigen::VectorXd::Zero(Ncomps);
-        if (!is_singlecomp){
+        if ((!is_singlecomp) && (N > 1)){ // Thermal diffusion related term, which is zero for a pure component, and only exists in the second approximation or over
             diff_expansion_coeff = reshape_diffusive_expansion_vector(compute_diffusive_expansion_coeff(rho, T, x, N));
             dth = compute_dth_vector(diff_expansion_coeff, th_expansion_coeff);
         }
@@ -93,7 +93,7 @@ std::map<std::string, double> KineticGas::thermal_conductivity_contributions(dou
         double lambda_prime = 0.;
         for (size_t i = 0; i < Ncomps; i++){
             double tmp = 0.;
-            if (!is_singlecomp){ // tmp is a Thermal diffusion related term, which is zero for a pure component
+            if ((!is_singlecomp) && (N > 1)){ // tmp is a Thermal diffusion related term, which is zero for a pure component, and only exists in the second approximation or over
                 for (size_t k = 0; k < Ncomps; k++){
                     tmp += diff_expansion_coeff[1][i][k] * dth(k);
                 }
@@ -104,7 +104,7 @@ std::map<std::string, double> KineticGas::thermal_conductivity_contributions(dou
         computed_contribs["t"] = lambda_prime;
     }
 
-    if (contains("d")){
+    if (contribs_contain("d")){
         vector2d rdf = get_rdf(rho, T, x);
         vector2d etl = get_etl(rho, T, x);
 
@@ -121,10 +121,9 @@ std::map<std::string, double> KineticGas::thermal_conductivity_contributions(dou
         computed_contribs["d"] = lambda_dblprime;
     }
 
-    if (contains("i")){
+    if (contribs_contain("i")){
         double lamba_internal = 0.;
-        double lamb_int_f = 1.32e3;
-        double eta0 = viscosity(T, 1e12, x, N);
+        constexpr double lamb_int_f = 1.32e3;
         double Cp_factor = (is_singlecomp) ? (eos->Cp_ideal(T, 1) - 5. * GAS_CONSTANT / 2.) / (m[0] * AVOGADRO * 1e3) : 0.;
         if (!is_singlecomp){
             for (size_t i = 0; i < Ncomps; i++){
@@ -132,7 +131,10 @@ std::map<std::string, double> KineticGas::thermal_conductivity_contributions(dou
                 Cp_factor += x[i] * (eos->Cp_ideal(T, i + 1) -  5. * GAS_CONSTANT / 2.) / Mi;
             }
         }
-        lamba_internal = lamb_int_f * eta0 * Cp_factor;
+        if (lamb_int_f * Cp_factor > 1e-8){
+            double eta0 = viscosity(T, 1e12, x, N);
+            lamba_internal = lamb_int_f * eta0 * Cp_factor;
+        }
         computed_contribs["i"] = lamba_internal;
     }
     return computed_contribs;

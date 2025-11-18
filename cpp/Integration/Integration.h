@@ -148,6 +148,19 @@ double integrate2d(const Point& origin, const Point& end,
     Standard Simpson-rule integration, with N_intervals between x0 and xN, where N_intervals >= 2
 */
 double simpson(std::function<double(double)> func, double x0, double xN, int N_intervals);
+/*
+    Simpson rule, starting with 10 points between x0 and init_end, then continuing outwards from init_end until infinite integral has converged
+    For users: This method is intended to integrate the "long tail" of some function. You likely want to handle integration close to the origin
+                yourself, before using this method to capture the tail.
+
+    Example:
+    auto func = [](double r){return r * sin(2 * PI * r) * exp(-r);}; // Want to integrate this from 0 to inf
+    double I1 = simpson(func, 0, 2, 50); // High resolution at start to capture details
+    double I2 = simpson_inf(func, 2, 3); // This will continue outward to capture the tail of the function
+    double I = I1 + I2; // Total integral
+*/
+double simpson_inf(std::function<double(double)> func, double x0, double init_end, double tol=1e-8, double I=0);
+
 
 /*
     Simpson integration of the function g(x) = w(x)f(x), and w(x) simultaneously.
@@ -176,3 +189,66 @@ std::pair<double, double> weighted_simpson(std::function<std::pair<double, doubl
 */
 double tanh_sinh(std::function<double(double)> func, double dh, double tol=1e-5);
 
+/*
+    Standard Newton solver
+
+    * newton_usafe: Will fail silently, signalling an error with the ierr flag.
+    * newton: Will throw an error upon failure.
+
+    Use the former if you plan to handle errors yourself. Use the latter if you're doing something that should never fail.
+*/
+double newton_usafe(const std::function<double(double)>& fun, const std::function<double(double)>& df, double x0, double ftol, double dtol, int& ierr) noexcept;
+inline double newton(const std::function<double(double)>& fun, const std::function<double(double)>& df, double x0, double ftol=1e-10, double dtol=-1){
+    int ierr = 0;
+    double r = newton_usafe(fun, df, x0, ftol, dtol, ierr);
+    if (ierr == 0) return r;
+    if (ierr == 1) throw std::runtime_error("Newton reached max iter!");
+    if (ierr == 2) throw std::runtime_error("Newton encountered NAN!");
+    if (ierr == 3) throw std::runtime_error("Newton encountered INF!");
+    throw std::runtime_error("Unknown Newton error : " + std::to_string(ierr));
+}
+
+
+/*
+    Basic bracket solvers
+
+    * bracet_positive: Will always return the positive side of the bracket
+    * bracket_root_usafe: Will never throw, and will set x0 to the value closest to the root (determined from abs(f0) < abs(f1))
+    * bracket_root: Will do some sanity checking, and may throw.
+*/
+double bracket_positive(const std::function<double(double)>& fun, double x0, double x1, double tol=1e-10);
+void bracket_root_usafe(const std::function<double(double)>& fun, double& x0, double& x1, double& f0, double& f1, double dtol, double ftol) noexcept;
+inline double bracket_root(const std::function<double(double)>& fun, double x0, double x1, double dtol=1e-5, double ftol=1e-10){
+    double f0 = fun(x0);
+    double f1 = fun(x1);
+    if (f0 * f1 > 0){
+        throw std::runtime_error("Bracket solver: Initial values have same sign!");
+    }
+    bracket_root_usafe(fun, x0, x1, f0, f1, dtol, ftol);
+    return x0;
+}
+
+/*
+    Simple trapezoidal integration, either using arrays, or using a constant grid spacing
+*/
+double trapezoid(const std::vector<double>& x, const std::vector<double>& y);
+double trapezoid(const double dx, const std::vector<double>& y);
+
+// Fit the quadric f(x) = ax^2 + bx + c to the (x, y) data 
+std::array<double, 3> fit_quadric(const std::array<double, 3>& x, const std::array<double, 3>& y);
+
+// Same as above, but fit to the last three elements in the vectors.
+std::array<double, 3> quadric_extrapolate_coeff(const std::vector<double>& x, const std::vector<double>& y);
+
+/*
+    Do a linear interpolation on (x, y) to get the value at x_val
+    Will throw if x_val is outside the range of the x-values
+*/
+double interpolate_grid(const double x_val, const std::vector<double>& x, const std::vector<double>& y);
+
+/*
+    Get the y-values at every new_x position by linear interpolation of (old_x, y)
+
+    Useful when we solve something on one grid (old_x) which is e.g. non-uniform, and want to extract the values on some new grid (new_x) from the solution.
+*/
+std::vector<double> interpolate_grid(const std::vector<double>& new_x, const std::vector<double>& old_x, const std::vector<double>& y);

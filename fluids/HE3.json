@@ -1,0 +1,198 @@
+{
+    "ident": "HE3",
+    "formula": "HE",
+    "cas_number": "14762-55-1",
+    "name": "HELIUM-3",
+    "aliases": [
+        "Helium3",
+        "HE3"
+    ],
+    "mol_weight": 3.016,
+    "default_fh_order": 0,
+    "Quantum" : {
+        "has_quantum_params" : true,
+        "half_spin" : 1,
+        "rot_ground_state" : 0,
+        "has_E_bound_file" : false,
+        "E_bound_div_k": [[-1.520e-3]],
+        "E_bound_reference": "R A Aziz and M J Slaman 1990 Metrologia 27 211"
+    },
+    "Mie": {
+        "Herdes": {
+            "sigma": 3.353e-10,
+            "eps_div_k": 4.44,
+            "lambda_a": 6.0,
+            "lambda_r": 14.84,
+            "bib_reference": "Herdes 2015, doi: 10.1016/j.fluid.2015.07.014"
+        },
+        "AASEN2019-FH0-LJ": {
+            "sigma": 3.1273e-10,
+            "eps_div_k": 4.1463,
+            "lambda_a": 6.0,
+            "lambda_r": 12.0,
+            "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+        },
+        "HYVA": {
+            "sigma": 2.8525e-10,
+            "eps_div_k": 4.5764,
+            "lambda_a": 6.0,
+            "lambda_r": 8.3471,
+            "bib_reference": "HYVA parameters with non-integer repulsive exponent"
+        },
+        "default": {
+            "sigma": 2.549e-10,
+            "eps_div_k": 10.952,
+            "lambda_a": 6.0,
+            "lambda_r": 13.0,
+            "FH_order": 2,
+            "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+        }
+    },
+    "HardSphere": {
+        "herdes2015": {
+            "sigma": 3.353e-10,
+            "FH_order": 0,
+            "bib_reference": "Herdes 2015, doi: 10.1016/j.fluid.2015.07.014"
+        },
+        "AASEN2019-FH1": {
+            "sigma": 2.7443e-10,
+            "FH_order": 1,
+            "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+        },
+        "AASEN2019-FH2": {
+            "sigma": 2.549e-10,
+            "FH_order": 2,
+            "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+        },
+        "AASEN2019-FH0-LJ": {
+            "sigma": 3.1273e-10,
+            "FH_order": 0,
+            "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+        },
+        "AASEN2019-FH1-LJ": {
+            "sigma": 2.8107e-10,
+            "FH_order": 1,
+            "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+        },
+        "AASEN2019-FH2-LJ": {
+            "sigma": 2.5442e-10,
+            "FH_order": 2,
+            "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+        },
+        "default": {
+            "sigma": 2.8525e-10,
+            "FH_order": 0,
+            "bib_reference": "HYVA parameters with non-integer repulsive exponent"
+        },
+        "HYVA-FH1": {
+            "sigma": 2.6615e-10,
+            "FH_order": 1,
+            "bib_reference": "HYVA parameters with non-integer repulsive exponent"
+        },
+        "HYVA-FH2": {
+            "sigma": 2.5682e-10,
+            "FH_order": 2,
+            "bib_reference": "HYVA parameters with non-integer repulsive exponent"
+        }
+    },
+    "Mie-FH0": {
+        "default": {
+            "sigma": 3.353e-10,
+            "eps_div_k": 4.44,
+            "lambda_a": 6.0,
+            "lambda_r": 14.84,
+            "FH_order": 0,
+            "bib_reference": "Herdes 2015, doi: 10.1016/j.fluid.2015.07.014"
+        },
+        "AASEN2019-FH0-LJ": {
+            "sigma": 3.1273e-10,
+            "eps_div_k": 4.1463,
+            "lambda_a": 6.0,
+            "lambda_r": 12.0,
+            "FH_order": 0,
+            "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+        },
+        "HYVA-FH0": {
+            "sigma": 2.8525e-10,
+            "eps_div_k": 4.5764,
+            "lambda_a": 6.0,
+            "lambda_r": 8.3471,
+            "FH_order": 0,
+            "bib_reference": "HYVA parameters with non-integer repulsive exponent"
+        }
+    },
+    "Mie-FH1": {
+        "default": {
+            "sigma": 2.7443e-10,
+            "eps_div_k": 5.4195,
+            "lambda_a": 6.0,
+            "lambda_r": 9.0,
+            "FH_order": 1,
+            "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+        },
+        "AASEN2019-FH1-LJ": {
+            "sigma": 2.8107e-10,
+            "eps_div_k": 6.6893,
+            "lambda_a": 6.0,
+            "lambda_r": 12.0,
+            "FH_order": 1,
+            "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+        },
+        "HYVA-FH1": {
+            "sigma": 2.6615e-10,
+            "eps_div_k": 7.9191,
+            "lambda_a": 6.0,
+            "lambda_r": 10.455,
+            "FH_order": 1,
+            "bib_reference": "HYVA parameters with non-integer repulsive exponent"
+        }
+    },
+    "Mie-FH2": {
+        "default": {
+            "sigma": 2.549e-10,
+            "eps_div_k": 10.952,
+            "lambda_a": 6.0,
+            "lambda_r": 13.0,
+            "FH_order": 2,
+            "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+        },
+        "AASEN2019-FH2-LJ": {
+            "sigma": 2.5442e-10,
+            "eps_div_k": 10.393,
+            "lambda_a": 6.0,
+            "lambda_r": 12.0,
+            "FH_order": 2,
+            "bib_reference": "Aasen 2019, doi: 10.1063/1.5111364"
+        },
+        "HYVA-FH2": {
+            "sigma": 2.5682e-10,
+            "eps_div_k": 11.942,
+            "lambda_a": 6.0,
+            "lambda_r": 13.239,
+            "FH_order": 2,
+            "bib_reference": "HYVA parameters with non-integer repulsive exponent"
+        }
+    },
+    "HFD-B2": {
+        "default": {
+            "A": 1.9221529e5,
+            "alpha": 10.73520708,
+            "c6": 1.34920045,
+            "c8": 0.41365922,
+            "c10": 0.17078164,
+            "C6": 0.0009260149409399379,
+            "C8": 2.5043621360101606e-05,
+            "C10": 9.120287155332109e-07,
+            "beta_star": -1.89296514,
+            "beta": -21.46,
+            "D": 1.4132,
+            "eps_div_k": 10.94,
+            "rm": 0.2970,
+            "sigma": 2.64205e-10,
+            "E_bound_div_k": [[]],
+            "bib_reference": "R A Aziz and M J Slaman 1990 Metrologia 27 211",
+            "E_bound_reference": "Calculated using MolCas VibRot : https://molcas.gitlab.io/OpenMolcas/sphinx/users.guide/programs/vibrot.html#ug-sec-vibrot",
+            "Note": "Beware fucked up units (see implementation or reference)."
+        }
+    }
+}

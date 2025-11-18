@@ -79,7 +79,7 @@ void MieKinGas::mix_exponents(std::vector<std::vector<double>>& expo){
 }
 
 double MieKinGas::omega(int i, int j, int l, int r, double T){
-    if ((l <= 2) && (r >= l) && (r <= 3) && (abs(la[i][j] - 6.) < 1e-10)){ // Use Correlation by Fokin, Popov and Kalashnikov, High Temperature, Vol. 37, No. 1 (1999)
+    if (omega_correlation_active && (l <= 2) && (r >= l) && (r <= 3) && (abs(la[i][j] - 6.) < 1e-10)){ // Use Correlation by Fokin, Popov and Kalashnikov, High Temperature, Vol. 37, No. 1 (1999)
         // NOTE: There is a typo in Eq. (4b) in the article, ln(1/m) should be ln(m).
         // See: I. H. Bell et. al. J. Chem. Eng. Data (2020), https://doi.org/10.1021/acs.jced.9b00455
         // The correlation implemented here has been verified vs. tabulated data.
@@ -145,6 +145,13 @@ double MieKinGas::omega_recursive_factor(int i, int j, int l, int r, double T_st
     }
     double C11 = omega_recursive_factor(i, j, l, r - 1, T_star);
     return 1 + (Cr / ((r + 2) * C11)) + (C11 - 1) * (r + 1) / (r + 2);
+}
+
+void MieKinGas::set_omega_correlation_active(bool active){
+    if (active != omega_correlation_active){
+        omega_map.clear();
+    }
+    omega_correlation_active = active;
 }
 
 std::vector<std::vector<double>> MieKinGas::saft_rdf(double rho, double T, const std::vector<double>& x, int order, bool g2_correction){

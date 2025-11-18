@@ -39,10 +39,24 @@ class Spherical : public KineticGas {
     virtual double potential(int i, int j, double r);
     virtual double potential_derivative_r(int i, int j, double r);
     virtual double potential_dblderivative_rr(int i, int j, double r);
+    virtual double potential_dn(int i, int j, double r, size_t n) { 
+        // n'th derivative of potential
+        // This must be overridden if you want to use the FH_Corrected template class to extend the class, otherwise it's not needed.
+        throw std::runtime_error("Spherical::potential_dn has not been overriden by this class.");
+    }
+
+    virtual double cross_section(int i, int j, int l, double E);
+    double hs_cross_section(int i, int j, int l);
+    double reduced_cross_section(int i, int j, int l, double E); // Reduced using corresponding Hard sphere value
 
     double omega(int i, int j, int l, int r, double T) override;
     vector2d model_mtl(double rho, double T, const vector1d& x) override; // Momentum transfer length
     vector2d model_etl(double rho, double T, const vector1d& x) override; // Energy transfer length
+
+    double second_virial(int i, int j, double T) override;
+    double bound_second_virial(int i, int j, double T) override;
+    virtual double bound_second_virial_lim(int i, int j);
+    std::map<char, double> second_virial_contribs(int i, int j, double T, const std::string& contribs) override;
 
     // ------------------------------------------------------------------------------------------- //
     // -------------------- GENERIC METHODS DESCRIBING A COLLISION TRAJECTORY -------------------- //
@@ -53,7 +67,22 @@ class Spherical : public KineticGas {
     double theta_r(int i, int j, double r, double T, double g, double b); // Angular position at given particle separation (r). A plot of r * sin(theta_r) vs. r * cos(theta_r) will show the particle trajectory for a collision with given T, g, b.
     double theta_r(int i, int j, double R, double r, double T, double g, double b); // Faster, if R is known.
 
+
+    double omega_tester(int i, int j, int l, int r, double T, IntegrationParam& param);
+    double w_integral_tester(int i, int j, double T, int l, int r, IntegrationParam& param);
+    double w_integrand(int i, int j, double T, double g, double b, int l, int r);
+
+    // ------------------------------------------------------------------------------------------- //
+    // -------------------- METHODS TO COMPUTE EFFECTIVE POTENTIAL DESCRIPTORS ------------------- //
+    // ------------------------------------------------------------------------------------------- //
+    virtual double get_r_min(int i, int j, double T);
+    virtual double get_sigma_eff(int i, int j, double T);
+    virtual double get_eps_eff(int i, int j, double T);
+    virtual double get_alpha_eff(int i, int j, double T);
+
 protected:
+    virtual double get_potential_root(int i, int j); // Protected, because assumes that set_internal_params has already been called.
+
     // ------------------------------------------------------------------------------------------- //
     // --------------------------------  TRANSFER LENGTH CACHING --------------------------------- //
     /*  
@@ -100,8 +129,6 @@ private:
     // -------------------------------- Spherical Internals are below here ----------------------------------------------- //
     // ---------------------- End users should not need to care about anything below ------------------------------------- //
     // ------------------------------------------------------------------------------------------------------------------- //
-    double omega_tester(int i, int j, int l, int r, double T, IntegrationParam& param);
-    double w_integral_tester(int i, int j, double T, int l, int r, IntegrationParam& param);
 
     double get_R0(int i, int j, double T, double g); // Solve get_R when b = 0
 
@@ -114,7 +141,6 @@ private:
     double get_R_rootfunc_derivative(int i, int j, double T, double g, double b, double& r);
 
     double w_integral(int i, int j, double T, int l, int r); // Dimentionless collision integral for spherical potentials
-    double w_integrand(int i, int j, double T, double g, double b, int l, int r);
 };
 
 class IntegrationParam{

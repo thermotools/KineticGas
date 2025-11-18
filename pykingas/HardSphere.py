@@ -75,6 +75,9 @@ class HardSphereEoS:
         warnings.warn("enthalpy_tvp is a dummy implementation!")
         return self.idealenthalpysingle(T, 0, dhdt=dhdt)
 
+    def enthalpy_tvp(self, T, V, n, dhdt=None):
+        raise NotImplementedError("This is just a dummy implementation...")
+
 def HS_pressure(rho, T, x, sigma, chi):
     p = rho * kB * T
     for i in range(len(x)):

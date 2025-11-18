@@ -1,13 +1,14 @@
 from pykingas.py_KineticGas import py_KineticGas
-from .libpykingas import cpp_ModTangToennis, cpp_TangToennisParam
+from pykingas.Quantum import Quantum, FH_Corrected
+from .libpykingas import cpp_ModTangToennis, cpp_FH_ModTangToennies, cpp_HFD_B2, cpp_FH_HFD_B2, cpp_Patowski, cpp_PatowskiFH
 from scipy.constants import Boltzmann, Avogadro
 import numpy as np
 from scipy.integrate import quad
 from scipy.optimize import root
 
-class ModTangToennis(py_KineticGas):
+class MultiParam(py_KineticGas):
 
-    def __init__(self, comps, parameter_ref='default'):
+    def __init__(self, comps):
         """Constructor
         Initialize modified Tang-Toennies potential
         &&
@@ -16,17 +17,6 @@ class ModTangToennis(py_KineticGas):
             parameter_ref (str, optional) : Identifier for parameter set to use
         """
         super().__init__(comps, is_idealgas=True)
-
-        potential = self.fluids[0]['ModTangToennis'][parameter_ref]
-        param = cpp_TangToennisParam(potential['A_div_k'], potential['b'],
-                                     potential['A_tilde_div_k'], potential['a'],
-                                     potential['a_tilde'], potential['eps_div_k'], potential['Re'],
-                                     potential['sigma'], potential['C']
-                                     )
-        self.eps_div_k = potential['eps_div_k']
-        self.sigma = potential['sigma']
-        self.Re = potential['Re'] * 1e-9
-        self.cpp_kingas = cpp_ModTangToennis(param, self.mole_weights, np.ones((2, 2)) * self.sigma, self.is_idealgas)
 
     def potential(self, r):
         """Utility
@@ -63,23 +53,17 @@ class ModTangToennis(py_KineticGas):
             float : Potential second derivative wrt. distance (N / m)
         """        
         return self.cpp_kingas.potential_rr(0, 0, r)
-
-    def second_virial(self, T):
+    
+    def potential_dn(self, r, n):
         """Utility
-        Compute second virial coefficient
-        &&
+        Calculate the `n`'th derivative of the potential wrt. distance.
         Args:
-            T (float) : Temperature (K)
+            r (float) : Distance (m)
         
-        Returns: 
-            float : Second virial coefficient
+        Returns:
+            float : Potential n'th derivative wrt. distance (J / m^n)
         """
-        integrand = lambda r_aa: (1 - np.exp(- self.potential(r_aa * 1e-10) / (Boltzmann * T))) * 4 * np.pi * r_aa ** 2
-        r1, r2 = self.Re * 1e10, 1.5 * self.Re * 1e10
-        B0 = quad(integrand, 0, r1)[0]
-        B1 = quad(integrand, r1, r2)[0]
-        B2 = quad(integrand, r2, np.inf)[0]
-        return 0.5 * (B0 + B1 + B2) * Avogadro * 1e-30
+        return self.cpp_kingas.potential_dn(0, 0, r, n)
 
     def vdw_alpha(self):
         """Utility
@@ -93,3 +77,127 @@ class ModTangToennis(py_KineticGas):
         E += quad(integrand, 1.5 * self.sigma * 1e10, np.inf)[0]
         E *= 1e-30
         return - E / ((self.eps_div_k * Boltzmann) * self.sigma ** 3)
+    
+    def get_r_min(self, i, j):
+        """Utility
+        Compute the position of the potential minimum.
+        &&
+        Args:
+            i, j (int): Species indices
+        Returns:
+            float : r_min (m)
+        """
+        return self.cpp_kingas.get_r_min(i, j, 1)
+
+class ModTangToennies(MultiParam, Quantum):
+    
+    def __init__(self, comps, quantum_active=True, parameter_ref='default'):
+        """Constructor
+        Initialize modified Tang-Toennies potential
+        &&
+        Args:
+            comps (str) : Single component identifier
+            parameter_ref (str, optional) : Identifier for parameter set to use
+        """
+        super().__init__(comps)
+        self.cpp_kingas = cpp_ModTangToennis(comps, 'default')
+        self.cpp_kingas.set_quantum_active(quantum_active)
+
+class FH_ModTangToennies(MultiParam, FH_Corrected):
+
+    def __init__(self, comps, FH_order):
+        super().__init__(comps)
+        self.cpp_kingas = cpp_FH_ModTangToennies(comps, FH_order, 'default')
+    
+    def potential(self, r, T):
+        return self.cpp_kingas.potential(0, 0, r, T)
+    
+    def potential_r(self, r, T):
+        return self.cpp_kingas.potential_r(0, 0, r, T)
+    
+    def potential_rr(self, r, T):
+        return self.cpp_kingas.potential_rr(0, 0, r, T)
+     
+    def set_FH_order(self, FH_order):
+        self.cpp_kingas.set_FH_order(FH_order)
+
+class HFD_B2(MultiParam, Quantum):
+
+    def __init__(self, comps, quantum_active=True):
+        super().__init__(comps)
+        self.cpp_kingas = cpp_HFD_B2(comps)
+        self.cpp_kingas.set_quantum_active(quantum_active)
+
+class FH_HFD_B2(MultiParam, FH_Corrected):
+
+    def __init__(self, comps, FH_order=1):
+        super().__init__(comps)
+        self.cpp_kingas = cpp_FH_HFD_B2(comps, FH_order)
+        self.cpp_kingas.set_quantum_active(False)
+    
+    def potential(self, r, T):
+        return self.cpp_kingas.potential(0, 0, r, T)
+    
+    def potential_r(self, r, T):
+        return self.cpp_kingas.potential_r(0, 0, r, T)
+    
+    def potential_rr(self, r, T):
+        return self.cpp_kingas.potential_rr(0, 0, r, T)
+     
+    def set_FH_order(self, FH_order):
+        self.cpp_kingas.set_FH_order(FH_order)
+
+
+class Patowski(MultiParam, Quantum):
+
+    def __init__(self, comps, quantum_active=True):
+        """Constructor
+        Initialize Patowski potential (used for H2)
+        """
+        super().__init__(comps)
+        self.cpp_kingas = cpp_Patowski(comps)
+        self.param = self.cpp_kingas.get_param()
+        self.cpp_kingas.set_quantum_active(quantum_active)
+
+class PatowskiFH(MultiParam, FH_Corrected):
+
+    def __init__(self, comps, FH_order=1):
+        super().__init__(comps)
+        self.cpp_kingas = cpp_PatowskiFH(comps, FH_order)
+        self.cpp_kingas.set_quantum_active(False)
+    
+    def potential(self, r, T):
+        return self.cpp_kingas.potential(0, 0, r, T)
+    
+    def potential_r(self, r, T):
+        return self.cpp_kingas.potential_r(0, 0, r, T)
+    
+    def potential_rr(self, r, T):
+        return self.cpp_kingas.potential_rr(0, 0, r, T)
+     
+    def set_FH_order(self, FH_order):
+        self.cpp_kingas.set_FH_order(FH_order)
+
+def init_multiparam(comp):
+    if comp in ('AR', 'NE', 'HE'):
+        kin = ModTangToennies(comp)
+        kin.cpp_kingas.set_JKWB_limits(10, 70)
+        return kin
+    elif comp in ('HE3',):
+        kin = HFD_B2(comp)
+        kin.cpp_kingas.set_JKWB_limits(1e9, 1000)
+    elif comp in ('O-H2', 'P-H2'):
+        kin = Patowski(comp)
+        kin.cpp_kingas.set_JKWB_limits(1e9, 1000)
+    else:
+        raise KeyError(f'Invalid MultiParam component : {comp}')
+    return kin
+
+def init_multiparam_FH(comp, order):
+    if comp in ('AR', 'NE', 'HE'):
+        return FH_ModTangToennies(comp, order)
+    if comp in ('HE3',):
+        return FH_HFD_B2(comp, order)
+    if comp in ('O-H2', 'P-H2'):
+        return PatowskiFH(comp, order)
+    raise KeyError(f'Invalid MultiParam component : {comp}')

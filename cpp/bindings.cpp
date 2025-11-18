@@ -1,15 +1,18 @@
 #include "KineticGas.h"
 #include "Factorial.h"
 #include "MieKinGas.h"
+#include "QuantumMie.h"
 #include "HardSphere.h"
 #include "PseudoHardSphere.h"
-#include "ModTangToennis.h"
+#include "multiparam.h"
+#include "Quantum.h"
 #include "LJSpline.h"
 #include "LJTS.h"
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 #include "pybind11/operators.h"
 #include "pybind11/eigen.h"
+#include "pybind11/numpy.h"
 #include <sstream>
 
 namespace py = pybind11;
@@ -33,12 +36,16 @@ using vector2d = std::vector<vector1d>;
         .def("thermal_diffusion_ratio", &Model::thermal_diffusion_ratio) \
         .def("thermal_diffusion_coeff", &Model::thermal_diffusion_coeff) \
         .def("thermal_diffusion_factor", &Model::thermal_diffusion_factor) \
+        .def("second_virial", py::overload_cast<int, int, double>(&Model::second_virial)) \
+        .def("bound_second_virial", &Model::bound_second_virial) \
+        .def("dimer_constant", &Model::dimer_constant) \
         .def("get_mtl", &Model::get_mtl) \
         .def("get_etl", &Model::get_etl) \
         .def("get_rdf", &Model::get_rdf) \
         .def("set_eos", py::overload_cast<py::object>(&Model::set_eos)) \
         .def("frame_of_reference_map", &Model::frame_of_reference_map) \
         .def("get_reducing_units", &Model::get_reducing_units) \
+        .def("de_broglie_wavelength", py::overload_cast<int, double>(&Model::de_broglie_wavelength)) \
         \
         .def("set_tl_model", &Model::set_transfer_length_model) \
         .def("get_tl_model", &Model::get_transfer_length_model) \
@@ -50,6 +57,8 @@ using vector2d = std::vector<vector1d>;
         .def("get_conductivity_matrix", &Model::get_conductivity_matrix) \
         .def("get_viscosity_matrix", &Model::get_viscosity_matrix)\
         .def("get_viscosity_vector", &Model::get_viscosity_vector)\
+        .def("get_bulk_viscosity_matrix", &Model::get_bulk_viscosity_matrix)\
+        .def("get_bulk_viscosity_vector", &Model::get_bulk_viscosity_vector)\
         .def("get_K_factors", &Model::get_K_factors) \
         .def("get_K_prime_factors", &Model::get_K_prime_factors) \
         .def("get_chemical_potential_factors", &Model::get_chemical_potential_factors) \
@@ -60,18 +69,36 @@ using vector2d = std::vector<vector1d>;
         .def("viscosity", &Model::viscosity) \
         .def("interdiffusion", &Model::interdiffusion) \
         .def("selfdiffusion", &Model::selfdiffusion) \
-
-
+        \
+        .def("precompute_ideal_diffusion", &Model::precompute_ideal_diffusion) \
+        .def("omega", &Model::omega) \
+        \
+        
 #define Spherical_potential_bindings(Model) \
         .def("potential", py::overload_cast<int, int, double>(&Model::potential)) \
         .def("potential_derivative_r", &Model::potential_derivative_r) \
         .def("potential_dblderivative_rr", &Model::potential_dblderivative_rr) \
+        .def("potential_r", &Model::potential_derivative_r) \
+        .def("potential_rr", &Model::potential_dblderivative_rr) \
         .def("get_reducing_units", &Model::get_reducing_units) \
+        .def("get_r_min", &Model::get_r_min) \
+        .def("get_sigma_eff", &Model::get_sigma_eff) \
+        .def("get_eps_eff", &Model::get_eps_eff) \
+        .def("get_alpha_eff", &Model::get_alpha_eff) \
+        .def("omega_tester", &Model::omega_tester) \
+        .def("w_integral_tester", &Model::w_integral_tester) \
+        .def("w_integrand", &Model::w_integrand)
 
 PYBIND11_MODULE(libpykingas, handle){
     handle.doc() = "Is this documentation? This is documentation.";
     handle.def("ipow", &ipow);
     handle.def("factorial_tests", &factorial_tests);
+
+    handle.def("get_partitions", &get_partitions);
+    handle.def("partition_multiplicity", &partition_multiplicity);
+
+    handle.def("simpson", [](double ulim, int N){return simpson([](double x){return exp(- x) * pow(x, 2);}, 0, ulim, N);});
+    handle.def("simpson_inf", [](double ulim){return simpson_inf([](double x){return exp(- x) * pow(x, 2);}, 0, ulim);});
 
     py::class_<Product>(handle, "Product")
         .def(py::init<int>())
@@ -82,6 +109,16 @@ PYBIND11_MODULE(libpykingas, handle){
     py::class_<Fac>(handle, "Fac")
         .def(py::init<int>())
         .def("eval", &Fac::eval);
+
+    py::class_<Polynomial>(handle, "Polynomial")
+        .def(py::init<int, int, vector1d, int>())
+        .def("derivative", py::vectorize(&Polynomial::derivative))
+        ;
+
+    py::class_<PolyExp>(handle, "PolyExp")
+        .def(py::init<Polynomial, Polynomial>())
+        .def("derivative", py::vectorize(&PolyExp::derivative))
+        ;
 
     py::class_<OmegaPoint>(handle, "OmegaPoint")
         .def_readwrite("i", &OmegaPoint::i)
@@ -114,6 +151,24 @@ PYBIND11_MODULE(libpykingas, handle){
         .def_readonly("tdiff", &Units::tdiff)   // Thermal diffusivity (m^2 / s)
         .def_readonly("tcond", &Units::tcond)   // Thermal conductivity
         ;
+    
+    py::class_<ExtSutherland>(handle, "cpp_ExtSutherland")
+        .def(py::init<vector1d, vector2d, vector2d, 
+                        vector3d, vector3d, vector3d, vector3d,
+                        bool, bool>())
+        KineticGas_bindings(ExtSutherland)
+        .def("potential", py::overload_cast<int, int, double>(&ExtSutherland::potential))
+        .def("potential_derivative_r", py::overload_cast<int, int, double>(&ExtSutherland::potential_derivative_r))
+        .def("potential_dblderivative_rr", py::overload_cast<int, int, double>(&ExtSutherland::potential_dblderivative_rr))
+        .def("saft_rdf", &ExtSutherland::saft_rdf)
+        .def("get_rdf_terms", &ExtSutherland::get_rdf_terms)
+        .def("get_sigma_eff", &ExtSutherland::get_sigma_eff)
+        .def("get_rmin", &ExtSutherland::get_sigma_min)
+        .def("get_epsilon_eff", &ExtSutherland::get_epsilon_eff)
+        .def("get_dBH", py::overload_cast<double, double>(&ExtSutherland::get_BH_diameters))
+        .def("get_vdw_alpha", &ExtSutherland::get_vdw_alpha)
+        .def("second_virial", &ExtSutherland::second_virial)
+        ;
 
     py::class_<MieKinGas>(handle, "cpp_MieKinGas")
         .def(py::init<vector1d,
@@ -128,6 +183,7 @@ PYBIND11_MODULE(libpykingas, handle){
         .def(py::init<std::string, bool>())
         KineticGas_bindings(MieKinGas)
         Spherical_potential_bindings(MieKinGas)
+        .def("set_omega_correlation_active", &MieKinGas::set_omega_correlation_active)
         .def("get_BH_diameters", &MieKinGas::get_BH_diameters)
         .def("get_vdw_alpha", &MieKinGas::get_vdw_alpha)
         .def("saft_rdf", &MieKinGas::saft_rdf)
@@ -164,6 +220,20 @@ PYBIND11_MODULE(libpykingas, handle){
         // .def("gamma_corr", py::overload_cast<double, double, const vector1d&>(&MieKinGas::gamma_corr))
         // ;
 
+    py::class_<QuantumMie>(handle, "cpp_QuantumMie")
+        .def(py::init<vector1d, vector2d, vector2d, vector2d, vector2d, std::vector<int>, bool, bool>())
+        KineticGas_bindings(QuantumMie)
+        .def("potential", py::overload_cast<int, int, double, double>(&QuantumMie::potential))
+        // .def("potential_derivative_r", py::overload_cast<int, int, double, double>(&QuantumMie::potential_derivative_r))
+        // .def("potential_dblderivative_rr", py::overload_cast<int, int, double, double>(&QuantumMie::potential_dblderivative_rr))
+        .def("get_sigma_eff", py::overload_cast<double>(&QuantumMie::get_sigma_eff))
+        .def("get_sigma_min", py::overload_cast<double>(&QuantumMie::get_sigma_min))
+        .def("get_epsilon_eff", py::overload_cast<double>(&QuantumMie::get_epsilon_eff))
+        // .def("get_BH_diameters", &QuantumMie::get_BH_diameters)
+        .def("saft_rdf", &QuantumMie::saft_rdf)
+        .def("get_rdf_terms", &QuantumMie::get_rdf_terms)
+        ;
+
    py::class_<IntegrationParam>(handle, "IntegrationParam")
         .def(py::init<vector1d, vector1d, double, double, int, int, double>())
         .def("set_end", &IntegrationParam::set_end)
@@ -174,11 +244,68 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("set_dd_lim", &IntegrationParam::set_dd_lim)
         ;
 
+    py::class_<HardSphere>(handle, "cpp_HardSphere")
+        .def(py::init<
+                        vector1d,
+                        vector2d,
+                        bool, bool
+                    >()
+            )
+        KineticGas_bindings(HardSphere)
+        .def("chi", &HardSphere::chi)
+        .def("omega", &HardSphere::omega)
+        .def("w_integral", &HardSphere::w_integral)
+        .def("cross_section", &HardSphere::cross_section)
+        ;
+    
+    py::class_<Quantum>(handle, "cpp_Quantum")
+        // .def(py::init<std::string>())
+        KineticGas_bindings(Quantum)
+        Spherical_potential_bindings(Quantum)
+        .def("get_E_bound", &Quantum::get_E_bound)
+        .def("cross_section", &Quantum::cross_section)
+        .def("classical_cross_section", &Quantum::classical_cross_section)
+        .def("reduced_cross_section", &Quantum::reduced_cross_section)
+        .def("wave_function", &Quantum::wave_function)
+        .def("phase_shift", &Quantum::phase_shift)
+        .def("JKWB_phase_shift", &Quantum::JKWB_phase_shift)
+        .def("quantum_phase_shift", &Quantum::quantum_phase_shift)
+        .def("absolute_phase_shift", py::overload_cast<int, int, int, double, double>(&Quantum::absolute_phase_shift))
+        .def("absolute_phase_shift", py::overload_cast<int, int, int, double>(&Quantum::absolute_phase_shift))
+        .def("absolute_phase_shifts", &Quantum::absolute_phase_shifts)
+        .def("get_levinson_r", &Quantum::get_levinson_r)
+        .def("integral_phase_shift", &Quantum::integral_phase_shift)
+        .def("total_phase_shifts", &Quantum::total_phase_shifts)
+        .def("dump_phase_shift_map", &Quantum::dump_phase_shift_map)
+        .def("clear_phase_shift_maps", &Quantum::clear_phase_shift_maps)
+        .def("dump_phase_shift_map_to_json", &Quantum::dump_phase_shift_map_to_json)
+        .def("r_classical_forbidden", &Quantum::r_classical_forbidden)
+        .def("get_de_boer", py::overload_cast<>(&Quantum::get_de_boer))
+        .def("get_de_boer", py::overload_cast<int, int>(&Quantum::get_de_boer))
+        .def("get_de_boer", py::overload_cast<int>(&Quantum::get_de_boer))
+        .def("set_de_boer_mass", &Quantum::set_de_boer_mass)
+        .def("JKWB_upper_E_limit", &Quantum::JKWB_upper_E_limit)
+        .def("omega", &Quantum::omega)
+        .def("quantum_omega", &Quantum::quantum_omega)
+        .def("second_virial", py::overload_cast<int, int, double>(&Quantum::second_virial))
+        .def("second_virial", py::overload_cast<int, int, const vector1d&>(&Quantum::second_virial))
+        .def("second_virial_contribs", &Quantum::second_virial_contribs)
+        .def("bound_second_virial_lim", &Quantum::bound_second_virial_lim)
+        .def("semiclassical_second_virial", &Quantum::semiclassical_second_virial)
+        .def("classical_omega", &Quantum::classical_omega)
+        .def("scattering_volume", &Quantum::scattering_volume)
+        .def("partial_scattering_volume", &Quantum::partial_scattering_volume)
+        .def("set_quantum_active", &Quantum::set_quantum_active)
+        .def("get_quantum_active", &Quantum::get_quantum_active)
+        .def("set_JKWB_limits", &Quantum::set_JKWB_limits)
+        .def("get_JKWB_limits", &Quantum::get_JKWB_limits)
+        .def("omega_tester", &Quantum::omega_tester)
+        .def("w_integrand", &Quantum::w_integrand)
+        .def("theta", &Quantum::theta)
+        .def("get_R", &Quantum::get_R)
+        ;
+    
     py::class_<TangToennisParam>(handle, "cpp_TangToennisParam")
-        .def(py::init<double, double, double, vector1d,
-                        double, double, double, double,
-                        vector1d>()
-             )
         .def_readwrite("sigma", &TangToennisParam::sigma)
         .def_readwrite("eps_div_k", &TangToennisParam::eps_div_k)
         .def_readwrite("Re", &TangToennisParam::Re)
@@ -203,27 +330,96 @@ PYBIND11_MODULE(libpykingas, handle){
         })
         ;
 
-    py::class_<ModTangToennis>(handle, "cpp_ModTangToennis")
-        .def(py::init<TangToennisParam, vector1d, bool>())
+    py::class_<ModTangToennis, Quantum>(handle, "cpp_ModTangToennis")
+        .def(py::init<std::string, std::string>())
         KineticGas_bindings(ModTangToennis)
         .def("potential", py::overload_cast<int, int, double>(&ModTangToennis::potential))
         .def("potential_r", &ModTangToennis::potential_derivative_r)
         .def("potential_rr", &ModTangToennis::potential_dblderivative_rr)
-        .def("set_tl_model", &ModTangToennis::set_transfer_length_model)
+        .def("potential_dn", &ModTangToennis::potential_dn)
+        .def("second_virial", py::overload_cast<int, int, const vector1d&>(&ModTangToennis::second_virial))
+        ;
+    
+    py::class_<FH_ModTangToennies, Quantum>(handle, "cpp_FH_ModTangToennies")
+        .def(py::init<std::string, size_t, std::string>())
+        .def("potential", py::overload_cast<int, int, double, double>(&FH_ModTangToennies::potential))
+        .def("potential_r", py::overload_cast<int, int, double, double>(&FH_ModTangToennies::potential_derivative_r))
+        .def("potential_rr", py::overload_cast<int, int, double, double>(&FH_ModTangToennies::potential_dblderivative_rr))
+        .def("set_FH_order", &FH_ModTangToennies::set_FH_order)
         ;
 
-    py::class_<HardSphere>(handle, "cpp_HardSphere")
-        .def(py::init<
-                        vector1d,
-                        vector2d,
-                        bool, bool
-                    >()
-            )
-        KineticGas_bindings(HardSphere)
-        .def("chi", &HardSphere::chi)
-        .def("omega", &HardSphere::omega)
-        .def("w_integral", &HardSphere::w_integral);
+    py::class_<HFD_B2, Quantum>(handle, "cpp_HFD_B2")
+        .def(py::init<std::string>())
+        KineticGas_bindings(HFD_B2)
+        Spherical_potential_bindings(HFD_B2)
+        .def("potential_dn", &HFD_B2::potential_dn)
+        ;
     
+    py::class_<FH_HFD_B2, Quantum>(handle, "cpp_FH_HFD_B2")
+        .def(py::init<std::string, size_t>())
+        KineticGas_bindings(FH_HFD_B2)
+        .def("potential", py::overload_cast<int, int, double, double>(&FH_HFD_B2::potential))
+        .def("potential_r", py::overload_cast<int, int, double, double>(&FH_HFD_B2::potential_derivative_r))
+        .def("potential_rr", py::overload_cast<int, int, double, double>(&FH_HFD_B2::potential_dblderivative_rr))
+        .def("set_FH_order", &FH_HFD_B2::set_FH_order)
+        ;
+
+    py::class_<PatowskiParam>(handle, "cpp_PatowskiParam")
+        .def_readonly("sigma", &PatowskiParam::sigma)
+        .def_readonly("eps_div_k", &PatowskiParam::eps_div_k)
+        .def_readonly("r_min", &PatowskiParam::r_min)
+        .def("__repr__",
+        [](const PatowskiParam &t) {
+            std::stringstream strm;
+            strm << "PatowskiParam\n"
+                 << "\tCex       : " << t.Cex1 << ", " << t.Cex2 << "\n"
+                 << "\tCsp       : " << t.Csp1 << ", " << t.Csp2 << ", " << t.Csp3 << ", " << t.Csp4 << "\n"
+                 << "\tCn        : " << t.C6 << ", " << t.C8 << ", " << t.C10 << "\n"
+                 << "\t----------\n"
+                 << "\tsigma     : " << t.sigma << "\n"
+                 << "\teps_div_k : " << t.eps_div_k << "\n"
+                 << "\tr_min     : " << t.r_min << std::endl;
+            return strm.str();
+        })
+        ;
+
+    py::class_<Patowski, Quantum>(handle, "cpp_Patowski")
+        .def(py::init<std::string>())
+        KineticGas_bindings(Patowski)
+        Spherical_potential_bindings(Patowski)
+        .def("get_param", &Patowski::get_param)
+        .def("potential_dn", &Patowski::potential_dn)
+        // .def("set_using_tabulated", &Patowski::set_using_tabulated)
+        ;
+
+    // py::class_<PatowskiFH1, Quantum>(handle, "cpp_PatowskiFH1")
+    //     .def(py::init<std::string>())
+    //     KineticGas_bindings(PatowskiFH1)
+    //     Spherical_potential_bindings(PatowskiFH1)
+    //     .def("potential", py::overload_cast<int, int, double, double>(&PatowskiFH1::potential))
+    //     .def("get_param", &PatowskiFH1::get_param)
+    //     ;
+    py::class_<PatowskiFH, Quantum>(handle, "cpp_PatowskiFH")
+        .def(py::init<std::string, size_t>())
+        KineticGas_bindings(PatowskiFH)
+        // Spherical_potential_bindings(PatowskiFH2)
+        .def("potential", py::overload_cast<int, int, double, double>(&PatowskiFH::potential))
+        .def("potential_r", py::overload_cast<int, int, double, double>(&PatowskiFH::potential_derivative_r))
+        .def("potential_rr", py::overload_cast<int, int, double, double>(&PatowskiFH::potential_dblderivative_rr))
+        .def("set_FH_order", &PatowskiFH::set_FH_order)
+        .def("get_param", &PatowskiFH::get_param)
+        ;
+    
+    // py::class_<PatowskiFH3, Quantum>(handle, "cpp_PatowskiFH3")
+    //     .def(py::init<std::string>())
+    //     KineticGas_bindings(PatowskiFH3)
+    //     // Spherical_potential_bindings(PatowskiFH2)
+    //     .def("potential", py::overload_cast<int, int, double, double>(&PatowskiFH3::potential))
+    //     .def("potential_r", py::overload_cast<int, int, double, double>(&PatowskiFH3::potential_derivative_r))
+    //     .def("potential_rr", py::overload_cast<int, int, double, double>(&PatowskiFH3::potential_dblderivative_rr))
+    //     .def("get_param", &PatowskiFH3::get_param)
+    //     ;
+
     py::class_<PseudoHardSphere>(handle, "cpp_PseudoHardSphere")
         .def(py::init<
                         vector1d,

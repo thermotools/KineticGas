@@ -12,6 +12,7 @@ Contains: Implementation of Integration.h
 #include <utility>
 #include <map>
 #include <math.h>
+#include <Eigen/Dense>
 
 #define FLTEPS 1e-12
 
@@ -306,8 +307,33 @@ double integrate2d(const Point& origin, const Point& end,
 }
 
 
+double simpson_38(std::function<double(double)> func, double x0, double xN){
+    double dx = (xN - x0) / 3;
+    return (3 * dx / 8) * (func(x0) + 3 * (func(x0 + dx) + func(x0 + 2 * dx)) + func(xN));
+}
+
+double simpson_38(std::function<double(double)> func, double x0, double xN, int N_intervals){
+    if (N_intervals % 3 != 0) throw std::runtime_error("simpson_38 must have number of subintervals divisible by 3!");
+    if (N_intervals == 3) return simpson_38(func, x0, xN);
+    double dx = (xN - x0) / N_intervals;
+    double val = func(x0) + func(xN);
+    for (int i = 1; i <= N_intervals - 2; i+=3){
+        val += 3 * (func(x0 + i * dx));
+    }
+    for (int i = 2; i <= N_intervals - 1; i+=3){
+        val += 3 * (func(x0 + i * dx));
+    }
+    for (int i = 3; i <= N_intervals - 3; i+=3){
+        val += 2 * (func(x0 + i * dx));
+    }
+    return 3 * dx * val / 8;
+}
+
 double simpson(std::function<double(double)> func, double x0, double xN, int N_intervals){
     double dx = (xN - x0) / N_intervals;
+    if (N_intervals % 2 != 0){
+        return simpson(func, x0, xN - 3 * dx, N_intervals - 3) + simpson_38(func, xN - 3 * dx, xN, 3);
+    }
     double val = func(x0) + func(xN);
     for (size_t i = 1; i <= (N_intervals / 2) - 1; i++){
         val += 4. * func(x0 + (2 * i - 1) * dx) + 2. * func(x0 + (2 * i) * dx);
@@ -315,6 +341,35 @@ double simpson(std::function<double(double)> func, double x0, double xN, int N_i
     val += 4. * func(xN - dx);
     val *= dx / 3.;
     return val;
+}
+
+double simpson_inf(std::function<double(double)> func, double x0, double init_end, double tol, double I){
+    /*
+        For evaluating infinite integrals using Simpsons rule:
+        To start: Integrate from x0 to init_end with 10 subintervals 
+        Then: Progressively increase the integration interval while integrating outwards
+        Return once the change over an interval is small enough.
+    */
+    I += simpson(func, x0, init_end, 10);
+    // std::cout << "start : " << I << std::endl;
+    double dx = (init_end - x0) / 10.;
+    double I_part = 0;
+    double part_tol = tol * 1e6;
+    do {
+        if (isnan(I)) throw std::runtime_error("Encountered NAN in simpson_inf");
+        x0 = init_end;
+        init_end += 10 * dx;
+        // std::cout << "Start : " << x0 << " => " << init_end << std::endl;
+        I_part = simpson(func, x0, init_end, 10);
+        I += I_part;
+        // std::cout << "simpson : " << x0 << " => " << init_end << " : " << I << ", " << I_part << ", " << part_tol << std::endl;
+        double conv_frac = abs(I_part / I);
+        if (conv_frac < tol) break;
+        if (conv_frac < part_tol) {
+            dx *= 2; part_tol *= 0.1;
+        }
+    } while ( part_tol > tol );
+    return I;
 }
 
 std::pair<double, double> weighted_simpson(std::function<double(double)> func, std::function<double(double)> wt, double x0, double xN, int N_intervals){
@@ -379,4 +434,153 @@ double tanh_sinh(std::function<double(double)> func, double h, double tol){
                     << "). Relative value of last integration step was " << abs((f * w) / I) << ", tolerance is : " << tol << std::endl;
     }
     return I;
+}
+
+double trapezoid(const std::vector<double>& x, const std::vector<double>& y){
+    double I = 0;
+    for (size_t i = 1; i < y.size(); i++){
+        I += (x[i] - x[i - 1]) * (y[i] + y[i - 1]);
+    }
+    return 0.5 * I;
+}
+
+double trapezoid(const double dx, const std::vector<double>& y){
+    double I = 0;
+    for (size_t i = 1; i < y.size() - 1; i++){
+        I += y[i];
+    }
+    I += 0.5 * (y.front() + y.back());
+    return I * dx;
+}
+
+double newton_usafe(const std::function<double(double)>& fun, const std::function<double(double)>& df, double x0, double ftol, double dtol, int& ierr) noexcept {
+    double f_val;
+    int niter = 0;
+    int max_iter = 50;
+    double prev_x;
+    do {
+        prev_x = x0;
+        f_val = fun(x0);
+        // std::cout << "\tNewton : " << x0 << ", " << f_val << ", " << df(x0) << std::endl;
+        x0 -= f_val / df(x0);
+        if (niter++ > max_iter) {ierr = 1; return x0;}
+    } while (abs(f_val) > ftol && abs(x0 - prev_x) > dtol);
+    if (isnan(x0)) {ierr = 2; return x0;}
+    if (isinf(x0)) {ierr = 3; return x0;}
+    return x0;
+}
+
+double bracket_positive(const std::function<double(double)>& fun, double x0, double x1, double tol){
+    double f0 = fun(x0);
+    double f1 = fun(x1);
+    if (f0 * f1 > 0){
+        throw std::runtime_error("Bracket solver (positive): Initial values have same sign!");
+    }
+    while ( (abs(f0) > tol) || (abs(f1) > tol) ){
+        double x_mid = 0.5 * (x0 + x1);
+        double f_mid = fun(x_mid);
+        if ((f0 * f_mid > 0)){ // f0 and f_mid have same sign
+            x0 = x_mid; f0 = f_mid;
+        }
+        else {
+            x1 = x_mid; f1 = f_mid;
+        }
+    }
+    if (f0 >= 0) return x0;
+    if (f1 < 0) throw std::runtime_error("Bracket solver (positive) : Both function values are negative!");
+    return x1;
+}
+
+void bracket_root_usafe(const std::function<double(double)>& fun, double& x0, double& x1, double& f0, double& f1, double dtol, double ftol) noexcept {
+    while ( (abs(x0 - x1) > dtol) && (abs(f0) > ftol) && (abs(f1) > ftol)){
+        double x_mid = 0.5 * (x0 + x1);
+        double f_mid = fun(x_mid);
+        if ((f0 * f_mid > 0)){ // f0 and f_mid have same sign
+            x0 = x_mid; f0 = f_mid;
+        }
+        else {
+            x1 = x_mid; f1 = f_mid;
+        }
+        // std::cout << "\t\tBracket solver : " << x0 << ", " << x1 << ", " << f0 << ", " << f1 << ", " << tol << std::endl;
+    }
+    // std::cout << "\t\tFinished bracket_root : " << x0 << ", " << x1 << ", " << f0 << ", " << f1 << ", " << tol << std::endl;
+    if (abs(f0) > abs(f1)) {
+        std::swap(x0, x1); std::swap(f0, f1);
+    }
+}
+
+std::array<double, 3> fit_quadric(const std::array<double, 3>& x, const std::array<double, 3>& y){
+    Eigen::MatrixXd A(3, 3);
+    Eigen::VectorXd b(3);
+    for (size_t i = 0; i < 3; i++){
+        A(i, 0) = x[i] * x[i];
+        A(i, 1) = x[i];
+        A(i, 2) = 1;
+        b(i) = y[i];
+    }
+
+    Eigen::VectorXd sol = A.partialPivLu().solve(b);
+    std::array<double, 3> coeff;
+    for (size_t i = 0; i < 3; i++){
+        coeff[i] = sol(i);
+    }
+    return coeff;
+}
+
+std::array<double, 3> quadric_extrapolate_coeff(const std::vector<double>& x, const std::vector<double>& y){
+    Eigen::MatrixXd A(3, 3);
+    Eigen::VectorXd b(3);
+    size_t N = x.size() - 3;
+    for (size_t i = 0; i < 3; i++){
+        double xi = x[N + i] - x.back();
+        A(i, 0) = xi * xi;
+        A(i, 1) = xi;
+        A(i, 2) = 1;
+        b(i) = y[N + i];
+    }
+    Eigen::VectorXd sol = A.partialPivLu().solve(b);
+    std::array<double, 3> coeff;
+    for (size_t i = 0; i < 3; i++){
+        coeff[i] = sol(i);
+    }
+    return coeff;
+}
+
+double interpolate_grid(const double x_val, const std::vector<double>& x, const std::vector<double>& y){
+    if (x_val < x[0]) throw std::range_error("Interpolate grid: x_val < min(x)! (" + std::to_string(x_val) + " < " + std::to_string(x[0]) + ")");
+    if (x_val > x.back()) throw std::range_error("Interpolate grid: x_val > max(x)! (" + std::to_string(x_val) + " > " + std::to_string(x.back()) + ")");
+
+    if (x_val == x[0]) return y[0];
+
+    size_t i = 1;
+    double x1{x[0]}, x2{x[i]};
+    for (i = 2; i < x.size(); i++){
+        if (x2 > x_val) break;
+        x1 = x2;
+        x2 = x[i];
+    }
+    const double y1{y[i - 1]}, y2{y[i]};
+
+    return y1 + (y2 - y1) * (x_val - x1) / (x2 - x1);
+}
+
+std::vector<double> interpolate_grid(const std::vector<double>& new_x, const std::vector<double>& old_x, const std::vector<double>& y){
+    std::vector<double> new_y(new_x.size());
+    if (new_x[0] / old_x[0] - 1 < - 1e-12) throw std::range_error("Interpolate grid: new_x < old_x! (" + std::to_string(new_x[0]) + " < " + std::to_string(old_x[0]) + ")");
+    if (new_x.back() / old_x.back() - 1 > 1e-12) throw std::range_error("Interpolate grid: new_x > old_x! (" + std::to_string(new_x.back()) + " > " + std::to_string(old_x.back() - 1e-8) + ")");
+
+    double x1{old_x[0]}, x2{old_x[1]};
+    size_t old_idx = 1;
+    for (size_t new_idx = 0; new_idx < new_x.size(); new_idx++){
+        double x = new_x[new_idx];
+        while ((old_idx < old_x.size() - 1) && (x2 < x)){
+            old_idx++;
+            x1 = x2;
+            x2 = old_x[old_idx];
+        }
+        double y1{y[old_idx - 1]}, y2{y[old_idx]};
+        new_y[new_idx] = y1 + (y2 - y1) * (x - x1) / (x2 - x1);
+        // std::cout << "Interpolate : " << x1 << " < " << x << " < " << x2 << ", " << y1 / PI << ", " << y2 / PI << " (" << old_idx << ") " << std::endl;
+    }
+    return new_y;
 }

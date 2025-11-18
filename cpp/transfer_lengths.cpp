@@ -119,6 +119,7 @@ vector2d Spherical::get_collision_diameters(double rho, double T, const std::vec
     }
     return avg_R;
 }
+
 vector2d Spherical::get_b_max(double T, std::vector<std::vector<int>>& ierr){
     // bmax[i][j] in units of sigma[i][j]
     // The maximum value of the impact parameter at which deflection angle (chi) is positive
@@ -147,6 +148,7 @@ vector2d Spherical::get_b_max(double T, std::vector<std::vector<int>>& ierr){
     }
     return bmax;
 }
+
 vector2d Spherical::get_b_max(double T){
     std::vector<std::vector<int>> ierr(Ncomps, std::vector<int>(Ncomps, 1));
     std::vector<std::vector<double>> b_max = get_b_max(T, ierr);
@@ -212,11 +214,15 @@ double Spherical::ewca_weight(int i, int j, double T, double g, double b, int pr
 
 double Spherical::momentum_transfer(int i, int j, double T, double g, double b){
     double chi_val = chi(i, j, T, g, b * sigma[i][j]);
+    // double red_mass = m[i] * m[j] / (m[i] + m[j]);
+    // double U = sqrt(2 * BOLTZMANN * T / red_mass) * g;
     return g * sqrt(2 * (1 - cos(chi_val))) * abs(sin(chi_val / 2.));
 }
 
 double Spherical::energy_transfer(int i, int j, double T, double g, double b){
     double chi_val = chi(i, j, T, g, b * sigma[i][j]);
+    // double red_mass = m[i] * m[j] / (m[i] + m[j]);
+    // double U = sqrt(2 * BOLTZMANN * T / red_mass) * g;
     return g * abs(cos(chi_val) - sin(chi_val) - 1);
 }
 
@@ -274,28 +280,54 @@ double Spherical::get_bmid(int i, int j, double g, double T){
 /********************************************************************************************/
 
 vector2d Spherical::MTL_correlation(double rho, double T){
-    double rho_r = rho * pow(sigma[0][0], 3);
-    double Tr = T * BOLTZMANN / eps[0][0];
+    constexpr double s[5] = {1.029, 0.091, 0.615, 1.074, - 0.603};
+    if (is_singlecomp){
+        double rho_r = rho * pow(sigma[0][0], 3);
+        double Tr = T * BOLTZMANN / eps[0][0];
 
-    static constexpr double s[5] = {1.029, 0.091, 0.615, 1.074, - 0.603};
+        double mtl_00 = s[0] - s[1] * log(Tr) + s[2] * (rho_r / Tr) * exp(- (s[3] + s[4] * rho_r) * sqrt(Tr) );
+        return vector2d(Ncomps, vector1d(Ncomps, mtl_00 * sigma[0][0]));
+    }
 
-    double mtl = s[0] - s[1] * log(Tr) + s[2] * (rho_r / Tr) * exp(- (s[3] + s[4] * rho_r) * sqrt(Tr) );
-    return vector2d(Ncomps, vector1d(Ncomps, mtl * sigma[0][0]));
+    vector2d mtl(Ncomps, vector1d(Ncomps, 0.));
+    for (size_t i = 0; i < Ncomps; i++){
+        for (size_t j = i; j < Ncomps; j++){
+            double rho_r = rho * pow(sigma[i][j], 3);
+            double Tr = T * BOLTZMANN / eps[i][j];
+            mtl[i][j] = mtl[j][i] = (s[0] - s[1] * log(Tr) + s[2] * (rho_r / Tr) * exp(- (s[3] + s[4] * rho_r) * sqrt(Tr) )) * sigma[i][j];
+        }
+    }
+    return mtl;
 }
 
 vector2d Spherical::ETL_correlation(double rho, double T){
-    double rho_r = rho * pow(sigma[0][0], 3);
-    double Tr = T * BOLTZMANN / eps[0][0];
 
-    const double a = 1.054;
-    const double bi[2] = {0.100, - 0.023};
-    const double ci[2] = {- 1.166, 2.389};
-    const double c0 = 3. * bi[0];
-    const double c1 = ci[0];
-    const double c2 = ci[1];
-    const double c3 = (c1 - c0);
-    const double b = bi[0] + bi[1] * rho_r;
-    const double c = c0 + c1 * rho_r + c2 * pow(rho_r, 2) + c3 * pow(rho_r, 3);
-    const double etl = a - b * log(Tr) + c / pow(Tr, 1.5);
-    return vector2d(Ncomps, vector1d(Ncomps, etl * sigma[0][0]));
+    constexpr double a = 1.054;
+    constexpr double bi[2] = {0.100, - 0.023};
+    constexpr double ci[2] = {- 1.166, 2.389};
+    constexpr double c0 = 3. * bi[0];
+    constexpr double c1 = ci[0];
+    constexpr double c2 = ci[1];
+    constexpr double c3 = (c1 - c0);
+
+    if (is_singlecomp){
+        double rho_r = rho * pow(sigma[0][0], 3);
+        double Tr = T * BOLTZMANN / eps[0][0];
+
+        const double b = bi[0] + bi[1] * rho_r;
+        const double c = c0 + c1 * rho_r + c2 * pow(rho_r, 2) + c3 * pow(rho_r, 3);
+        const double etl = a - b * log(Tr) + c / pow(Tr, 1.5);
+        return vector2d(Ncomps, vector1d(Ncomps, etl * sigma[0][0]));
+    }
+    vector2d etl(Ncomps, vector1d(Ncomps, 0.));
+    for (size_t i = 0; i < Ncomps; i++){
+        for (size_t j = i; j < Ncomps; j++){
+            double rho_r = rho * pow(sigma[i][j], 3);
+            double Tr = T * BOLTZMANN / eps[i][j];
+            double b = bi[0] + bi[1] * rho_r;
+            double c = c0 + c1 * rho_r + c2 * pow(rho_r, 2) + c3 * pow(rho_r, 3);
+            etl[i][j] = etl[j][i] = (a - b * log(Tr) + c / pow(Tr, 1.5)) * sigma[i][j];
+        }
+    }
+    return etl;
 }

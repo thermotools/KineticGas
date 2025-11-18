@@ -1,7 +1,7 @@
 ---
 layout: default
 version: 
-title: Please Cite
+title: References
 permalink: /please_cite.html
 ---
 
@@ -18,6 +18,10 @@ KineticGas has been developed throughout several works. If you are referencing t
 * The Lennard-Jones spline fluid
   * [Viscosity, thermal conductivity and self-diffusion coefficient of the Lennard Jones spline fluid: Evaluation of theories for a short-ranged potential](https://doi.org/10.1016/j.fluid.2025.114584) (J. S. Løken, V. G. Jervell, M. Hammer, B. Hafskjold, T. T. Trinh and Ø. Wilhelmsen, 2025)
   * [Revised Enskog theory and extended corresponding states models for the transport properties of the Lennard-Jones/spline fluid](https://ntnuopen.ntnu.no/ntnu-xmlui/handle/11250/3182899) (Johannes S. Løken, 2025)
+* Quantum mechanical methods and Feynman-Hibbs corrections
+  * [The limits of Feynman–Hibbs corrections in capturing quantum-nuclear contributions to thermophysical properties](https://doi.org/10.1063/5.0295049) (V. G. Jervell and Ø. Wilhelmsen, J. Chem. Phys. 2025)
+* Ab initio reference potentials
+  * Argon, Neon, Hydrogen and Helium: [The limits of Feynman–Hibbs corrections in capturing quantum-nuclear contributions to thermophysical properties](https://doi.org/10.1063/5.0295049) (V. G. Jervell and Ø. Wilhelmsen, J. Chem. Phys. 2025)
 
 Cite this repository as
 

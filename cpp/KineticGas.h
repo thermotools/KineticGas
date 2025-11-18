@@ -111,7 +111,13 @@ public:
     double selfdiffusion(double T, double Vm, int N=2){
         return *(interdiffusion(T, Vm, {0.5,0.5}, N).data());}
     Eigen::VectorXd soret_coefficient(double T, double Vm, const std::vector<double>& x, int N, int dependent_idx=-1);
-    std::map<std::string, double> thermal_conductivity_contributions(double T, double Vm, const std::vector<double>& x, int N=2, std::string contribs="tdi");
+    std::map<std::string, double> thermal_conductivity_contributions(double T, double Vm, const std::vector<double>& x, int N=2, std::string contribs="tdi"); // (t)ranslational, (d)ensity, and (i)nternal contributions.
+    virtual double second_virial(int i, int j, double T) = 0;
+    virtual double bound_second_virial(int i, int j, double T) = 0;
+    virtual double dimer_constant(int i, int j, double T) {return - bound_second_virial(i, j, T);}
+    virtual std::map<char, double> second_virial_contribs(int i, int j, double T, const std::string& contribs="ibt") = 0; // (i)deal, (b)ound, and (t)hermal contributions.
+    double de_broglie_wavelength(int i, double T);
+    double de_broglie_wavelength(int i, int j, double T);
 
     // ------------------------------------------------------------------------------------------------------------------- //
     // ----------- TP-interface methods: These just compute molar volume and feed the call to the methods above ---------- //
@@ -144,9 +150,14 @@ public:
     std::vector<std::vector<double>> get_diffusion_matrix(double rho, double T, const std::vector<double>& x, int N);
     std::vector<std::vector<double>> get_viscosity_matrix(double rho, double T, const std::vector<double>&x, int N);
     std::vector<double> get_viscosity_vector(double rho, double T, const std::vector<double>& x, int N);
+    std::vector<std::vector<double>> get_bulk_viscosity_matrix(double rho, double T, const std::vector<double>&x, int N);
+    std::vector<double> get_bulk_viscosity_vector(double rho, double T, double p, const std::vector<double>& x, int N);
+
+
 
     vector1d get_K_factors(double rho, double T, const vector1d& mole_fracs); // Eq. (1.2) of 'multicomponent docs'
     vector1d get_K_prime_factors(double rho, double T, const vector1d& mole_fracs); // Eq. (5.4) of 'multicomponent docs'
+    vector1d get_K_dblprime_factors(double rho, double T, double p, const vector1d& mole_fracs);
 
 // ----------------------------------------------------------------------------------------------------------------------------------- //
 // -------------------------------------------------- Utility methods ---------------------------------------------------------------- //
@@ -186,6 +197,7 @@ public:
 
     int frame_of_reference_map(std::string frame_of_ref);
 
+    void precompute_ideal_diffusion(vector1d T);
 // ------------------------------------------------------------------------------------------------------------------------ //
 // --------------------------------------- KineticGas internals are below here -------------------------------------------- //
 // -------------------------------- End users should not need to care about any of this ----------------------------------- //
@@ -197,9 +209,15 @@ protected:
 
     vector1d m; // Particle masses (kg)
     vector2d M, m0, red_mass; // Various combinations of particle masses that show up often
+    
+    mutable KineticGasCache cache; // This is going to replace the various *_map members ...
+    
     std::map<OmegaPoint, double> omega_map;
     std::map<StatePoint, vector2d> mtl_map;
     std::map<StatePoint, vector2d> etl_map;
+    // Any method that changes model parameters should use this to clear the caches to ensure that all caches are
+    // cleared, also if new caches are introduced in the future.
+    virtual void clear_all_caches();
 
     // In the general case, sigma and eps are scaling parameters for the molecular interaction, 
     // with sigma being the length scale (m) and eps being the energy scale (J).
@@ -209,14 +227,19 @@ protected:
 
     std::unique_ptr<GenericEoS> eos;
     const std::vector<json> compdata; // Fluid data for each component, 
+    const std::vector<std::string> comps;
 
     const int default_tl_model_id = TransferLengthModel::EWCA; // Default transfer length model
     int transfer_length_model_id = default_tl_model_id; // Currently active transfer length model
 
     // set_internals is called at the start of all public methods. 
-    // If a derived class needs to set any internals before running a computation,
-    // it should be done by overriding this method.
-    inline virtual void set_internals(double rho, double T, const vector1d& x){};
+    // If a derived class needs to set any internals before running a computation it should be done by overriding this method.
+    // The return value of the method signals if any internals have been set. 
+    // Use 0 to signal that nothing has been set, otherwise do whatever you like.
+    // Essentially, the return value can be useful if you are inheritting from some class, and want to check whether that class
+    // does anything at runtime.
+    virtual size_t set_internals(double rho, double T, const vector1d& x){return 0;};
+    virtual void set_masses(); // Precompute reduced mass of particle pairs. Call this if you for some reason have modified particle masses after init.
 
     // Implementations of omega, model_mtl, and model_etl, may wish to use the omega_map, mtl_map and etl_map
     // To store values for lazy evaluation (massive speedups)
@@ -264,7 +287,6 @@ protected:
 
 private:
 
-    void set_masses(); // Precompute reduced mass of particle pairs (used only on init.)
     void precompute_diffusion(int N, double T, double rho); // Forwards call to precompute_conductivity_omega. Override that instead.
     void precompute_th_diffusion(int N, double T, double rho); // Forwards call to precompute_conductivity_omega. Override that instead.
 
@@ -290,6 +312,11 @@ private:
     double L_ij(int p, int q, int i, int j, double T); // [S^(p)_{5/2}(U^2_i), S^(q)_{5/2}(U^2_j)]_{ij}
     double L_i(int p, int q, int i, int j, double T);  // [S^(p)_{5/2}(U^2_i), S^(q)_{5/2}(U^2_i)]_{ij}
     double L_simple(int p, int q, int i, double T);    // [S^(p)_{5/2}(U^2_i), S^(q)_{5/2}(U^2_i)]_{i}
+
+    // Bulk viscosity
+    double Lb_ij(int p, int q, int i, int j, double T); // [S^(p)_{1/2}(U^2_i), S^(q)_{1/2}(U^2_j)]_{ij}
+    double Lb_i(int p, int q, int i, int j, double T);  // [S^(p)_{1/2}(U^2_i), S^(q)_{1/2}(U^2_i)]_{ij}
+
 };
 
 inline int delta(int i, int j) {return (i == j) ? 1 : 0;}
