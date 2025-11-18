@@ -189,6 +189,14 @@ std::pair<double, double> weighted_simpson(std::function<std::pair<double, doubl
 */
 double tanh_sinh(std::function<double(double)> func, double dh, double tol=1e-5);
 
+/*
+    Standard Newton solver
+
+    * newton_usafe: Will fail silently, signalling an error with the ierr flag.
+    * newton: Will throw an error upon failure.
+
+    Use the former if you plan to handle errors yourself. Use the latter if you're doing something that should never fail.
+*/
 double newton_usafe(const std::function<double(double)>& fun, const std::function<double(double)>& df, double x0, double ftol, double dtol, int& ierr) noexcept;
 inline double newton(const std::function<double(double)>& fun, const std::function<double(double)>& df, double x0, double ftol=1e-10, double dtol=-1){
     int ierr = 0;
@@ -200,6 +208,14 @@ inline double newton(const std::function<double(double)>& fun, const std::functi
     throw std::runtime_error("Unknown Newton error : " + std::to_string(ierr));
 }
 
+
+/*
+    Basic bracket solvers
+
+    * bracet_positive: Will always return the positive side of the bracket
+    * bracket_root_usafe: Will never throw, and will set x0 to the value closest to the root (determined from abs(f0) < abs(f1))
+    * bracket_root: Will do some sanity checking, and may throw.
+*/
 double bracket_positive(const std::function<double(double)>& fun, double x0, double x1, double tol=1e-10);
 void bracket_root_usafe(const std::function<double(double)>& fun, double& x0, double& x1, double& f0, double& f1, double dtol, double ftol) noexcept;
 inline double bracket_root(const std::function<double(double)>& fun, double x0, double x1, double dtol=1e-5, double ftol=1e-10){
@@ -212,10 +228,27 @@ inline double bracket_root(const std::function<double(double)>& fun, double x0, 
     return x0;
 }
 
+/*
+    Simple trapezoidal integration, either using arrays, or using a constant grid spacing
+*/
 double trapezoid(const std::vector<double>& x, const std::vector<double>& y);
 double trapezoid(const double dx, const std::vector<double>& y);
 
+// Fit the quadric f(x) = ax^2 + bx + c to the (x, y) data 
 std::array<double, 3> fit_quadric(const std::array<double, 3>& x, const std::array<double, 3>& y);
+
+// Same as above, but fit to the last three elements in the vectors.
 std::array<double, 3> quadric_extrapolate_coeff(const std::vector<double>& x, const std::vector<double>& y);
-double interpolate_grid(const std::vector<double>& x, const std::vector<double>& y);
+
+/*
+    Do a linear interpolation on (x, y) to get the value at x_val
+    Will throw if x_val is outside the range of the x-values
+*/
+double interpolate_grid(const double x_val, const std::vector<double>& x, const std::vector<double>& y);
+
+/*
+    Get the y-values at every new_x position by linear interpolation of (old_x, y)
+
+    Useful when we solve something on one grid (old_x) which is e.g. non-uniform, and want to extract the values on some new grid (new_x) from the solution.
+*/
 std::vector<double> interpolate_grid(const std::vector<double>& new_x, const std::vector<double>& old_x, const std::vector<double>& y);
