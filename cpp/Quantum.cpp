@@ -125,10 +125,21 @@ Quantum::Quantum(std::string comps_)
         }
     }
     std::string phase_shift_filepath = get_fluid_dir() + "/E_bound/" + comps[0] + ".phase_shifts";
-    std::ifstream phase_shift_file(phase_shift_filepath);
-    if (phase_shift_file.is_open()){
-        json phase_shift_data = json::parse(phase_shift_file);
-        absolute_phase_shift_map = phase_shift_data.get<std::map<int, vector2d>>();
+    std::ifstream psf(phase_shift_filepath, std::ios::binary);
+    if (psf.is_open()){
+        // Read file written by Quantum::dump_phase_shift_map
+        size_t n; psf.read((char*)&n, sizeof(n));
+        while (n--) {
+            int l; psf.read((char*)&l, sizeof(l));
+            size_t a; psf.read((char*)&a, sizeof(a));
+            auto& vv = absolute_phase_shift_map[l];
+            vv.resize(a);
+            for (auto& v : vv) {
+                size_t b; psf.read((char*)&b, sizeof(b));
+                v.resize(b);
+                psf.read((char*)v.data(), b * sizeof(double));
+            }
+        }
     } 
     else {
         std::cout << "No phase shift data found for component : " << comps[0] << std::endl;
@@ -572,11 +583,33 @@ vector2d Quantum::absolute_phase_shifts(int i, int j, int l, double k_max){
 }
 
 void Quantum::dump_phase_shift_map(){
+    // Dump absolute phase shifts to a binary file
     std::string filepath = get_fluid_dir() + "/E_bound/" + comps[0] + ".phase_shifts";
+
+    std::ofstream file(filepath, std::ios::binary);
+    if (!file.is_open()) throw std::runtime_error("Failed to open dumpfile: " + filepath);
+    size_t n = absolute_phase_shift_map.size(); 
+    file.write((char*)&n, sizeof(n));
+
+    for (auto& [k, vv] : absolute_phase_shift_map) {
+        file.write((char*)&k, sizeof(k));
+        size_t a = vv.size(); 
+        file.write((char*)&a, sizeof(a));
+        for (auto& v : vv) {
+            size_t b = v.size(); 
+            file.write((char*)&b, sizeof(b));
+            file.write((char*)v.data(), b * sizeof(double));
+        }
+    }
+    std::cout << "Dumped absolute phase shifts to " << filepath << std::endl;
+}
+
+void Quantum::dump_phase_shift_map_to_json(){
+    // Dump phase shifts to a json file (nice for plotting etc.)
+    std::string filepath = get_fluid_dir() + "/E_bound/" + comps[0] + "_phase_shifts.json";
     std::ofstream file(filepath);
     if (!file.is_open()) throw std::runtime_error("Failed to open dumpfile: " + filepath);
     json dump_data(absolute_phase_shift_map);
-    // dump_data["Total"] = stored_total_phase_shifts;
     file << std::setw(4) << dump_data << std::endl;
     std::cout << "Dumped absolute phase shifts to " << filepath << std::endl;
 }

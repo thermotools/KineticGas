@@ -278,6 +278,7 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("total_phase_shifts", &Quantum::total_phase_shifts)
         .def("dump_phase_shift_map", &Quantum::dump_phase_shift_map)
         .def("clear_phase_shift_maps", &Quantum::clear_phase_shift_maps)
+        .def("dump_phase_shift_map_to_json", &Quantum::dump_phase_shift_map_to_json)
         .def("r_classical_forbidden", &Quantum::r_classical_forbidden)
         .def("get_de_boer", py::overload_cast<>(&Quantum::get_de_boer))
         .def("get_de_boer", py::overload_cast<int, int>(&Quantum::get_de_boer))

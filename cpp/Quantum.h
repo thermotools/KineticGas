@@ -104,7 +104,8 @@ public:
     // Result is stored in the internal "total_phase_shift_map" after tracing, and can be retrieved with the total_phase_shifts method.
     void trace_total_phase_shifts(int i, int j, double k_max);
     vector2d total_phase_shifts(int i, int j, double k_max);
-    void dump_phase_shift_map();
+    void dump_phase_shift_map(); // Dumps to a custom binary format. Use the below for json.
+    void dump_phase_shift_map_to_json(); // Format: {l : [[...k], [...delta]]} or something like that. "k" is probably in "sigma^-1".
     void clear_phase_shift_maps();
 
     // The "integral phase shift" is the integral of the total phase shift, weighted with a Boltzmann factor.
