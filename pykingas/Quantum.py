@@ -62,11 +62,11 @@ class Quantum(py_KineticGas):
         Args:
             i, j (int): Species indices
             l (int): Angular momentum quantum number
-            E (float): Total energy (J)
+            E (float): Dimensionless energy (E / epsilon[i][j])
             r_end (float): Maximum particle separation (m)
             dr (float): Step size
         Returns:
-            list[float] : The two-particle non-normalized wave function out to `r_end`.
+            list[list[float]] : [r, psi, delta], the positions, wave function value, and local phase shift out to r_end
         """
         return self.cpp_kingas.wave_function(i, j, l, E, r_end, dr)
     
@@ -76,7 +76,7 @@ class Quantum(py_KineticGas):
         Args:
             i, j (int): Species indices
             l (int): Angular momentum quantum number
-            E (float): Total energy (J)
+            E (float): Dimensionless energy (E / epsilon[i][j])
         Returns:
             float: The relative phase shift $(- \pi / 2, \pi / 2)$
         """
@@ -88,7 +88,7 @@ class Quantum(py_KineticGas):
         Args:
             i, j (int): Species indices
             l (int): Angular momentum quantum number
-            E (float): Total energy (J)
+            E (float): Dimensionless energy (E / epsilon[i][j])
         Returns:
             float: The relative phase shift $(- \pi / 2, \pi / 2)$
         """
