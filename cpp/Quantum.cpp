@@ -37,6 +37,7 @@ See Also:
 
 #include "Quantum.h"
 #include "Integration/Integration.h"
+#include <cmath>
 #include <autodiff/forward/dual.hpp>
 #include <fstream>
 #include <sstream>
