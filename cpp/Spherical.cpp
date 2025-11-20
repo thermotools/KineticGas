@@ -9,57 +9,49 @@ Spherical::Spherical(vector1d mole_weights,
                     : KineticGas(mole_weights, sigma, eps, is_idealgas, is_singlecomp)
                     {}
 
-double Spherical::potential(int i, int j, double r){
+double Spherical::potential(int i, int j, double r) const {
     return potential(i, j, static_cast<dual2>(r)).val.val;
 }
 
-double Spherical::potential_derivative_r(int i, int j, double r){
+double Spherical::potential_derivative_r(int i, int j, double r) const {
     dual2 rd = r;
     const auto func = [&](dual2 r_){return potential(i, j, r_);};
     auto [u0, ur, urr] = autodiff::derivatives(func, autodiff::wrt(rd), autodiff::at(rd));
     return ur;
 }
 
-double Spherical::potential_dblderivative_rr(int i, int j, double r){
+double Spherical::potential_dblderivative_rr(int i, int j, double r) const {
     dual2 rd = r;
     const auto func = [&](dual2 r_){return potential(i, j, r_);};
     auto [u0, ur, urr] = autodiff::derivatives(func, autodiff::wrt(rd, rd), autodiff::at(rd));
     return urr;
 }
 
-StatePoint Spherical::get_transfer_length_point(double rho, double T, const vector1d& x){
+StatePoint Spherical::get_transfer_length_point(double rho, double T, const vector1d& x) const {
     if (transfer_length_model_id == TransferLengthModel::correlation){
         return StatePoint(T, rho);
     }
     return StatePoint(T);
 }
 
-double Spherical::omega(int i, int j, int l, int r, double T){
+double Spherical::omega(int i, int j, int l, int r, double T) const {
+    if (is_singlecomp) {
+        i = 0; j = 0;
+    }
     OmegaPoint point = get_omega_point(i, j, l, r, T);
-    OmegaPoint sympoint = get_omega_point(j, i, l, r, T);
-    const std::map<OmegaPoint, double>::iterator pos = omega_map.find(point);
 
-    if (pos != omega_map.end()) return pos->second;
+    if (auto val = cache.omega.get(point)){
+        return *val;
+    }
 
     double w = w_integral(i, j, T, l, r);
     double val;
     if (i == j) val = pow(sigma[i][j], 2) * sqrt((PI * BOLTZMANN * T) / m[i]) * w;
     else val = 0.5 * pow(sigma[i][j], 2) * sqrt(2 * PI * BOLTZMANN * T / (m0[i][j] * M[i][j] * M[j][i])) * w;
-    omega_map[point] = val;
-    omega_map[sympoint] = val; // Collision integrals are symmetric wrt. particle indices.
-    if (is_singlecomp){
-        for (int ci = 0; ci < Ncomps; ci++){
-            for (int cj = 0; cj < Ncomps; cj++){
-                if (((ci == i) && (cj == j)) || ((ci == j) && (cj == i))) continue;
-                OmegaPoint purepoint = get_omega_point(ci, cj, l, r, T);
-                omega_map[purepoint] = val;
-            }
-        }
-    }
-    return val;
+    return cache.omega.store_if_absent(point, val);
 }
 
-double Spherical::w_integral(int i, int j, double T, int l, int r){
+double Spherical::w_integral(int i, int j, double T, int l, int r) const {
     /*
     Evaulate the dimensionless collision integral
 
@@ -105,13 +97,13 @@ double Spherical::w_integral(int i, int j, double T, int l, int r){
 
 double Spherical::w_integrand(int i, int j, double T, 
                                         double g, double b,
-                                        int l, int r){ // Using b = b / sigma to better scale the axes. Multiply the final integral by sigma.
+                                        int l, int r) const { // Using b = b / sigma to better scale the axes. Multiply the final integral by sigma.
     if ((b > 2.5) && (g > 1.5)) return 0;
     const double chi_val = chi(i, j, T, g, b * sigma[i][j]);
     return 2 * exp(- pow(g, 2)) * pow(g, 2.0 * r + 3.0) * (1 - pow(cos(chi_val), l)) * b;
 };
 
-double Spherical::cross_section(int i, int j, int l, double E){
+double Spherical::cross_section(int i, int j, int l, double E) const {
     /*
         Collision cross-sections, \int_0^{\infty} (1 - \cos^{l}(\chi)) b \d b
         - i, j : Component indices
@@ -136,12 +128,12 @@ double Spherical::cross_section(int i, int j, int l, double E){
     return pow(sigma[i][j], 2) * I; // * simpson_inf(integrand, 1e-6, 0.5); // Integration carried out in reduced units.
 }
 
-double Spherical::hs_cross_section(int i, int j, int l){
+double Spherical::hs_cross_section(int i, int j, int l) const {
     if (l % 2 == 1) return PI * pow(sigma[i][j], 2);
     return (1 - 1. / (1 + l)) * PI * pow(sigma[i][j], 2);
 }
 
-double Spherical::reduced_cross_section(int i, int j, int l, double E){
+double Spherical::reduced_cross_section(int i, int j, int l, double E) const {
     double Q = cross_section(i, j, l, E); 
     double Q_hs = hs_cross_section(i, j, l);
     return Q / Q_hs; 
@@ -243,7 +235,7 @@ double Spherical::get_alpha_eff(int i, int j, double T){
     return - E / eps[i][j];
 }
 
-double Spherical::get_potential_root(int i, int j){
+double Spherical::get_potential_root(int i, int j) const {
     return newton([&](double r){return potential(i, j, r) / eps[i][j];},
                   [&](double r){return potential_derivative_r(i, j, r) / eps[i][j];},
                   sigma[i][j]);
@@ -266,7 +258,7 @@ Common variables are:
 
 // Helper funcions for computing dimentionless collision integrals
 
-double Spherical::theta(int i, int j, const double T, const double g, const double b){
+double Spherical::theta(int i, int j, const double T, const double g, const double b) const {
     /* Compute angular collision coordinate at distance of closest approach
         - i, j : Component indices
         - T : Temperature (K)
@@ -322,19 +314,19 @@ double Spherical::theta_r(int i, int j, double R, double r, double T, double g, 
     return i1 + i2;
 }
 
-double Spherical::theta_lim(int i, int j, const double T, const double g){
+double Spherical::theta_lim(int i, int j, const double T, const double g) const {
     double b = 100 * sigma[i][j];
     double R = get_R(i, j, T, g, b);
     return theta_integral(i, j, T, R, g, b);
 }
 
-double Spherical::theta_integral(int i, int j, double T, double R, double g, double b){
+double Spherical::theta_integral(int i, int j, double T, double R, double g, double b) const {
     constexpr double dh{1.0e-3};
     const auto integrand = [&](double u){return (R / pow(u, 2)) * theta_integrand(i, j, T, R / u, g, b);};
     return tanh_sinh(integrand, dh);
 }
 
-double Spherical::theta_integrand(int i, int j, double T, double r, double g, double b){
+double Spherical::theta_integrand(int i, int j, double T, double r, double g, double b) const {
     return pow((pow(r, 4) / pow(b, 2)) * (1.0 - potential(i, j, r) / (BOLTZMANN * T * pow(g, 2))) - pow(r, 2), -0.5);
 }
 
@@ -357,15 +349,15 @@ double Spherical::theta_integrand_dblderivative(int i, int j, double T, double r
     return val;
 }
 
-double Spherical::get_R_rootfunc(int i, int j, double T, double g, double b, double& r){
+double Spherical::get_R_rootfunc(int i, int j, double T, double g, double b, double& r) const {
     return (potential(i, j, r) / (BOLTZMANN * T * pow(g, 2))) + pow(b / r, 2) - 1;
 }
 
-double Spherical::get_R_rootfunc_derivative(int i, int j, double T, double g, double b, double& r){
+double Spherical::get_R_rootfunc_derivative(int i, int j, double T, double g, double b, double& r) const {
     return (potential_derivative_r(i, j, r) / (BOLTZMANN * T * pow(g, 2))) - (2 / b) * pow(b / r, 3);
 }
 
-double Spherical::get_R(int i, int j, double T, double g, double b){
+double Spherical::get_R(int i, int j, double T, double g, double b) const {
     /* Compute distance of closest approach (m)
         - i, j : Component indices
         - T : Temperature (K)
@@ -442,43 +434,9 @@ double Spherical::get_R(int i, int j, double T, double g, double b){
         if (niter++ > 50) throw std::runtime_error("get_R reached max iter!");
     }
     return R * sigma[i][j];
-
-    // Newtons method
-    b *= sigma[i][j];
-    double tol = 1e-5; // Relative to sigma[i][j]
-    double init_guess_factor = 1.0;
-    double r = init_guess_factor * b;
-    double f = get_R_rootfunc(i, j, T, g, b, r);
-    double dfdr = get_R_rootfunc_derivative(i, j, T, g, b, r);
-    double next_r = r - f / dfdr;
-    niter = 0;
-    while (abs((r - next_r) / sigma[i][j]) > tol){
-        if (next_r < 0){
-            init_guess_factor *= 0.95;
-            r = init_guess_factor * b;
-        }
-        else if (f < 0 && f / dfdr < 0){
-            init_guess_factor *= 0.95;
-            r = init_guess_factor * b;
-        }
-        else{
-            r = next_r;
-        }
-        f = get_R_rootfunc(i, j, T, g, b, r);
-        dfdr = get_R_rootfunc_derivative(i, j, T, g, b, r);
-        next_r = r - f / dfdr;
-        if (niter++ > 10000) throw std::runtime_error("get_R exceeded 100 iterations! (T, g, b) : " 
-                                                    + std::to_string(T) + ", " + std::to_string(g) + ", " + std::to_string(b / sigma[i][j]) + " : " + std::to_string(next_r / sigma[i][j]));
-        if (isnan(next_r)) throw std::runtime_error("Encountered NAN in get_R! (T, g, b) : " 
-                                                        + std::to_string(T) + ", " + std::to_string(g) + ", " + std::to_string(b));
-        // std::cout << "\tIter R : " << niter << ", " << next_r / sigma[i][j] << ", " << f << ", " << dfdr << std::endl;
-    }
-    std::cout << "Old val : " << next_r / sigma[i][j] << std::endl;
-    if (abs(r0 - next_r / sigma[i][j] > 1e-6)) throw std::runtime_error("Approaches differ too much...");
-    return next_r;
 }
 
-double Spherical::get_R0(int i, int j, double T, double g){
+double Spherical::get_R0(int i, int j, double T, double g) const {
     double tol = 1e-6;
     double Ek = BOLTZMANN * T * pow(g, 2);
     double r = 0.9 * sigma[i][j];
@@ -496,7 +454,7 @@ double Spherical::get_R0(int i, int j, double T, double g){
     return r;
 }
 
-double Spherical::chi(int i, int j, double T, double g, double b){
+double Spherical::chi(int i, int j, double T, double g, double b) const {
     /* Compute deflection angle
         - i, j : Component indices
         - T : Temperature (K)

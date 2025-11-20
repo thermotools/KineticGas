@@ -25,19 +25,16 @@ public:
     QuantumMie(vector1d mole_weights, vector2d sigma, vector2d eps, vector2d la, vector2d lr, std::vector<int> FH_order,
                 bool is_idealgas, bool is_singlecomp);
 
-    double potential(int i, int j, double r, double T){
-        set_C_eff(current_rho, T);
-        return ExtSutherland::potential(i, j, r);
+    double potential(int i, int j, double r, double T) const {
+        return ExtSutherland::potential(i, j, r, T, 1.);
     }
 
-    double potential_derivative_r(int i, int j, double r, double T){
-        set_C_eff(current_rho, T);
-        return ExtSutherland::potential_derivative_r(i, j, r);
+    double potential_derivative_r(int i, int j, double r, double T) const {
+        return ExtSutherland::potential_r(i, j, r, T, 1.);
     }
 
-    double potential_dblderivative_rr(int i, int j, double r, double T){
-        set_C_eff(current_rho, T);
-        return ExtSutherland::potential_dblderivative_rr(i, j, r);
+    double potential_dblderivative_rr(int i, int j, double r, double T) const {
+        return ExtSutherland::potential_rr(i, j, r, T, 1.);
     }
 
     vector2d get_sigma_eff(double T){return ExtSutherland::get_sigma_eff(current_rho, T);}
@@ -51,7 +48,7 @@ private:
 
     void init_FH_terms();
     size_t set_effective_params(dual2 rho, dual2 T) override {return ExtSutherland::set_effective_params(current_rho, T);}
-    StatePoint get_transfer_length_point(double rho, double T, const vector1d& x) override {return Spherical::get_transfer_length_point(rho, T, x);}
+    StatePoint get_transfer_length_point(double rho, double T, const vector1d& x) const override {return Spherical::get_transfer_length_point(rho, T, x);}
     inline double Q1(size_t i, size_t j, const vector2d& lamb){
         return lamb[i][j] * (lamb[i][j] - 1);
     }

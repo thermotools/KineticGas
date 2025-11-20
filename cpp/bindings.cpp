@@ -135,7 +135,7 @@ PYBIND11_MODULE(libpykingas, handle){
         ;
 
     py::class_<Spherical, KineticGas>(handle, "cpp_Spherical")
-        .def("potential", py::overload_cast<int, int, double>(&Spherical::potential))
+        .def("potential", py::overload_cast<int, int, double>(&Spherical::potential, py::const_))
         .def("potential_derivative_r", &Spherical::potential_derivative_r)
         .def("potential_dblderivative_rr", &Spherical::potential_dblderivative_rr)
         .def("potential_r", &Spherical::potential_derivative_r)
@@ -155,9 +155,9 @@ PYBIND11_MODULE(libpykingas, handle){
         .def(py::init<vector1d, vector2d, vector2d, 
                         vector3d, vector3d, vector3d, vector3d,
                         bool, bool>())
-        .def("potential", py::overload_cast<int, int, double>(&ExtSutherland::potential))
-        .def("potential_derivative_r", py::overload_cast<int, int, double>(&ExtSutherland::potential_derivative_r))
-        .def("potential_dblderivative_rr", py::overload_cast<int, int, double>(&ExtSutherland::potential_dblderivative_rr))
+        .def("potential", py::overload_cast<int, int, double>(&ExtSutherland::potential, py::const_))
+        .def("potential_derivative_r", py::overload_cast<int, int, double>(&ExtSutherland::potential_derivative_r, py::const_))
+        .def("potential_dblderivative_rr", py::overload_cast<int, int, double>(&ExtSutherland::potential_dblderivative_rr, py::const_))
         .def("saft_rdf", &ExtSutherland::saft_rdf)
         .def("get_rdf_terms", &ExtSutherland::get_rdf_terms)
         .def("get_sigma_eff", &ExtSutherland::get_sigma_eff)
@@ -218,9 +218,7 @@ PYBIND11_MODULE(libpykingas, handle){
 
     py::class_<QuantumMie, Spherical>(handle, "cpp_QuantumMie")
         .def(py::init<vector1d, vector2d, vector2d, vector2d, vector2d, std::vector<int>, bool, bool>())
-        .def("potential", py::overload_cast<int, int, double, double>(&QuantumMie::potential))
-        // .def("potential_derivative_r", py::overload_cast<int, int, double, double>(&QuantumMie::potential_derivative_r))
-        // .def("potential_dblderivative_rr", py::overload_cast<int, int, double, double>(&QuantumMie::potential_dblderivative_rr))
+        .def("potential", py::overload_cast<int, int, double, double>(&QuantumMie::potential, py::const_))
         .def("get_sigma_eff", py::overload_cast<double>(&QuantumMie::get_sigma_eff))
         .def("get_sigma_min", py::overload_cast<double>(&QuantumMie::get_sigma_min))
         .def("get_epsilon_eff", py::overload_cast<double>(&QuantumMie::get_epsilon_eff))
@@ -323,9 +321,9 @@ PYBIND11_MODULE(libpykingas, handle){
 
     py::class_<ModTangToennis, Quantum>(handle, "cpp_ModTangToennis")
         .def(py::init<std::string, std::string>())
-        .def("potential", py::overload_cast<int, int, double>(&ModTangToennis::potential))
-        .def("potential_r", &ModTangToennis::potential_derivative_r)
-        .def("potential_rr", &ModTangToennis::potential_dblderivative_rr)
+//         .def("potential", py::overload_cast<int, int, double>(&ModTangToennis::potential))
+//         .def("potential_r", &ModTangToennis::potential_derivative_r)
+//         .def("potential_rr", &ModTangToennis::potential_dblderivative_rr)
         .def("potential_dn", &ModTangToennis::potential_dn)
         .def("second_virial", py::overload_cast<int, int, const vector1d&>(&ModTangToennis::second_virial))
         ;

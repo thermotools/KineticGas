@@ -29,7 +29,7 @@ ModTangToennis::ModTangToennis(std::string comps, std::string parameter_ref)
     
 }
 
-dual2 ModTangToennis::potential(int i, int j, dual2 r){
+dual2 ModTangToennis::potential(int i, int j, dual2 r) const {
     r /= param.L_unit; // Convert to units used in parameter set (probably Å or nm)
     if (r < param.short_range_lim){
         return (param.A_tilde / r) * exp(- param.a_tilde * r) * BOLTZMANN;
@@ -53,7 +53,7 @@ dual2 ModTangToennis::potential(int i, int j, dual2 r){
     return u * BOLTZMANN;
 }
 
-double ModTangToennis::potential(int i, int j, double r){
+double ModTangToennis::potential(int i, int j, double r) const {
     r /= param.L_unit; // Using nm internally
     if (r < param.short_range_lim){
         return (param.A_tilde / r) * exp(- param.a_tilde * r) * BOLTZMANN;
@@ -74,7 +74,7 @@ double ModTangToennis::potential(int i, int j, double r){
     return u * BOLTZMANN;
 }
 
-double ModTangToennis::potential_dn(int i, int j, double r, size_t n){
+double ModTangToennis::potential_dn(int i, int j, double r, size_t n) const {
     r /= param.L_unit;
     double val = 0;
     if (r < param.short_range_lim){
@@ -129,7 +129,7 @@ HFD_B2::HFD_B2(std::string comps) : Quantum(comps) {
     
 }
 
-dual2 HFD_B2::potential(int i, int j, dual2 r){
+dual2 HFD_B2::potential(int i, int j, dual2 r) const {
     r *= 1e9; // working in nm internally
     dual2 x = r / param.rm;
     dual2 V = param.A * exp(- param.alpha * x + param.beta_star * pow(x, 2));
@@ -145,7 +145,7 @@ dual2 HFD_B2::potential(int i, int j, dual2 r){
     return V * eps[i][j];
 }
 
-double HFD_B2::potential(int i, int j, double r){
+double HFD_B2::potential(int i, int j, double r) const {
     r *= 1e9; // working in nm internally
     double x = r / param.rm;
     double V = param.A * exp(- param.alpha * x + param.beta_star * pow(x, 2));
@@ -161,7 +161,7 @@ double HFD_B2::potential(int i, int j, double r){
     return V * param.eps_div_k * BOLTZMANN;
 }
 
-double HFD_B2::potential_dn(int i, int j, double r, size_t n){
+double HFD_B2::potential_dn(int i, int j, double r, size_t n) const {
     r *= 1e9; // Working in nm internally
     double x = r / param.rm;
     double scaling = eps[i][j] * pow(1e9 / param.rm, n);
@@ -225,7 +225,7 @@ Patowski::Patowski(std::string comps)
     }
 }
 
-dual2 Patowski::potential(int i, int j, dual2 r){
+dual2 Patowski::potential(int i, int j, dual2 r) const {
     r *= 1e10; // Working in Å internally
     if (r < param.Rc){
         // Potential is only valid for r > Rc, but we need a continuous extrapolation that is well behaved for numerical purposes.
@@ -244,7 +244,7 @@ dual2 Patowski::potential(int i, int j, dual2 r){
     return p * BOLTZMANN;
 }
 
-double Patowski::potential(int i, int j, double r){
+double Patowski::potential(int i, int j, double r) const {
     r *= 1e10; // Working in Å internally
     if (r < param.Rc){ 
         // Potential is only valid for r > Rc, but we need a continuous extrapolation that is well behaved for numerical purposes.
@@ -263,7 +263,7 @@ double Patowski::potential(int i, int j, double r){
     return p * BOLTZMANN;
 }
 
-double Patowski::potential_dn(int i, int j, double r, size_t n){
+double Patowski::potential_dn(int i, int j, double r, size_t n) const {
     // std::cout << "potential_dn : " << n << std::endl;
     // if (n == 0) return potential(i, j, r);
     r *= 1e10; // Working in Å internally

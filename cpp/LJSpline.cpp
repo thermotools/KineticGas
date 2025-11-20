@@ -120,7 +120,7 @@ double LJSpline::gamma_corr(double rho, double T) {
 //OMEGA APPROXIMATION FUNCTIONS, SEE CORRESPONDING IMPLEMENTATION FOR MieKinGas CLASS. THESE FUNCTIONS
 //ARE ADOPTED FOR THE LJSpline CLASS FROM THE MieKinGas IMPLEMENTATION:
 
-double LJSpline::omega(int i, int j, int l, int r, double T){
+double LJSpline::omega(int i, int j, int l, int r, double T) const {
     if ((l <= 2) && (r >= l) && (r <= 3)){ 
         // Use modified version of correlation by Fokin, Popov and Kalashnikov, High Temperature, Vol. 37, No. 1 (1999)
         // See [REF master thesis] for details
@@ -133,7 +133,7 @@ double LJSpline::omega(int i, int j, int l, int r, double T){
     return Spherical::omega(i, j, l, r, T);
 }
 
-double LJSpline::omega_correlation(int i, int j, int l, int r, double T_star){
+double LJSpline::omega_correlation(int i, int j, int l, int r, double T_star) const {
     // Modified version of correlation by Fokin, Popov and Kalashnikov, High Temperature, Vol. 37, No. 1 (1999)
     // The correlation gives the logarithm of the reduced collision integral.
     // The collision integral is reduced using the hard-sphere value, i.e. lnomega_star = log(omega / omega_hs)
@@ -149,7 +149,7 @@ double LJSpline::omega_correlation(int i, int j, int l, int r, double T_star){
     return omega_recursive_factor(i, j, l, r - 1, T_star) * omega_correlation(i, j, l, r - 1, T_star);
 }
 
-double LJSpline::omega_recursive_factor(int i, int j, int l, int r, double T_star){
+double LJSpline::omega_recursive_factor(int i, int j, int l, int r, double T_star) const {
     // Higher order collision integrals can be computed from the derivative of lower order ones using the recursion
     // Given in Fokin, Popov and Kalashnikov, High Temperature, Vol. 37, No. 1 (1999)
     // See also: Hirchfelder, Curtiss & Bird, Molecular Theory of Gases and Liquids.

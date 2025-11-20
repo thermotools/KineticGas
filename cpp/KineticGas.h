@@ -44,6 +44,7 @@ References:
 #include <memory>
 #include "utils.h"
 #include "eos_interface.h"
+#include "KineticGasCache.h"
 
 #ifdef PYLIB
     #include <pybind11/pybind11.h>
@@ -210,14 +211,7 @@ protected:
     vector1d m; // Particle masses (kg)
     vector2d M, m0, red_mass; // Various combinations of particle masses that show up often
     
-    mutable KineticGasCache cache; // This is going to replace the various *_map members ...
-    
-    std::map<OmegaPoint, double> omega_map;
-    std::map<StatePoint, vector2d> mtl_map;
-    std::map<StatePoint, vector2d> etl_map;
-    // Any method that changes model parameters should use this to clear the caches to ensure that all caches are
-    // cleared, also if new caches are introduced in the future.
-    virtual void clear_all_caches();
+    mutable KineticGasCache cache; // Holds values that are expensive to compute
 
     // In the general case, sigma and eps are scaling parameters for the molecular interaction, 
     // with sigma being the length scale (m) and eps being the energy scale (J).
@@ -247,15 +241,15 @@ protected:
     // classes can override these if they want to handle state points differently 
     // For example, if you are using a density-dependent potential, you will want to include the density in the OmegaPoint.
     // See: Spherical for example.
-    virtual OmegaPoint get_omega_point(int i, int j, int l, int r, double T){
+    virtual OmegaPoint get_omega_point(int i, int j, int l, int r, double T) const {
         return OmegaPoint(i, j, l, r, T);
     }
-    virtual StatePoint get_transfer_length_point(double rho, double T, const vector1d& x){
+    virtual StatePoint get_transfer_length_point(double rho, double T, const vector1d& x) const {
         return StatePoint(T);
     }
     
     // Collision integrals
-    virtual double omega(int i, int j, int l, int r, double T) = 0;
+    virtual double omega(int i, int j, int l, int r, double T) const = 0;
 
     /*
        The radial distribution function "at contact" for the given potential model. model_rdf is only called if object

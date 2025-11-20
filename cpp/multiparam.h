@@ -44,11 +44,11 @@ public:
 
     ModTangToennis(std::string comps, std::string parameter_ref="default");
 
-    dual2 potential(int i, int j, dual2 r) override;
-    double potential(int i, int j, double r) override;
-    double potential_dn(int i, int j, double r, size_t n) override;
-    double potential_derivative_r(int i, int j, double r) override {return potential_dn(i, j, r, 1);}
-    double potential_dblderivative_rr(int i, int j, double r) override {return potential_dn(i, j, r, 2);}
+    dual2 potential(int i, int j, dual2 r) const override;
+    double potential(int i, int j, double r) const override;
+    double potential_dn(int i, int j, double r, size_t n) const override;
+    double potential_derivative_r(int i, int j, double r) const override {return potential_dn(i, j, r, 1);}
+    double potential_dblderivative_rr(int i, int j, double r) const override {return potential_dn(i, j, r, 2);}
 
     vector2d model_rdf(double rho, double T, const vector1d& x) override {
         throw std::runtime_error("Modified Tang-Toennis only implemented for ideal gas!");
@@ -80,9 +80,9 @@ public:
     HFD_B2(std::string comps);
     HFD_B2(HFD_B2_Param param);
 
-    dual2 potential(int i, int j, dual2 r) override;
-    double potential(int i, int j, double r) override;
-    double potential_dn(int i, int j, double r, size_t n) override;
+    dual2 potential(int i, int j, dual2 r) const override;
+    double potential(int i, int j, double r) const override;
+    double potential_dn(int i, int j, double r, size_t n) const override;
 
     HFD_B2_Param get_param(){return param;}
 private:
@@ -110,9 +110,9 @@ public:
     Patowski(PatowskiParam param);
 
     using Spherical::potential;
-    dual2 potential(int i, int j, dual2 r) override;
-    double potential(int i, int j, double r) override;
-    double potential_dn(int i, int j, double r, size_t n) override;
+    dual2 potential(int i, int j, dual2 r) const override;
+    double potential(int i, int j, double r) const override;
+    double potential_dn(int i, int j, double r, size_t n) const override;
 
     inline PatowskiParam get_param(){return param;}
 protected:

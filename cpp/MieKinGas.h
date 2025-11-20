@@ -23,33 +23,33 @@ class MieKinGas : public Spherical {
     void mix_epsilon();
     void mix_exponents(vector2d& expo);
 
-    dual2 potential(int i, int j, dual2 r) override {
+    dual2 potential(int i, int j, dual2 r) const override {
         return C[i][j] * eps[i][j] * (pow(sigma[i][j] / r, lr[i][j]) - pow(sigma[i][j] / r, la[i][j]));
     }
 
-    double potential(int i, int j, double r) override {
+    double potential(int i, int j, double r) const override {
         return C[i][j] * eps[i][j] * (pow(sigma[i][j] / r, lr[i][j]) - pow(sigma[i][j] / r, la[i][j]));
     }
     
-    double potential_derivative_r(int i, int j, double r) override {
+    double potential_derivative_r(int i, int j, double r) const override {
         return C[i][j] * eps[i][j] * ((la[i][j] * pow(sigma[i][j] / r, la[i][j]) / r)
                                         - (lr[i][j] * pow(sigma[i][j] / r, lr[i][j]) / r));
     }
 
-    double potential_dblderivative_rr(int i, int j, double r) override {
+    double potential_dblderivative_rr(int i, int j, double r) const override {
         return C[i][j] * eps[i][j] * ((lr[i][j] * (lr[i][j] + 1) * pow(sigma[i][j] / r, lr[i][j]) / pow(r, 2))
                                     - (la[i][j] * (la[i][j] + 1) * pow(sigma[i][j] / r, la[i][j]) / pow(r, 2)));
     }
 
 
-    double omega(int i, int j, int l, int r, double T) override;
-    double omega_correlation(int i, int j, int l, int r, double T_star);
-    double omega_recursive_factor(int i, int j, int l, int r, double T);
+    double omega(int i, int j, int l, int r, double T) const override;
+    double omega_correlation(int i, int j, int l, int r, double T_star) const;
+    double omega_recursive_factor(int i, int j, int l, int r, double T) const;
     void set_omega_correlation_active(bool active);
     // The hard sphere integrals are used as the reducing factor for the correlations.
     // So we need to compute the hard-sphere integrals to convert the reduced collision integrals from the
     // Correlation by Fokin et. al. to the "real" collision integrals.
-    inline double omega_hs(int i, int j, int l, int r, double T){
+    inline double omega_hs(int i, int j, int l, int r, double T) const {
         double w = PI * pow(sigma[i][j], 2) * 0.5 * (r + 1);
         for (int ri = r; ri > 1; ri--) {w *= ri;}
         if (l % 2 == 0){
