@@ -23,30 +23,6 @@ def k_delta(i, j): # Kronecker delta
         return 1
     return 0
 
-def compress_diffusion_matr(M, dependent_idx):
-    """Internal
-    Remove the dependent row and column from a diffusion matrix, returning an (N - 1 x N - 1) matrix.
-    &&
-    Args:
-        M (array_like) : Diffusion matrix, shape (N, N)
-        dependent_idx (int) : Index of the dependent species
-    Returns:
-        array : (N - 1) x (N - 1) array of independent diffusion coefficients, where N is the number of components.
-    """
-    M_indep = np.empty((len(M) - 1, len(M) - 1))
-    M_i = 0
-    for i in range(len(M)):
-        if i == dependent_idx:
-            continue
-        M_j = 0
-        for j in range(len(M)):
-            if j == dependent_idx:
-                continue
-            M_indep[M_i][M_j] = M[i][j]
-            M_j += 1
-        M_i += 1
-    return M_indep
-
 class py_KineticGas:
 
     def __init__(self, comps, mole_weights=None, N=3, is_idealgas=False, is_single_component=False):
@@ -249,85 +225,12 @@ class py_KineticGas:
         if (use_binary is True) and (self.ncomps == 2):
             return D[0][0]
         return D
-        # Old implementation below, not deleting it completely quite yet ...
-        if dependent_idx is None:
-            dependent_idx = self.ncomps - 1
-        while dependent_idx < 0:
-            dependent_idx += self.ncomps
-        x = self.validate_and_sanitize_composition(x)
-        D = self.interdiffusion_general(T, Vm, x, N=N)
-        # psi = Transformation matrix from 'centre of mass' to 'frame_of_reference'
-        # get_com_2_for_matr() dispatches the call to specific functions for different frames of reference.
-        if frame_of_reference == 'zarate_x':
-            D = self.interdiffusion(T, Vm, x, N=N, frame_of_reference='CoN', dependent_idx=dependent_idx, use_independent=True, use_binary=False)
-            return compress_diffusion_matr(D, dependent_idx)
-        elif frame_of_reference == 'zarate':
-            X = self.get_zarate_X_matr(x, dependent_idx)
-            D_x = self.interdiffusion(T, Vm, x, N=N, frame_of_reference='zarate_x', dependent_idx=dependent_idx, use_binary=False)
-            return X @ D_x @ np.linalg.inv(X)
-        elif frame_of_reference == 'zarate_w':
-            W = self.get_zarate_W_matr(x, dependent_idx)
-            D_z = self.interdiffusion(T, Vm, x, N=N, frame_of_reference='zarate', dependent_idx=dependent_idx, use_binary=False)
-            return W @ D_z @ np.linalg.inv(W)
-
-    #     psi = self.get_com_2_for_matr(T, Vm, x, frame_of_reference, solvent_idx=solvent_idx)
-    #     D = psi @ D
-    #     if use_independent is True:
-    #         if dependent_idx is None:
-    #             if frame_of_reference == 'solvent':
-    #                 dependent_idx = solvent_idx
-    #             else:
-    #                 dependent_idx = self.ncomps - 1
-    #         P = self.get_P_factors(Vm, T, x)
-    #         D_dep = copy.deepcopy(D)
-    #         for i in range(self.ncomps):
-    #             for j in range(self.ncomps):
-    #                 D[i, j] -= (P[j] / P[dependent_idx]) * D_dep[i, dependent_idx]
-    #         if use_binary is True and self.ncomps == 2:
-    #             independent_idx = 1 - dependent_idx
-    #             return D[independent_idx][independent_idx] # Return the independent fluxes response to the independent force
-    #     return D
 
     def selfdiffusion(self, T, Vm, N=2):
         r"""TV-property
         Simple wrapper for the `interdiffusion` method so that mole fractions don't need to be supplied
         """
         return self.cpp_kingas.selfdiffusion(T, Vm, N)
-
-    def interdiffusion_general(self, T, Vm, x, N=None):
-        r"""TV-property
-        Compute the 'Kinetic CoM diffusion coefficients', defined by
-
-        $$ J_i^{(n, m)} = - \sum_j D_{ij} \nabla n_j, \nabla T = \nabla p = F_k = 0 \forall k $$
-
-        **For end-users, see `interdiffusion`**
-        See Eq. (19) in RET for Mie fluids (https://doi.org/10.1063/5.0149865)
-        &&
-        Args:
-            T (float) : Temperature (K)
-            Vm (float) : Molar volume (m3 / mol)
-            x (array_like) : composition (mole fractions)
-            N (int, optional) : Enskog approximation order
-
-        Returns:
-            (2D array) : Array of the (not independent) $D^{(K, m)}$ diffusion coefficients. Unit [m^2 / s]
-        """
-        if N is None:
-            N = self.default_N
-
-        x = self.validate_and_sanitize_composition(x)
-        particle_density = Avogadro / Vm
-        d = self.compute_diffusion_coeff_vector(particle_density, T, x, N=N)
-        d = self.reshape_diffusion_coeff_vector(d)
-        E = self.get_Eij(Vm, T, x)
-        Dij = np.zeros((self.ncomps, self.ncomps))
-
-        for i in range(self.ncomps):
-            for j in range(self.ncomps):
-                for k in range(self.ncomps):
-                    Dij[i][j] += d[i][0][k] * E[k][j]
-                Dij[i][j] *= x[i] / (2 * particle_density)
-        return Dij
 
     def thermal_diffusion_coeff(self, T, Vm, x, N=None,
                                 use_independent=False, dependent_idx=-1,
@@ -372,73 +275,6 @@ class py_KineticGas:
                           + str(N) + ')', RuntimeWarning, stacklevel=2)
             return np.full(self.ncomps, np.nan)
         return self.cpp_kingas.thermal_diffusion_coeff(T, Vm, x, N, frame_of_reference, dependent_idx, solvent_idx)
-        use_zarate = False
-        if frame_of_reference.lower() == 'zarate':
-            frame_of_reference = 'CoN'
-            use_zarate = True
-            use_independent = True
-
-        particle_density = Avogadro / Vm
-        d = self.compute_diffusion_coeff_vector(particle_density, T, x, N=N)
-        d = self.reshape_diffusion_coeff_vector(d)
-        a = self.compute_cond_vector(particle_density, T, x, N=N)
-        P = self.get_P_factors(Vm, T, x)
-        rdf = self.get_rdf(particle_density, T, x)
-        b = np.empty((self.ncomps, self.ncomps)) # Precomputing some factors that are used many places later
-        if self.is_idealgas is True:
-            b = np.identity(self.ncomps)
-        else:
-            etl = self.get_etl(particle_density, T, x)
-            for j in range(self.ncomps):
-                for k in range(self.ncomps):
-                    b[j, k] = k_delta(j, k) + (4 * np.pi / 3) * particle_density * x[k] * etl[j][k] ** 3 * self.M[j, k] * rdf[j][k]
-
-        DT = np.zeros(self.ncomps)
-        for i in range(self.ncomps):
-            outer_sum = 0
-            for j in range(self.ncomps):
-                inner_sum = 0
-                for k in range(self.ncomps):
-                    inner_sum += b[j, k]
-                outer_sum += d[i][0][j] * x[j] * inner_sum
-            DT[i] = (x[i] / 2) * (a[i] - outer_sum)
-        psi = self.get_com_2_for_matr(T, Vm, x, frame_of_reference, solvent_idx=solvent_idx)
-        DT = psi @ DT
-
-        if use_independent is True:
-            if dependent_idx is None:
-                dependent_idx = self.ncomps - 1
-
-            Dij = self.interdiffusion_general(T, Vm, x, N=N)
-            Dij = psi @ Dij
-            for i in range(self.ncomps):
-                tmp = 0
-                for k in range(self.ncomps):
-                    for m in range(self.ncomps):
-                        tmp += particle_density * x[m] * b[m, k]
-
-                DT[i] += (Dij[i, dependent_idx] / P[dependent_idx]) * tmp
-
-        DT /= Avogadro # Dividing by Avogadros number to convert unit from particle number to mole number
-        if use_zarate is True:
-            D = self.interdiffusion(T, Vm, x, N=N, use_independent=True, dependent_idx=dependent_idx, frame_of_reference='CoN',
-                                    use_binary=False)
-            DT_indep = np.empty(self.ncomps - 1)
-            D_indep = compress_diffusion_matr(D, dependent_idx)
-            DT_idx = 0
-            x_factor = np.empty(self.ncomps - 1)
-
-            for i in range(self.ncomps):
-                if i == dependent_idx:
-                    continue
-                x_factor[DT_idx] = x[i]
-                DT_indep[DT_idx] = DT[i]
-                DT_idx += 1
-            X = self.get_zarate_X_matr(x, dependent_idx)
-            c = 1 / Vm
-            DT = np.linalg.solve(- c * X, (DT_indep + c * D_indep @ x_factor) / T)
-
-        return DT
 
     def thermal_diffusion_ratio(self, T, Vm, x, N=None):
         r"""TV-property
@@ -477,35 +313,6 @@ class py_KineticGas:
                           + str(N) + ')', RuntimeWarning, stacklevel=2)
             return np.full(self.ncomps, np.nan)
         return self.cpp_kingas.thermal_diffusion_ratio(T, Vm, x, N)
-        particle_density = Avogadro / Vm
-        DT = self.thermal_diffusion_coeff(T, Vm, x, N=N, frame_of_reference='CoM',
-                                          use_independent=True, dependent_idx=self.ncomps - 1)
-        Dij = self.interdiffusion(T, Vm, x, N=N, frame_of_reference='CoM',
-                                  use_binary=False, use_independent=True, dependent_idx=self.ncomps - 1)
-        rdf = self.get_rdf(particle_density, T, x)
-        
-        P = self.get_P_factors(Vm, T, x)
-        A = np.zeros((self.ncomps, self.ncomps))
-
-        for i in range(self.ncomps - 1):
-            for j in range(self.ncomps):
-                A[i, j] = - Dij[i, j] * x[j] * (1 / Vm) # density in moles, because DT has unit moles (not particles)
-
-        for i in range(self.ncomps):
-            A[-1, i] = x[i] * P[i]
-
-        # Overwriting the DT vector for the final element of the b-vector of A @ kT = b
-        if self.is_idealgas is True:
-            DT[-1] = 1
-        else:
-            DT[-1] = 0
-            etl = self.get_etl(particle_density, T, x)
-            for i in range(self.ncomps):
-                for j in range(self.ncomps):
-                    DT[-1] += x[i] * (k_delta(i, j) + (4 * np.pi / 3) * particle_density * x[j] * etl[i][j]**3 * self.M[i, j] * rdf[i][j])
-
-        kT = np.linalg.solve(A, DT)
-        return kT
 
     def thermal_diffusion_factor(self, T, Vm, x, N=None):
         r"""TV-property
@@ -536,13 +343,6 @@ class py_KineticGas:
                           + str(N) + ')', RuntimeWarning, stacklevel=2)
             return np.full((self.ncomps, self.ncomps), np.nan)
         return self.cpp_kingas.thermal_diffusion_factor(T, Vm, x, N)
-        kT = self.thermal_diffusion_ratio(T, Vm, x, N=N)
-        alpha = np.empty((self.ncomps, self.ncomps))
-        for i in range(self.ncomps):
-            for j in range(self.ncomps):
-                alpha[i, j] = kT[i] - kT[j]
-
-        return alpha
 
     def soret_coefficient(self, T, Vm, x, N=None, use_zarate=True, dependent_idx=-1):
         r"""TV-Property
@@ -597,13 +397,6 @@ class py_KineticGas:
         if use_zarate is True:
             return self.cpp_kingas.soret_coefficient(T, Vm, x, N, dependent_idx)
         return self.cpp_kingas.thermal_diffusion_factor(T, Vm, x, N) / T
-        if use_zarate is True:
-            D = self.interdiffusion(T, Vm, x, N=N, frame_of_reference='zarate', dependent_idx=dependent_idx, use_binary=False)
-            DT = self.thermal_diffusion_coeff(T, Vm, x, N=N, frame_of_reference='zarate', dependent_idx=dependent_idx)
-            return np.linalg.solve(D, DT)
-
-        alpha = self.thermal_diffusion_factor(T, Vm, x, N=N)
-        return alpha / T
 
     def thermal_conductivity(self, T, Vm, x, N=None, idealgas=None, contributions='all'):
         r"""TV-Property
@@ -631,62 +424,6 @@ class py_KineticGas:
         if (contributions != 'all'):
             return self.cpp_kingas.thermal_conductivity_contributions(T, Vm, x, N, contributions)
         return self.cpp_kingas.thermal_conductivity(T, Vm, x, N)
-
-        if idealgas is None:
-            idealgas = self.is_idealgas
-
-        x = self.validate_and_sanitize_composition(x)
-        lambda_int = 0
-
-        f_int = 1.32e3
-        eta_0 = self.viscosity(T, 1e10, x, N=N, idealgas=True)
-        Cp_factor = 0
-        for i in range(self.ncomps):
-            _, Cpi_id = self.eos.idealenthalpysingle(T, 1 if self._is_singlecomp else i + 1, dhdt=True)
-            Mi = self.mole_weights[i] * Avogadro * 1e3  # Mole weight in g / mol
-            Cp_factor += x[i] * (Cpi_id - 5 * gas_constant / 2) / Mi
-
-        print(f'eta0 (new): {eta_0}, Cp : {Cp_factor}')
-        lambda_int = f_int * eta_0 * Cp_factor
-
-        if contributions == 'i':
-            return lambda_int
-
-        particle_density = Avogadro / Vm
-        a = self.compute_cond_vector(particle_density, T, x, N=N)
-        rdf = self.get_rdf(particle_density, T, x)
-        K = self.cpp_kingas.get_K_factors(particle_density, T, x)
-        d = self.compute_diffusion_coeff_vector(particle_density, T, x, N=N)
-        d = self.reshape_diffusion_coeff_vector(d)
-
-    #     lambda_prime = 0
-    #     dth = self.compute_dth_vector(particle_density, T, x, N=N)
-    #     for i in range(self.ncomps):
-    #         tmp = 0
-    #         for k in range(self.ncomps):
-    #             tmp += d[i, 1, k] * dth[k]
-    #         lambda_prime += x[i] * K[i] * (a[self.ncomps + i] - tmp)
-    #     lambda_prime *= (5 * Boltzmann / 4)
-
-        lambda_dblprime = 0
-        if idealgas is False:  # lambda_dblprime is only nonzero when density corrections are present, and vanishes at infinite dilution
-            etl = self.get_etl(particle_density, T, x)
-            for i in range(self.ncomps):
-                for j in range(self.ncomps):
-                    lambda_dblprime += particle_density ** 2 * np.sqrt(
-                        2 * pi * self.m[i] * self.m[j] * Boltzmann * T / (self.m[i] + self.m[j])) \
-                                       * (x[i] * x[j]) / (self.m[i] + self.m[j]) * (etl[i][j] ** 4) * rdf[i][j]
-            lambda_dblprime *= (4 * Boltzmann / 3)
-
-    #     cond = lambda_prime + lambda_int + lambda_dblprime
-    #     if contributions == 'all':
-    #         return cond
-
-    #     contribs = {'t' : lambda_prime, 'i' : lambda_int, 'd' : lambda_dblprime}
-    #     if len(contributions) > 1:
-    #         return np.array([contribs[c] for c in contributions])
-    #     else:
-    #         return contribs[contributions]
 
     def thermal_diffusivity(self, T, Vm, x, N=None):
         """TV-property
@@ -722,40 +459,6 @@ class py_KineticGas:
         x = self.validate_and_sanitize_composition(x)
         N = self.default_N if (N is None) else N
         return self.cpp_kingas.viscosity(T, Vm, x, N)
-        if N is None:
-            N = self.default_N
-        if idealgas is None:
-            idealgas = self.is_idealgas
-        x = self.validate_and_sanitize_composition(x)
-        particle_density = Avogadro / Vm
-        b = self.compute_visc_vector(T, particle_density, x, N=N)
-        K_prime = self.cpp_kingas.get_K_prime_factors(particle_density, T, x) if (idealgas is False) else np.ones(self.ncomps)
-
-    #     Returns:
-    #         (float) : The shear viscosity of the mixture.
-    #     """
-    #     if N is None:
-    #         N = self.default_N
-    #     if idealgas is None:
-    #         idealgas = self.is_idealgas
-    #     x = self.check_valid_composition(x)
-    #     particle_density = Avogadro / Vm
-    #     b = self.compute_visc_vector(T, particle_density, x, N=N)
-    #     K_prime = self.cpp_kingas.get_K_prime_factors(particle_density, T, x) if (idealgas is False) else np.ones(self.ncomps)
-
-    #     eta_prime = 0
-    #     for i in range(self.ncomps):
-    #         eta_prime += K_prime[i] * x[i] * b[i]
-    #     eta_prime *= Boltzmann * T / 2
-
-    #     eta_dblprime = 0
-    #     if idealgas is False: # eta_dblprime is only nonzero when density corrections are present, and vanish at infinite dilution
-    #         mtl = self.get_mtl(particle_density, T, x)
-    #         rdf = self.get_rdf(particle_density, T, x)
-    #         for i in range(self.ncomps):
-    #             for j in range(self.ncomps):
-    #                 eta_dblprime += np.sqrt(self.m[i] * self.m[j] / (self.m[i] + self.m[j])) * x[i] * x[j] * mtl[i][j]**4 * rdf[i][j]
-    #         eta_dblprime *= 4 * particle_density**2 * np.sqrt(2 * np.pi * Boltzmann * T) / 15
 
     def kinematic_viscosity(self, T, Vm, x, N=None):
         """TV-property
@@ -802,7 +505,7 @@ class py_KineticGas:
                     bvisc_dblprime += x[i] * x[j] * mtl[i][j]**4 * rdf[i][j] * np.sqrt(self.m[i] * self.m[j] / (self.m[i] + self.m[j]))
             bvisc_dblprime *= particle_density**2 * 4 * np.sqrt(2 * np.pi * Boltzmann * T) / 9
 
-        # print(f'Contributions : {bvisc_prime}, {bvisc_dblprime}')
+
         return bvisc_prime + bvisc_dblprime
 
     def conductivity_matrix(self, T, Vm, x, N=2, formulation='T-psi', frame_of_reference='CoM', use_thermal_conductivity=None):
