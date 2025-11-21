@@ -165,7 +165,6 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("get_epsilon_eff", &ExtSutherland::get_epsilon_eff)
         .def("get_dBH", py::overload_cast<double, double>(&ExtSutherland::get_BH_diameters))
         .def("get_vdw_alpha", &ExtSutherland::get_vdw_alpha)
-        .def("second_virial", &ExtSutherland::second_virial)
         ;
 
     py::class_<MieKinGas, Spherical>(handle, "cpp_MieKinGas")
@@ -325,7 +324,6 @@ PYBIND11_MODULE(libpykingas, handle){
 //         .def("potential_r", &ModTangToennis::potential_derivative_r)
 //         .def("potential_rr", &ModTangToennis::potential_dblderivative_rr)
         .def("potential_dn", &ModTangToennis::potential_dn)
-        .def("second_virial", py::overload_cast<int, int, const vector1d&>(&ModTangToennis::second_virial))
         ;
     
     py::class_<FH_ModTangToennies, Quantum>(handle, "cpp_FH_ModTangToennies")
