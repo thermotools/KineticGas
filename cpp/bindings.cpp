@@ -221,7 +221,6 @@ PYBIND11_MODULE(libpykingas, handle){
         .def("get_sigma_eff", py::overload_cast<double>(&QuantumMie::get_sigma_eff))
         .def("get_sigma_min", py::overload_cast<double>(&QuantumMie::get_sigma_min))
         .def("get_epsilon_eff", py::overload_cast<double>(&QuantumMie::get_epsilon_eff))
-        // .def("get_BH_diameters", &QuantumMie::get_BH_diameters)
         .def("saft_rdf", &QuantumMie::saft_rdf)
         .def("get_rdf_terms", &QuantumMie::get_rdf_terms)
         ;
@@ -320,9 +319,6 @@ PYBIND11_MODULE(libpykingas, handle){
 
     py::class_<ModTangToennis, Quantum>(handle, "cpp_ModTangToennis")
         .def(py::init<std::string, std::string>())
-//         .def("potential", py::overload_cast<int, int, double>(&ModTangToennis::potential))
-//         .def("potential_r", &ModTangToennis::potential_derivative_r)
-//         .def("potential_rr", &ModTangToennis::potential_dblderivative_rr)
         .def("potential_dn", &ModTangToennis::potential_dn)
         ;
     
