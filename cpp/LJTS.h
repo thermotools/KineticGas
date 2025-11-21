@@ -9,7 +9,7 @@ only for dilute gas transport properties.
 
 class LJTS : public Spherical {
     public:
-    double rc; 
+    double rc, uc; 
     
     LJTS(std::vector<double> mole_weights, std::vector<std::vector<double>> sigmaij, std::vector<std::vector<double>> eps, bool is_idealgas, bool is_singlecomp)
     : Spherical(mole_weights, sigmaij, eps, true, true), rc{2.5*sigmaij[0][0]} 
@@ -22,25 +22,27 @@ class LJTS : public Spherical {
         {
             throw std::invalid_argument("The Lennard-Jones/spline is not implemented for multicomponent systems (yet)!");
         }
+
+        uc = static_cast<double>(LJ(0, 0, rc));
     }   
-    dual2 LJ(int i, int j, dual2 r) {
+    dual2 LJ(int i, int j, dual2 r) const {
         return 4 * eps[0][0] * (pow(sigma[0][0] / r, 12) - pow(sigma[0][0] / r, 6));
     }
 
-    dual2 potential(int i, int j, dual2 r) override {
+    dual2 potential(int i, int j, dual2 r) const override {
         if (r <= rc) {
-            return LJ(i,j,r) - LJ(i,j, static_cast<dual2>(rc));
+            return LJ(i,j,r) - uc;
         }
         else {
             return static_cast<dual2>(0);
         }
     }
 
-    double potential(int i, int j, double r) override{
+    double potential(int i, int j, double r) const override{
         return potential(i, j, static_cast<dual2>(r)).val.val;
     }
 
-    double potential_derivative_r(int i, int j, double r) override {
+    double potential_derivative_r(int i, int j, double r) const override {
         if (r <= rc) {
             return -24*eps[0][0]/r*(2*pow(sigma[0][0] / r, 12) - pow(sigma[0][0] / r, 6));
         }
@@ -48,7 +50,7 @@ class LJTS : public Spherical {
             return 0;
         }
     }
-    double potential_dblderivative_rr(int i, int j, double r) override {
+    double potential_dblderivative_rr(int i, int j, double r) const override {
         if (r <= rc) {
             return 24*eps[0][0]/pow(r,2)*(26*pow(sigma[0][0] / r, 12) - 7*pow(sigma[0][0] / r, 6));
         }

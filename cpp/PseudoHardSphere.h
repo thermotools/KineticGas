@@ -17,14 +17,14 @@ class PseudoHardSphere : public Spherical {
         bool is_idealgas, bool is_singlecomp)
         : Spherical(mole_weights, sigmaij, vector2d(mole_weights.size(), vector1d(mole_weights.size(), 1)), is_idealgas, is_singlecomp) {}
     
-    dual2 potential(int i, int j, dual2 r) override {
+    dual2 potential(int i, int j, dual2 r) const override {
         if (r > sigma[i][j]){
             return 0.0;
         }
         return (pow(sigma[i][j] / (r), 20) - (20.0 * 21.0 / 2) * pow(r / sigma[i][j], 2) + 20.0 * 22.0 * (r / sigma[i][j]) + 20.0 * ((21.0 / 2.0) - 22.0) - 1.0) / BOLTZMANN;
     }
 
-    double potential(int i, int j, double r) override {
+    double potential(int i, int j, double r) const override {
         // To get this, start with a potential that has a second derivative f''(r) = (sigma / r)^22 + A
         // Then integrate the function and require that f''(sigma) = f'(sigma) = f(sigma) = 0
         if (r > sigma[i][j]){
@@ -33,14 +33,14 @@ class PseudoHardSphere : public Spherical {
         return (pow(sigma[i][j] / (r), 20) - (20.0 * 21.0 / 2) * pow(r / sigma[i][j], 2) + 20.0 * 22.0 * (r / sigma[i][j]) + 20.0 * ((21.0 / 2.0) - 22.0) - 1.0) / BOLTZMANN; // Force continiuous function
     }
     
-    double potential_derivative_r(int i, int j, double r) override {
+    double potential_derivative_r(int i, int j, double r) const override {
         if (r > sigma[i][j]){
             return 0.0;
         }
         return (- 20.0 * pow(sigma[i][j], 20) / pow((r), 21) - 20.0 * 21.0 * (r) / pow(sigma[i][j], 2) + 20.0 * 22.0 / sigma[i][j]) / BOLTZMANN; // Force continiuous first derivative
     }
     
-    double potential_dblderivative_rr(int i, int j, double r) override {
+    double potential_dblderivative_rr(int i, int j, double r) const override {
         if (r > sigma[i][j]){
             return 0.0;
         }

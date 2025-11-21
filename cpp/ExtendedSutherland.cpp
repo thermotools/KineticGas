@@ -99,7 +99,7 @@ void ExtSutherland::mix_exponents(std::vector<std::vector<double>>& expo){
 // -------------------------- Potential Methods -------------------------- // 
 // ----------------------------------------------------------------------- //
 
-dual2 ExtSutherland::potential(int i, int j, dual2 r, dual2 T, dual2 rho){
+dual2 ExtSutherland::potential(int i, int j, dual2 r, dual2 T, dual2 rho) const {
     if (T > 1e4) throw std::runtime_error("Using density instead of T?");
     dual2 p{0.0};
     dual2 beta = eps[i][j] / (BOLTZMANN * T);
@@ -110,7 +110,7 @@ dual2 ExtSutherland::potential(int i, int j, dual2 r, dual2 T, dual2 rho){
     return eps[i][j] * p;
 }
 
-double ExtSutherland::potential(int i, int j, double r){
+double ExtSutherland::potential(int i, int j, double r) const {
     double p{0.0};
     for (size_t k = 0; k < nterms; k++){
         p += static_cast<double>(C_eff[k][i][j]) * pow(sigma[i][j] / r, lambda[k][i][j]);
@@ -118,7 +118,7 @@ double ExtSutherland::potential(int i, int j, double r){
     return eps[i][j] * p;
 }
 
-double ExtSutherland::potential(int i, int j, double r, double T, double rho){
+double ExtSutherland::potential(int i, int j, double r, double T, double rho) const {
     if (T > 1e4) throw std::runtime_error("Using density instead of T?");
     double p{0.0};
     double beta = eps[i][j] / (BOLTZMANN * T);
@@ -129,7 +129,7 @@ double ExtSutherland::potential(int i, int j, double r, double T, double rho){
     return eps[i][j] * p;
 }
 
-dual2 ExtSutherland::potential_r(int i, int j, dual2 r, dual2 T, dual2 rho){
+dual2 ExtSutherland::potential_r(int i, int j, dual2 r, dual2 T, dual2 rho) const {
     dual2 p{0.0};
     dual2 beta = eps[i][j] / (BOLTZMANN * T);
     dual2 rho_r = rho * pow(sigma[i][j], 3);
@@ -139,7 +139,7 @@ dual2 ExtSutherland::potential_r(int i, int j, dual2 r, dual2 T, dual2 rho){
     return eps[i][j] * p;
 }
 
-dual2 ExtSutherland::potential_rr(int i, int j, dual2 r, dual2 T, dual2 rho){
+dual2 ExtSutherland::potential_rr(int i, int j, dual2 r, dual2 T, dual2 rho) const {
     dual2 p{0.0};
     dual2 beta = eps[i][j] / (BOLTZMANN * T);
     dual2 rho_r = rho * pow(sigma[i][j], 3);
@@ -149,15 +149,15 @@ dual2 ExtSutherland::potential_rr(int i, int j, dual2 r, dual2 T, dual2 rho){
     return eps[i][j] * p;
 }
 
-dual2 ExtSutherland::potential(int i, int j, dual2 r){
+dual2 ExtSutherland::potential(int i, int j, dual2 r) const {
     return potential(i, j, r, current_T, current_rho);
 }
 
-dual2 ExtSutherland::potential_r(int i, int j, dual2 r){
+dual2 ExtSutherland::potential_r(int i, int j, dual2 r) const {
     return potential_r(i, j, r, current_T, current_rho);
 }
 
-dual2 ExtSutherland::potential_rr(int i, int j, dual2 r){
+dual2 ExtSutherland::potential_rr(int i, int j, dual2 r) const {
     return potential_rr(i, j, r, current_T, current_rho);
 }
 

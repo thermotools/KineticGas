@@ -71,10 +71,12 @@ public:
                 vector3d C, vector3d lambda, vector3d beta_exp, vector3d rho_exp, 
                 bool is_idealgas=false, bool is_singlecomp=false);
 
-    dual2 potential(int i, int j, dual2 r, dual2 T, dual2 rho);
-    dual2 potential_r(int i, int j, dual2 r, dual2 T, dual2 rho);
-    dual2 potential_rr(int i, int j, dual2 r, dual2 T, dual2 rho);
-    double potential(int i, int j, double r, double T, double rho);
+    dual2 potential(int i, int j, dual2 r, dual2 T, dual2 rho) const;
+    dual2 potential_r(int i, int j, dual2 r, dual2 T, dual2 rho) const;
+    dual2 potential_rr(int i, int j, dual2 r, dual2 T, dual2 rho) const;
+    double potential(int i, int j, double r, double T, double rho) const;
+    double potential_r(int i, int j, double r, double T, double rho) const {return static_cast<double>(potential_r(i, j, static_cast<dual2>(r), static_cast<dual2>(T), static_cast<dual2>(rho)));}
+    double potential_rr(int i, int j, double r, double T, double rho) const {return static_cast<double>(potential_rr(i, j, static_cast<dual2>(r), static_cast<dual2>(T), static_cast<dual2>(rho)));}
 
      // To directly compute the RDF at different pertubation orders.
     vector2d saft_rdf(double rho, double T, const std::vector<double>& x, int order=2, bool g2_correction=true);
@@ -144,14 +146,14 @@ public:
     vector2d2 vdw_alpha;
     vector3d2 C_eff;
 
-    OmegaPoint get_omega_point(int i, int j, int l, int r, double T) override {
+    OmegaPoint get_omega_point(int i, int j, int l, int r, double T) const override {
         if (T != current_T){
             throw std::runtime_error("Something is very wrong ... (in ExtSutherland::get_omega_point)");
         }
         return OmegaPoint(i, j, l, r, T, current_rho);
     }
 
-    StatePoint get_transfer_length_point(double rho, double T, const vector1d& x) override {
+    StatePoint get_transfer_length_point(double rho, double T, const vector1d& x) const override {
         if (T != current_T){
             throw std::runtime_error("Something is even more wrong ... (in ExtSutherland::get_transfer_length_point)");
         }
@@ -162,10 +164,10 @@ public:
         return saft_rdf(rho, T, x, 2, true);
     }
 
-    dual2 potential(int i, int j, dual2 r);
-    dual2 potential_r(int i, int j, dual2 r);
-    dual2 potential_rr(int i, int j, dual2 r);
-    double potential(int i, int j, double r) override;
+    dual2 potential(int i, int j, dual2 r) const;
+    dual2 potential_r(int i, int j, dual2 r) const;
+    dual2 potential_rr(int i, int j, dual2 r) const;
+    double potential(int i, int j, double r) const override;
     using Spherical::potential_derivative_r;
     using Spherical::potential_dblderivative_rr;
 

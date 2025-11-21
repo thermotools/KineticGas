@@ -22,10 +22,10 @@ public:
     Quantum(std::string comps);
 
     // Reroute to one of the below based on whether quantum calculations are active
-    double omega(int i, int j, int l, int r, double T) override;
+    double omega(int i, int j, int l, int r, double T) const override;
 
-    double quantum_omega(int i, int j, int n, int s, double T);
-    double classical_omega(int i, int j, int l, int r, double T);
+    double quantum_omega(int i, int j, int n, int s, double T) const;
+    double classical_omega(int i, int j, int l, int r, double T) const;
 
     // Compute the second virial coefficient, or ceertain contributions to it.
     double second_virial(int i, int j, double T) override;
@@ -73,9 +73,9 @@ public:
 
     // Compute the relative phase shift
     // Either using the JKWB approximation, without the JKWB approximation, or conditionally using the JKWB approximation based on the set limits
-    double JKWB_phase_shift(int i, int j, int l, double E);
-    double quantum_phase_shift(int i, int j, int l, double E, double& r_lev);
-    double phase_shift(int i, int j, int l, double E);
+    double JKWB_phase_shift(int i, int j, int l, double E) const;
+    double quantum_phase_shift(int i, int j, int l, double E, double& r_lev) const;
+    double phase_shift(int i, int j, int l, double E) const;
 
     // Compute the abolute phase shifts...
     // When the absolute phase shift at the previous step is known (relatively cheap)
@@ -94,7 +94,7 @@ public:
     void fill_absolute_phase_shifts_tail(int i, int j, int l, double next_k, int& n, vector1d& k_vals, vector1d& phase_shifts);
 
     // Get the "Levinson multiple" at E = 0 (count number of vibrational states with angular momentum l)
-    int get_levinson_multiple(int i, int j, int l);
+    int get_levinson_multiple(int i, int j, int l) const;
 
     // The "Levinson-radius" is the radial position of the outermost root of the wave function that is inside the classically forbidden region.
     // We track this position to determine whether there are "resonances" in the phase shifts
@@ -110,13 +110,13 @@ public:
 
     // The "integral phase shift" is the integral of the total phase shift, weighted with a Boltzmann factor.
     double integral_phase_shift(int i, int j, int l, double T);
-    double r_classical_forbidden(int i, int j, int l, double E);
+    double r_classical_forbidden(int i, int j, int l, double E) const;
 
     // Compute the collision cross section
-    double cross_section_A(int n, int l, size_t k);
-    double cross_section_kernel(int i, int j, int n, int l, double E);
+    double cross_section_A(int n, int l, size_t k) const ;
+    double cross_section_kernel(int i, int j, int n, int l, double E) const;
     double JKWB_cross_section(int i, int j, int n, double E);
-    double cross_section(int i, int j, int n, double E) override;
+    double cross_section(int i, int j, int n, double E) const override;
     double classical_cross_section(int i, int j, int l, double E);
 
     double scattering_volume(int i, int j, double E);
@@ -127,7 +127,6 @@ public:
 
     void set_JKWB_limits(double E, int l){
         JKWB_E_limit = E; JKWB_l_limit = l;
-        phase_shift_map.clear();
     }
 
     std::pair<double, int> get_JKWB_limits(){
@@ -135,15 +134,14 @@ public:
     }
 
     // Whether we have Fermi-Dirac, Bose-Einstein or Boltzmann statistics (uses an enum, see utils.h)
-    int get_interaction_statistics(int i, int j);
-    std::array<double, 2> get_symmetry_weights(int i, int j);
+    int get_interaction_statistics(int i, int j) const ;
+    std::array<double, 2> get_symmetry_weights(int i, int j) const ;
 
     vector2d get_E_bound_from_file(const std::string& comp);
     vector2d get_E_bound(int i, int j);
 
 protected:
     vector2d model_rdf(double rho, double T, const vector1d& mole_fracs) override {throw std::runtime_error("Method model_rdf not implemented for Quantum!");}
-    void clear_all_caches() override;
 
     // The bound state energies, organised as E_bound[v][l], where v is the vibrational quantum number, and l is the angular momentum quantum number
     // These are pre-computed values stored in the fluid files, or associated E_bound files.
@@ -159,12 +157,8 @@ private:
     std::vector<double> spin;
     std::vector<unsigned int> rot_ground_state; // Rotational ground state
     std::vector<std::vector<int>> interaction_statistics;
-    std::map<std::pair<int, double>, double> phase_shift_map;
-    std::map<int, vector2d> absolute_phase_shift_map;
-    std::mutex abs_phase_shift_map_mutex;
-    vector2d stored_total_phase_shifts;
 
-    std::shared_mutex cross_section_map_mutex;
-    std::unordered_map<CrossSectionPoint, double, CrossSectionHash> cross_section_map;
+    std::map<int, vector2d> absolute_phase_shift_map;
+    vector2d stored_total_phase_shifts;
 
 };

@@ -95,7 +95,7 @@ void KineticGas::set_masses(){
             red_mass[i][j] = M[i][j] * m[j];
         }
     }
-    clear_all_caches();
+    cache.clear();
 }
 
 Units KineticGas::get_reducing_units(int i, int j){
@@ -159,7 +159,7 @@ void KineticGas::set_transfer_length_model(int model_id){
 
     if ((model_id == TransferLengthModel::DEFAULT) || (!model_is_valid)) model_id = default_tl_model_id;
     if (model_id != transfer_length_model_id){
-        mtl_map.clear(); etl_map.clear();
+        cache.mtl.clear(); cache.etl.clear();
     }
     transfer_length_model_id = model_id;
 
@@ -198,10 +198,6 @@ std::map<int, std::string> KineticGas::get_valid_transfer_length_models(){
     }
     model_id_descr[default_tl_model_id].append(" (default)");
     return model_id_descr;
-}
-
-void KineticGas::clear_all_caches(){
-    omega_map.clear(); mtl_map.clear(); etl_map.clear();
 }
 
 // --------------------------------------------------------------------------------------------------- //

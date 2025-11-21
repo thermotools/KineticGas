@@ -1,6 +1,5 @@
 #include "utils.h"
 #include <filesystem>
-#include <mutex>
 
 #ifdef FLUID_DIR
     #define __MACRO_STRING__(s) __EXPAND_MACRO_STR__(s)
@@ -23,70 +22,6 @@ static void __set_fluid_dir(); // Platform specific handling of relative paths
 void set_fluid_dir(const std::string path){
     rel_fluid_dir = path;
     __set_fluid_dir();
-}
-
-bool KineticGasCache::has_omega(const OmegaPoint& point) const {
-    std::shared_lock lock(omega_mutex);
-    return omega_map.find(point) != omega_map.end();
-}
-
-bool KineticGasCache::has_mtl(const StatePoint& stp) const {
-    std::shared_lock lock(mtl_mutex);
-    return mtl_map.find(stp) != mtl_map.end();
-}
-
-bool KineticGasCache::has_etl(const StatePoint& stp) const {
-    std::shared_lock lock(etl_mutex);
-    return etl_map.find(stp) != etl_map.end();
-}
-
-std::optional<double> KineticGasCache::get_omega(const OmegaPoint& point) const {
-    std::shared_lock lock(omega_mutex);
-    auto it = omega_map.find(point);
-    if (it != omega_map.end()) {
-        return it->second;
-    }
-    return std::nullopt;
-}
-
-std::optional<vector2d> KineticGasCache::get_mtl(const StatePoint& stp) const {
-    std::shared_lock lock(mtl_mutex);
-    auto it = mtl_map.find(stp);
-    if (it != mtl_map.end()) {
-        return it->second;
-    }
-    return std::nullopt;
-}
-
-std::optional<vector2d> KineticGasCache::get_etl(const StatePoint& stp) const {
-    std::shared_lock lock(etl_mutex);
-    auto it = etl_map.find(stp);
-    if (it != etl_map.end()) {
-        return it->second;
-    }
-    return std::nullopt;
-}
-
-void KineticGasCache::store_omega(const OmegaPoint& point, const double omega) {
-    std::unique_lock lock(omega_mutex);
-    omega_map[point] = omega;
-}
-
-void KineticGasCache::store_mtl(const StatePoint& stp, const vector2d& mtl) {
-    std::unique_lock lock(mtl_mutex);
-    mtl_map[stp] = mtl;
-}
-
-void KineticGasCache::store_etl(const StatePoint& stp, const vector2d& etl) {
-    std::unique_lock lock(etl_mutex);
-    etl_map[stp] = etl;
-}
-
-void KineticGasCache::clear(){
-    std::scoped_lock lock(omega_mutex, mtl_mutex, etl_mutex);
-    omega_map.clear();
-    mtl_map.clear();
-    etl_map.clear();
 }
 
 #ifdef _WIN32

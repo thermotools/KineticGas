@@ -70,7 +70,7 @@ def __test_scalar(__model, method, overwrite=False, fail_fast=True):
                     assert False, ostr
                 else:
                     rel_err = (val - oldval) / oldval
-                    if rel_err > 1e-2:
+                    if abs(rel_err) > 5e-4: 
                         print(ostr)
             else:
                 val_new[i] = val
@@ -113,12 +113,12 @@ def test_ljs(overwrite=False):
             data.loc[i, 'Drho'] = Drho_new
             print(f'Changes at ({t:.1f}, {r:.3f}) : {(cond_new - cond_old) / cond_old:.1e}, {(visc_new - visc_old) / visc_old:.1e}, {(Drho_new - Drho_old) / Drho_old:.1e}')
             continue
-        if not (check_eq_rel(cond_new, cond_old) and check_eq_rel(visc_new, visc_old) and check_eq_rel(Drho_new, Drho_old)):
+        if not (check_eq_rel(cond_new, cond_old, tol=1e-6) and check_eq_rel(visc_new, visc_old, tol=1e-6) and check_eq_rel(Drho_new, Drho_old, tol=1e-6)):
             unchanged = False
             print('Failure at : T =', t, ' rho =', r)
-            print(cond_new, cond_old)
-            print(visc_new, visc_old)
-            print(Drho_new, Drho_old)
+            print(f'\tCond : {cond_old} => {cond_new} ({abs((cond_new - cond_old) / cond_old)})')
+            print(f'\tVisc : {visc_old} => {visc_new} ({abs((visc_new - visc_old) / visc_old)})')
+            print(f'\tDiff : {Drho_old} => {Drho_new} ({abs((Drho_new - Drho_old) / Drho_old)})')
     
     if overwrite is True:
         data.to_csv(f'{os.path.dirname(__file__)}/data/transport_properties_ljs.csv')
@@ -243,6 +243,8 @@ if __name__ == '__main__':
             test_viscosity(USING_MODEL, overwrite=False, fail_fast=args.fail_fast)
         if args.diff:
             test_diffusion(USING_MODEL, overwrite=False, fail_fast=args.fail_fast)
+        if args.ljs:
+            test_ljs(overwrite=False)
 
         exit(0)
 

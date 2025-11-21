@@ -225,7 +225,7 @@ public:
     }
 
     using T::potential;
-    double potential(int i, int j, double r) override {
+    double potential(int i, int j, double r) const override {
         double u = T::potential(i, j, r);
         double Dn = 1;
         const double Db = D_factors[i][j] / (BOLTZMANN * current_T);
@@ -237,7 +237,7 @@ public:
     }
 
     using T::potential_derivative_r;
-    double potential_derivative_r(int i, int j, double r) override {
+    double potential_derivative_r(int i, int j, double r) const override {
         double ur = T::potential_derivative_r(i, j, r);
         double Dn = 1;
         const double Db = D_factors[i][j] / (BOLTZMANN * current_T);
@@ -255,7 +255,7 @@ public:
     }
 
     using T::potential_dblderivative_rr;
-    double potential_dblderivative_rr(int i, int j, double r) override {
+    double potential_dblderivative_rr(int i, int j, double r) const override {
         double urr = T::potential_dblderivative_rr(i, j, r);
         double Dn = 1;
         const double Db = D_factors[i][j] / (BOLTZMANN * current_T);
@@ -315,7 +315,7 @@ public:
 
     void set_FH_order(size_t order) {
         if (order != FH_order){
-            T::clear_all_caches();
+            T::cache.clear();
             FH_order = order;
         }
     }

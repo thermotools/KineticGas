@@ -103,16 +103,28 @@ Quantum::Quantum(std::string comps_)
     spin(Ncomps, 0),
     rot_ground_state(Ncomps, 0)
 {   
+    /*
+        We want to be able to inherit the Quantum class, but also use our subclasses for components that don't specify stuff like 
+        bound state energies or spin, such that they don't support quantum calculations. Therefore, we have a "quantum_supported"
+        and "quantum_active" attribute. If `quantum_active == false`, we just forward everything to Spherical. Branch prediction is our
+        friend, so this should have virtually zero cost.
+    */
+    quantum_supported = true;
+
     for (size_t i = 0; i < Ncomps; i++){
-        const auto qdata = compdata[i]["Quantum"];
-        bool has_quantum_params = static_cast<bool>(qdata["has_quantum_params"]);
+        bool has_quantum_params = compdata[i].contains("Quantum");
         if (!has_quantum_params) {
-            std::cout << "WARNING : Component " << comps[i] << " does not support Quantum!\n";
-            std::cout << "\tDeactivating Quantum as default behaviour. You can use `set_quantum_active` if you really want to ...\n";
             quantum_is_active = false;
             quantum_supported = false;
+
+            // Don't break, we still want to read in bound-state energies and spins for the components
+            // that might support quantum.
+            std::cout << "Component " << comps[i] << " does not support Quantum: Defaulting to classical calculations." << std::endl;
             continue;
         }
+
+        const auto qdata = compdata[i]["Quantum"];
+
         half_spin[i] = static_cast<unsigned int>(qdata["half_spin"]);
         spin[i] = static_cast<double>(half_spin[i]) / 2.;
         rot_ground_state[i] = static_cast<unsigned int>(qdata["rot_ground_state"]);
@@ -186,19 +198,14 @@ vector2d Quantum::get_E_bound(int i, int j){
     return E_bound[i][j];
 }
 
-void Quantum::clear_all_caches(){
-    Spherical::clear_all_caches();
-    phase_shift_map.clear();
-}
-
-int Quantum::get_interaction_statistics(int i, int j){
+int Quantum::get_interaction_statistics(int i, int j) const {
     if ( (is_singlecomp) ) i = j;
     if ( i != j ) return StatisticType::Boltzmann;
     if ( (half_spin[i] % 2) == 0 ) return StatisticType::BoseEinstein;
     return StatisticType::FermiDirac;
 }
 
-std::array<double, 2> Quantum::get_symmetry_weights(int i, int j){
+std::array<double, 2> Quantum::get_symmetry_weights(int i, int j) const {
     
     std::array<double, 2> wts;
     if (is_singlecomp) i = j;
@@ -241,7 +248,7 @@ double Quantum::JKWB_upper_E_limit(int i, int j){
     return E_red;
 }
 
-double Quantum::JKWB_phase_shift(int i, int j, int l, double E){
+double Quantum::JKWB_phase_shift(int i, int j, int l, double E) const {
     if (E < 1e-10) return 0.;
     E *= eps[i][j];
     double k = sqrt(2. * red_mass[i][j] * E) / HBAR;
@@ -408,7 +415,7 @@ vector2d Quantum::wave_function(int i, int j, int l, double E, double r_end, dou
     r_lev seems to be a remnant for some method for detecting resonances, I'm highly unsure of whether it's actually used for anything anymore.
     It looks like r_lev is the radial position of a node (root of the wave function) that indicates a resonance.
 */
-double Quantum::quantum_phase_shift(int i, int j, int l, double E, double& r_lev){
+double Quantum::quantum_phase_shift(int i, int j, int l, double E, double& r_lev) const {
     E *= eps[i][j];
     double k2 = (2. * red_mass[i][j] / pow(HBAR, 2));
     double k = sqrt(k2 * E);
@@ -512,7 +519,7 @@ double Quantum::quantum_phase_shift(int i, int j, int l, double E, double& r_lev
     return delta;
 }
 
-double Quantum::phase_shift(int i, int j, int l, double E){    
+double Quantum::phase_shift(int i, int j, int l, double E) const {    
     if (l >= JKWB_l_limit || E > JKWB_E_limit) return JKWB_phase_shift(i, j, l, E);
 
     double r_lev;
@@ -527,7 +534,7 @@ double Quantum::phase_shift(int i, int j, int l, double E){
 
     E : Dimensionless energy (E / eps[i][j])
 */
-double Quantum::r_classical_forbidden(int i, int j, int l, double E){
+double Quantum::r_classical_forbidden(int i, int j, int l, double E) const {
     E *= eps[i][j];
     const double k2 = (2. * red_mass[i][j] / pow(HBAR, 2));
     const double L_unt = sigma[i][j];
@@ -736,8 +743,8 @@ void Quantum::fill_absolute_phase_shifts_tail(int i, int j, int l, double next_k
     phase_shifts.push_back(delta);
 }
 
-int Quantum::get_levinson_multiple(int i, int j, int l){
-    vector2d& Eb = E_bound[i][j];
+int Quantum::get_levinson_multiple(int i, int j, int l) const {
+    const vector2d& Eb = E_bound[i][j];
     int nl = 0;
     for (size_t vib_i = 0; vib_i < Eb.size(); vib_i++){
         if (Eb[vib_i].size() > l) nl++;
@@ -789,17 +796,6 @@ void Quantum::trace_absolute_phase_shifts(int i, int j, int l, double k_max){
     constexpr bool verbose = false;
     const auto E_from_k = [&](double k_val){return pow(k_val * HBAR, 2) / (2. * red_mass[i][j] * eps[i][j]);};
     int n = get_levinson_multiple(i, j, l);
-
-    // First, create the element in the cache if it doesn't exist.
-    {
-        std::lock_guard<std::mutex> loc(abs_phase_shift_map_mutex);
-        const auto pos = absolute_phase_shift_map.find(l);
-        if (pos == absolute_phase_shift_map.end()){
-            vector1d k_vals = {0};
-            vector1d phase_shifts = {PI * n};
-            absolute_phase_shift_map[l] = vector2d({k_vals, phase_shifts});
-        }
-    }
 
     // References for easy access later
     vector1d& k_vals = absolute_phase_shift_map[l][0];
@@ -1157,7 +1153,7 @@ double Quantum::integral_phase_shift(int i, int j, int l, double T){
 }
 
 // The elements of the "A" vector given by Meeks et al. for the calculation of quantum mechanical collision integrals.
-double Quantum::cross_section_A(int n, int l, size_t k){
+double Quantum::cross_section_A(int n, int l, size_t k) const {
     switch (k) {
     case 0:
         return 1;
@@ -1177,7 +1173,7 @@ double Quantum::cross_section_A(int n, int l, size_t k){
 
 // The integrand of the quantum mechanical cross section
 // Input is reduced energy (E = E(Joule) / eps[i][j])
-double Quantum::cross_section_kernel(int i, int j, int n, int l, double E){
+double Quantum::cross_section_kernel(int i, int j, int n, int l, double E) const {
     switch (n){
     case 0: return (2 * l + 1) * pow(sin(phase_shift(i, j, l, E)), 2);
     case 1: return (l + 1) * pow(sin(phase_shift(i, j, l, E) - phase_shift(i, j, l + 1, E)), 2);
@@ -1201,97 +1197,74 @@ double Quantum::cross_section_kernel(int i, int j, int n, int l, double E){
 
 // Quantum mechanical cross section.
 // Input is reduced energy (E = E(Joule) / eps[i][j])
-double Quantum::cross_section(int i, int j, const int n, const double E){
+double Quantum::cross_section(int i, int j, const int n, const double E) const {
     if (E < 5e-4) return cross_section(i, j, n, 5e-4); // Cross sections approach constant value at small E, but numerical solver fails for very small E
     if (is_singlecomp) i = j;
     
-    {
-        std::shared_lock lock(cross_section_map_mutex);
-        const auto pos = cross_section_map.find({i, j, n, E});
-        if (pos != cross_section_map.end()) return pos->second;
-    }
+    const CrossSectionPoint point = {i, j, n, E};
+    return cache.cross_section.compute_if_absent(point, [&](){
 
-    auto [sym_prefactor, anti_prefactor] = get_symmetry_weights(i, j);
-    double Q = 0;
-    if (sym_prefactor > 0.){
-        double Q_even = 0;
-        int l_even = 0;
-        double q_even;
-        do {
-            q_even = cross_section_kernel(i, j, n, l_even, E);
-            Q_even += q_even;
-            l_even += 2;
-        } while (abs(q_even) > 1e-6 * Q_even);
-        Q += sym_prefactor * Q_even;
-    } 
-    if (anti_prefactor > 0.){
-        double Q_odd = 0;
-        int l_odd = 1;
-        double q_odd;
-        do {
-            q_odd = cross_section_kernel(i, j, n, l_odd, E);
-            Q_odd += q_odd;
-            l_odd += 2;
-        } while (abs(q_odd) > 1e-6 * Q_odd);
-        Q += anti_prefactor * Q_odd;
-    } 
+        auto [sym_prefactor, anti_prefactor] = get_symmetry_weights(i, j);
+        double Q = 0;
+        if (sym_prefactor > 0.){
+            double Q_even = 0;
+            int l_even = 0;
+            double q_even;
+            do {
+                q_even = cross_section_kernel(i, j, n, l_even, E);
+                Q_even += q_even;
+                l_even += 2;
+            } while (abs(q_even) > 1e-6 * Q_even);
+            Q += sym_prefactor * Q_even;
+        } 
+        if (anti_prefactor > 0.){
+            double Q_odd = 0;
+            int l_odd = 1;
+            double q_odd;
+            do {
+                q_odd = cross_section_kernel(i, j, n, l_odd, E);
+                Q_odd += q_odd;
+                l_odd += 2;
+            } while (abs(q_odd) > 1e-6 * Q_odd);
+            Q += anti_prefactor * Q_odd;
+        } 
 
-    double k2 = 4. * red_mass[i][j] * E * eps[i][j] / pow(HBAR, 2);
-    Q *= 4. * PI / k2;
-
-    {
-        std::unique_lock lock(cross_section_map_mutex);
-        const CrossSectionPoint point = {i, j, n, E};
-        const auto pos = cross_section_map.find(point);
-        if (pos != cross_section_map.end()) return pos->second;
-        cross_section_map[point] = Q;
-    }
-
-    return Q;
+        double k2 = 4. * red_mass[i][j] * E * eps[i][j] / pow(HBAR, 2);
+        Q *= 4. * PI / k2;
+        return Q;
+    });
 }
 
 double Quantum::classical_cross_section(int i, int j, int l, double E){
     return Spherical::cross_section(i, j, l, E);
 }
 
-double Quantum::quantum_omega(int i, int j, int n, int s, double T){
-    double beta = 1. / (T * BOLTZMANN);
-    const auto kernel = [&](double Eb){
-        double Q = cross_section(i, j, n, Eb / (beta * eps[i][j]));
-        double pref = exp(- Eb) * pow(Eb, s + 1);
-        return pref * Q;
-    };
-    double maxpoint = s + 1.; // Approximately the location of the peak of the integrand
-    double I = simpson_inf(kernel, 0, maxpoint / 3);
-    double val = I * sqrt(2. / (PI * beta * red_mass[i][j]));
-    return val;
+double Quantum::quantum_omega(int i, int j, int n, int s, double T) const {
+    if (is_singlecomp){
+        i = 0; j = 0;
+    }
+    OmegaPoint point = get_omega_point(i, j, n, s, T);
+    return cache.omega.compute_if_absent(point, [&](){
+        double beta = 1. / (T * BOLTZMANN);
+        const auto kernel = [&](double Eb){
+            double Q = cross_section(i, j, n, Eb / (beta * eps[i][j]));
+            double pref = exp(- Eb) * pow(Eb, s + 1);
+            return pref * Q;
+        };
+        double maxpoint = s + 1.; // Approximately the location of the peak of the integrand
+        double I = simpson_inf(kernel, 0, maxpoint / 3);
+        double val = I * sqrt(2. / (PI * beta * red_mass[i][j]));
+        return val;
+    });
 }
 
-double Quantum::classical_omega(int i, int j, int l, int r, double T){
+double Quantum::classical_omega(int i, int j, int l, int r, double T) const {
     double val = Spherical::omega(i, j, l, r, T);
     return val;
 }
 
-double Quantum::omega(int i, int j, int l, int r, double T){
-    OmegaPoint point = get_omega_point(i, j, l, r, T);
-    OmegaPoint sympoint = get_omega_point(j, i, l, r, T);
-    const std::map<OmegaPoint, double>::iterator pos = omega_map.find(point);
-    if (pos == omega_map.end()){
-        double val = (quantum_is_active) ? quantum_omega(i, j, l, r, T) : classical_omega(i, j, l, r, T);
-        omega_map[point] = val;
-        omega_map[sympoint] = val; // Collision integrals are symmetric wrt. particle indices.
-        if (is_singlecomp){
-            for (int ci = 0; ci < Ncomps; ci++){
-                for (int cj = 0; cj < Ncomps; cj++){
-                    if (((ci == i) && (cj == j)) || ((ci == j) && (cj == i))) continue;
-                    OmegaPoint purepoint = get_omega_point(ci, cj, l, r, T);
-                    omega_map[purepoint] = val;
-                }
-            }
-        }
-        return val;
-    }
-    return pos->second;
+double Quantum::omega(int i, int j, int l, int r, double T) const {
+    return (quantum_is_active) ? quantum_omega(i, j, l, r, T) : classical_omega(i, j, l, r, T);
 }
 
 /*
@@ -1549,7 +1522,7 @@ void Quantum::set_quantum_active(bool active){
         std::cout << "WARNING : Some components do not support Quantum! (I'm letting you activate anyway at your own discretion ...)\n";
     }
     if (active != quantum_is_active){
-        clear_all_caches();
+        cache.clear();
     }
     quantum_is_active = active;
 }

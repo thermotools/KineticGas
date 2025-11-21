@@ -29,13 +29,13 @@ class HardSphere : public KineticGas {
         return prefactor * PI * pow(sigma[i][j], 2);
     }
 
-    double omega(int i, int j, int l, int r, double T) override {
+    double omega(int i, int j, int l, int r, double T) const override {
         double w = w_integral(i, j, T, l, r); 
         if (i == j) return pow(sigma.at(i).at(j), 2) * sqrt((PI * BOLTZMANN * T) / m.at(i)) * w;
         return 0.5 * pow(sigma.at(i).at(j), 2) * sqrt(2 * PI * BOLTZMANN * T / (m0[i][j] * M[i][j] * M[j][i])) * w;
     }
 
-    double w_integral(int i, int j, double T, int l, int r){
+    double w_integral(int i, int j, double T, int l, int r) const {
         long long f = Fac(r + 1).eval();
         if (l % 2 == 0){
             return 0.25 * (2 - ((1.0 / (l + 1)) * 2)) * f;

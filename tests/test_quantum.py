@@ -2,7 +2,7 @@ from pykingas.multiparam import init_multiparam, init_multiparam_FH
 from pykingas.multiparam import Patowski, PatowskiFH, ModTangToennies, FH_ModTangToennies
 import pytest
 
-@pytest.mark.parametrise('comp', ['AR', 'P-H2', 'NE', 'HE'])
+@pytest.mark.parametrize('comp', ['AR', 'P-H2', 'NE', 'HE'])
 def test_virial(comp):
     q_model = init_multiparam(comp)
     q_model.set_quantum_active(True)
@@ -25,7 +25,7 @@ def test_virial(comp):
     assert abs(B_c - B_q) > abs(B_fh - B_q)
     assert abs((B_fh - B_q) / B_q) < 5e-2
 
-@pytest.mark.parametrise('comp', ['AR', 'P-H2', 'NE', 'HE'])
+@pytest.mark.parametrize('comp', ['AR', 'P-H2', 'NE', 'HE'])
 def test_viscosity(comp):
     q_model = init_multiparam(comp)
     q_model.set_quantum_active(True)

@@ -78,7 +78,7 @@ void MieKinGas::mix_exponents(std::vector<std::vector<double>>& expo){
     }
 }
 
-double MieKinGas::omega(int i, int j, int l, int r, double T){
+double MieKinGas::omega(int i, int j, int l, int r, double T) const {
     if (omega_correlation_active && (l <= 2) && (r >= l) && (r <= 3) && (abs(la[i][j] - 6.) < 1e-10)){ // Use Correlation by Fokin, Popov and Kalashnikov, High Temperature, Vol. 37, No. 1 (1999)
         // NOTE: There is a typo in Eq. (4b) in the article, ln(1/m) should be ln(m).
         // See: I. H. Bell et. al. J. Chem. Eng. Data (2020), https://doi.org/10.1021/acs.jced.9b00455
@@ -92,7 +92,7 @@ double MieKinGas::omega(int i, int j, int l, int r, double T){
     return Spherical::omega(i, j, l, r, T);
 }
 
-double MieKinGas::omega_correlation(int i, int j, int l, int r, double T_star){
+double MieKinGas::omega_correlation(int i, int j, int l, int r, double T_star) const {
     // Correlation by Fokin, Popov and Kalashnikov, High Temperature, Vol. 37, No. 1 (1999)
     // NOTE: There is a typo in Eq. (4b) in the article, ln(1/m) should be ln(m).
     // See: I. H. Bell et. al. J. Chem. Eng. Data (2020), https://doi.org/10.1021/acs.jced.9b00455
@@ -117,7 +117,7 @@ double MieKinGas::omega_correlation(int i, int j, int l, int r, double T_star){
     return omega_recursive_factor(i, j, l, r - 1, T_star) * omega_correlation(i, j, l, r - 1, T_star);
 }
 
-double MieKinGas::omega_recursive_factor(int i, int j, int l, int r, double T_star){
+double MieKinGas::omega_recursive_factor(int i, int j, int l, int r, double T_star) const {
     // Higher order collision integrals can be computed from the derivative of lower order ones using the recursion
     // Given in Fokin, Popov and Kalashnikov, High Temperature, Vol. 37, No. 1 (1999)
     // See also: Hirchfelder, Curtiss & Bird, Molecular Theory of Gases and Liquids.
@@ -149,7 +149,7 @@ double MieKinGas::omega_recursive_factor(int i, int j, int l, int r, double T_st
 
 void MieKinGas::set_omega_correlation_active(bool active){
     if (active != omega_correlation_active){
-        omega_map.clear();
+        cache.omega.clear();
     }
     omega_correlation_active = active;
 }

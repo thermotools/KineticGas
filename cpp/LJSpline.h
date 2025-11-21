@@ -34,7 +34,7 @@ class LJSpline : public Spherical {
     }   
 
     //Changing Spherical::theta_integrand, such that a 0 / 0 error is avoided when potential is exactly 0.
-    double theta_integrand(int i, int j, double T, double r, double g, double b) override{
+    double theta_integrand(int i, int j, double T, double r, double g, double b) const override {
         if (g == 0) return 0;
         double t = (pow(r, 4) / pow(b, 2)) * (1.0 - potential(i, j, r) / (BOLTZMANN * T * pow(g, 2))) - pow(r, 2);
         if (t < 0) return 0;
@@ -42,7 +42,7 @@ class LJSpline : public Spherical {
     }
 
     //Potential definitions:
-    dual2 potential(int i, int j, dual2 r) override {
+    dual2 potential(int i, int j, dual2 r) const override {
         if (r < rs) {
             return 4 * eps[0][0] * (pow(sigma[0][0] / r, 12) - pow(sigma[0][0] / r, 6));
         }
@@ -54,11 +54,11 @@ class LJSpline : public Spherical {
         }
     }
 
-    double potential(int i, int j, double r) override{
+    double potential(int i, int j, double r) const override{
         return potential(i, j, static_cast<dual>(r)).val.val;
     };
 
-    double potential_derivative_r(int i, int j, double r) override {
+    double potential_derivative_r(int i, int j, double r) const override {
         if (r < rs) {
             return -24*eps[0][0]/r*(2*pow(sigma[0][0] / r, 12) - pow(sigma[0][0] / r, 6));
         }
@@ -69,7 +69,7 @@ class LJSpline : public Spherical {
             return 0;
         }
     }
-    double potential_dblderivative_rr(int i, int j, double r) override {
+    double potential_dblderivative_rr(int i, int j, double r) const override {
         if (r < rs) {
             return 24*eps[0][0]/pow(r,2)*(26*pow(sigma[0][0] / r, 12) - 7*pow(sigma[0][0] / r, 6));
         }
@@ -126,9 +126,9 @@ class LJSpline : public Spherical {
 
     // Collision integral - parametrizations. 
 
-    double omega(int i, int j, int l, int r, double T) override;
-    double omega_correlation(int i, int j, int l, int r, double T_star);
-    double omega_recursive_factor(int i, int j, int l, int r, double T);
+    double omega(int i, int j, int l, int r, double T) const override;
+    double omega_correlation(int i, int j, int l, int r, double T_star) const;
+    double omega_recursive_factor(int i, int j, int l, int r, double T) const;
 
 
     // The hard sphere integrals are used as the reducing factor for the correlations.
@@ -141,7 +141,7 @@ class LJSpline : public Spherical {
          {0.2525206,  -0.12502955, -1.02633768,  3.31321146, -2.58470784,  0.62745361}
         };
 
-    inline double omega_hs(int i, int j, int l, int r, double T){
+    inline double omega_hs(int i, int j, int l, int r, double T) const {
         double w = PI * pow(sigma[i][j], 2) * 0.5 * (r + 1);
         for (int ri = r; ri > 1; ri--) {w *= ri;}
         if (l % 2 == 0){
