@@ -103,16 +103,28 @@ Quantum::Quantum(std::string comps_)
     spin(Ncomps, 0),
     rot_ground_state(Ncomps, 0)
 {   
+    /*
+        We want to be able to inherit the Quantum class, but also use our subclasses for components that don't specify stuff like 
+        bound state energies or spin, such that they don't support quantum calculations. Therefore, we have a "quantum_supported"
+        and "quantum_active" attribute. If `quantum_active == false`, we just forward everything to Spherical. Branch prediction is our
+        friend, so this should have virtually zero cost.
+    */
+    quantum_supported = true;
+
     for (size_t i = 0; i < Ncomps; i++){
-        const auto qdata = compdata[i]["Quantum"];
-        bool has_quantum_params = static_cast<bool>(qdata["has_quantum_params"]);
+        bool has_quantum_params = compdata[i].contains("Quantum");
         if (!has_quantum_params) {
-            std::cout << "WARNING : Component " << comps[i] << " does not support Quantum!\n";
-            std::cout << "\tDeactivating Quantum as default behaviour. You can use `set_quantum_active` if you really want to ...\n";
             quantum_is_active = false;
             quantum_supported = false;
+
+            // Don't break, we still want to read in bound-state energies and spins for the components
+            // that might support quantum.
+            std::cout << "Component " << comps[i] << " does not support Quantum: Defaulting to classical calculations." << std::endl;
             continue;
         }
+
+        const auto qdata = compdata[i]["Quantum"];
+
         half_spin[i] = static_cast<unsigned int>(qdata["half_spin"]);
         spin[i] = static_cast<double>(half_spin[i]) / 2.;
         rot_ground_state[i] = static_cast<unsigned int>(qdata["rot_ground_state"]);

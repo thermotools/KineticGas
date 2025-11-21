@@ -9,9 +9,6 @@
     ],
     "mol_weight": 2.016,
     "default_fh_order": 0,
-    "spin": 0,
-    "E_bound_div_k" : [[-4.10507, -1.89464]],
-    "E_bound_reference": "Calculated using MolCas VibRot : https://molcas.gitlab.io/OpenMolcas/sphinx/users.guide/programs/vibrot.html#ug-sec-vibrot",
     "Mie": {
         "default": {
             "sigma": 3.2574e-10,
