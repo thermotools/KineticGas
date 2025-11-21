@@ -38,17 +38,15 @@ double Spherical::omega(int i, int j, int l, int r, double T) const {
     if (is_singlecomp) {
         i = 0; j = 0;
     }
+
     OmegaPoint point = get_omega_point(i, j, l, r, T);
-
-    if (auto val = cache.omega.get(point)){
-        return *val;
-    }
-
-    double w = w_integral(i, j, T, l, r);
-    double val;
-    if (i == j) val = pow(sigma[i][j], 2) * sqrt((PI * BOLTZMANN * T) / m[i]) * w;
-    else val = 0.5 * pow(sigma[i][j], 2) * sqrt(2 * PI * BOLTZMANN * T / (m0[i][j] * M[i][j] * M[j][i])) * w;
-    return cache.omega.store_if_absent(point, val);
+    return cache.omega.compute_if_absent(point, [&](){
+        double w = w_integral(i, j, T, l, r);
+        double val;
+        if (i == j) val = pow(sigma[i][j], 2) * sqrt((PI * BOLTZMANN * T) / m[i]) * w;
+        else val = 0.5 * pow(sigma[i][j], 2) * sqrt(2 * PI * BOLTZMANN * T / (m0[i][j] * M[i][j] * M[j][i])) * w;
+        return val;
+    });
 }
 
 double Spherical::w_integral(int i, int j, double T, int l, int r) const {

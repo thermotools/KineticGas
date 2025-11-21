@@ -27,6 +27,14 @@ public:
         map[key] = val;
     }
 
+    Value compute_if_absent(const Key& key, const std::function<Value(void)>& fun) {
+        if (auto val = get(key)){
+            return *val;
+        }
+        Value val = fun();
+        return store_if_absent(key, val);
+    }
+
     Value& store_if_absent(const Key& key, Value& val){
         {
             std::shared_lock lock(mtx);
@@ -52,6 +60,15 @@ private:
     mutable std::shared_mutex mtx;
 };
 
+inline size_t combined_hash(const std::vector<size_t>& hashes) noexcept {
+    // Pretty standard way to combine hash keys. See "hashing" and "golden ratio".
+    size_t hash = 0;
+    for (size_t h : hashes) {
+        hash ^= h + 0x9e3779b9 + (hash << 6) + (hash >> 2);
+    }
+    return hash;
+}
+
 struct StatePoint{
     int T_dK;
     double rho;
@@ -65,9 +82,10 @@ struct StatePoint{
 
 struct StatePointHash {
     size_t operator()(const StatePoint& sp) const noexcept {
-        size_t h1 = std::hash<int>{}(sp.T_dK);
-        size_t h2 = std::hash<double>{}(sp.rho);
-        return h1 ^ (h2 << 1);
+        return combined_hash({
+            std::hash<int>{}(sp.T_dK),
+            std::hash<double>{}(sp.rho)
+        });
     }
 };
 
@@ -91,20 +109,16 @@ struct OmegaPoint{
 
 struct OmegaPointHash {
     size_t operator()(const OmegaPoint& op) const noexcept {
-        size_t h1 = std::hash<int>{}(op.i);
-        size_t h2 = std::hash<int>{}(op.j);
-        size_t h3 = std::hash<int>{}(op.l);
-        size_t h4 = std::hash<int>{}(op.r);
-        size_t h5 = std::hash<int>{}(op.T_dK);
-        size_t h6 = std::hash<double>{}(op.rho);
-
-        size_t seed = h1;
-        seed ^= h2 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-        seed ^= h3 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-        seed ^= h4 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-        seed ^= h5 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-        seed ^= h6 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-        return seed;
+        int i = (op.i < op.j) ? op.i : op.j;
+        int j = (op.i < op.j) ? op.j : op.i;
+        return combined_hash({
+            std::hash<int>{}(i),
+            std::hash<int>{}(j),
+            std::hash<int>{}(op.l),
+            std::hash<int>{}(op.r),
+            std::hash<int>{}(op.T_dK),
+            std::hash<double>{}(op.rho)
+        });
     }
 };
 
@@ -123,8 +137,14 @@ struct CrossSectionPoint{
 
 struct CrossSectionHash {
     size_t operator()(const CrossSectionPoint& s) const {
-        return std::hash<int>()(s.i) ^ (std::hash<int>()(s.j) << 1) ^
-               (std::hash<int>()(s.l) << 2) ^ (std::hash<double>()(s.E) << 3);
+        int i = (s.i < s.j) ? s.i : s.j;
+        int j = (s.i < s.j) ? s.j : s.i;
+        return combined_hash({
+            std::hash<int>{}(i),
+            std::hash<int>{}(j),
+            std::hash<int>{}(s.l),
+            std::hash<double>{}(s.E)
+        });
     }
 };
 

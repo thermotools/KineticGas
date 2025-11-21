@@ -1202,39 +1202,37 @@ double Quantum::cross_section(int i, int j, const int n, const double E) const {
     if (is_singlecomp) i = j;
     
     const CrossSectionPoint point = {i, j, n, E};
-    if (auto val = cache.cross_section.get(point)) {
-        return *val;
-    }
+    return cache.cross_section.compute_if_absent(point, [&](){
 
-    auto [sym_prefactor, anti_prefactor] = get_symmetry_weights(i, j);
-    double Q = 0;
-    if (sym_prefactor > 0.){
-        double Q_even = 0;
-        int l_even = 0;
-        double q_even;
-        do {
-            q_even = cross_section_kernel(i, j, n, l_even, E);
-            Q_even += q_even;
-            l_even += 2;
-        } while (abs(q_even) > 1e-6 * Q_even);
-        Q += sym_prefactor * Q_even;
-    } 
-    if (anti_prefactor > 0.){
-        double Q_odd = 0;
-        int l_odd = 1;
-        double q_odd;
-        do {
-            q_odd = cross_section_kernel(i, j, n, l_odd, E);
-            Q_odd += q_odd;
-            l_odd += 2;
-        } while (abs(q_odd) > 1e-6 * Q_odd);
-        Q += anti_prefactor * Q_odd;
-    } 
+        auto [sym_prefactor, anti_prefactor] = get_symmetry_weights(i, j);
+        double Q = 0;
+        if (sym_prefactor > 0.){
+            double Q_even = 0;
+            int l_even = 0;
+            double q_even;
+            do {
+                q_even = cross_section_kernel(i, j, n, l_even, E);
+                Q_even += q_even;
+                l_even += 2;
+            } while (abs(q_even) > 1e-6 * Q_even);
+            Q += sym_prefactor * Q_even;
+        } 
+        if (anti_prefactor > 0.){
+            double Q_odd = 0;
+            int l_odd = 1;
+            double q_odd;
+            do {
+                q_odd = cross_section_kernel(i, j, n, l_odd, E);
+                Q_odd += q_odd;
+                l_odd += 2;
+            } while (abs(q_odd) > 1e-6 * Q_odd);
+            Q += anti_prefactor * Q_odd;
+        } 
 
-    double k2 = 4. * red_mass[i][j] * E * eps[i][j] / pow(HBAR, 2);
-    Q *= 4. * PI / k2;
-
-    return cache.cross_section.store_if_absent(point, Q);
+        double k2 = 4. * red_mass[i][j] * E * eps[i][j] / pow(HBAR, 2);
+        Q *= 4. * PI / k2;
+        return Q;
+    });
 }
 
 double Quantum::classical_cross_section(int i, int j, int l, double E){
