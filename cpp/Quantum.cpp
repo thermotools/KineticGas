@@ -1240,16 +1240,22 @@ double Quantum::classical_cross_section(int i, int j, int l, double E){
 }
 
 double Quantum::quantum_omega(int i, int j, int n, int s, double T) const {
-    double beta = 1. / (T * BOLTZMANN);
-    const auto kernel = [&](double Eb){
-        double Q = cross_section(i, j, n, Eb / (beta * eps[i][j]));
-        double pref = exp(- Eb) * pow(Eb, s + 1);
-        return pref * Q;
-    };
-    double maxpoint = s + 1.; // Approximately the location of the peak of the integrand
-    double I = simpson_inf(kernel, 0, maxpoint / 3);
-    double val = I * sqrt(2. / (PI * beta * red_mass[i][j]));
-    return val;
+    if (is_singlecomp){
+        i = 0; j = 0;
+    }
+    OmegaPoint point = get_omega_point(i, j, n, s, T);
+    return cache.omega.compute_if_absent(point, [&](){
+        double beta = 1. / (T * BOLTZMANN);
+        const auto kernel = [&](double Eb){
+            double Q = cross_section(i, j, n, Eb / (beta * eps[i][j]));
+            double pref = exp(- Eb) * pow(Eb, s + 1);
+            return pref * Q;
+        };
+        double maxpoint = s + 1.; // Approximately the location of the peak of the integrand
+        double I = simpson_inf(kernel, 0, maxpoint / 3);
+        double val = I * sqrt(2. / (PI * beta * red_mass[i][j]));
+        return val;
+    });
 }
 
 double Quantum::classical_omega(int i, int j, int l, int r, double T) const {
@@ -1258,16 +1264,7 @@ double Quantum::classical_omega(int i, int j, int l, int r, double T) const {
 }
 
 double Quantum::omega(int i, int j, int l, int r, double T) const {
-    if (is_singlecomp) {
-        i = 0; j = 0;
-    }
-
-    OmegaPoint point = get_omega_point(i, j, l, r, T);
-    if (auto val = cache.omega.get(point)) {
-        return *val;
-    }
-    double val = (quantum_is_active) ? quantum_omega(i, j, l, r, T) : classical_omega(i, j, l, r, T);
-    return cache.omega.store_if_absent(point, val);
+    return (quantum_is_active) ? quantum_omega(i, j, l, r, T) : classical_omega(i, j, l, r, T);
 }
 
 /*
